@@ -88,6 +88,7 @@ $login->route = '/login';
 
 // Initialize the app
 $app = new App('layout');
+$app->targetId('app');
 $app->register($home);
 $app->register($login);
 $app->run();
