@@ -22,20 +22,75 @@ To allow developers to create fast, interactive, and modern PHP websites that be
 * 🪶 Minimal JavaScript dependency (one small helper script).
 * 🛠️ Works with or without JavaScript (graceful fallback).
 
-### 🖼️ **Basic Use Case**
+
+### 🚀 **Getting Started with phpSPA**
 
 ```php
-<!-- /components/Home.php -->
-<template>
-  <h1>Welcome Home</h1>
-  <p>This is the homepage loaded via phpSPA.</p>
-</template>
-
-<script>
-  function onMount() {
-    echo "Home component mounted.";
-  }
-</script>
+<?php
+// layout.php
+function layout() {
+    return <<<HTML
+    <html>
+        <head>
+            <title>phpSPA App</title>
+        </head>
+        <body>
+            <div id="app">
+                __CONTENT__
+            </div>
+            <script src="/phpspa.js"></script>
+        </body>
+    </html>
+HTML;
+}
 ```
 
----
+```php
+<?php
+// components.php
+function HomePage() {
+    return <<<HTML
+        <div id="home">
+            <h1>Welcome to phpSPA</h1>
+            <a href="/login">Go to Login</a>
+        </div>
+HTML;
+}
+
+function LoginPage() {
+    return <<<HTML
+        <div id="login">
+            <h2>Login</h2>
+            <form method="post">
+                <input name="username" placeholder="Username"><br>
+                <input name="password" type="password" placeholder="Password"><br>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+HTML;
+}
+```
+
+```php
+<?php
+// index.php
+require 'App.php';
+require 'Component.php';
+require 'layout.php';
+require 'components.php';
+
+// Register components
+$home = new Component('HomePage');
+$home->method_get();
+$home->route = '/';
+
+$login = new Component('LoginPage');
+$login->method_get_post();
+$login->route = '/login';
+
+// Initialize the app
+$app = new App('layout');
+$app->register($home);
+$app->register($login);
+$app->run();
+```
