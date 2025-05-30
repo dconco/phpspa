@@ -74,8 +74,6 @@ HTML;
 ```php
 <?php
 // index.php
-require 'App.php';
-require 'Component.php';
 require 'layout.php';
 require 'components.php';
 
