@@ -3,6 +3,7 @@
 namespace phpSPA;
 
 use Closure;
+use phpSPA\Router\MapRoute;
 
 class App implements Interfaces\phpSpaInterface
 {
@@ -78,7 +79,9 @@ class App implements Interfaces\phpSpaInterface
    {
       foreach ($this->components as $component)
       {
-         var_dump($component);
+         $router = (new MapRoute())
+                                 ->match($component->method, $component->route);
+         var_dump($router);
       }
    }
 }
