@@ -13,52 +13,27 @@ class Request
 {
    use \phpSPA\Utils\Validate;
 
-
    /**
-    * Handles the HTTP request and returns the request data.
+    * Invokes the request object to retrieve a parameter value by key.
     *
-    * This method processes the incoming HTTP request and provides access
-    * to request parameters, headers, and other relevant information.
+    * Checks if the specified key exists in the request parameters ($_REQUEST).
+    * If found, validates and returns the associated value.
+    * If not found, returns the provided default value.
     *
-    * @return array The processed request data.
+    * @param string $key The key to look for in the request parameters.
+    * @param string|null $default The default value to return if the key does not exist. Defaults to null.
+    * @return mixed The validated value associated with the key, or the default value if the key is not present.
     */
-   public function request ()
+   public function __invoke (string $key, ?string $default = null): mixed
    {
-      $keys = func_get_args();
-
-      if (empty($keys))
+      // Check if the key exists in the request parameters
+      if (isset($_REQUEST[$key]))
       {
-         return $this->validate($_REQUEST);
+         // Validate and return the value associated with the key
+         return $this->validate($_REQUEST[$key]);
       }
 
-      if (count($keys) > 1)
-      {
-         $data = [];
-
-         foreach ($keys as $k)
-         {
-            if (isset($_REQUEST[$k]))
-            {
-               $data[$k] = $this->validate($_REQUEST[$k]);
-            }
-         }
-
-         return $data;
-      }
-
-      return isset($_REQUEST[$keys[0]]) ? $this->validate($_REQUEST[$keys[0]]) : null;
-   }
-
-   /**
-    * Invokes the request handler with the provided arguments.
-    *
-    * This magic method allows the object to be called as a function,
-    * forwarding all received arguments to the internal request method.
-    *
-    * @return mixed The result of the request method.
-    */
-   public function __invoke ()
-   {
-      return $this->request(...func_get_args());
+      // If the key does not exist, return the default value
+      return $default;
    }
 }

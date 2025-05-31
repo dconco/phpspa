@@ -41,6 +41,13 @@ class ComponentImpl
     */
    protected ?string $targetID = null;
 
+   /**
+    * Indicates whether the component should treat values as case sensitive.
+    *
+    * @var bool|null If true, case sensitivity is enabled; if false, it is disabled; if null, the default behavior is used.
+    */
+   protected ?bool $caseSensitive = null;
+
 
    /**
     * Constructor for the Component class.
@@ -99,6 +106,30 @@ class ComponentImpl
    public function targetID (string $targetID): self
    {
       $this->targetID = $targetID;
+      return $this;
+   }
+
+   /**
+    * Enables case sensitivity for the component.
+    *
+    * Sets the internal flag to treat operations as case sensitive.
+    *
+    * @return self Returns the current instance for method chaining.
+    */
+   public function caseSensitive (): self
+   {
+      $this->caseSensitive = true;
+      return $this;
+   }
+
+   /**
+    * Sets the component to operate in a case-insensitive mode.
+    *
+    * @return self Returns the current instance for method chaining.
+    */
+   public function caseInsensitive (): self
+   {
+      $this->caseSensitive = false;
       return $this;
    }
 }

@@ -4,9 +4,10 @@ use phpSPA\Http\Request;
 
 function HomePage (array $path, Request $request): string
 {
-   $name = $request('name') ?? 'dconco';
+   $name = $request('name', 'dconco');
 
    print_r($path);
+   print_r($name);
 
    return <<<HTML
       <div>

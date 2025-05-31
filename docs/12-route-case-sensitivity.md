@@ -22,7 +22,7 @@ You can override the case-sensitivity for individual components.
 
 ```php
 $component->caseSensitive();     // Force sensitivity for this one
-$component->caseInSensitive();   // Explicitly make this one case-insensitive
+$component->caseInsensitive();   // Explicitly make this one case-insensitive
 ```
 
 This is useful if:
@@ -41,7 +41,7 @@ $one->caseSensitive();
 
 $two = new Component('Admin');
 $two->route("/admin");
-$two->caseInSensitive(); // Optional here — it's default anyway
+$two->caseInsensitive(); // Optional here — it's default anyway
 ```
 
 Without case sensitivity:
