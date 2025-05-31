@@ -2,6 +2,8 @@
 
 namespace phpSPA;
 
+use Closure;
+
 class App implements Interfaces\phpSpaInterface
 {
    /**
@@ -28,6 +30,8 @@ class App implements Interfaces\phpSpaInterface
    protected array $components = [];
 
    public static string $request_uri;
+
+   public static ?Closure $handleInvalidParameterType;
 
    /**
     * APP CONSTRUCTOR
@@ -72,6 +76,9 @@ class App implements Interfaces\phpSpaInterface
     */
    public function run (): void
    {
-
+      foreach ($this->components as $component)
+      {
+         var_dump($component);
+      }
    }
 }

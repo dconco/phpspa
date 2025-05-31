@@ -3,6 +3,7 @@
 namespace phpSPA\Utils\Routes\Exceptions;
 
 use Closure;
+use phpSPA\App;
 use phpSPA\Exceptions\AppException;
 
 class InvalidTypesException extends AppException
@@ -95,9 +96,9 @@ class InvalidTypesException extends AppException
    {
       http_response_code($code);
 
-      if (Application::$handleInvalidParameterType)
+      if (App::$handleInvalidParameterType)
       {
-         print_r((Application::$handleInvalidParameterType)($typeGotten));
+         print_r((App::$handleInvalidParameterType)($typeGotten));
          exit();
       }
       else
