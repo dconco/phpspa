@@ -64,5 +64,4 @@ $login->targetID("main"); // Optional if it's the same as default
 
 ---
 
-Next up: 📦 **Component Routing with Parameters**
-(we’ll dive into `$path`, `$request`, and how components can use URL data).
+Next up: 📦 [Navigating Between Pages](./9-navigating-between-pages.md)
