@@ -17,7 +17,7 @@ class Component
     *
     * @var string|null $title The title can be a string or null if not set.
     */
-   public ?string $title;
+   public ?string $title = null;
 
    /**
     * The HTTP method to be used for the component's request.
@@ -32,6 +32,14 @@ class Component
     * @var string $route
     */
    public string $route;
+
+   /**
+    * The ID of the target element associated with this component.
+    * This is typically used to specify where the component's content should be rendered in the DOM.
+    * 
+    * @var string|null The target element's ID, or null if to use the default target.
+    */
+   public ?string $targetID = null;
 
 
    /**
