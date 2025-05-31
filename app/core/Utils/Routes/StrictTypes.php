@@ -74,8 +74,9 @@ trait StrictTypes
 			};
 		}
 
-		InvalidTypesException::catchInvalidStrictTypes($haystack);
-		throw InvalidTypesException::catchInvalidParameterTypes($types, $typeOfNeedle);
+		return false;
+		// InvalidTypesException::catchInvalidStrictTypes($haystack);
+		// throw InvalidTypesException::catchInvalidParameterTypes($types, $typeOfNeedle);
 	}
 
 
@@ -109,14 +110,16 @@ trait StrictTypes
 
 			if (!is_array($needle))
 			{
-				throw new AppException("Invalid request parameter type. {ARRAY} requested, but got {{$typeOfNeedle}}");
+				return false;
+				// throw new AppException("Invalid request parameter type. {ARRAY} requested, but got {{$typeOfNeedle}}");
 			}
 
 			foreach ($eachArrayTypes as $key => $eachArrayType)
 			{
 				if (!isset($needle[$key]))
 				{
-					throw new AppException("Array index $key not found in the request parameter");
+					return false;
+					// throw new AppException("Array index $key not found in the request parameter");
 				}
 
 				$needle2 = is_array($needle[$key])
@@ -128,13 +131,14 @@ trait StrictTypes
 
 				if (!self::matchType($needle2, $eachTypes))
 				{
-					$requested = implode(', ', $eachTypes);
-					InvalidTypesException::catchInvalidStrictTypes($eachTypes);
-					throw InvalidTypesException::catchInvalidParameterTypes(
-					 $eachTypes,
-					 $typeOfNeedle2,
-					 "Invalid request parameter type. {{$requested}} requested on array index $key, but got {{$typeOfNeedle2}}",
-					);
+					return false;
+					// $requested = implode(', ', $eachTypes);
+					// InvalidTypesException::catchInvalidStrictTypes($eachTypes);
+					// throw InvalidTypesException::catchInvalidParameterTypes(
+					//  $eachTypes,
+					//  $typeOfNeedle2,
+					//  "Invalid request parameter type. {{$requested}} requested on array index $key, but got {{$typeOfNeedle2}}",
+					// );
 				}
 			}
 			return true;
@@ -151,8 +155,9 @@ trait StrictTypes
 
 			if ((!$max && $min < $needle) || $max && ($needle < $min || $needle > $max))
 			{
-				$requested = !$max ? "INT min ($min)" : "INT min ($min), max($max)";
-				throw new AppException("Invalid request parameter type. {{$requested}} requested, but got {{$needle}}");
+				return false;
+				// $requested = !$max ? "INT min ($min)" : "INT min ($min), max($max)";
+				// throw new AppException("Invalid request parameter type. {{$requested}} requested, but got {{$needle}}");
 			}
 			return true;
 		}

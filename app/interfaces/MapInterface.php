@@ -16,5 +16,5 @@ interface MapInterface
     * @param string $method
     * @param string|array $route
     */
-   public function match(string $method, string|array $route): bool|array;
+   public function match(string $method, string|array $route, bool $caseSensitive): bool|array;
 }

@@ -33,9 +33,21 @@ class AppImpl extends Component implements \phpSPA\Interfaces\phpSpaInterface
     */
    protected array $components = [];
 
+   /**
+    * Indicates whether the application should treat string comparisons as case sensitive.
+    *
+    * @var bool $caseSensitive Defaults to false, meaning string comparisons are case insensitive by default.
+    */
+   protected bool $caseSensitive = false;
+
+   /**
+    * The base URI of the application.
+    * This is used to determine the root path for routing and resource loading.
+    *
+    * @var string
+    */
    public static string $request_uri;
 
-   public static ?Closure $handleInvalidParameterType;
 
    /**
     * APP CONSTRUCTOR
@@ -52,6 +64,11 @@ class AppImpl extends Component implements \phpSPA\Interfaces\phpSpaInterface
    public function defaultTargetID (string $targetID): void
    {
       $this->defaultTargetID = $targetID;
+   }
+
+   public function defaultToCaseSensitive (): void
+   {
+      $this->caseSensitive = true;
    }
 
    /**
@@ -83,7 +100,7 @@ class AppImpl extends Component implements \phpSPA\Interfaces\phpSpaInterface
       foreach ($this->components as $component)
       {
          $router = (new MapRoute())
-            ->match($component->method, $component->route);
+            ->match($component->method, $component->route, $this->caseSensitive);
 
          if (!$router)
          {

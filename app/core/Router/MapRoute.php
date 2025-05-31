@@ -35,6 +35,13 @@ class MapRoute implements MapInterface
    private static array $method;
 
    /**
+    * Sets the case sensitivity for route matching.
+    *
+    * @param bool $caseSensitive If true, route matching will be case sensitive.
+    */
+   private static bool $caseSensitive;
+
+   /**
     * Matches the given HTTP method and route against the current request URI.
     *
     * @param string $method The HTTP method(s) to match, separated by '|'.
@@ -53,23 +60,28 @@ class MapRoute implements MapInterface
     * - Returns an array with the matched method, route, and parameters if a match is found.
     * - Returns false if no match is found.
     */
-   public function match(string $method, string|array $route): bool|array
+   public function match(string $method, string|array $route, bool $caseSensitive): bool|array
    {
       self::$method = explode('|', $method);
+      self::$caseSensitive = $caseSensitive;
+
       /**
        *   ----------------------------------------------
        *   |   Replacing first and last forward slashes
        *   |   $_REQUEST['uri'] will be empty if req uri is /
        *   ----------------------------------------------
        */
-      self::$request_uri = strtolower(
-       preg_replace("/(^\/)|(\/$)/", '', App::$request_uri),
-      );
+      self::$request_uri = preg_replace("/(^\/)|(\/$)/", '', App::$request_uri);
       self::$request_uri = empty(self::$request_uri) ? '/' : self::$request_uri;
+
+      // If caseSensitive is false, convert request URI to lowercase
+      self::$request_uri = $caseSensitive
+       ? self::$request_uri
+       : strtolower(self::$request_uri);
 
       self::$route = is_array($route)
        ? $route
-       : strtolower(preg_replace("/(^\/)|(\/$)/", '', $route));
+       : preg_replace("/(^\/)|(\/$)/", '', $caseSensitive ? $route : strtolower($route));
 
       //  Firstly, resolve route with pattern
       if (is_array(self::$route))
@@ -216,6 +228,12 @@ class MapRoute implements MapInterface
                 $param_value,
                 $param_types,
                );
+
+               if (!$parsed_value)
+               {
+                  return false;
+               }
+
                $req[$param_name] = $parsed_value;
             }
          }
@@ -253,8 +271,8 @@ class MapRoute implements MapInterface
             $each_route = preg_replace("/(^\/)|(\/$)/", '', self::$route[$i]);
 
             empty($each_route)
-             ? array_push($uri, strtolower('/'))
-             : array_push($uri, strtolower($each_route));
+             ? array_push($uri, '/')
+             : array_push($uri, strtolower(self::$caseSensitive ? $each_route : strtolower($each_route)));
          }
       }
       else
