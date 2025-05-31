@@ -7,6 +7,7 @@ function HomePage (): string
    return <<<HTML
       <div>
          <p>Welcome to my PHP SPA project! @$name</p>
+         <Link to="/login" text="GO TO LOGIN" />
       </div>
    HTML;
 }
