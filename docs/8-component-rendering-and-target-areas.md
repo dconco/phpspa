@@ -17,6 +17,8 @@ function Home() {
 To make this available to your app:
 
 ```php
+use phpSPA\Component;
+
 $home = new Component('Home');
 $home->route("/");
 ```
@@ -25,43 +27,81 @@ $home->route("/");
 
 ---
 
+## 🔢 Specifying HTTP Methods (Optional)
+
+You can control **which HTTP methods** the component responds to:
+
+```php
+$home->method("GET");
+```
+
+You can also allow **multiple methods** using a pipe `|` separator:
+
+```php
+$login->method("GET|POST");
+```
+
+* This is especially useful for components that handle form submissions (`POST`) and normal page loads (`GET`).
+
+---
+
+## 📄 Setting Page Titles (Optional)
+
+Want to change the `<title>` when this component is loaded?
+
+```php
+$home->title("Home Page");
+```
+
+> This automatically updates `document.title` in the browser when this component is shown.
+
+---
+
 ## 🎯 Setting a Target Area (Optional)
 
-By default, components get rendered into the **App’s default target area** (`$app->defaultTargetID("main")`, for example).
-But if you want a component to render somewhere else (like a specific div), you can override it:
+By default, components render into the app's default target area
+(e.g., set using `$app->defaultTargetID("main")`).
+
+But if you want a component to render elsewhere (like a specific div), override it:
 
 ```php
 $home->targetID("content");
 ```
 
-That means this component will update the element with ID `#content` instead of the app’s default.
+That tells phpSPA to update the element with ID `#content` when this route loads.
 
-> ⚠️ Use this when you want a sidebar, modal, or some custom container to be dynamically updated by a route.
+> ⚠️ Use this for modals, sidebars, or custom layout sections.
 
 ---
 
 ## 🔁 Full Example
 
 ```php
+use phpSPA\Component;
+
 function Login() {
-    return "<form>...</form>";
+    return "<form method='post'>...</form>";
 }
 
 $login = new Component('Login');
 $login->route("/login");
-$login->targetID("main"); // Optional if it's the same as default
+$login->method("GET|POST");
+$login->title("Login Page");
+$login->targetID("main"); // Optional if it matches default
 ```
 
 ---
 
 ## 🧠 Summary
 
-| What You Can Do         | How                              |
-| ----------------------- | -------------------------------- |
-| Register a component    | `$comp = new Component('MyFn');` |
-| Set its route           | `$comp->route("/about");`        |
-| Change where it renders | `$comp->targetID("sidebar");`    |
+| What You Can Do         | How                              |           |
+| ----------------------- | -------------------------------- | --------- |
+| Register a component    | `$comp = new Component('MyFn');` |           |
+| Set its route           | `$comp->route("/about");`        |           |
+| Allow HTTP methods      | \`\$comp->method("GET            | POST");\` |
+| Set browser title       | `$comp->title("Page Title");`    |           |
+| Change where it renders | `$comp->targetID("sidebar");`    |           |
 
 ---
 
-Next up: 📦 [Navigating Between Pages](./9-navigating-between-pages.md)
+➡️ Next up: 📦 [Navigating Between Pages](./9-navigating-between-pages.md)

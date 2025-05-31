@@ -1,12 +1,49 @@
 # 🧩 Creating Your First Component
 
-In phpSPA, components are the heart of your app. A **component** is just a PHP function that returns a chunk of HTML.
+In phpSPA, components are the heart of your app. A **component** is just a PHP function that returns a chunk of HTML — no class inheritance or special syntax needed.
 
-Let’s break this down properly, step by step:
+Let’s walk through the process step by step:
 
 ---
 
-## ✅ Step 1: Write a Component Function
+## ✅ Step 1: Create the Layout Function
+
+You’ll start by defining a layout function that returns the full HTML page. It must include the `__CONTENT__` placeholder, which phpSPA will replace with the component’s output.
+
+```php
+function layout() {
+    return <<<HTML
+    <html>
+        <head>
+            <title>My phpSPA App</title>
+        </head>
+        <body>
+            <div id="app">
+                __CONTENT__
+            </div>
+            <script src="https://cdn.example.com/phpspa.js"></script>
+        </body>
+    </html>
+HTML;
+}
+```
+
+---
+
+## ✅ Step 2: Create the App Instance
+
+Now you’ll set up the `App` instance and optionally define a default target element ID for components to render into.
+
+```php
+use phpSPA\App;
+
+$app = new App(layout);
+$app->defaultTargetID("app"); // Optional: default ID for content rendering
+```
+
+---
+
+## ✅ Step 3: Write a Component Function
 
 Here’s a super simple component:
 
@@ -16,74 +53,90 @@ function Home() {
 }
 ```
 
-> ☝️ A component is just a normal PHP function — nothing special yet.
+> ☝️ A component is just a plain PHP function. No need for special syntax or templating.
 
 ---
 
-## ✅ Step 2: Register the Component
+## ✅ Step 4: Register the Component
 
-To make this component load on a specific URL, you’ll wrap it in a `Component` class and give it a route.
+Wrap your function in the `Component` class, and assign it to a route:
 
 ```php
 use phpSPA\Component;
 
 $home = new Component('Home');
-$home->route("/");
+$home->route("/"); // Show this component at the root URL
 ```
 
-### 🧠 What’s happening here?
+You can also set:
 
-* `Component` accepts **a callable** — you pass the function itself, not what it returns.
-* The `route()` method tells phpSPA when to render this component (in this case, at `/`).
+```php
+$home->method("GET");        // Optional: set HTTP method(s)
+$home->targetID("main");     // Optional: override the default render target
+$home->title("Home Page");   // Optional: sets document.title when shown
+```
 
-> 💡 If your component should respond to a specific HTTP method, you can also add:
->
-> ```php
-> $home->method("GET");
-> ```
-
-And you can also add multiple HTTP method like `GET|POST`, but for now, that’s optional.
+> 💡 `targetID()` is only needed if you want to render into a different element instead of the app’s default.
 
 ---
 
-### 🧱 Optional: targetID() and title()
+## ✅ Step 5: Attach and Run
 
-You can customize how and where the component gets rendered.
+Now, connect the component to the app and start it:
 
 ```php
-$home->targetID("main");  // If you want to use a different element ID than the default
-$home->title("Home Page"); // Sets the document title when this component is shown
+$app->attach($home); // Attach the component
+$app->run();         // Start the app
 ```
-
-> 🔄 If you don’t call `targetID()`, phpSPA uses the default target set in `$app->defaultTargetID()`.
 
 ---
 
-### ✅ All Together Now
+### ✅ Final Example
 
-Here’s what it looks like as a full example:
+Here’s how everything fits together:
 
 ```php
+use phpSPA\App;
+use phpSPA\Component;
+
+function layout() {
+    return <<<HTML
+    <html>
+        <head><title>My phpSPA App</title></head>
+        <body>
+            <div id="app">
+                __CONTENT__
+            </div>
+            <script src="https://cdn.example.com/phpspa.js"></script>
+        </body>
+    </html>
+HTML;
+}
+
 function Home() {
     return "<h1>Welcome to my site!</h1>";
 }
+
+$app = new App(layout);
+$app->defaultTargetID("app");
 
 $home = new Component('Home');
 $home->route("/");
 $home->method("GET");
 $home->title("Home Page");
+
+$app->attach($home);
+$app->run();
 ```
 
 ---
 
 ### 🔄 What Happens When You Visit `/`?
 
-When a user visits `/`:
-
-* phpSPA matches the route to the `Home` component.
-* The `Home()` function runs and returns HTML.
-* That HTML replaces the `__CONTENT__` area inside your layout.
-* On navigation, only that part updates — no full page reload.
+* The app matches the route to `/`
+* It renders the `Home()` component
+* The returned HTML replaces the `__CONTENT__` part of the layout
+* All without reloading the full page
 
 ---
 

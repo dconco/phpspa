@@ -14,7 +14,7 @@ Your layout is just a function that returns HTML (usually with heredoc `<<<HTML`
 ```php
 function layout() {
     return <<<HTML
-        <html>
+    <html>
         <head>
             <title>My App</title>
         </head>
@@ -23,9 +23,10 @@ function layout() {
             <main>
                 __CONTENT__
             </main>
+            <script src="https://cdn.example.com/phpspa.js"></script>
         </body>
-        </html>
-    HTML;
+    </html>
+HTML;
 }
 ```
 
@@ -38,42 +39,65 @@ function layout() {
 Once you’ve got your layout, you can initialize the app:
 
 ```php
+use phpSPA\App;
+
 $app = new App('layout');
 ```
 
-> `layout` here is the callable, **not** the returned string or a string.
+> `layout` is a **callable** — the function itself, not its output.
 
 ---
 
 ## 🎯 Default Target ID (Optional)
 
-By default, phpSPA uses the `__CONTENT__` marker for first render.
-But for dynamic navigations (handled by JS), you can define where updates should go:
+By default, phpSPA uses the `__CONTENT__` placeholder for the initial render.
+But for dynamic navigations (handled via JavaScript), you can define the DOM element that should be replaced:
 
 ```php
 $app->defaultTargetID("main");
 ```
 
-> This tells phpSPA’s JS to replace the `<main>` element’s content when changing routes.
+> This tells phpSPA’s JavaScript to replace the `<main>` content when the route changes.
+
+---
+
+## 📦 Add a Component and Run the App
+
+Let’s quickly register a sample component and finish the setup:
+
+```php
+use phpSPA\Component;
+
+function Home() {
+    return "<h1>Welcome!</h1>";
+}
+
+$home = new Component('Home');
+$home->route("/");
+$home->title("Home");
+
+$app->attach($home);
+$app->run();
+```
 
 ---
 
 ## 🔀 How Content Swap Works
 
-1. User visits `/dashboard` → server returns layout + Dashboard HTML inserted at `__CONTENT__`.
-2. User clicks a link → JS intercepts it.
-3. JS sends a background request to the server, asking for just the new component.
-4. Once loaded, the content in the `main` tag (or your chosen target ID) is replaced.
+1. User visits `/` → phpSPA sends layout + `Home` component inserted at `__CONTENT__`.
+2. User clicks a navigation link → JS intercepts it.
+3. JS requests just the new component HTML from the server.
+4. When it arrives, phpSPA updates the target area (e.g. `<main>`) without touching the rest of the page.
 
-All without reloading the whole page. Clean, fast, and good for UX.
+⚡ All without a full page reload. This makes your app feel instant and smooth.
 
 ---
 
 ## 💡 Notes
 
-* You only need to define the layout once — no need to repeat HTML.
-* You can style the layout however you want — just keep the `__CONTENT__` placeholder inside.
-* If you want to use different target areas for certain components (not the default), we’ll cover that next in **Component Rendering & Target Areas**.
+* Define your layout once — no need to duplicate markup.
+* The `__CONTENT__` placeholder will be swapped with component content automatically.
+* You can still control exactly *where* in the DOM the content swaps occur using `targetID()` on each component.
 
 ---
 
