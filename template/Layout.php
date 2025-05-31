@@ -8,7 +8,9 @@ function Layout (): string
             <title>PHP SPA PROJECT BY DCONCO</title>
          </head>
          <body>
-            <div id="app"></div>
+            <div id="app">
+               __CONTENT__
+            </div>
 
             <!-- phpSPA JS PLUGIN -->
             <script type="application/javascript" src="/phpspa.min.js"></script>

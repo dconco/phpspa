@@ -76,6 +76,10 @@ function LoginPage() {
 require 'layout.php';
 require 'components.php';
 
+// Initialize the app
+$app = new App('layout');
+$app->targetId('app');
+
 // Register components
 $home = new Component('HomePage');
 $home->title = 'Home Page';
@@ -87,9 +91,7 @@ $login->title = 'Login Page';
 $login->method = 'GET|POST';
 $login->route = '/login';
 
-// Initialize the app
-$app = new App('layout');
-$app->targetId('app');
+// Attach Components and run application
 $app->attach($home);
 $app->attach($login);
 $app->run();
