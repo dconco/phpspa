@@ -74,8 +74,8 @@ Just clone or download this repo and include it in your project.
 In your `index.php`, make sure to include:
 
 ```php
-require 'phpSPA/core/App.php';
-require 'phpSPA/core/Component.php';
+require 'path/to/phpspa/core/App.php';
+require 'path/to/phpspa/core/Component.php';
 
 use phpSPA\App;
 use phpSPA\Component;
