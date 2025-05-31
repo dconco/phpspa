@@ -69,5 +69,6 @@ class App implements Interfaces\phpSpaInterface
     */
    public function run (): void
    {
+
    }
 }
