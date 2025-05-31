@@ -87,6 +87,4 @@ When a user visits `/`:
 
 ---
 
-➡️ Next up: [Understanding Routing and Parameters](#)
-
-Let me know when you're ready for the routing page or if you want any small additions here.
+➡️ Next up: [Understanding Routing and Parameters](./4-routing-and-parameters.md)

@@ -71,4 +71,4 @@ Done ✅
 
 ➡️ [Getting Started](./2-getting-started.md)
 ➡️ [Creating Your First Component](./3-creating-your-first-component.md)
-➡️ [Understanding Layouts and Placeholders](#)
+➡️ [Understanding Routing and Parameters](./4-routing-and-parameters.md)
