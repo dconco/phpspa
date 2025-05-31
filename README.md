@@ -67,6 +67,12 @@ Each component can also define its **own loader**, to show something unique whil
 composer require dconco/phpspa
 ```
 
+Include the autoloader in your entry script:
+
+```php
+require 'vendor/autoload.php';
+```
+
 ### 2. Manual Installation
 
 Just clone or download this repo and include it in your project.
