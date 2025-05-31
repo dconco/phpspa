@@ -27,12 +27,15 @@ class App implements Interfaces\phpSpaInterface
     */
    protected array $components = [];
 
+   public static string $request_uri;
+
    /**
     * APP CONSTRUCTOR
     */
    public function __construct (callable $layout)
    {
       $this->layout = $layout;
+      self::$request_uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
    }
 
    /**
