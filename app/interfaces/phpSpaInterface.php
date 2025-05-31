@@ -11,9 +11,9 @@ interface phpSpaInterface
     *
     * Initializes the App instance with the specified layout.
     *
-    * @param string $layout The name of the layout to be used by the application.
+    * @param callable $layout The name of the layout to be used by the application.
     */
-   public function __construct (string $layout);
+   public function __construct (callable $layout);
 
    /**
     * Sets the target ID for the application.
@@ -31,4 +31,22 @@ interface phpSpaInterface
     * @return void
     */
    public function attach (Component $component): void;
+
+   /**
+    * Detaches the specified component from the current context.
+    *
+    * @param Component $component The component instance to be detached.
+    * @return void
+    */
+   public function detach (Component $component): void;
+
+   /**
+    * Runs the application.
+    *
+    * This method is responsible for executing the main logic of the application,
+    * including routing, rendering components, and managing the application lifecycle.
+    *
+    * @return void
+    */
+   public function run (): void;
 }
