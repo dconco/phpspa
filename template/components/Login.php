@@ -1,11 +1,13 @@
 <?php
 
-function Login (&$req): string
+use phpSPA\Http\Request;
+
+function Login (Request $request): string
 {
-   if ($req->method() == "POST")
+   if ($_SERVER['REQUEST_METHOD'] == "POST")
    {
-      $username = $req->post("username");
-      $password = $req->post("password");
+      $username = $request("username");
+      $password = $request("password");
 
       if ($username !== 'admin' && $password !== 'admin')
       {
@@ -18,7 +20,7 @@ function Login (&$req): string
 
    return <<<HTML
       <div>
-         <form action="{$req->uri()}" method="POST">
+         <form action="/login" method="POST">
             <label>Enter your Username:</label>
             <input type="text" />
             <br />

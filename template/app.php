@@ -8,6 +8,7 @@ require 'Layout.php';
 
 use phpSPA\App;
 use phpSPA\Component;
+use phpSPA\Http\Request;
 
 /* Initialize a new Application */
 $app = new App('layout');
