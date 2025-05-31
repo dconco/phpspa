@@ -13,19 +13,19 @@ use phpSPA\Component;
 $app = new App('layout');
 $app->targetID('app');
 
-/* Create a new HOME PAGE Component */
-$homePage = new Component('HomePage');
-$homePage->title = 'Home Page';
-$homePage->method = 'GET';
-$homePage->route = '/';
+// /* Create a new HOME PAGE Component */
+// $homePage = new Component('HomePage');
+// $homePage->title = 'Home Page';
+// $homePage->method = 'GET';
+// $homePage->route = '/';
 
-/* LOGIN PAGE Component */
-$loginPage = new Component('Login');
-$loginPage->title = 'Login Page';
-$loginPage->method = 'GET|POST';
-$loginPage->route = '/login';
+// /* LOGIN PAGE Component */
+// $loginPage = new Component('Login');
+// $loginPage->title = 'Login Page';
+// $loginPage->method = 'GET|POST';
+// $loginPage->route = '/login';
 
-/* Attach and Run Application */
-$app->attach($homePage);
-$app->attach($loginPage);
-$app->run();
+// /* Attach and Run Application */
+// $app->attach($homePage);
+// $app->attach($loginPage);
+// $app->run();

@@ -4,9 +4,9 @@
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "PhpSPA\\": "app/core/",
-            "PhpSPA\\Interfaces\\": "app/interfaces/",
-            "PhpSPA\\Exceptions\\": "app/exceptions/"
+            "phpSPA\\": "app/core/",
+            "phpSPA\\Interfaces\\": "app/interfaces/",
+            "phpSPA\\Exceptions\\": "app/exceptions/"
         }
     },
     "authors": [

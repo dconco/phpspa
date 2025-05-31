@@ -1,18 +1,8 @@
 <?php
 
-namespace PhpSPA\Exceptions;
+namespace phpSPA\Exceptions;
 
-if (class_exists('\PhpSlides\Exception'))
+class AppException extends \Exception
 {
-   class AppException extends \PhpSlides\Exception
-   {
 
-   }
-}
-else
-{
-   class AppException extends \Exception
-   {
-
-   }
 }
