@@ -11,21 +11,21 @@ use phpSPA\Component;
 
 /* Initialize a new Application */
 $app = new App('layout');
-$app->targetID('app');
+$app->defaultTargetID('app');
 
 /* Create a new HOME PAGE Component */
-$homePage = new Component('HomePage');
-$homePage->title = 'Home Page';
-$homePage->method = 'GET';
-$homePage->route = '/';
+$homePage = (new Component('HomePage'))
+   ->title('Home Page')
+   ->method('GET')
+   ->route('/phpspa/template/{id}');
 
-// /* LOGIN PAGE Component */
-$loginPage = new Component('Login');
-$loginPage->title = 'Login Page';
-$loginPage->method = 'GET|POST';
-$loginPage->route = '/login';
+/* LOGIN PAGE Component */
+$loginPage = (new Component('Login'))
+   ->title('Login Page')
+   ->method('GET|POST')
+   ->route('/login');
 
-// /* Attach and Run Application */
+/* Attach and Run Application */
 $app->attach($homePage);
 $app->attach($loginPage);
 $app->run();

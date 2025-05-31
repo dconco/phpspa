@@ -22,7 +22,7 @@ interface phpSpaInterface
     *
     * @return void
     */
-   public function targetID (string $targetID): void;
+   public function defaultTargetID (string $targetID): void;
 
    /**
     * Attaches a component to the current object.

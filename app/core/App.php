@@ -3,9 +3,11 @@
 namespace phpSPA;
 
 use Closure;
+use phpSPA\Http\Request;
 use phpSPA\Router\MapRoute;
+use phpSPA\Helper\CallableInspector;
 
-class App implements Interfaces\phpSpaInterface
+class App extends Component implements Interfaces\phpSpaInterface
 {
    /**
     * The layout of the application.
@@ -15,11 +17,11 @@ class App implements Interfaces\phpSpaInterface
    protected $layout;
 
    /**
-    * The target ID where the application will render its content.
+    * The default target ID where the application will render its content.
     *
-    * @var string $targetID
+    * @var string $defaultTargetID
     */
-   protected string $targetID;
+   protected string $defaultTargetID;
 
    /**
     * Stores the list of application components.
@@ -46,9 +48,9 @@ class App implements Interfaces\phpSpaInterface
    /**
     * APPLICATION INITIAL TARGET ID
     */
-   public function targetID (string $targetID): void
+   public function defaultTargetID (string $targetID): void
    {
-      $this->targetID = $targetID;
+      $this->defaultTargetID = $targetID;
    }
 
    /**
@@ -80,8 +82,45 @@ class App implements Interfaces\phpSpaInterface
       foreach ($this->components as $component)
       {
          $router = (new MapRoute())
-                                 ->match($component->method, $component->route);
-         var_dump($router);
+            ->match($component->method, $component->route);
+
+         if (!$router)
+         {
+            continue; // Skip if no match found
+         }
+
+         $request = new Request();
+
+         /**
+          * Invokes the specified component callback with appropriate parameters based on its signature.
+          *
+          * This logic checks if the component's callable accepts 'path' and/or 'request' parameters
+          * using CallableInspector. It then calls the component with the corresponding arguments:
+          * - If both 'path' and 'request' are accepted, both are passed.
+          * - If only 'path' is accepted, only 'path' is passed.
+          * - If only 'request' is accepted, only 'request' is passed.
+          * - If neither is accepted, the component is called without arguments.
+          *
+          * @param object $component The component object containing the callable to invoke.
+          * @param array $router An associative array containing 'params' and 'request' to be passed as arguments.
+          */
+
+         if (CallableInspector::hasParam($component->component, 'path') && CallableInspector::hasParam($component->component, 'request'))
+         {
+            call_user_func($component->component, path: $router['params'], request: $request);
+         }
+         elseif (CallableInspector::hasParam($component->component, 'path'))
+         {
+            call_user_func($component->component, path: $router['params']);
+         }
+         elseif (CallableInspector::hasParam($component->component, 'request'))
+         {
+            call_user_func($component->component, request: $request);
+         }
+         else
+         {
+            call_user_func($component->component);
+         }
       }
    }
 }

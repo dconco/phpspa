@@ -17,21 +17,21 @@ class Component
     *
     * @var string|null $title The title can be a string or null if not set.
     */
-   public ?string $title = null;
+   protected ?string $title = null;
 
    /**
     * The HTTP method to be used for the component's request.
     * 
     * @var string $method Defaults to 'GET'.
     */
-   public string $method = 'GET';
+   protected string $method = 'GET';
 
    /**
     * The route associated with the component to be rendered.
     *
     * @var string $route
     */
-   public string $route;
+   protected string $route;
 
    /**
     * The ID of the target element associated with this component.
@@ -39,7 +39,7 @@ class Component
     * 
     * @var string|null The target element's ID, or null if to use the default target.
     */
-   public ?string $targetID = null;
+   protected ?string $targetID = null;
 
 
    /**
@@ -52,5 +52,28 @@ class Component
    public function __construct (callable $component)
    {
       $this->component = $component;
+   }
+
+   public function title (string $title): self
+   {
+      $this->title = $title;
+      return $this;
+   }
+
+   public function method (string $method): self
+   {
+      $this->method = $method;
+      return $this;
+   }
+
+   public function route (string $route): self
+   {
+      $this->route = $route;
+      return $this;
+   }
+   public function targetID (string $targetID): self
+   {
+      $this->targetID = $targetID;
+      return $this;
    }
 }
