@@ -18,7 +18,6 @@
         }
     ],
     "require": {
-        "php": "^8.2",
-        "phpslides/framework": "^1.4"
+        "php": "^8.2"
     }
 }

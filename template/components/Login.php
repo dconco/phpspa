@@ -1,8 +1,6 @@
 <?php
 
-use PhpSlides\Core\Http\Request;
-
-function Login (Request &$req): string
+function Login (&$req): string
 {
    if ($req->method() == "POST")
    {
