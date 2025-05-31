@@ -22,7 +22,6 @@ To allow developers to create fast, interactive, and modern PHP websites that be
 * 🪶 Minimal JavaScript dependency (one small helper script).
 * 🛠️ Works with or without JavaScript (graceful fallback).
 
-
 ### 🚀 **Getting Started with phpSPA**
 
 ```php
@@ -41,7 +40,7 @@ function layout() {
             <script src="/phpspa.js"></script>
         </body>
     </html>
-HTML;
+    HTML;
 }
 ```
 
@@ -54,7 +53,7 @@ function HomePage() {
             <h1>Welcome to phpSPA</h1>
             <a href="/login">Go to Login</a>
         </div>
-HTML;
+    HTML;
 }
 
 function LoginPage() {
@@ -67,7 +66,7 @@ function LoginPage() {
                 <button type="submit">Login</button>
             </form>
         </div>
-HTML;
+    HTML;
 }
 ```
 
@@ -79,17 +78,19 @@ require 'components.php';
 
 // Register components
 $home = new Component('HomePage');
-$home->method_get();
+$home->title = 'Home Page';
+$home->method = 'GET';
 $home->route = '/';
 
 $login = new Component('LoginPage');
-$login->method_get_post();
+$login->title = 'Login Page';
+$login->method = 'GET|POST';
 $login->route = '/login';
 
 // Initialize the app
 $app = new App('layout');
 $app->targetId('app');
-$app->register($home);
-$app->register($login);
+$app->attach($home);
+$app->attach($login);
 $app->run();
 ```

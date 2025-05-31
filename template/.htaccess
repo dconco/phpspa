@@ -1,0 +1,18 @@
+<IfModule mod_rewrite.c>
+   RewriteEngine On
+
+   # Accept Authorization Header
+   RewriteCond %{HTTP:Authorization} ^(.+)$
+   RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+   # Redirect to the same URI with a trailing slash
+   RewriteCond %{REQUEST_FILENAME} -d
+   RewriteCond %{REQUEST_URI} !(.+/$)
+   RewriteCond %{REQUEST_URI} !^/$
+   RewriteRule ^ %{REQUEST_URI}/ [L,R=301]
+
+   # Send Request to bootstrap configuration
+   RewriteCond %{REQUEST_FILENAME} !-d|-d
+   RewriteCond %{REQUEST_FILENAME} !-f|-f
+   RewriteRule ^(.*)$ app.php?uri=$1 [QSA,L]
+</IfModule>

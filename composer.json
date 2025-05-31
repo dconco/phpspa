@@ -1,0 +1,24 @@
+{
+    "name": "dconco/phpspa",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "PhpSPA\\": "app/core/",
+            "PhpSPA\\Interfaces\\": "app/interfaces/",
+            "PhpSPA\\Exceptions\\": "app/exceptions/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Dave Conco",
+            "email": "concodave@gmail.com",
+            "role": "Developer",
+            "homepage": "https://dconco.dev"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "phpslides/framework": "^1.4.3"
+    }
+}
