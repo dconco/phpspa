@@ -1,29 +1,30 @@
 (function () {
    window.addEventListener("DOMContentLoaded", () => {
-      const target = document.querySelector("[data-phpspa-target]");
+      const target = document.querySelector("[data-phpspa-target]").parentNode;
 
       if (target) {
          const state = {
             url: location.href,
             title: document.title,
-            targetID: target.parentElement.id,
-            content: target.parentElement.innerHTML,
+            targetID: target.id,
+            content: target.innerHTML,
          };
          history.replaceState(state, document.title, location.href);
       }
    });
 
-   const info = document.querySelectorAll('a[data-type="phpspa-link-tag"]');
+   document.addEventListener("click", (ev) => {
+      const info = ev.target.closest('a[data-type="phpspa-link-tag"]');
 
-   info.forEach((element) => {
-      element.addEventListener("click", async (ev) => {
+      if (info) {
          ev.preventDefault();
-         phpspa.navigate(new URL(element.href, location.href), "push");
-      });
+         phpspa.navigate(new URL(info.href, location.href), "push");
+      }
    });
 
    window.addEventListener("popstate", (ev) => {
       const state = ev.state;
+      console.log(state);
 
       if (state && state.url && state.targetID && state.content) {
          document.title = state.title ?? document.title;
