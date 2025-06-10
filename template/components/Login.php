@@ -1,5 +1,6 @@
 <?php
 
+use phpSPA\Component;
 use phpSPA\Http\Request;
 
 function Login (Request $request): string
@@ -20,15 +21,33 @@ function Login (Request $request): string
 
    return <<<HTML
       <div>
-         <form action="/login" method="POST">
+         <form action=/phpspa/template/logina method=POST>
             <label>Enter your Username:</label>
-            <input type="text" />
+            <input type=text />
             <br />
             <label>Enter your Password:</label>
-            <input type="password" />
+            <input type=password />
             <br />
-            <button>LOGIN</button>
+            <button id=btn>LOGIN</button>
          </form>
+         <div id=hashID>
+            <p>Hello</p>
+         </div>
       </div>
+
+      <script>
+         console.log('ss')
+         document.getElementById("btn").onclick = (ev) => {
+            ev.preventDefault();
+            phpspa.navigate("/phpspa/template/logina");
+         };
+      </script>
    HTML;
 }
+
+
+return (new Component('Login'))
+   ->method('GET|POST')
+   ->title('Login Page')
+   ->route('/phpspa/template/login')
+   ->caseInsensitive();

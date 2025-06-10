@@ -2,32 +2,16 @@
 
 require '../vendor/autoload.php';
 
-require 'components/HomePage.php';
-require 'components/Login.php';
-require 'Layout.php';
-
 use phpSPA\App;
-use phpSPA\Component;
-use phpSPA\Http\Request;
 
 /* Initialize a new Application */
-$app = new App('layout');
-$app->defaultTargetID('app');
-$app->defaultToCaseSensitive();
-
-/* Create a new HOME PAGE Component */
-$homePage = (new Component('HomePage'))
-   ->title('Home Page')
-   ->method('GET')
-   ->route('/phpspa/template/{id:int}');
-
-/* LOGIN PAGE Component */
-$loginPage = (new Component('Login'))
-   ->title('Login Page')
-   ->method('GET|POST')
-   ->route('/login');
+$app = new App(require 'Layout.php');
 
 /* Attach and Run Application */
-$app->attach($homePage);
-$app->attach($loginPage);
+$app->attach(require 'components/HomePage.php');
+$app->attach(require 'components/Login.php');
+
+$app->defaultToCaseSensitive();
+$app->defaultTargetID('app');
+
 $app->run();

@@ -2,20 +2,20 @@
 
 namespace phpSPA\Impl\RealImpl;
 
-use Closure;
 use phpSPA\Component;
 use phpSPA\Http\Request;
 use phpSPA\Router\MapRoute;
+use phpSPA\Helper\LinkTagFormatter;
 use phpSPA\Helper\CallableInspector;
 
-class AppImpl extends Component implements \phpSPA\Interfaces\phpSpaInterface
+abstract class AppImpl extends Component
 {
    /**
     * The layout of the application.
     *
     * @var callable $layout
     */
-   private $layout;
+   protected $layout;
 
    /**
     * The default target ID where the application will render its content.
@@ -48,19 +48,16 @@ class AppImpl extends Component implements \phpSPA\Interfaces\phpSpaInterface
     */
    public static string $request_uri;
 
-
    /**
-    * APP CONSTRUCTOR
+    * Holds the data that has been rendered.
+    *
+    * This property is used to store data that has already been processed or rendered
+    * by the application, allowing for reuse or reference without reprocessing.
+    *
+    * @var mixed
     */
-   public function __construct (callable $layout)
-   {
-      $this->layout = $layout;
-      self::$request_uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
-   }
+   private $renderedData;
 
-   /**
-    * APPLICATION INITIAL TARGET ID
-    */
    public function defaultTargetID (string $targetID): void
    {
       $this->defaultTargetID = $targetID;
@@ -68,20 +65,14 @@ class AppImpl extends Component implements \phpSPA\Interfaces\phpSpaInterface
 
    public function defaultToCaseSensitive (): void
    {
-      $this->caseSensitive = true;
+      $this->defaultCaseSensitive = true;
    }
 
-   /**
-    * ATTACH COMPONENT
-    */
    public function attach (Component $component): void
    {
       $this->components[] = $component;
    }
 
-   /**
-    * DETACH COMPONENT
-    */
    public function detach (Component $component): void
    {
       $key = array_search($component, $this->components, true);
@@ -92,14 +83,12 @@ class AppImpl extends Component implements \phpSPA\Interfaces\phpSpaInterface
       }
    }
 
-   /**
-    * RUN APPLICATION
-    */
    public function run (): void
    {
       foreach ($this->components as $component)
       {
          $caseSensitive = $component->caseSensitive ?? $this->defaultCaseSensitive;
+         $targetID = $component->targetID ?? $this->defaultTargetID;
 
          $router = (new MapRoute())
             ->match($component->method, $component->route, $caseSensitive);
@@ -110,6 +99,9 @@ class AppImpl extends Component implements \phpSPA\Interfaces\phpSpaInterface
          }
 
          $request = new Request();
+
+         $layoutOutput = call_user_func($this->layout);
+         $componentOutput = '';
 
          /**
           * Invokes the specified component callback with appropriate parameters based on its signature.
@@ -127,20 +119,38 @@ class AppImpl extends Component implements \phpSPA\Interfaces\phpSpaInterface
 
          if (CallableInspector::hasParam($component->component, 'path') && CallableInspector::hasParam($component->component, 'request'))
          {
-            call_user_func($component->component, path: $router['params'], request: $request);
+            $componentOutput = call_user_func($component->component, path: $router['params'], request: $request);
          }
          elseif (CallableInspector::hasParam($component->component, 'path'))
          {
-            call_user_func($component->component, path: $router['params']);
+            $componentOutput = call_user_func($component->component, path: $router['params']);
          }
          elseif (CallableInspector::hasParam($component->component, 'request'))
          {
-            call_user_func($component->component, request: $request);
+            $componentOutput = call_user_func($component->component, request: $request);
          }
          else
          {
-            call_user_func($component->component);
+            $componentOutput = call_user_func($component->component);
          }
+
+         $componentOutput = LinkTagFormatter::format($componentOutput);
+
+         if (strtolower($_SERVER['REQUEST_METHOD']) === 'phpspa_get')
+         {
+            $info = [ 'content' => $componentOutput, 'title' => $component->title, 'targetID' => $targetID ];
+            print_r(json_encode($info));
+         }
+         else
+         {
+            $this->renderedData = str_replace('__CONTENT__', $componentOutput, $layoutOutput);
+            print_r($this->renderedData);
+         }
+
+         exit;
       }
+
+      http_response_code(404);
+      exit('404 Page Not Found');
    }
 }

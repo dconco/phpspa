@@ -2,7 +2,9 @@
 
 namespace phpSPA\Impl\RealImpl;
 
-class ComponentImpl
+use phpSPA\Component;
+
+abstract class ComponentImpl
 {
    /**
     * The callable component that defines the behavior of this component.
@@ -22,14 +24,14 @@ class ComponentImpl
    /**
     * The HTTP method to be used for the component's request.
     * 
-    * @var string $method Defaults to 'GET'.
+    * @var string $method Defaults to 'GET|VIEW'.
     */
-   protected string $method = 'GET';
+   protected string $method = 'GET|VIEW';
 
    /**
     * The route associated with the component to be rendered.
     *
-    * @var string $route
+    * @var array|string $route
     */
    protected string $route;
 
@@ -48,86 +50,42 @@ class ComponentImpl
     */
    protected ?bool $caseSensitive = null;
 
-
-   /**
-    * Constructor for the Component class.
-    *
-    * Initializes the component with a callable that defines the component function.
-    *
-    * @param callable $component The callable representing the component logic.
-    */
-   public function __construct (callable $component)
-   {
-      $this->component = $component;
-   }
-
-   /**
-    * Sets the title for the component.
-    *
-    * @param string $title The title to set.
-    * @return self Returns the current instance for method chaining.
-    */
-   public function title (string $title): self
+   public function title (string $title): Component
    {
       $this->title = $title;
       return $this;
    }
 
-   /**
-    * Sets the method name for the component.
-    *
-    * @param string $method The name of the method to set.
-    * @return self Returns the current instance for method chaining.
-    */
-   public function method (string $method): self
+   public function method (string $method): Component
    {
       $this->method = $method;
+
+      if (strtolower($_SERVER['REQUEST_METHOD']) === 'phpspa_get')
+      {
+         $this->method = $method . '|' . strtoupper('phpspa_get');
+      }
       return $this;
    }
 
-   /**
-    * Sets the current route for the component.
-    *
-    * @param string $route The route to be set.
-    * @return self Returns the current instance for method chaining.
-    */
-   public function route (string $route): self
+   public function route (array|string $route): Component
    {
       $this->route = $route;
       return $this;
    }
 
-   /**
-    * Sets the target ID for the component.
-    *
-    * @param string $targetID The identifier of the target element.
-    * @return self Returns the current instance for method chaining.
-    */
-   public function targetID (string $targetID): self
+   public function targetID (string $targetID): Component
    {
       $this->targetID = $targetID;
       return $this;
    }
 
-   /**
-    * Enables case sensitivity for the component.
-    *
-    * Sets the internal flag to treat operations as case sensitive.
-    *
-    * @return self Returns the current instance for method chaining.
-    */
-   public function caseSensitive (): self
+   public function caseSensitive (): Component
    {
       $this->caseSensitive = true;
       return $this;
    }
 
-   /**
-    * Sets the component to operate in a case-insensitive mode.
-    *
-    * @return self Returns the current instance for method chaining.
-    */
-   public function caseInsensitive (): self
+   public function caseInsensitive (): Component
    {
       $this->caseSensitive = false;
       return $this;

@@ -1,18 +1,20 @@
 <IfModule mod_rewrite.c>
-   RewriteEngine On
+    RewriteEngine On
 
-   # Accept Authorization Header
-   RewriteCond %{HTTP:Authorization} ^(.+)$
-   RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+    # Accept Authorization Header
+    RewriteCond %{HTTP:Authorization} ^(.+)$
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-   # Redirect to the same URI with a trailing slash
-   RewriteCond %{REQUEST_FILENAME} -d
-   RewriteCond %{REQUEST_URI} !(.+/$)
-   RewriteCond %{REQUEST_URI} !^/$
-   RewriteRule ^ %{REQUEST_URI}/ [L,R=301]
+    # Redirect directories to have trailing slash (optional – you can remove if not needed)
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteCond %{REQUEST_URI} !/$
+    RewriteCond %{REQUEST_URI} !^/$
+    RewriteRule ^ %{REQUEST_URI}/ [R=301,L]
 
-   # Send Request to bootstrap configuration
-   RewriteCond %{REQUEST_FILENAME} !-d|-d
-   RewriteCond %{REQUEST_FILENAME} !-f|-f
-   RewriteRule ^(.*)$ app.php?uri=$1 [QSA,L]
+    # Serve only files directly (not directories)
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+
+    # Otherwise, pass to app.php
+    RewriteRule ^(.*)$ app.php?uri=$1 [QSA,L]
 </IfModule>

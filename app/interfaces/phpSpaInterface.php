@@ -25,6 +25,17 @@ interface phpSpaInterface
    public function defaultTargetID (string $targetID): void;
 
    /**
+    * Sets the default behavior to case sensitive.
+    *
+    * Implementing this method should configure the system or component
+    * to treat relevant operations (such as string comparisons or lookups)
+    * as case sensitive by default.
+    *
+    * @return void
+    */
+   public function defaultToCaseSensitive (): void;
+
+   /**
     * Attaches a component to the current object.
     *
     * @param Component $component The component instance to attach.

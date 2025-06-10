@@ -1,18 +1,20 @@
 <?php
 
+use phpSPA\Component;
 use phpSPA\Http\Request;
 
-function HomePage (array $path, Request $request): string
+return (new Component(function (Request $request): string
 {
    $name = $request('name', 'dconco');
-
-   print_r($path);
-   print_r($name);
 
    return <<<HTML
       <div>
          <p>Welcome to my PHP SPA project! @$name</p>
-         <Link to="/login" label="GO TO LOGIN" />
+         <Link to="./login#hashID" label="GO TO LOGIN" id=id class=s />
       </div>
    HTML;
-}
+}))
+
+   ->method('GET')
+   ->title('Home Page')
+   ->route('/phpspa/template/{id:int}');
