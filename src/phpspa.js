@@ -4,9 +4,33 @@
    info.forEach((element) => {
       element.addEventListener("click", async (ev) => {
          ev.preventDefault();
-         let url = new URL(element.href);
-         phpspa.navigate(url);
+         phpspa.navigate(element.href);
       });
+   });
+
+   window.addEventListener("popstate", (ev) => {
+      const state = ev.state;
+
+      if (state && state.url && state.targetID && state.content) {
+         let targetElement =
+            document.getElementById(state.targetID) ?? document.body;
+
+         phpspa.states[state.url.pathname] = [
+            targetElement,
+            targetElement.innerHTML,
+         ];
+         targetElement.innerHTML = state.content;
+
+         if (state.scrollY) {
+            scroll({
+               top: state.scrollY,
+            });
+         }
+
+         document.title = state.title || document.title;
+      } else {
+         phpspa.navigate(location.href, "replace");
+      }
    });
 })();
 
@@ -16,10 +40,10 @@ class phpspa {
    static navigate(url, state = "push") {
       (async () => {
          let initialPath = location.pathname;
-         if (state === "push") {
-            history.pushState(url.pathname, url.pathname, url);
-         } else if (state === "replace") {
-            history.replaceState(url.pathname, url.pathname, url);
+         let scrollY = window.scrollY;
+
+         if (url instanceof URL === false) {
+            url = new URL(url, location.href);
          }
 
          let response = await fetch(url, {
@@ -59,6 +83,20 @@ class phpspa {
                data?.content ?? data,
             ];
 
+            const stateData = {
+               url: url,
+               title: data?.title ?? document.title,
+               targetID: data?.targetID ?? targetElement.id,
+               content: data?.content ?? data,
+               scrollY: scrollY,
+            };
+
+            if (state === "push") {
+               history.pushState(stateData, stateData.title, url);
+            } else if (state === "replace") {
+               history.replaceState(stateData, stateData.title, url);
+            }
+
             let hashedElement = document.getElementById(url.hash?.substring(1));
 
             if (hashedElement) {
@@ -79,7 +117,6 @@ class phpspa {
                Object.keys(this.states).indexOf(history.state) - 1
             )
          ];
-      targetElement.innerHTML = content;
 
       let url = new URL(
          Object.keys(this.states).at(
@@ -87,17 +124,23 @@ class phpspa {
          ),
          location.href
       );
-      let hashedElement = document.getElementById(url.hash.substring(1));
 
-      if (hashedElement) {
-         scroll({
-            top: hashedElement.offsetTop,
-         });
+      if (!targetElement) {
+         this.navigate(url, "replace");
+      } else {
+         targetElement.innerHTML = content;
+         let hashedElement = document.getElementById(url.hash.substring(1));
+
+         if (hashedElement) {
+            scroll({
+               top: hashedElement.offsetTop,
+            });
+         }
       }
    }
 
    static forward() {
-      history.back();
+      history.forward();
 
       let [targetElement, content] =
          this.states[
@@ -105,7 +148,6 @@ class phpspa {
                Object.keys(this.states).indexOf(history.state) + 1
             )
          ];
-      targetElement.innerHTML = content;
 
       let url = new URL(
          Object.keys(this.states).at(
@@ -113,12 +155,18 @@ class phpspa {
          ),
          location.href
       );
-      let hashedElement = document.getElementById(url.hash.substring(1));
 
-      if (hashedElement) {
-         scroll({
-            top: hashedElement.offsetTop,
-         });
+      if (!targetElement) {
+         this.navigate(url, "replace");
+      } else {
+         targetElement.innerHTML = content;
+         let hashedElement = document.getElementById(url.hash.substring(1));
+
+         if (hashedElement) {
+            scroll({
+               top: hashedElement.offsetTop,
+            });
+         }
       }
    }
 }
