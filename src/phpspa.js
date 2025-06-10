@@ -1,10 +1,24 @@
 (function () {
-   let info = document.querySelectorAll('a[data-type="phpspa-link-tag');
+   window.addEventListener("DOMContentLoaded", () => {
+      const target = document.querySelector("[data-phpspa-target]");
+
+      if (target) {
+         const state = {
+            url: location.href,
+            title: document.title,
+            targetID: target.parentElement.id,
+            content: target.parentElement.innerHTML,
+         };
+         history.replaceState(state, document.title, location.href);
+      }
+   });
+
+   const info = document.querySelectorAll('a[data-type="phpspa-link-tag"]');
 
    info.forEach((element) => {
       element.addEventListener("click", async (ev) => {
          ev.preventDefault();
-         phpspa.navigate(element.href);
+         phpspa.navigate(new URL(element.href, location.href), "push");
       });
    });
 
@@ -12,41 +26,37 @@
       const state = ev.state;
 
       if (state && state.url && state.targetID && state.content) {
+         document.title = state.title ?? document.title;
+
          let targetElement =
             document.getElementById(state.targetID) ?? document.body;
 
-         phpspa.states[state.url.pathname] = [
-            targetElement,
-            targetElement.innerHTML,
-         ];
+         // if (state.url instanceof URL) {
+         //    phpspa.states[state.url.pathname] = [
+         //       targetElement,
+         //       targetElement.innerHTML,
+         //    ];
+         // } else {
+         //    let url = new URL(state.url, location.href);
+         //    phpspa.states[url] = [targetElement, targetElement.innerHTML];
+         // }
          targetElement.innerHTML = state.content;
-
-         if (state.scrollY) {
-            scroll({
-               top: state.scrollY,
-            });
-         }
-
-         document.title = state.title || document.title;
       } else {
-         phpspa.navigate(location.href, "replace");
+         phpspa.navigate(new URL(location.href), "replace");
       }
+
+      history.scrollRestoration = "auto";
    });
 })();
 
 class phpspa {
-   static states = {};
+   // static states = {};
 
    static navigate(url, state = "push") {
       (async () => {
-         let initialPath = location.pathname;
-         let scrollY = window.scrollY;
+         // let initialPath = location.pathname;
 
-         if (url instanceof URL === false) {
-            url = new URL(url, location.href);
-         }
-
-         let response = await fetch(url, {
+         const response = await fetch(url, {
             method: "PHPSPA_GET",
             mode: "same-origin",
             keepalive: true,
@@ -73,22 +83,21 @@ class phpspa {
             let targetElement =
                document.getElementById(data?.targetID) ?? document.body;
 
-            phpspa.states[initialPath] = [
-               targetElement,
-               targetElement.innerHTML,
-            ];
+            // phpspa.states[initialPath] = [
+            //    targetElement,
+            //    targetElement.innerHTML,
+            // ];
             targetElement.innerHTML = data?.content ?? data;
-            phpspa.states[url.pathname] = [
-               targetElement,
-               data?.content ?? data,
-            ];
+            // phpspa.states[url.pathname] = [
+            //    targetElement,
+            //    data?.content ?? data,
+            // ];
 
             const stateData = {
-               url: url,
+               url: url?.href ?? url,
                title: data?.title ?? document.title,
                targetID: data?.targetID ?? targetElement.id,
                content: data?.content ?? data,
-               scrollY: scrollY,
             };
 
             if (state === "push") {
@@ -97,7 +106,9 @@ class phpspa {
                history.replaceState(stateData, stateData.title, url);
             }
 
-            let hashedElement = document.getElementById(url.hash?.substring(1));
+            let hashedElement = document.getElementById(
+               url?.hash?.substring(1)
+            );
 
             if (hashedElement) {
                scroll({
@@ -111,62 +122,59 @@ class phpspa {
    static back() {
       history.back();
 
-      let [targetElement, content] =
-         this.states[
-            Object.keys(this.states).at(
-               Object.keys(this.states).indexOf(history.state) - 1
-            )
-         ];
-
-      let url = new URL(
-         Object.keys(this.states).at(
-            Object.keys(this.states).indexOf(history.state) - 1
-         ),
-         location.href
-      );
-
-      if (!targetElement) {
-         this.navigate(url, "replace");
-      } else {
-         targetElement.innerHTML = content;
-         let hashedElement = document.getElementById(url.hash.substring(1));
-
-         if (hashedElement) {
-            scroll({
-               top: hashedElement.offsetTop,
-            });
-         }
-      }
+      // let [targetElement, content] =
+      //    this.states[
+      //       Object.keys(this.states).at(
+      //          Object.keys(this.states).indexOf(history.state) - 1
+      //       )
+      //    ];
+      // let url = new URL(
+      //    Object.keys(this.states).at(
+      //       Object.keys(this.states).indexOf(history.state) - 1
+      //    ),
+      //    location.href
+      // );
+      // if (!targetElement) {
+      //    this.navigate(url, "replace");
+      // } else {
+      //    targetElement.innerHTML = content;
+      //    let hashedElement = document.getElementById(url.hash.substring(1));
+      //    if (hashedElement) {
+      //       scroll({
+      //          top: hashedElement.offsetTop,
+      //       });
+      //    }
+      // }
    }
 
    static forward() {
       history.forward();
 
-      let [targetElement, content] =
-         this.states[
-            Object.keys(this.states).at(
-               Object.keys(this.states).indexOf(history.state) + 1
-            )
-         ];
+      // let [targetElement, content] =
+      //    this.states[
+      //       Object.keys(this.states).at(
+      //          Object.keys(this.states).indexOf(history.state) + 1
+      //       )
+      //    ];
 
-      let url = new URL(
-         Object.keys(this.states).at(
-            Object.keys(this.states).indexOf(history.state) + 1
-         ),
-         location.href
-      );
+      // let url = new URL(
+      //    Object.keys(this.states).at(
+      //       Object.keys(this.states).indexOf(history.state) + 1
+      //    ),
+      //    location.href
+      // );
 
-      if (!targetElement) {
-         this.navigate(url, "replace");
-      } else {
-         targetElement.innerHTML = content;
-         let hashedElement = document.getElementById(url.hash.substring(1));
+      // if (!targetElement) {
+      //    this.navigate(url, "replace");
+      // } else {
+      //    targetElement.innerHTML = content;
+      //    let hashedElement = document.getElementById(url.hash.substring(1));
 
-         if (hashedElement) {
-            scroll({
-               top: hashedElement.offsetTop,
-            });
-         }
-      }
+      //    if (hashedElement) {
+      //       scroll({
+      //          top: hashedElement.offsetTop,
+      //       });
+      //    }
+      // }
    }
 }

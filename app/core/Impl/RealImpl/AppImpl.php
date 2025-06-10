@@ -143,7 +143,7 @@ abstract class AppImpl extends Component
          }
          else
          {
-            $this->renderedData = str_replace('__CONTENT__', $componentOutput, $layoutOutput);
+            $this->renderedData = str_replace('__CONTENT__', "<div data-phpspa-target>" . $componentOutput . "</div>", $layoutOutput);
             print_r($this->renderedData);
          }
 
