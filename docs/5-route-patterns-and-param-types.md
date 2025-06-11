@@ -97,4 +97,4 @@ You can use typed params and patterns together too — they’re totally compati
 
 That’s a wrap on patterns and types!
 
-➡️ [Next: Loading States (Optional but Cool)](./6-loading-states.md)
+➡️ [Next: Loading Events](./6-loading-events.md)

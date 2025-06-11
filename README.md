@@ -21,7 +21,7 @@ To allow developers to create fast, interactive, and modern PHP websites that be
 * 🔄 Dynamic content loading with no full-page reload.
 * 🧩 Component-based architecture (like React, but in PHP).
 * 🔗 URL routing using JavaScript + PHP routes.
-* ⚙️ Lifecycle support (e.g., `onMount`).
+* ⚙️ Automatic Lifecycle support on render.
 * 🪶 Minimal JavaScript dependency (one small helper script).
 * 🛠️ Works with or without JavaScript (graceful fallback).
 
@@ -193,7 +193,7 @@ phpspa.on("load", ({ success }) => hideLoader());
 
 ## 📘 License
 
-MIT © [dconco](https://github.com/dconco)
+MIT License © [dconco](https://github.com/dconco)
 
 ---
 
