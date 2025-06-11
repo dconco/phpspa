@@ -17,7 +17,8 @@
             "phpSPA\\": "app/core/",
             "phpSPA\\Interfaces\\": "app/interfaces/",
             "phpSPA\\Exceptions\\": "app/exceptions/"
-        }
+        },
+        "files": [ "app/core/Component/createState.php" ]
     },
     "authors": [
         {
@@ -31,5 +32,5 @@
         "php": "^8.2"
     },
     "prefer-stable": true,
-    "minimum-stability": "stable"
+    "minimum-stability": "stable",
 }

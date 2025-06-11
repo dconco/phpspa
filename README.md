@@ -93,7 +93,7 @@ use phpSPA\Component;
 ### 🌐 CDN (for JS Engine)
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/dconco/phpspa@main/dist/phpspa.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/phpspa-js/dist/phpspa.min.js"></script>
 ```
 
 ---
@@ -114,7 +114,7 @@ function layout() {
                 __CONTENT__
             </div>
             
-            <script src="https://cdn.jsdelivr.net/gh/dconco/phpspa@main/dist/phpspa.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/phpspa-js/dist/phpspa.min.js"></script>
             
             <script>
                 phpspa.on("load", ({ success }) => {

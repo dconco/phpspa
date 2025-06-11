@@ -64,6 +64,7 @@ class MapRoute implements MapInterface
    {
       self::$method = explode('|', $method);
       self::$method = array_map('trim', self::$method);
+      self::$method = array_map('strtoupper', self::$method);
       self::$method[] = 'PHPSPA_GET';
       self::$caseSensitive = $caseSensitive;
 
@@ -207,16 +208,6 @@ class MapRoute implements MapInterface
       // now matching route with regex
       if (preg_match("/$reqUri/", self::$route . '$'))
       {
-         // checks if the requested method is of the given route
-         if (
-         !in_array($_SERVER['REQUEST_METHOD'], self::$method) &&
-         !in_array('*', self::$method)
-         )
-         {
-            http_response_code(405);
-            exit('Method Not Allowed');
-         }
-
          if (!empty($unvalidate_req))
          {
             foreach ($unvalidate_req as $value)
@@ -234,6 +225,16 @@ class MapRoute implements MapInterface
                if (!$parsed_value)
                {
                   return false;
+               }
+
+               // checks if the requested method is of the given route
+               if (
+               !in_array($_SERVER['REQUEST_METHOD'], self::$method) &&
+               !in_array('*', self::$method)
+               )
+               {
+                  http_response_code(405);
+                  exit('Method Not Allowed');
                }
 
                $req[$param_name] = $parsed_value;

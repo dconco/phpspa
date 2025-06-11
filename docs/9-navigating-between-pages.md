@@ -9,7 +9,7 @@ phpSPA hijacks your navigation to avoid full page reloads — just like modern f
 Make sure to include the phpSPA JS engine in your layout. Add this at the bottom of your layout HTML:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/dconco/phpspa@main/phpspa.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/phpspa-js/dist/phpspa.min.js"></script>
 ```
 
 > This is required. It’s what powers all dynamic navigation, component swapping, history handling, and more.

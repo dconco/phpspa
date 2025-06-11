@@ -2,61 +2,80 @@
 
 use phpSPA\Component;
 use phpSPA\Http\Request;
+use function phpSPA\Component\createState;
 
-function Login (Request $request): string
+include_once 'HashComp.php';
+include_once realpath(__DIR__ . '/../../app/core/Component/CreateState.php');
+
+function Login (): string
 {
-   if ($_SERVER['REQUEST_METHOD'] == "POST")
-   {
-      $username = $request("username");
-      $password = $request("password");
+   $hashComp = HashComp(children: "This is an Hashed element");
 
+   $loginDetails = createState('login', [
+      'username' => null,
+      'password' => null
+   ]);
+
+   $username = $loginDetails()['username'];
+   $password = $loginDetails()['password'];
+
+   if (!empty($username) && !empty($password))
+   {
       if ($username !== 'admin' && $password !== 'admin')
       {
          http_response_code(401);
-         return json_encode([ 'message' => 'Incorrect Login Details' ]);
+         return 'Incorrect Login Details';
       }
-
-      return json_encode([ 'message' => 'Login Successful' ]);
+      return 'Login Successful';
    }
 
    return <<<HTML
+      <style data-type="phpspa/css">
+         #hashID {
+            padding-top: 100vh;
+            padding-bottom: 100vh;
+         }
+      </style>
+
       <div>
-         <form action=/phpspa/template/logina method=POST>
+         <form action="/phpspa/template/login" method="POST">
             <label>Enter your Username:</label>
-            <input type=text />
+            <input type="text" id="username" value="{$username}" />
             <br />
             <label>Enter your Password:</label>
-            <input type=password />
+            <input type="password" id="password" value="{$password}" />
             <br />
-            <button id=btn>LOGIN</button>
+            <button id="btn">LOGIN</button>
          </form>
-         <div id=hashID>
-            <p>Hello</p>
-         </div>
+         <!-- <Hash children="This is an Hashed element" /> -->
+         $hashComp;
       </div>
+
+      <script data-type="phpspa-script">
+         const submitBtn = document.getElementById('btn');
+         
+         submitBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (username.trim() !== '' && password.trim() !== '') {
+               console.log("Submitting...")
+               phpspa.setState('login', { username, password })
+                  .then(res => console.log("Submitted", res))
+            }
+         })
+      </script>
    HTML;
 }
 
 
 return (new Component('Login'))
-   ->method('GET|POST')
+   ->method('POST|GET')
    ->title('Login Page')
    ->route('/phpspa/template/login')
    ->caseInsensitive()
 
-   ->script(function ()
-   {
-      return <<<JS
+   ->script(fn () => <<<JS
          console.log('Script Mounted');
-      JS;
-   })
-
-   ->script(function ()
-   {
-      return <<<JS
-         document.getElementById("btn").onclick = (ev) => {
-            ev.preventDefault();
-            phpspa.navigate("/phpspa/template/logina");
-         };
-      JS;
-   });
+      JS);

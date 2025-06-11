@@ -51,12 +51,20 @@ abstract class ComponentImpl
    protected ?bool $caseSensitive = null;
 
    /**
-    * The script to be executed when the component is mounted.
+    * The scripts to be executed when the component is mounted.
     * This can be used to add interactivity or dynamic behavior to the component.
     *
-    * @var callable[] $script
+    * @var callable[] $scripts
     */
-   protected array $script = [];
+   protected array $scripts = [];
+
+   /**
+    * The styles to be executed when the component is mounted.
+    * This can be used to add interactivity or dynamic behavior to the component.
+    *
+    * @var callable[] $stylesheets
+    */
+   protected array $stylesheets = [];
 
    public function title (string $title): Component
    {
@@ -101,7 +109,13 @@ abstract class ComponentImpl
 
    public function script (callable $script): Component
    {
-      $this->script[] = $script;
+      $this->scripts[] = $script;
+      return $this;
+   }
+
+   public function styleSheet (callable $style): Component
+   {
+      $this->stylesheets[] = $style;
       return $this;
    }
 }

@@ -68,4 +68,12 @@ interface IComponent
     * @return self Returns the current instance for method chaining.
     */
    public function script (callable $script): self;
+
+   /**
+    * Sets the stylesheet to be executed when the component is mounted.
+    *
+    * @param callable $style The stylesheet to be executed.
+    * @return self Returns the current instance for method chaining.
+    */
+   public function styleSheet (callable $style): self;
 }

@@ -91,7 +91,7 @@ abstract class AppImpl extends Component
          $targetID = $component->targetID ?? $this->defaultTargetID;
 
          $router = (new MapRoute())
-            ->match($component->method, $component->route, $caseSensitive);
+         ->match($component->method, $component->route, $caseSensitive);
 
          if (!$router)
          {
@@ -102,6 +102,30 @@ abstract class AppImpl extends Component
 
          $layoutOutput = call_user_func($this->layout);
          $componentOutput = '';
+
+
+         if (strtolower($_SERVER['REQUEST_METHOD']) === 'phpspa_get')
+         {
+            $body = json_decode(file_get_contents('php://input'), true);
+
+            if ($body !== null && json_last_error() === JSON_ERROR_NONE)
+            {
+               if (!empty($body['stateKey']) && !empty($body['value']))
+               {
+                  if (session_status() < 2) session_start();
+                  $_SESSION["__phpspa_state_{$body['stateKey']}"] = $body['value'];
+               }
+            }
+         }
+         else
+         {
+            if (session_status() < 2) session_start();
+            $reg = unserialize($_SESSION["__registered_phpspa_states"] ?? serialize([]));
+            foreach ($reg as $r)
+            {
+               unset($_SESSION["__phpspa_state_$r"]);
+            }
+         }
 
          /**
           * Invokes the specified component callback with appropriate parameters based on its signature.
@@ -137,9 +161,9 @@ abstract class AppImpl extends Component
          $componentOutput = LinkTagFormatter::format($componentOutput);
 
          // If the component has a script, execute it
-         if (!empty($component->script))
+         if (!empty($component->scripts))
          {
-            foreach ($component->script as $script)
+            foreach ($component->scripts as $script)
             {
                if (is_callable($script))
                {
@@ -148,6 +172,23 @@ abstract class AppImpl extends Component
                   if (is_string($scriptValue) && !empty($scriptValue))
                   {
                      $componentOutput .= "\n<script data-type=\"phpspa/script\">\n" . $scriptValue . "\n</script>\n";
+                  }
+               }
+            }
+         }
+
+         // If the component has a style, execute it
+         if (!empty($component->stylesheets))
+         {
+            foreach ($component->stylesheets as $style)
+            {
+               if (is_callable($style))
+               {
+                  $styleValue = call_user_func($style);
+
+                  if (is_string($styleValue) && !empty($styleValue))
+                  {
+                     $componentOutput = "<style data-type=\"phpspa/css\">\n" . $styleValue . "\n</style>\n" . $componentOutput;
                   }
                }
             }
@@ -181,8 +222,5 @@ abstract class AppImpl extends Component
 
          exit;
       }
-
-      http_response_code(404);
-      exit('404 Page Not Found');
    }
 }

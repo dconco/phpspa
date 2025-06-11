@@ -21,7 +21,7 @@ function layout() {
             <div id="app">
                 __CONTENT__
             </div>
-            <script src="https://cdn.example.com/phpspa.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/phpspa-js/dist/phpspa.min.js"></script>
         </body>
     </html>
 HTML;
@@ -107,7 +107,7 @@ function layout() {
             <div id="app">
                 __CONTENT__
             </div>
-            <script src="https://cdn.example.com/phpspa.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/phpspa-js/dist/phpspa.min.js"></script>
         </body>
     </html>
 HTML;

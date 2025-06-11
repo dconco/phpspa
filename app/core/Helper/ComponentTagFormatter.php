@@ -1,0 +1,71 @@
+<?php
+
+namespace phpSPA\Helper;
+
+/**
+ * Class ComponentTagFormatter
+ *
+ * Responsible for formatting and generating HTML link tags.
+ * Typically used to create `<Component />` elements for use.
+ *
+ * @package phpSPA\Helper
+ */
+class ComponentTagFormatter
+{
+   /**
+    * Constructor.
+    *
+    * This constructor is a placeholder for any necessary initialization for
+    * the class.
+    */
+   public function __construct ()
+   {
+   }
+
+   static public function format ($dom)
+   {
+      $pattern = '/<Link(S?)\s+([^>]+)\/?\/>/';
+
+      $formattedContent = preg_replace_callback(
+       $pattern,
+       function ($matches)
+       {
+          $attributes = $matches[2]; // Extract the attributes: 'path="hello" name="value" id=1 role=["admin", "user"]'
+ 
+          $labelPattern = '/label=["|\']([^"]+)["|\']/';
+          $toPattern = '/to=["|\']([^"]+)["|\']/';
+
+          // Extract the 'label' attribute value using a regular expression
+          $attributes = preg_replace_callback(
+           $labelPattern,
+           function ($matches)
+          {
+             global $label;
+             $label = $matches[1];
+             return null;
+          },
+           $attributes,
+          );
+
+          // Extract the 'to' attribute value using a regular expression
+          $attributes = preg_replace_callback(
+           $toPattern,
+           function ($matches)
+          {
+             global $to;
+             $to = $matches[1];
+             return null;
+          },
+           $attributes,
+          );
+
+          global $label;
+          global $to;
+
+          return '<a href="' . $to . '" ' . trim($attributes) . ' data-type="phpspa-link-tag">' . $label . '</a>';
+       },
+       $dom,
+      );
+      return $formattedContent;
+   }
+}
