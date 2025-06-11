@@ -148,10 +148,6 @@ class phpspa {
     */
    static navigate(url, state = "push") {
       (async () => {
-         let currentScroll = {
-            top: scrollY,
-            left: scrollX,
-         };
          // let initialPath = location.pathname;
          phpspa.emit("beforeload", { route: url });
 
@@ -214,21 +210,19 @@ class phpspa {
 
             if (state === "push") {
                history.pushState(stateData, stateData.title, url);
-
-               scroll(currentScroll);
             } else if (state === "replace") {
                history.replaceState(stateData, stateData.title, url);
+            }
 
-               let hashedElement = document.getElementById(
-                  url?.hash?.substring(1)
-               );
+            let hashedElement = document.getElementById(
+               url?.hash?.substring(1)
+            );
 
-               if (hashedElement) {
-                  scroll({
-                     top: hashedElement.offsetTop,
-                     left: hashedElement.offsetLeft,
-                  });
-               }
+            if (hashedElement) {
+               scroll({
+                  top: hashedElement.offsetTop,
+                  left: hashedElement.offsetLeft,
+               });
             }
 
             runInlineStyles(targetElement);
@@ -429,7 +423,7 @@ function runInlineScripts(container) {
 
    scripts.forEach((script) => {
       const newScript = document.createElement("script");
-      newScript.textContent = script.textContent;
+      newScript.textContent = `(function() {\n${script.textContent}\n})();`;
       document.head.appendChild(newScript).remove();
    });
 }

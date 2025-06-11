@@ -16,6 +16,11 @@ function Login (): string
    ]);
    $loading = createState('loading', false);
 
+   $loadingText = "$loading" == "true" ? 'Loading' : 'LOGIN';
+   $buttonDisabled = "$loading" == "true" ? 'disabled' : '';
+
+   $buttonHtml = "<button id=\"btn\" $buttonDisabled>$loadingText</button>";
+
    $username = $loginDetails()['username'];
    $password = $loginDetails()['password'];
 
@@ -36,6 +41,10 @@ function Login (): string
             padding-top: 100vh;
             padding-bottom: 100vh;
          }
+         body {
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+         }
       </style>
 
       <div>
@@ -46,13 +55,13 @@ function Login (): string
             <label>Enter your Password:</label>
             <input type="password" id="password" value="{$password}" />
             <br />
-            <button id="btn">{$loading ? 'Loading' : 'LOGIN'}</button>
+            {$buttonHtml}
          </form>
          <!-- <Hash children="This is an Hashed element" /> -->
          $hashComp;
       </div>
 
-      <script data-type="phpspa-script">
+      <script data-type="phpspa/script">
          const submitBtn = document.getElementById('btn');
          
          submitBtn.addEventListener('click', (e) => {
@@ -61,9 +70,9 @@ function Login (): string
             const password = document.getElementById('password').value;
 
             if (username.trim() !== '' && password.trim() !== '') {
-               console.log("Submitting...")
-               phpspa.setState('login', { username, password })
-                  .then(() => console.log("Submitted"))
+               phpspa.setState('loading', "true")
+                  .then(() => phpspa.setState('login', { username, password }))
+                  .then(() => phpspa.setState('loading', "false"));
             }
          })
       </script>
