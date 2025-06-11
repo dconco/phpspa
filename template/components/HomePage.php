@@ -10,11 +10,9 @@ return (new Component(function (Request $request): string
    return <<<HTML
       <div>
          <p>Welcome to my PHP SPA project! @$name</p>
-         <Link to="./login#hashID" label="GO TO LOGIN" id=id class=s />
+         <Link to="./login#hashID" label="GO TO LOGIN" />
       </div>
    HTML;
 }))
-
-   ->method('GET')
    ->title('Home Page')
    ->route('/phpspa/template/{id:int}');

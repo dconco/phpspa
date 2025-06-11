@@ -60,4 +60,12 @@ interface IComponent
     * @return self Returns the current instance for method chaining.
     */
    public function caseInsensitive (): self;
+
+   /**
+    * Sets the script to be executed when the component is mounted.
+    *
+    * @param callable $script The script to be executed.
+    * @return self Returns the current instance for method chaining.
+    */
+   public function script (callable $script): self;
 }

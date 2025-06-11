@@ -1,12 +1,12 @@
 (function () {
    window.addEventListener("DOMContentLoaded", () => {
-      const target = document.querySelector("[data-phpspa-target]").parentNode;
+      const target = document.querySelector("[data-phpspa-target]");
 
       if (target) {
          const state = {
             url: location.href,
             title: document.title,
-            targetID: target.id,
+            targetID: target.parentElement.id,
             content: target.innerHTML,
          };
          history.replaceState(state, document.title, location.href);
@@ -24,7 +24,6 @@
 
    window.addEventListener("popstate", (ev) => {
       const state = ev.state;
-      console.log(state);
 
       if (state && state.url && state.targetID && state.content) {
          document.title = state.title ?? document.title;
@@ -42,6 +41,7 @@
          //    phpspa.states[url] = [targetElement, targetElement.innerHTML];
          // }
          targetElement.innerHTML = state.content;
+         runInlineScripts(targetElement);
       } else {
          phpspa.navigate(new URL(location.href), "replace");
       }
@@ -52,6 +52,7 @@
 
 class phpspa {
    // static states = {};
+   static callback = [];
 
    static navigate(url, state = "push") {
       (async () => {
@@ -82,7 +83,9 @@ class phpspa {
             }
 
             let targetElement =
-               document.getElementById(data?.targetID) ?? document.body;
+               document.getElementById(data?.targetID) ??
+               document.getElementById(history.state?.targetID) ??
+               document.body;
 
             // phpspa.states[initialPath] = [
             //    targetElement,
@@ -116,6 +119,8 @@ class phpspa {
                   top: hashedElement.offsetTop,
                });
             }
+
+            runInlineScripts(targetElement);
          }
       })();
    }
@@ -178,4 +183,26 @@ class phpspa {
       //    }
       // }
    }
+
+   static reload() {
+      this.navigate(new URL(location.href), "replace");
+   }
+}
+
+(function () {
+   if (typeof window.phpspa === "undefined") {
+      window.phpspa = phpspa;
+   }
+})();
+
+function runInlineScripts(container) {
+   const scripts = container.querySelectorAll(
+      "script[data-type='phpspa/script']"
+   );
+
+   scripts.forEach((script) => {
+      const newScript = document.createElement("script");
+      newScript.textContent = script.textContent;
+      document.head.appendChild(newScript).remove();
+   });
 }

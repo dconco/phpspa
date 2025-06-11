@@ -136,6 +136,23 @@ abstract class AppImpl extends Component
 
          $componentOutput = LinkTagFormatter::format($componentOutput);
 
+         // If the component has a script, execute it
+         if (!empty($component->script))
+         {
+            foreach ($component->script as $script)
+            {
+               if (is_callable($script))
+               {
+                  $scriptValue = call_user_func($script);
+
+                  if (is_string($scriptValue) && !empty($scriptValue))
+                  {
+                     $componentOutput .= "\n<script data-type=\"phpspa/script\">\n" . $scriptValue . "\n</script>\n";
+                  }
+               }
+            }
+         }
+
          if (strtolower($_SERVER['REQUEST_METHOD']) === 'phpspa_get')
          {
             $info = [ 'content' => $componentOutput, 'title' => $component->title, 'targetID' => $targetID ];
@@ -143,7 +160,22 @@ abstract class AppImpl extends Component
          }
          else
          {
-            $this->renderedData = str_replace('__CONTENT__', "<div data-phpspa-target>" . $componentOutput . "</div>", $layoutOutput);
+            $layoutOutput = LinkTagFormatter::format($layoutOutput);
+
+            if ($component->title)
+            {
+               $layoutOutput = preg_replace_callback(
+                 '/<title([^>]*)>.*?<\/title>/si',
+                 function ($matches) use ($component)
+                 {
+                    // $matches[1] contains any attributes inside the <title> tag
+                    return '<title' . $matches[1] . '>' . $component->title . '</title>';
+                 },
+                 $layoutOutput,
+               );
+            }
+
+            $this->renderedData = str_replace('__CONTENT__', "\n<div data-phpspa-target>" . $componentOutput . "</div>\n", $layoutOutput);
             print_r($this->renderedData);
          }
 

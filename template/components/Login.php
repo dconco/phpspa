@@ -34,14 +34,6 @@ function Login (Request $request): string
             <p>Hello</p>
          </div>
       </div>
-
-      <script>
-         console.log('ss')
-         document.getElementById("btn").onclick = (ev) => {
-            ev.preventDefault();
-            phpspa.navigate("/phpspa/template/logina");
-         };
-      </script>
    HTML;
 }
 
@@ -50,4 +42,21 @@ return (new Component('Login'))
    ->method('GET|POST')
    ->title('Login Page')
    ->route('/phpspa/template/login')
-   ->caseInsensitive();
+   ->caseInsensitive()
+
+   ->script(function ()
+   {
+      return <<<JS
+         console.log('Script Mounted');
+      JS;
+   })
+
+   ->script(function ()
+   {
+      return <<<JS
+         document.getElementById("btn").onclick = (ev) => {
+            ev.preventDefault();
+            phpspa.navigate("/phpspa/template/logina");
+         };
+      JS;
+   });

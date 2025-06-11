@@ -50,6 +50,14 @@ abstract class ComponentImpl
     */
    protected ?bool $caseSensitive = null;
 
+   /**
+    * The script to be executed when the component is mounted.
+    * This can be used to add interactivity or dynamic behavior to the component.
+    *
+    * @var callable[] $script
+    */
+   protected array $script = [];
+
    public function title (string $title): Component
    {
       $this->title = $title;
@@ -88,6 +96,12 @@ abstract class ComponentImpl
    public function caseInsensitive (): Component
    {
       $this->caseSensitive = false;
+      return $this;
+   }
+
+   public function script (callable $script): Component
+   {
+      $this->script[] = $script;
       return $this;
    }
 }

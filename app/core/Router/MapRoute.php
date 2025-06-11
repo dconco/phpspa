@@ -63,6 +63,8 @@ class MapRoute implements MapInterface
    public function match(string $method, string|array $route, bool $caseSensitive): bool|array
    {
       self::$method = explode('|', $method);
+      self::$method = array_map('trim', self::$method);
+      self::$method[] = 'PHPSPA_GET';
       self::$caseSensitive = $caseSensitive;
 
       /**
