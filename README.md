@@ -36,11 +36,17 @@ To empower PHP developers to create **modern, dynamic web apps** with the elegan
 ## ✨ Features
 
 ✅ Fully PHP + HTML syntax
+
 ✅ No template engines required
+
 ✅ Dynamic GET & POST routing
+
 ✅ Server-rendered SEO-ready output
+
 ✅ Per-component and global loading indicators
+
 ✅ Supports Composer or manual usage
+
 ✅ **State system**: update UI reactively from JS
 
 ---
