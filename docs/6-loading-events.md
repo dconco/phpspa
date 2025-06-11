@@ -1,78 +1,110 @@
-# ⏳ Loading States (Optional but Cool)
+# ⏳ Loading Event Hooks
 
 Sometimes when a route is loading — especially over AJAX — you don’t want your users staring at a blank page. That’s where **loading states** come in.
 
-phpSPA lets you show a loading UI **globally** or per-component, depending on what you want.
+In `phpSPA`, loading states are handled using **event hooks** you can register globally or per-component. These give you full control over UI behaviors during navigation.
 
 ---
 
-## 🧮 Global Loading Indicator
+## 🧮 Global Loading via Events
 
-You can define a default loading state for the whole app:
+Hook into the `beforeload` and `load` lifecycle events using:
 
-```php
-$app->defaultLoading(fn() => "<div class='spinner'>Loading...</div>", true);
+```js
+phpspa.on("beforeload", ({ route }) => {
+    // Show a global spinner
+});
+
+phpspa.on("load", ({ route, success, error }) => {
+    // Hide spinner and handle result
+});
 ```
-
-### 📌 Breakdown
-
-* The first argument is a function that returns the loading HTML.
-* The second argument is a `bool`:
-
-  * `true` = completely replace the target area with the loading UI.
-  * `false` = show loading UI *alongside* existing content.
 
 ---
 
-## 🧩 Per-Component Loading
+### 📌 Parameters Explained
 
-Want something different just for one route? No problem:
+Each event gives you context about what’s happening:
 
-```php
-$dashboard = new Component('Dashboard');
-$dashboard->route("/dashboard");
-$dashboard->loading(fn() => "<div class='mini-loader'>Please wait...</div>", false);
-```
+* `route`: the path being navigated to (string)
+* `success`: `true` if the component loaded successfully
+* `error`: contains an error object if something went wrong, otherwise `null`
 
-This loading UI only applies when this component is being fetched.
+This means you can gracefully handle loading errors, display route-specific logic, or just log transitions.
 
 ---
 
 ## 🎨 Example with CSS Spinner
 
-Here’s a tiny example you could use:
+```html
+<script>
+    phpspa.on("beforeload", ({ route }) => {
+        const loader = document.createElement("div");
+        loader.className = "loader";
+        loader.id = "global-loader";
+        document.body.appendChild(loader);
+        console.log("Navigating to:", route);
+    });
 
-```php
-$app->defaultLoading(function () {
-    return <<<HTML
-        <div class="loader"></div>
-        <style>
-        .loader {
-            width: 30px;
-            height: 30px;
-            border: 4px solid #ccc;
-            border-top-color: #007bff;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+    phpspa.on("load", ({ route, success, error }) => {
+        document.getElementById("global-loader")?.remove();
+
+        if (!success) {
+            console.error("Failed to load:", route);
+            alert("Something went wrong loading this page.");
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+    });
+</script>
+
+<style>
+.loader {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 30px;
+    height: 30px;
+    border: 4px solid #ccc;
+    border-top-color: #007bff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    z-index: 9999;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+</style>
+```
+
+---
+
+## 🧩 Per-Component Loading
+
+You can still use `<script type="phpspa/script">` inside a component to define loading behavior that only applies when that component is loaded:
+
+```html
+<script type="phpspa/script">
+    phpspa.on("beforeload", ({ route }) => {
+        // This only runs when this component is being loaded
+    });
+
+    phpspa.on("load", ({ success }) => {
+        if (!success) {
+            alert("Failed to load this view.");
         }
-        </style>
-    HTML;
-}, true);
+    });
+</script>
 ```
 
 ---
 
 ## 🔄 When is loading shown?
 
-* Only during **dynamic navigations** (not initial page load).
-* It appears **while the component content is being fetched and swapped in**.
+* Only during **phpSPA navigations**
+* Not triggered during **initial page load**
 
 ---
 
-You’re not required to define a loading state, but it’s a great touch for UX — especially for bigger apps or slow APIs.
+You’re not required to define loading states, but they dramatically improve UX — especially on slow networks or large apps.
 
 ---
 

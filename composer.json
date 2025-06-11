@@ -1,6 +1,16 @@
 {
     "name": "dconco/phpspa",
     "type": "library",
+    "description": "A lightweight, component-based PHP library for building Single Page Applications (SPAs) without relying on heavy frontend frameworks.",
+    "keywords": [
+        "php",
+        "spa",
+        "phpspa",
+        "js",
+        "jsx",
+        "javascript",
+        "component-library"
+    ],
     "license": "MIT",
     "autoload": {
         "psr-4": {
