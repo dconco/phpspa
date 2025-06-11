@@ -1,90 +1,143 @@
-# 🧭 JavaScript Navigation: `Navigate` Class
+# 🧭 JavaScript Navigation: `phpspa.navigate()`
 
-phpSPA comes with a built-in JavaScript navigation helper that works behind the scenes to handle page transitions without reloading.
-
-## 📌 Important
-
-**You must include the phpSPA JavaScript CDN** inside your layout's HTML. This enables:
-
-* Dynamic routing
-* SPA-like transitions
-* `<Link />` and `Navigate` class support
-
-```html
-<script src="https://cdn.jsdelivr.net/gh/dconco/phpspa@latest/phpspa.js"></script>
-```
-
-Place it at the bottom of your layout, before `</body>`.
+phpSPA provides seamless, JavaScript-powered page transitions without reloads. You can trigger route changes using `phpspa.navigate()` and manage browser history with a few simple helpers.
 
 ---
 
-## 🔗 `<Link />` — Navigate Without Reload
+## 📌 Include the JS File
 
-Instead of using `<a href="...">`, use the custom `<Link />` element provided by phpSPA.
+Ensure the phpSPA JavaScript file is loaded in your layout (before the closing `</body>` tag):
 
 ```html
-<Link to="/login" label="Go To Login" />
+<script src="https://cdn.jsdelivr.net/npm/phpspa-js/dist/phpspa.min.js"></script>
 ```
 
-### Attributes
-
-| Attribute | Description                                 |
-| --------- | ------------------------------------------- |
-| `to`      | Required. The route path to navigate to.    |
-| `label`   | Optional. The display text inside the link. |
+This enables dynamic routing, component swapping, `<Link />`, state updates, and more.
 
 ---
 
-## ⚙️ JavaScript API — `Navigate` Class
+## 🔗 `<Link />` — Inline Navigation Element
 
-The `Navigate` class gives you full control to trigger page transitions manually via JavaScript.
+To create client-side links without reloading the page, use the custom `<Link />` tag:
 
-```js
-Navigate.push("/dashboard");
+```html
+<Link to="/login" label="Go to Login" />
 ```
 
-### 🧭 Methods
+### ✅ Attributes
 
-#### `Navigate.push(path: string)`
+| Attribute | Description                            |
+| --------- | -------------------------------------- |
+| `to`      | (Required) The route to navigate to.   |
+| `label`   | (Optional) Text content of the anchor. |
 
-Navigates to a new route and pushes it to the browser history stack.
+phpSPA automatically renders this as an `<a href="/login">Go to Login</a>` element and intercepts the click event to perform a dynamic transition.
 
-```js
-Navigate.push("/about");
-```
+---
 
-#### `Navigate.replace(path: string)`
+## ⚙️ JavaScript Navigation API
 
-Replaces the current route without pushing to the history stack.
+Use the global `phpspa` object for manual routing control:
 
-```js
-Navigate.replace("/login");
-```
+### `phpspa.navigate(path, state = "push")`
 
-#### `Navigate.pop()`
+Navigate to a new route.
 
-Moves back in history (like `window.history.back()`).
-
-```js
-Navigate.pop();
-```
-
-#### `Navigate.reload()`
-
-Reloads the current component manually.
+* `path`: The route to go to.
+* `state`: `"push"` (default) or `"replace"`.
 
 ```js
-Navigate.reload();
+phpspa.navigate("/dashboard"); // push to history
+phpspa.navigate("/login", "replace"); // replace current history
 ```
 
-#### `Navigate.current()`
+### `phpspa.back()`
 
-Returns the current path.
+Go back in browser history:
 
 ```js
-const path = Navigate.current();
+phpspa.back();
 ```
+
+### `phpspa.forward()`
+
+Go forward in browser history:
+
+```js
+phpspa.forward();
+```
+
+### `phpspa.reload()`
+
+Reload the currently mounted component:
+
+```js
+phpspa.reload();
+```
+
+---
+
+## 📡 Event Hooks: `phpspa.on(...)`
+
+You can listen to lifecycle events using `phpspa.on()`:
+
+```js
+phpspa.on("beforeload", ({ route }) => {
+  console.log("Loading:", route);
+});
+
+phpspa.on("load", ({ route, success, error }) => {
+  if (success) {
+    console.log("Route loaded:", route);
+  } else {
+    console.error("Failed to load:", route, error);
+  }
+});
+```
+
+### Event Types
+
+| Event        | Description                                         |
+| ------------ | --------------------------------------------------- |
+| `beforeload` | Fires before a component fetch starts               |
+| `load`       | Fires after a component is loaded or failed to load |
+
+Both events receive an object with:
+
+* `route` → the route being loaded
+* `success` → `true` or `false`
+* `error` → an error object if `success` is false
+
+---
+
+## 🧩 Component Styles & Scripts
+
+Each component can define its own styles and scripts using these special blocks:
+
+### ✅ Inline Component Style
+
+```html
+<style data-type="phpspa/css">
+  .page {
+    padding: 20px;
+  }
+</style>
+```
+
+### ✅ Inline Component Script
+
+```html
+<script data-type="phpspa/script">
+  console.log("Component script mounted");
+</script>
+```
+
+These blocks are handled and injected dynamically by the phpSPA JS runtime whenever components are swapped.
 
 ---
 
 ➡️ Up next: [CSRF Protection](./16-csrf-protection.md)
+
+Here’s your refined and updated documentation based on your current phpSPA JavaScript system — including your latest changes such as the use of `phpspa.on(...)`, custom `<Link />`, and your `Navigate` class logic:
+
+---

@@ -60,7 +60,7 @@ trait Validate
 
 		// Sanitize the string to prevent potential HTML injection issues
 		$sanitizedValue = htmlspecialchars(
-		 trim($validatedValue),
+		 $validatedValue,
 		 ENT_QUOTES,
 		 'UTF-8',
 		);

@@ -1,11 +1,10 @@
 <?php
 
 use phpSPA\Component;
-use phpSPA\Http\Request;
 use function phpSPA\Component\createState;
 
 include_once 'HashComp.php';
-include_once realpath(__DIR__ . '/../../app/core/Component/CreateState.php');
+include_once realpath(__DIR__ . '/../../app/core/Component/createState.php');
 
 function Login (): string
 {
@@ -15,12 +14,14 @@ function Login (): string
       'username' => null,
       'password' => null
    ]);
+   $loading = createState('loading', false);
 
    $username = $loginDetails()['username'];
    $password = $loginDetails()['password'];
 
    if (!empty($username) && !empty($password))
    {
+      sleep(2);
       if ($username !== 'admin' && $password !== 'admin')
       {
          http_response_code(401);
@@ -45,7 +46,7 @@ function Login (): string
             <label>Enter your Password:</label>
             <input type="password" id="password" value="{$password}" />
             <br />
-            <button id="btn">LOGIN</button>
+            <button id="btn">{$loading ? 'Loading' : 'LOGIN'}</button>
          </form>
          <!-- <Hash children="This is an Hashed element" /> -->
          $hashComp;
@@ -62,7 +63,7 @@ function Login (): string
             if (username.trim() !== '' && password.trim() !== '') {
                console.log("Submitting...")
                phpspa.setState('login', { username, password })
-                  .then(res => console.log("Submitted", res))
+                  .then(() => console.log("Submitted"))
             }
          })
       </script>
