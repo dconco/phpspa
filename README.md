@@ -1,10 +1,13 @@
-## 📄 **phpSPA - Project Description**
+# 📄 **phpSPA - Project Description**
 
-### 📛 **Name**
+## 📛 **Name**
 
-**phpSPA** — a lightweight, component-based PHP library for building Single Page Applications (SPAs) without relying on heavy frontend frameworks.
+**phpSPA** allows developers to build dynamic, component-based PHP applications with modern SPA behavior — without full page reloads. It's designed to feel familiar to frontend devs but stay PHP-native.
 
-### 🎯 **Goal**
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Version](https://img.shields.io/badge/version-1.0.0-green.svg)
+
+## 🎯 **Goal**
 
 To allow developers to create fast, interactive, and modern PHP websites that behave like SPAs:
 
@@ -13,18 +16,18 @@ To allow developers to create fast, interactive, and modern PHP websites that be
 * Using clean, component-based PHP syntax.
 * With native URL updates using the History API.
 
-### 🧱 **Core Features**
+## 🧱 **Core Features**
 
 * 🔄 Dynamic content loading with no full-page reload.
 * 🧩 Component-based architecture (like React, but in PHP).
 * 🔗 URL routing using JavaScript + PHP routes.
-* ⚙️ Lifecycle support (e.g., `onMount`, `onDestroy`).
+* ⚙️ Lifecycle support (e.g., `onMount`).
 * 🪶 Minimal JavaScript dependency (one small helper script).
 * 🛠️ Works with or without JavaScript (graceful fallback).
 
 ---
 
-### ✨ Features
+## ✨ Features
 
 * ✅ Full PHP + HTML syntax support — no templating languages or syntax extensions
 * ✅ Component-based architecture (just PHP functions returning HTML)
@@ -36,7 +39,7 @@ To allow developers to create fast, interactive, and modern PHP websites that be
 
 ---
 
-### 🧠 Concept
+## 🧠 Concept
 
 * **Layout**: A layout function defines the base HTML structure and must include a `__CONTENT__` placeholder.
 * **Component**: Each page/component is a PHP function that returns HTML.
@@ -44,13 +47,13 @@ To allow developers to create fast, interactive, and modern PHP websites that be
 
 ---
 
-### ⚙️ Component-Specific Loaders
+## ⚙️ Component-Specific Loaders
 
 Each component can also define its **own loader**, to show something unique while it's being fetched. This gives you full control over user experience.
 
 ---
 
-### 🧩 Customization
+## 🧩 Customization
 
 * Supports both `GET`, `POST`, or both: `'GET|POST'`
 * You can register as many components as needed.
@@ -87,6 +90,12 @@ use phpSPA\App;
 use phpSPA\Component;
 ```
 
+### 🌐 CDN (for JS Engine)
+
+```html
+<script src="https://cdn.jsdelivr.net/gh/dconco/phpspa@main/dist/phpspa.min.js"></script>
+```
+
 ---
 
 ### 🚀 **Getting Started with phpSPA**
@@ -104,7 +113,14 @@ function layout() {
             <div id="app">
                 __CONTENT__
             </div>
-            <script src="/phpspa.js"></script>
+            
+            <script src="https://cdn.jsdelivr.net/gh/dconco/phpspa@main/dist/phpspa.min.js"></script>
+            
+            <script>
+                phpspa.on("load", ({ success }) => {
+                    console.log("Component loaded");
+                });
+            </script>
         </body>
     </html>
     HTML;
@@ -118,7 +134,7 @@ function HomePage() {
     return <<<HTML
         <div id="home">
             <h1>Welcome to phpSPA</h1>
-            <a href="/login">Go to Login</a>
+            <Link to="/login" label="Go to Login" />
         </div>
     HTML;
 }
@@ -166,9 +182,18 @@ $app->run();
 
 ---
 
+## 🛠 Events
+
+```js
+phpspa.on("beforeload", ({ route }) => showLoader());
+phpspa.on("load", ({ success }) => hideLoader());
+```
+
+---
+
 ## 📘 License
 
-MIT License
+MIT © [dconco](https://github.com/dconco)
 
 ---
 

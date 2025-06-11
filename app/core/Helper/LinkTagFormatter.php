@@ -2,6 +2,14 @@
 
 namespace phpSPA\Helper;
 
+/**
+ * Class LinkTagFormatter
+ *
+ * Responsible for formatting and generating HTML link tags.
+ * Typically used to create `<Link />` elements for stylesheets, icons, and other resources.
+ *
+ * @package phpSPA\Helper
+ */
 class LinkTagFormatter
 {
 	/**
@@ -14,6 +22,12 @@ class LinkTagFormatter
 	{
 	}
 
+	/**
+	 * Formats a given tag into a specific format.
+	 *
+	 * @param mixed $tag The tag to be formatted.
+	 * @return mixed The formatted tag.
+	 */
 	static public function format ($tag)
 	{
 		$pattern = '/<Link(S?)\s+([^>]+)\/?\/>/';

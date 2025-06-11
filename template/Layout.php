@@ -19,6 +19,18 @@ return fn () => <<<HTML
 
          <!-- phpSPA JS PLUGIN -->
          <script type=application/javascript src=../src/phpspa.js></script>
+         
+         <script>
+            phpspa.on("beforeload", ({ route }) => {
+               document.getElementById("app").innerHTML = "<h1>Loading...</h1>";
+               console.log("Before Load:");
+            });
+
+            phpspa.on("load", ({ route }) => {
+               document.getElementById("app").innerHTML = "<h1>Loaded!</h1>";
+               console.log("Loaded:");
+            });
+         </script>
       </body>
    </html>
 HTML;

@@ -2,6 +2,16 @@
 
 namespace phpSPA;
 
+/**
+ * Class App
+ *
+ * The main application class for phpSPA.
+ * Handles layout composition, component mounting, and rendering flow.
+ *
+ * @package phpSPA\App
+ * @extends \phpSPA\Impl\RealImpl\AppImpl
+ * @implements \phpSPA\Interfaces\phpSpaInterface
+ */
 class App extends \phpSPA\Impl\RealImpl\AppImpl implements \phpSPA\Interfaces\phpSpaInterface
 {
    /**

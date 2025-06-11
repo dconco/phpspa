@@ -2,6 +2,16 @@
 
 namespace phpSPA;
 
+/**
+ * Class Component
+ *
+ * This class serves as the core component within the phpSPA framework, providing
+ * essential functionality and structure for all components.
+ *
+ * @package phpSPA\Component
+ * @extends \phpSPA\Impl\RealImpl\ComponentImpl
+ * @implements \phpSPA\Interfaces\IComponent
+ */
 class Component extends \phpSPA\Impl\RealImpl\ComponentImpl implements \phpSPA\Interfaces\IComponent
 {
    /**
