@@ -40,4 +40,4 @@ No additional libraries or sessions are required — phpSPA takes care of genera
 
 ---
 
-➡️ Up next: [Final Notes](./17-final-notes.md)
+➡️ Up next: [State Management](./17-state-management.md)

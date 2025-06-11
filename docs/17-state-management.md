@@ -149,3 +149,5 @@ use function phpSPA\Component\createState;
 > ☝️ `createState` is defined in a namespaced file — you must use `use function` or it won’t work.
 
 ---
+
+➡️ Up next: [Per-Component Scripts and Styles in PHP](./18-component-script-and-styles.md)

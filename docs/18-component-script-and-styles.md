@@ -91,3 +91,5 @@ Behind the scenes, phpSPA scans for any registered styles and scripts on the ser
 The frontend JavaScript part (`phpspa-js`) handles mounting and cleanup as you navigate between components.
 
 ---
+
+➡️ Up next: [Handling Loading State](./19-handling-loading-states.md)
