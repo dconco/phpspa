@@ -1,64 +1,74 @@
-# 📄 **phpSPA - Project Description**
+# 📄 **phpSPA - Build Native PHP SPAs Without JavaScript Frameworks**
 
 ## 📛 **Name**
 
-**phpSPA** allows developers to build dynamic, component-based PHP applications with modern SPA behavior — without full page reloads. It's designed to feel familiar to frontend devs but stay PHP-native.
+**phpSPA** lets you build fast, interactive single-page apps using **pure PHP** — with dynamic routing, component architecture, and no full-page reloads. No JavaScript frameworks required.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Version](https://img.shields.io/badge/version-1.0.0-green.svg)
 
+---
+
 ## 🎯 **Goal**
 
-To allow developers to create fast, interactive, and modern PHP websites that behave like SPAs:
+To empower PHP developers to create **modern, dynamic web apps** with the elegance of frontend SPA frameworks — but fully in PHP.
 
-* Without full page reloads.
-* With dynamic content swapping.
-* Using clean, component-based PHP syntax.
-* With native URL updates using the History API.
+* 🚫 No full-page reloads
+* ⚡ Instant component swapping
+* 🧱 Clean, function-based components
+* 🌍 Real SPA behavior via History API
+* 🧠 Now with **State Management**!
+
+---
 
 ## 🧱 **Core Features**
 
-* 🔄 Dynamic content loading with no full-page reload.
-* 🧩 Component-based architecture (like React, but in PHP).
-* 🔗 URL routing using JavaScript + PHP routes.
-* ⚙️ Automatic Lifecycle support on render.
-* 🪶 Minimal JavaScript dependency (one small helper script).
-* 🛠️ Works with or without JavaScript (graceful fallback).
+* 🔄 Dynamic content updates — feels like React
+* 🧩 Component-based PHP architecture
+* 🔗 URL routing (client + server synced)
+* 🧠 **Built-in State Management**
+* ⚙️ Lifecycle support for loaders, metadata, etc.
+* 🪶 Minimal JS: one small file
+* 🔁 Graceful fallback (no JS? Still works)
 
 ---
 
 ## ✨ Features
 
-* ✅ Full PHP + HTML syntax support — no templating languages or syntax extensions
-* ✅ Component-based architecture (just PHP functions returning HTML)
-* ✅ Dynamic routing with native PHP
-* ✅ SEO-friendly — initial component renders server-side
-* ✅ Lightweight JS handles client-side updates
-* ✅ Per-component or global loading indicators
-* ✅ Works with Composer or manually — no build tools
+✅ Fully PHP + HTML syntax
+✅ No template engines required
+✅ Dynamic GET & POST routing
+✅ Server-rendered SEO-ready output
+✅ Per-component and global loading indicators
+✅ Supports Composer or manual usage
+✅ **State system**: update UI reactively from JS
 
 ---
 
 ## 🧠 Concept
 
-* **Layout**: A layout function defines the base HTML structure and must include a `__CONTENT__` placeholder.
-* **Component**: Each page/component is a PHP function that returns HTML.
-* **App**: Manages routing and rendering logic.
+* **Layout** → The base HTML (with `__CONTENT__`)
+* **Component** → A PHP function returning HTML
+* **App** → Registers and runs components based on routes
+* **State** → Simple mechanism to manage reactive variables across requests
 
 ---
 
-## ⚙️ Component-Specific Loaders
+## 🧩 State Management
 
-Each component can also define its **own loader**, to show something unique while it's being fetched. This gives you full control over user experience.
+You can create persistent state variables inside your components using:
 
----
+```php
+$counter = createState("counter", 0);
+```
 
-## 🧩 Customization
+Update state from the frontend:
 
-* Supports both `GET`, `POST`, or both: `'GET|POST'`
-* You can register as many components as needed.
-* Layout can include custom styles/scripts.
-* The layout’s `__CONTENT__` will be replaced initially on the server and then updated by JS later.
+```js
+phpspa.setState("counter", newValue);
+```
+
+This will automatically **re-render** the component on update.
 
 ---
 
@@ -70,27 +80,24 @@ Each component can also define its **own loader**, to show something unique whil
 composer require dconco/phpspa
 ```
 
-Include the autoloader in your entry script:
+Include the autoloader:
 
 ```php
 require 'vendor/autoload.php';
 ```
 
-### 2. Manual Installation
+### 2. Manual
 
-Just clone or download this repo and include it in your project.
-
-In your `index.php`, make sure to include:
+Include the core files:
 
 ```php
 require 'path/to/phpspa/core/App.php';
 require 'path/to/phpspa/core/Component.php';
-
-use phpSPA\App;
-use phpSPA\Component;
 ```
 
-### 🌐 CDN (for JS Engine)
+---
+
+### 🌐 JS Engine (CDN)
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/phpspa-js/dist/phpspa.min.js"></script>
@@ -98,7 +105,7 @@ use phpSPA\Component;
 
 ---
 
-### 🚀 **Getting Started with phpSPA**
+## 🚀 **Getting Started (with Live Counter)**
 
 ```php
 <?php
@@ -107,20 +114,11 @@ function layout() {
     return <<<HTML
     <html>
         <head>
-            <title>phpSPA App</title>
+            <title>My Live App</title>
         </head>
         <body>
-            <div id="app">
-                __CONTENT__
-            </div>
-            
+            <div id="app">__CONTENT__</div>
             <script src="https://cdn.jsdelivr.net/npm/phpspa-js/dist/phpspa.min.js"></script>
-            
-            <script>
-                phpspa.on("load", ({ success }) => {
-                    console.log("Component loaded");
-                });
-            </script>
         </body>
     </html>
     HTML;
@@ -131,24 +129,25 @@ function layout() {
 <?php
 // components.php
 function HomePage() {
+    $counter = createState("count", 0);
+
     return <<<HTML
-        <div id="home">
-            <h1>Welcome to phpSPA</h1>
-            <Link to="/login" label="Go to Login" />
-        </div>
+        <h1>Counter: {$counter}</h1>
+        <button onclick="phpspa.setState('count', {$counter} + 1)">Increase</button>
+        <button onclick="phpspa.setState('count', 0)">Reset</button>
+        <br><br>
+        <Link to="/login" label="Go to Login" />
     HTML;
 }
 
 function LoginPage() {
     return <<<HTML
-        <div id="login">
-            <h2>Login</h2>
-            <form method="post">
-                <input name="username" placeholder="Username"><br>
-                <input name="password" type="password" placeholder="Password"><br>
-                <button type="submit">Login</button>
-            </form>
-        </div>
+        <h2>Login</h2>
+        <form method="post">
+            <input name="username" placeholder="Username"><br>
+            <input name="password" type="password" placeholder="Password"><br>
+            <button type="submit">Login</button>
+        </form>
     HTML;
 }
 ```
@@ -159,30 +158,29 @@ function LoginPage() {
 require 'layout.php';
 require 'components.php';
 
-// Initialize the app
 $app = new App('layout');
 $app->targetId('app');
 
-// Register components
-$home = new Component('HomePage');
-$home->title = 'Home Page';
-$home->method = 'GET';
-$home->route = '/';
+$app->attach(
+    (new Component('HomePage'))
+        ->title('Home')
+        ->method('GET')
+        ->route('/')
+);
 
-$login = new Component('LoginPage');
-$login->title = 'Login Page';
-$login->method = 'GET|POST';
-$login->route = '/login';
+$app->attach(
+    (new Component('LoginPage'))
+        ->title('Login')
+        ->method('GET|POST')
+        ->route('/login')
+);
 
-// Attach Components and run application
-$app->attach($home);
-$app->attach($login);
 $app->run();
 ```
 
 ---
 
-## 🛠 Events
+## 🛠 JS Events
 
 ```js
 phpspa.on("beforeload", ({ route }) => showLoader());
@@ -197,7 +195,7 @@ MIT License © [dconco](https://github.com/dconco)
 
 ---
 
-## 🛠 Maintained by
+## 🧑‍💻 Maintained by
 
 **Dave Conco**
 Simple, fast, and native PHP – just the way we like it.
