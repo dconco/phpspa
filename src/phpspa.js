@@ -128,22 +128,23 @@
  * @method emit
  * @static
  * @param {string} event - The event name to emit.
- * @param {*} payload - The data to pass to event listeners.
+ * @param {Object} payload - The data to pass to event listeners.
  * @description Emits a custom event to all registered listeners.
  */
 class phpspa {
    // static states = {};
-   static onLoad = null;
 
    /**
     * Internal event registry for custom events.
     * @type {Object}
     * @private
     */
-   static _events = {
-      beforeload: [],
-      load: [],
-   };
+   static get _events() {
+      return {
+         beforeload: [],
+         load: [],
+      };
+   }
 
    /**
     * Navigates to a given URL using PHPSPA's custom navigation logic.
@@ -177,7 +178,7 @@ class phpspa {
                phpspa.emit("load", { route: url, success: false, error: e });
                call(data);
             }
-         });
+         }).catch(e => phpspa.emit("load", { route: url, success: false, error: e }));
 
          function runInlineScripts(container) {
             const scripts = container.querySelectorAll(
