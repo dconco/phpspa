@@ -13,18 +13,18 @@ You’ll start by defining a layout function that returns the full HTML page. It
 ```php
 function layout() {
     return <<<HTML
-    <html>
-        <head>
-            <title>My phpSPA App</title>
-        </head>
-        <body>
-            <div id="app">
-                __CONTENT__
-            </div>
-            <script src="https://cdn.jsdelivr.net/npm/phpspa-js"></script>
-        </body>
-    </html>
-HTML;
+        <html>
+            <head>
+                <title>My phpSPA App</title>
+            </head>
+            <body>
+                <div id="app">
+                    __CONTENT__
+                </div>
+                <script src="https://cdn.jsdelivr.net/npm/phpspa-js"></script>
+            </body>
+        </html>
+    HTML;
 }
 ```
 

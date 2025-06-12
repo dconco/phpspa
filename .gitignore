@@ -5,6 +5,7 @@
 /vendor
 /.idea
 /.vscode
+/venve
 .log
 .env
 .env.dev

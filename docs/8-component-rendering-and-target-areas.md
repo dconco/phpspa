@@ -104,4 +104,4 @@ $login->targetID("main"); // Optional if it matches default
 
 ---
 
-➡️ Next up: 📦 [Navigating Between Pages](./9-navigating-between-pages.md)
+➡️ Next up: 📦 [Component Nesting](./10-component-nesting.md)

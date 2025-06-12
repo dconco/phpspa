@@ -136,8 +136,6 @@ These blocks are handled and injected dynamically by the phpSPA JS runtime whene
 
 ---
 
-➡️ Up next: [CSRF Protection](./16-csrf-protection.md)
+➡️ Up next: [State Management](./17-state-management.md)
 
 Here’s your refined and updated documentation based on your current phpSPA JavaScript system — including your latest changes such as the use of `phpspa.on(...)`, custom `<Link />`, and your `Navigate` class logic:
-
----

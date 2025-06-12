@@ -1,5 +1,14 @@
-sphinx
-sphinx-rtd-theme
-pygments
-myst-parser
-sphinx_copybutton
+# MkDocs core
+mkdocs>=1.5.0
+
+# Theme
+mkdocs-material>=9.0.0
+
+# Extensions for syntax highlighting and features
+pymdown-extensions>=10.0.0
+
+# Optional plugins
+mkdocs-minify-plugin>=0.7.0
+
+# For emoji support
+pymdown-extensions[extra]>=10.0.0
