@@ -1,57 +1,80 @@
 # 🔡 Route Case Sensitivity
 
-phpSPA routes are **case-insensitive by default** — that means `/Login` and `/login` are treated the same.
-
-But you can change that behavior globally or per component.
+!!! gears "Default Behavior"
+    phpSPA routes are **case-insensitive by default** — `/Login` and `/login` resolve to the same component.
 
 ---
 
-## 🌍 Global Setting
+## 🎚 Granular Control
 
-```php
+### 🌍 Global Configuration
+
+```php title="Setting default for all routes"
+// Make ALL routes case-sensitive by default:
 $app->defaultToCaseSensitive();
+
+// Revert to default case-insensitive behavior:
+$app->defaultToCaseInsensitive(); 
 ```
 
-This will make all routes case-sensitive unless overridden.
+### 🔧 Per-Component Overrides
+
+```php title="Individual component settings"
+<?php
+$adminComponent = new Component('Admin');
+
+// Force exact case matching:
+$adminComponent->caseSensitive();  
+
+// Explicitly allow case variations (default):
+$guestComponent->caseInsensitive();  
+```
+
+!!! tip "When to Override"
+    - Banking apps needing `/Transfer` ≠ `/transfer`
+    - Legacy systems preserving exact URLs
+    - Marketing pages where UX trumps precision
 
 ---
 
-## 🔧 Per Component
+## 🕵️‍♂️ Real-World Scenario
 
-You can override the case-sensitivity for individual components.
+```php title="Mixed sensitivity in one app"
+<?php
+// Strict admin access (exact case required)
+$secureAdmin = new Component('AdminPanel');
+$secureAdmin->route("/AdminConsole");
+$secureAdmin->caseSensitive();
 
-```php
-$component->caseSensitive();     // Force sensitivity for this one
-$component->caseInsensitive();   // Explicitly make this one case-insensitive
+// Public-facing content (flexible casing)
+$publicDocs = new Component('Documentation');
+$publicDocs->route("/docs"); 
+// caseInsensitive() is default, but can be explicit
 ```
 
-This is useful if:
-
-* You want case-insensitivity generally, but a few routes must be strict.
-* You want to allow `/Dashboard` and `/dashboard` to act differently.
+```mermaid
+graph LR
+    A[Incoming Request] --> B{Case Sensitive?}
+    B -->|Yes| C[Exact match required]
+    B -->|No| D[Case-folded comparison]
+    C & D --> E[Component Execution]
+```
 
 ---
 
-## 🔎 Real-World Use Case
+## 🚦 Best Practices
 
-```php
-$one = new Component('Admin');
-$one->route("/Admin");
-$one->caseSensitive();
+| Use Case            | Recommendation      | Example            |
+| ------------------- | ------------------- | ------------------ |
+| Security-sensitive  | `caseSensitive()`   | `/Admin/Export`    |
+| User-facing content | `caseInsensitive()` | `/About/Company`   |
+| API endpoints       | Match your API spec | `/api/v1/resource` |
 
-$two = new Component('Admin');
-$two->route("/admin");
-$two->caseInsensitive(); // Optional here — it's default anyway
-```
-
-Without case sensitivity:
-
-* `/Admin` and `/admin` would both go to the same component.
-
-With case sensitivity enabled:
-
-* Only exact-case matches will work.
+!!! warning "Consistency Matters"
+    - Document your casing strategy
+    - Avoid mixing styles for similar routes
+    - Consider SEO implications for public pages
 
 ---
 
-➡️ Up next: [Setting Page Titles](./13-setting-page-titles.md)
+➡️ **Next Up**: [Setting Page Titles :material-arrow-right:](./13-setting-page-titles.md){ .md-button .md-button--primary }

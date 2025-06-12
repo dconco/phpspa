@@ -3,7 +3,7 @@
 Welcome! Let's get phpSPA running step by step — no rush, no pressure.
 
 !!! tip "Before You Begin"
-    Make sure you have PHP 7.4+ installed on your system. phpSPA works best with modern PHP versions.
+    Make sure you have PHP 8.2+ installed on your system. phpSPA works best with modern PHP versions.
 
 ## 📦 Installation
 

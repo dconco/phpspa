@@ -1,84 +1,108 @@
 # 🧬 Component Props (Passing Data to Components)
 
-In phpSPA, since components are just PHP functions, you can pass props the same way you’d pass arguments to functions.
+!!! abstract "Core Principle"
+    Since phpSPA components are PHP functions, props work exactly like function arguments - with some smart conventions for routing.
 
 ---
 
-## ✅ Basic Example
+## ✅ Basic Usage
 
-```php
+```php title="Component with props"
+<?php
 function Admin(string $name, int $age, array $path = []) {
     return "<h1>$name - $age</h1>";
 }
 ```
 
-Now you can render it inside another component like this:
-
-```php
+```php title="Using the component"
+<?php
 function Dashboard(array $path) {
     return Admin(name: "dconco", age: 10, path: $path);
 }
 ```
 
-> 🔹 All props passed must match the function’s argument names.
-> 🔹 `path` is **optional**, but useful when reusing components tied to a route.
+!!! tip "Key Notes"
+    - 🔹 **Named arguments** must match parameter names exactly
+    - 🔹 `path` is optional but enables route-aware components
+    - 🔹 Type hints (`string`, `int`) provide built-in validation
 
 ---
 
-## ⚙️ `$path` Special Note
+## ⚙️ Special Props Handling
 
-`$path` is automatically injected by phpSPA when the component is matched via a route with dynamic parameters (like `/user/{id}`).
+### The `$path` Parameter
 
-But when **manually reusing a component** inside another one, you must do one of these:
+```php title="Route-matched vs manual usage"
+// Automatically populated when matched via route:
+// e.g., /admin/{name}/{age}
 
-1. Provide a default value:
+// Manual usage requires either:
+function Admin(string $name, array $path = []) { ... }  // Default
+// OR
+Admin(name: "dconco", path: $parentPath);  // Explicit pass
+```
 
-   ```php
-      function Admin(string $name, int $age, array $path = []) { ... }
-   ```
+### The `$request` Object
 
-2. Pass `$path` explicitly from the parent:
-
-   ```php
-   function Dashboard(array $path) {
-      return Admin(name: "dconco", age: 10, path: $path);
-   }
-   ```
-
----
-
-## 🧪 `$request` Argument
-
-If your component uses `$request`, just define it like this:
-
-```php
+```php title="Request handling best practice"
+<?php
 use phpSPA\Http\Request;
 
-function Admin(string $name, int $age, array $path = [], Request $request = new Request()) {
-    $id = $path["id"] ?? 1;
-    $query = $request("q", "default");
-    return "<h1>$name - $age - $id</h1>";
+function Search(
+    string $query, 
+    array $path = [],
+    Request $request = new Request()  // Always default!
+) {
+    $page = $request('page', 1);
+    return "Showing page $page for '$query'";
 }
 ```
 
-Even though `$request` is auto-injected when the route is hit directly, **you should provide a default value** when reusing the component — that way it won’t break.
+!!! warning "Critical"
+    Always provide default `Request` objects - components should work both in routes and when manually composed.
 
-> ✅ This is the best practice:
+---
 
-```php
-Request $request = new Request()
+## 📊 Prop Rules Reference
+
+| Prop Type        | Injection Source | Required Default? | Usage Context           |
+| ---------------- | ---------------- | ----------------- | ----------------------- |
+| Custom (`$name`) | Manual passing   | No                | Always explicit         |
+| `$path`          | Route matcher    | Yes if reused     | Route parameters access |
+| `$request`       | Auto-injected    | Always            | Query params, POST data |
+
+```mermaid
+graph TD
+    A[Component Call] --> B{Is Route Match?}
+    B -->|Yes| C[Auto-inject path/request]
+    B -->|No| D[Requires manual args]
+    D --> E[Use defaults or parent values]
 ```
 
 ---
 
-## 🔄 Summary: Prop Rules
+## 🏗 Practical Patterns
 
-| Argument                    | Required?          | Default Needed? When?                   |
-| --------------------------- | ------------------ | --------------------------------------- |
-| Custom Props (e.g. `$name`) | Yes                | Always provide default or pass manually |
-| `$path`                     | Provided by phpSPA | Default if reusing manually             |
-| `$request`                  | Provided by phpSPA | Always set `new Request()` when reusing |
+### Prop Forwarding
 
----
+```php title="Passing all props to child"
+<?php
+function UserProfile(array $props) {
+    return ProfileCard(...$props);
+}
+```
 
-➡️ Up next: [Route Case Sensitivity](./12-route-case-sensitivity.md)
+### Validation Layer
+
+```php title="Type-safe props"
+<?php
+function StrictComponent(
+    string $id,
+    int $count = 0,
+    array $allowed = ['read']
+) {
+    // Built-in type checking
+}
+```
+
+➡️ **Next Up**: [Route Case Sensitivity :material-arrow-right:](./12-route-case-sensitivity.md){ .md-button .md-button--primary }
