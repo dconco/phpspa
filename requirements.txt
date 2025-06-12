@@ -1,2 +1,4 @@
+furo
 sphinx
 myst-parser
+sphinx_copybutton
