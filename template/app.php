@@ -11,7 +11,6 @@ $app = new App(require 'Layout.php');
 $app->attach(require 'components/HomePage.php');
 $app->attach(require 'components/Login.php');
 $app->attach(require 'components/Counter.php');
-$app->attach(require 'components/Cart.php');
 
 $app->defaultToCaseSensitive();
 $app->defaultTargetID('app');
