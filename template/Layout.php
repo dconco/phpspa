@@ -14,7 +14,7 @@ return fn () => <<<HTML
          <!-- <script type=application/javascript src=../src/index.js></script> -->
          <script src="https://cdn.jsdelivr.net/npm/phpspa-js"></script>
          
-         <script data-type=phpspa/script>
+         <script>
             phpspa.on("beforeload", ({ route }) => {
                document.getElementById("app").innerHTML = "<h1>Loading...</h1>";
                console.log("Before Load:");
