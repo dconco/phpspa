@@ -61,15 +61,6 @@
          let targetElement =
             document.getElementById(state.targetID) ?? document.body;
 
-         // if (state.url instanceof URL) {
-         //    phpspa.states[state.url.pathname] = [
-         //       targetElement,
-         //       targetElement.innerHTML,
-         //    ];
-         // } else {
-         //    let url = new URL(state.url, location.href);
-         //    phpspa.states[url] = [targetElement, targetElement.innerHTML];
-         // }
          targetElement.innerHTML = state.content;
          runInlineStyles(targetElement);
          runInlineScripts(targetElement);
@@ -121,19 +112,15 @@
  * @description Emits a custom event to all registered listeners.
  */
 class phpspa {
-   // static states = {};
-
    /**
     * Internal event registry for custom events.
     * @type {Object}
     * @private
     */
-   static get _events() {
-      return {
-         beforeload: [],
-         load: [],
-      };
-   }
+   static _events = {
+      beforeload: [],
+      load: [],
+   };
 
    /**
     * Navigates to a given URL using PHPSPA's custom navigation logic.
@@ -191,15 +178,7 @@ class phpspa {
                document.getElementById(history.state?.targetID) ??
                document.body;
 
-            // phpspa.states[initialPath] = [
-            //    targetElement,
-            //    targetElement.innerHTML,
-            // ];
             targetElement.innerHTML = data?.content ?? data;
-            // phpspa.states[url.pathname] = [
-            //    targetElement,
-            //    data?.content ?? data,
-            // ];
 
             const stateData = {
                url: url?.href ?? url,
@@ -240,30 +219,6 @@ class phpspa {
     */
    static back() {
       history.back();
-
-      // let [targetElement, content] =
-      //    this.states[
-      //       Object.keys(this.states).at(
-      //          Object.keys(this.states).indexOf(history.state) - 1
-      //       )
-      //    ];
-      // let url = new URL(
-      //    Object.keys(this.states).at(
-      //       Object.keys(this.states).indexOf(history.state) - 1
-      //    ),
-      //    location.href
-      // );
-      // if (!targetElement) {
-      //    this.navigate(url, "replace");
-      // } else {
-      //    targetElement.innerHTML = content;
-      //    let hashedElement = document.getElementById(url.hash.substring(1));
-      //    if (hashedElement) {
-      //       scroll({
-      //          top: hashedElement.offsetTop,
-      //       });
-      //    }
-      // }
    }
 
    /**
@@ -275,33 +230,6 @@ class phpspa {
     */
    static forward() {
       history.forward();
-
-      // let [targetElement, content] =
-      //    this.states[
-      //       Object.keys(this.states).at(
-      //          Object.keys(this.states).indexOf(history.state) + 1
-      //       )
-      //    ];
-
-      // let url = new URL(
-      //    Object.keys(this.states).at(
-      //       Object.keys(this.states).indexOf(history.state) + 1
-      //    ),
-      //    location.href
-      // );
-
-      // if (!targetElement) {
-      //    this.navigate(url, "replace");
-      // } else {
-      //    targetElement.innerHTML = content;
-      //    let hashedElement = document.getElementById(url.hash.substring(1));
-
-      //    if (hashedElement) {
-      //       scroll({
-      //          top: hashedElement.offsetTop,
-      //       });
-      //    }
-      // }
    }
 
    /**
@@ -343,6 +271,20 @@ class phpspa {
       }
    }
 
+   /**
+    * Updates the application state by sending a custom fetch request and updating the DOM accordingly.
+    *
+    * @param {string} stateKey - The key representing the state to update.
+    * @param {*} value - The new value to set for the specified state key.
+    * @returns {Promise<void>} A promise that resolves when the state is updated and the DOM is modified, or rejects if an error occurs.
+    *
+    * @fires phpspa#beforeload - Emitted before the state is loaded.
+    *
+    * @example
+    * phpspa.setState('user', { name: 'Alice' })
+    *   .then(() => console.log('State updated!'))
+    *   .catch(err => console.error('Failed to update state:', err));
+    */
    static setState(stateKey, value) {
       return new Promise(async (resolve, reject) => {
          let currentScroll = {

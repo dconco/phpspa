@@ -5,6 +5,7 @@ The `map()` function provides array iteration capabilities for state values.
 ## Usage
 
 ```php
+<?php
 $items = createState('cart.items', ['apple', 'banana']);
 
 return <<<HTML
@@ -35,6 +36,7 @@ Returns concatenated string result of all mapped items.
 ### Basic List Rendering
 
 ```php
+<?php
 $todos = createState('todos', [
     'Buy milk',
     'Walk dog'
@@ -50,6 +52,7 @@ HTML;
 ### Complex Object Mapping
 
 ```php
+<?php
 $products = createState('products', [
     ['id' => 1, 'name' => 'Chair'],
     ['id' => 2, 'name' => 'Table']
