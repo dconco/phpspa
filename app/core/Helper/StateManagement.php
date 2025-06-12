@@ -1,14 +1,30 @@
 <?php
 
-namespace phpSPA\Component;
+namespace phpSPA\Helper;
 
 use Closure;
 
+/**
+ * Class StateManagement
+ *
+ * Provides methods and utilities for managing application state.
+ * This class is responsible for handling state transitions, storing state data,
+ * and providing access to state information throughout the application lifecycle.
+ *
+ * @package phpSPA\Helper
+ * @author dconco <concodave@gmail.com>
+ */
 class StateManagement
 {
    private string $stateKey;
    private $value;
 
+   /**
+    * Initializes the state with a given key and a default value.
+    *
+    * @param string $stateKey The unique key used to identify the state.
+    * @param mixed $default The default value to initialize the state with.
+    */
    public function __construct (string $stateKey, $default)
    {
       $this->value = $_SESSION["__phpspa_state_{$stateKey}"] ?? $default;
@@ -23,6 +39,14 @@ class StateManagement
       }
    }
 
+   /**
+    * Invokes the object as a function.
+    *
+    * This magic method allows the object to be called as a function. Optionally accepts a value.
+    *
+    * @param mixed $value Optional value to be processed when the object is invoked.
+    * @return mixed The result of the invocation, depending on the implementation.
+    */
    public function __invoke ($value = null)
    {
       if (!$value) return $_SESSION["__phpspa_state_{$this->stateKey}"];
@@ -31,10 +55,15 @@ class StateManagement
       $_SESSION["__phpspa_state_{$this->stateKey}"] = $value;
    }
 
+   /**
+    * Magic method to convert the object to its string representation.
+    *
+    * @return string The string representation of the object.
+    */
    public function __tostring ()
    {
       $value = $_SESSION["__phpspa_state_{$this->stateKey}"] ?? $this->value;
-      return is_array($value) ? json_encode($value) : (string) $value;
+      return is_array($value) ? json_encode($value) : $value;
    }
 
    /**

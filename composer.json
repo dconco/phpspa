@@ -18,7 +18,10 @@
             "phpSPA\\Interfaces\\": "app/interfaces/",
             "phpSPA\\Exceptions\\": "app/exceptions/"
         },
-        "files": [ "app/core/Component/createState.php" ]
+        "files": [
+            "app/core/Component/createState.php",
+            "app/core/Component/import.php"
+        ]
     },
     "authors": [
         {

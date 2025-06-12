@@ -4,7 +4,6 @@ use phpSPA\Component;
 use function phpSPA\Component\createState;
 
 include_once 'HashComp.php';
-include_once realpath(__DIR__ . '/../../app/core/Component/createState.php');
 
 function Login (): string
 {

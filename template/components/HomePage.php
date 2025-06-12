@@ -2,24 +2,25 @@
 
 use phpSPA\Component;
 use phpSPA\Http\Request;
-use function phpSPA\Component\createState;
 
-include_once realpath(__DIR__ . '/../../app/core/Component/CreateState.php');
+use function phpSPA\Component\import;
+use function phpSPA\Component\createState;
 
 return (new Component(function (Request $request): string
 {
    $name = $request('name', 'dconco');
    $counter = createState('counter', 0);
-   $counterIncreament = "$counter" + 1;
+   $icon = import(__DIR__ . '/../../site/assets/images/favicon.png');
 
    return <<<HTML
       <div>
+         <img src="{$icon}" />
          <p>Welcome to my PHP SPA project! @$name</p>
          <br />
-         <button onclick="phpspa.setState('counter', $counterIncreament)">Counter: {$counter}</button>
+         <button onclick="phpspa.setState('counter', $counter + 1)">Counter: $counter</button>
          <Link to="./login#hashID" label="GO TO LOGIN" />
       </div>
    HTML;
 }))
    ->title('Home Page')
-   ->route('/phpspa/template/{id:int}');
+   ->route('/phpspa/template');

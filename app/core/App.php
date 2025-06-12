@@ -8,7 +8,7 @@ namespace phpSPA;
  * The main application class for phpSPA.
  * Handles layout composition, component mounting, and rendering flow.
  *
- * @package phpSPA\App
+ * @package phpSPA
  * @extends \phpSPA\Impl\RealImpl\AppImpl
  * @implements \phpSPA\Interfaces\phpSpaInterface
  */
