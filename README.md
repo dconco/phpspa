@@ -190,11 +190,6 @@ phpspa.on("load", ({ success }) => hideLoader());
 ```
 
 ---
-Congrats! That’s a huge milestone 🎉
-
-Here's a clean, professional section you can add to your GitHub `README.md` so visitors can access the full phpSPA documentation:
-
----
 
 ## 📚 Full Documentation
 
@@ -233,13 +228,10 @@ Simple, fast, and native PHP – just the way we like it.
 
 ## 🌟 Give Me a Star
 
-If you like this project, show some love 💙
-Your support helps more developers discover **phpSPA**!
+If you find phpSPA useful, please consider giving it a star on GitHub! It helps others discover the project and keeps the momentum going 🚀
 
-[![GitHub stars](https://img.shields.io/github/stars/dconco/phpspa?style=social)](https://github.com/dconco/phpspa)
+👉 **[Give us a ⭐ on GitHub](https://github.com/dconco/phpspa)**
 
-👉 [Click here to star the repo](https://github.com/dconco/phpspa)
-
-Thank you! 😊
+Your support means a lot! ❤️
 
 ---
