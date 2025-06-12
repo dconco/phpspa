@@ -2,6 +2,8 @@
 
 namespace phpSPA\Component;
 
+use Closure;
+
 class StateManagement
 {
    private string $stateKey;
@@ -33,5 +35,21 @@ class StateManagement
    {
       $value = $_SESSION["__phpspa_state_{$this->stateKey}"] ?? $this->value;
       return is_array($value) ? json_encode($value) : (string) $value;
+   }
+
+   public function map (Closure $closure)
+   {
+      $value = $_SESSION["__phpspa_state_{$this->stateKey}"] ?? $this->value;
+
+      if (is_array($value))
+      {
+         $newValue = '';
+
+         foreach ($value as $key => $item)
+         {
+            $newValue .= $closure($item, $key);
+         }
+         return $newValue;
+      }
    }
 }
