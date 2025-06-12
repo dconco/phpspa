@@ -29,7 +29,7 @@ source_suffix = {
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'furo'
+html_theme = 'sphinx-rtd-theme'
 html_static_path = ['_static']
 pygments_style = "material" # or "monokai", "tango", "friendly"
 pygments_dark_style = "native"
