@@ -1,92 +1,131 @@
-# 🌀 Handling a Simple Loading State in phpSPA
+# 🌀 Handling Loading States in phpSPA
 
-In many forms (like login), it's common to show a loading indicator while processing the request. You can use `createState()` in PHP to handle this easily.
+!!! abstract "Reactive Loading Indicators"
+    Use `createState()` to manage loading states that automatically update your UI during asynchronous operations like form submissions.
 
 ---
 
-## ✅ Step 1: Define the State in PHP
+## 🛠️ Implementation Guide
 
-```php
+### 1. Create Loading State
+
+```php title="Define loading state"
+<?php
 use function phpSPA\Component\createState;
 
-$loading = createState('loading', 'false');
+$loading = createState('loading', 'false'); // 'true' or 'false' string
 ```
 
-This creates a state named `"loading"` that defaults to `false`. You can now use `$loading` as a string (`"true"` or `"false"`) to update the UI.
+### 2. Optional: Form State Management
 
----
-
-## ✅ Bonus: Define the Login State (Optional)
-
-If you're handling the login data too:
-
-```php
-$login = createState('login', [
-   'username' => null,
-   'password' => null
+```php title="Form data state example"
+<?php
+$formData = createState('login', [
+   'username' => '',
+   'password' => ''
 ]);
-
-$username = $login()['username'];
-$password = $login()['password'];
 ```
-
-Use that however you want — like verifying login or returning errors.
 
 ---
 
-## ✅ Step 2: Render HTML Based on Loading State
+## 💡 UI Integration
 
-Here we update the button's label and disable it when loading:
+### Dynamic Button Component
 
-```php
-$loadingText = "$loading" === "true" ? 'Loading...' : 'LOGIN';
-$buttonDisabled = "$loading" === "true" ? 'disabled' : '';
+```php title="Conditional button rendering"
+<?php
+$buttonProps = "$loading" === "true" 
+    ? ['text' => 'Loading...', 'disabled' => 'disabled']
+    : ['text' => 'LOGIN', 'disabled' => ''];
 
-$buttonHtml = "<button id=\"btn\" $buttonDisabled>$loadingText</button>";
-```
-
-Now render that inside your form:
-
-```php
 return <<<HTML
-   <form method="POST" action="">
-      <label>Username:</label>
-      <input type="text" id="username" />
-
-      <label>Password:</label>
-      <input type="password" id="password" />
-
-      $buttonHtml
-   </form>
-
-   <script data-type="phpspa/script">
-      const btn = document.getElementById("btn");
-
-      btn.addEventListener("click", (e) => {
-         e.preventDefault();
-
-         const username = document.getElementById("username").value;
-         const password = document.getElementById("password").value;
-
-         if (username.trim() !== "" && password.trim() !== "") {
-            phpspa.setState("loading", "true")
-               .then(() => phpspa.setState("login", { username, password }))
-               .then(() => phpspa.setState("loading", "false"));
-         }
-      });
-   </script>
+    <button id="submit" {$buttonProps['disabled']}>
+        {$buttonProps['text']}
+    </button>
 HTML;
 ```
 
 ---
 
-### ✅ Summary
+## 🧩 Complete Example
 
-* `createState('loading', 'false')` creates a loading flag.
-* You read its value in PHP using `"$loading"`.
-* From JS, you update it with `phpspa.setState("loading", "true" | "false")`.
-* The UI updates reactively on the next render.
+```php title="Login Form with Loading State"
+<?php
+function LoginForm() {
+    $loading = createState('loading', 'false');
+    
+    return <<<HTML
+        <form id="login-form">
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+
+            <button id="submit" {$buttonProps['disabled']}>
+               {$buttonProps['text']}
+            </button>
+        </form>
+
+        <script data-type="phpspa/script">
+            document.getElementById('login-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                await phpspa.setState('loading', 'true');
+                
+                // Simulate API call
+                await new Promise(r => setTimeout(r, 1000));
+                
+                await phpspa.setState('loading', 'false');
+                phpspa.navigate('/dashboard');
+            });
+        </script>
+    HTML;
+}
+```
+
+```mermaid
+sequenceDiagram
+    User->>Browser: Clicks Submit
+    Browser->>phpSPA: setState('loading', 'true')
+    phpSPA->>Server: Re-render Component
+    Server->>Browser: Updated UI (Loading state)
+    Browser->>Server: Process Form Data
+    Server->>phpSPA: setState('loading', 'false')
+    phpSPA->>Browser: Final UI Update
+```
 
 ---
 
-➡️ Up next: [Request Handling](./20-request-handling.md)
+## 📌 Key Features
+
+| Feature               | Benefit                      |
+| --------------------- | ---------------------------- |
+| **String States**     | Simple 'true'/'false' values |
+| **Automatic UI Sync** | No manual DOM updates        |
+| **Promise Chain**     | Sequential state management  |
+| **Component Scoped**  | Isolated to current view     |
+
+---
+
+## ⚠️ Common Pitfalls
+
+1. **State Type Confusion**  
+   Remember loading state uses strings (`'true'`/`'false'`) not booleans
+2. **Missing Cleanup**  
+   Always ensure loading gets set to `'false'` after operations
+3. **Over-nesting**  
+   Avoid deeply nested state conditions
+
+```php title="Safe state handling"
+<?php
+$loading = createState('loading', 'false');
+
+try {
+    await phpspa.setState('loading', 'true');
+    // Perform operation
+} finally {
+    await phpspa.setState('loading', 'false');
+}
+```
+
+---
+
+➡️ **Next Up**: [Request Handling :material-arrow-right:](./20-request-handling.md){ .md-button .md-button--primary }

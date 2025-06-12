@@ -90,6 +90,8 @@ abstract class AppImpl extends Component
          $caseSensitive = $component->caseSensitive ?? $this->defaultCaseSensitive;
          $targetID = $component->targetID ?? $this->defaultTargetID;
 
+         if (!isset($component->route)) continue;
+
          $router = (new MapRoute())
          ->match($component->method, $component->route, $caseSensitive);
 

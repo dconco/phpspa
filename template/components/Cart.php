@@ -7,10 +7,10 @@ include_once __DIR__ . '../../../app/core/Component/createState.php';
 
 return (new Component(function ()
 {
-   $items = createState('cart.items', []);
-   $total = array_sum(array_column($items(), 'price'));
+    $items = createState('cart.items', []);
+    $total = array_sum(array_column($items(), 'price'));
 
-   return <<<HTML
+    return <<<HTML
         <div class="cart">
             <h3>Cart Total: \${$total}</h3>
             <ul>
@@ -29,5 +29,5 @@ return (new Component(function ()
         </script>
     HTML;
 }))
-   ->method('/phpspa/template/cart')
+   ->route('/phpspa/template/cart')
    ->title('View Cart');
