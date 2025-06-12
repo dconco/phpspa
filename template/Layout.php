@@ -11,7 +11,8 @@ return fn () => <<<HTML
          </div>
 
          <!-- phpSPA JS PLUGIN -->
-         <script type=application/javascript src=../src/index.js></script>
+         <!-- <script type=application/javascript src=../src/index.js></script> -->
+         <script src="https://cdn.jsdelivr.net/npm/phpspa-js"></script>
          
          <script data-type=phpspa/script>
             phpspa.on("beforeload", ({ route }) => {
