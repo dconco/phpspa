@@ -1,4 +1,5 @@
 furo
 sphinx
+pygments
 myst-parser
 sphinx_copybutton
