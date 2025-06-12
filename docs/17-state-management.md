@@ -144,7 +144,7 @@ function Cart() {
         <script data-type="phpspa/script">
             function addItem() {
                 phpspa.setState('cart.items', [
-                    ...{$items()},
+                    ...{$items},
                     {name: 'Sample', price: 9.99}
                 ]);
             }

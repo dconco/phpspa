@@ -155,8 +155,8 @@ When calling a component from inside another component, you need default values:
             <div class="dashboard">
                 <h1>Admin Dashboard</h1>
                 <div class="widgets">
-                    {UserCard()}
-                    {UserCard()}
+                    {{ UserCard() }}
+                    {{ UserCard() }}
                 </div>
             </div>
         HTML;

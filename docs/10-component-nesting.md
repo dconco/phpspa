@@ -16,7 +16,7 @@ function Sidebar() {
 function Dashboard(array $path = [], $request = null) {
     return <<<HTML
         <div>
-            {Sidebar()}
+            {{ Sidebar() }}
             <main>Dashboard main content</main>
         </div>
     HTML;
@@ -39,9 +39,9 @@ use phpSPA\Http\Request;
 function Wrapper($path = [], Request $request = new Request()) {
     return <<<HTML
         <div>
-            {Header()}
+           {{ Header() }}
             <section>{MainContent($path, $request)}</section>
-            {Footer()}
+           {{ Footer() }}
         </div>
     HTML;
 }

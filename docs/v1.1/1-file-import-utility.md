@@ -162,3 +162,64 @@ try {
 2. Verify file types before processing
 3. Use `isImage()` for image-specific handling
 4. Store large files directly rather than using data URIs
+
+---
+
+## JavaScript Integration
+
+Array states automatically convert to JSON when used in JavaScript context, enabling direct access to PHP state values in JavaScript.
+
+### Accessing State in JavaScript
+
+```php
+<?php
+$items = createState('cart.items', [
+    ['id' => 1, 'name' => 'Product 1'],
+    ['id' => 2, 'name' => 'Product 2']
+]);
+```
+
+```html
+<script>
+    // Directly use PHP state as JavaScript object
+    const currentItems = {$items};
+    console.log(currentItems); 
+    // Output: [{id: 1, name: 'Product 1'}, {id: 2, name: 'Product 2'}]
+</script>
+```
+
+### Updating State
+
+You can update state from either PHP or JavaScript:
+
+#### From PHP
+
+```php
+<?php
+// Update by calling state with new value
+$items([...$items(), ['id' => 3, 'name' => 'New Product']]);
+```
+
+#### From JavaScript
+
+```javascript
+// Update using phpspa.setState()
+phpspa.setState("cart.items", [
+    ...currentItems, 
+    {id: 3, name: 'New Product'}
+]);
+```
+
+### Important Notes
+
+1. **Automatic Reactivity**:
+   - Both update methods will trigger UI updates automatically
+   - No manual DOM manipulation needed
+
+2. **State Reference**:
+   - In JavaScript, always reference states using their exact keys
+   - The `phpspa.setState()` method requires the full state key
+
+3. **Performance**:
+   - For complex objects, consider granular updates
+   - Batch multiple updates when possible
