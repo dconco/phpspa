@@ -2,6 +2,7 @@
 
 namespace phpSPA\Component;
 
+use phpSPA\Utils\ImportedFile;
 use phpSPA\Exceptions\AppException;
 
 /**
@@ -11,7 +12,7 @@ use phpSPA\Exceptions\AppException;
  * @return string Data URI (format: data:<mime-type>;base64,<content>)
  * @throws AppException If file doesn't exist or can't be read
  */
-function import (string $file): string
+function import (string $file): ImportedFile
 {
    if (!is_file($file))
    {
@@ -26,5 +27,5 @@ function import (string $file): string
    $contents = base64_encode(file_get_contents($file));
 
    $data = "data:$file_type;base64,$contents";
-   return $data;
+   return new ImportedFile($data, $file);
 }
