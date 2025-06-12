@@ -1,141 +1,178 @@
-# 🧭 JavaScript Navigation: `phpspa.navigate()`
+# 🧭 JavaScript Navigation
 
-phpSPA provides seamless, JavaScript-powered page transitions without reloads. You can trigger route changes using `phpspa.navigate()` and manage browser history with a few simple helpers.
+!!! abstract "Client-Side Routing"
+    phpSPA provides seamless page transitions through its JavaScript API, including history management, event hooks, and dynamic component loading.
 
 ---
 
-## 📌 Include the JS File
+## 🚀 Quick Start
 
-Ensure the phpSPA JavaScript file is loaded in your layout (before the closing `</body>` tag):
-
-```html
+```html title="Include the runtime"
+<!-- Before closing </body> -->
 <script src="https://cdn.jsdelivr.net/npm/phpspa-js"></script>
 ```
 
-This enables dynamic routing, component swapping, `<Link />`, state updates, and more.
+```javascript title="Basic navigation"
+// Navigate to dashboard (adds to history)
+phpspa.navigate("/dashboard");
+
+// Replace current history entry
+phpspa.navigate("/login", "replace");
+```
 
 ---
 
-## 🔗 `<Link />` — Inline Navigation Element
+## 📌 Core API
 
-To create client-side links without reloading the page, use the custom `<Link />` tag:
+### Navigation Methods
+
+| Method                 | Description            | Example                       |
+| ---------------------- | ---------------------- | ----------------------------- |
+| `navigate(path, mode)` | Main navigation method | `phpspa.navigate("/profile")` |
+| `back()`               | History backward       | `phpspa.back()`               |
+| `forward()`            | History forward        | `phpspa.forward()`            |
+| `reload()`             | Refresh current view   | `phpspa.reload()`             |
+
+### History Modes
+
+```javascript
+"push"    // Default - adds to history stack (Ctrl+Z-able)
+"replace" // Replaces current entry (no back navigation)
+```
+
+---
+
+## 🔗 The `<Link>` Component
+
+```html title="SPA-enabled links"
+<Link to="/about" label="About Us" class="nav-link" />
+```
+
+**Rendered As:**
 
 ```html
-<Link to="/login" label="Go to Login" />
+<a href="/about" class="nav-link" data-type="phpspa-link-tag">About Us</a>
 ```
 
-### ✅ Attributes
-
-| Attribute | Description                            |
-| --------- | -------------------------------------- |
-| `to`      | (Required) The route to navigate to.   |
-| `label`   | (Optional) Text content of the anchor. |
-
-phpSPA automatically renders this as an `<a href="/login">Go to Login</a>` element and intercepts the click event to perform a dynamic transition.
+!!! tip "Automatic Interception"
+    All `<Link>` clicks are handled by phpSPA without page reloads.
 
 ---
 
-## ⚙️ JavaScript Navigation API
+## 🎛 Event System
 
-Use the global `phpspa` object for manual routing control:
-
-### `phpspa.navigate(path, state = "push")`
-
-Navigate to a new route.
-
-* `path`: The route to go to.
-* `state`: `"push"` (default) or `"replace"`.
-
-```js
-phpspa.navigate("/dashboard"); // push to history
-phpspa.navigate("/login", "replace"); // replace current history
-```
-
-### `phpspa.back()`
-
-Go back in browser history:
-
-```js
-phpspa.back();
-```
-
-### `phpspa.forward()`
-
-Go forward in browser history:
-
-```js
-phpspa.forward();
-```
-
-### `phpspa.reload()`
-
-Reload the currently mounted component:
-
-```js
-phpspa.reload();
-```
-
----
-
-## 📡 Event Hooks: `phpspa.on(...)`
-
-You can listen to lifecycle events using `phpspa.on()`:
-
-```js
+```javascript title="Lifecycle Hooks"
+// Before route load
 phpspa.on("beforeload", ({ route }) => {
-  console.log("Loading:", route);
+  NProgress.start(); // Show loading bar
 });
 
+// After successful load
 phpspa.on("load", ({ route, success, error }) => {
   if (success) {
-    console.log("Route loaded:", route);
+    NProgress.done();
+    ga('send', 'pageview', route);
   } else {
-    console.error("Failed to load:", route, error);
+    // Handle Error
+    showToast(`Navigation failed: ${error.message}`);
   }
 });
 ```
 
-### Event Types
+**Event Types:**
 
-| Event        | Description                                         |
-| ------------ | --------------------------------------------------- |
-| `beforeload` | Fires before a component fetch starts               |
-| `load`       | Fires after a component is loaded or failed to load |
-
-Both events receive an object with:
-
-* `route` → the route being loaded
-* `success` → `true` or `false`
-* `error` → an error object if `success` is false
+| Event        | Trigger Timing                |
+| ------------ | ----------------------------- |
+| `beforeload` | Route change initiated        |
+| `load`       | Component loaded successfully |
 
 ---
 
-## 🧩 Component Styles & Scripts
+## 🧩 Component Assets
 
-Each component can define its own styles and scripts using these special blocks:
+### Scoped Styles
 
-### ✅ Inline Component Style
-
-```html
+```html title="Component CSS"
 <style data-type="phpspa/css">
-  .page {
-    padding: 20px;
+  .profile-card {
+    background: var(--surface);
   }
 </style>
 ```
 
-### ✅ Inline Component Script
+### Mount Scripts
 
-```html
+```html title="Component JS"
 <script data-type="phpspa/script">
-  console.log("Component script mounted");
+  document.querySelector('.btn').addEventListener(...);
 </script>
 ```
 
-These blocks are handled and injected dynamically by the phpSPA JS runtime whenever components are swapped.
+```mermaid
+graph LR
+    A[Link Click] --> B[phpspa.navigate]
+    B --> C[beforeload Event]
+    C --> D[Fetch Component]
+    D --> E[Inject Styles/Scripts]
+    E --> F[load Event]
+```
 
 ---
 
-➡️ Up next: [State Management](./17-state-management.md)
+## 🛠 Practical Patterns
 
-Here’s your refined and updated documentation based on your current phpSPA JavaScript system — including your latest changes such as the use of `phpspa.on(...)`, custom `<Link />`, and your `Navigate` class logic:
+### Protected Routes
+
+```javascript
+phpspa.on("beforeload", ({ route }) => {
+  if (route.startsWith("/admin") && !isAdmin()) {
+    phpspa.navigate("/login");
+    return false; // Cancel original navigation
+  }
+});
+```
+
+### Analytics Tracking
+
+```javascript
+phpspa.on("load", ({ route }) => {
+  if (window.ga) ga('send', 'pageview', route);
+});
+```
+
+### Smooth Transitions
+
+```css
+[data-type="phpspa-link-tag"] {
+  transition: opacity 0.3s;
+}
+[data-type="phpspa-link-tag"]:hover {
+  opacity: 0.8;
+}
+```
+
+---
+
+## ⚠️ Common Issues
+
+1. **Missing Script**  
+   Ensure `phpspa.js` is loaded before any navigation calls
+
+2. **Event Listener Leaks**  
+   Use component scripts for DOM events instead of global handlers
+
+3. **History Loops**  
+   Avoid circular redirects in navigation hooks
+
+```javascript title="Safe redirect example"
+phpspa.on("beforeload", ({ route }) => {
+  if (needsAuth(route) && !isLoggedIn()) {
+    phpspa.navigate("/login?return=" + encodeURIComponent(route));
+    return false;
+  }
+});
+```
+
+---
+
+➡️ **Next Up**: [State Management :material-arrow-right:](./17-state-management.md){ .md-button .md-button--primary }

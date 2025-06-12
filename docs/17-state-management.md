@@ -1,153 +1,158 @@
 # 🧠 State Management
 
-phpSPA supports **reactive state** between the frontend and backend — no full page reload required.
-
-You define state in PHP using `createState()`, and update it from JavaScript using `phpspa.setState()`.
-
-Let’s break it down with a basic **counter app**.
+!!! abstract "Reactive Data Flow"
+    phpSPA enables **bidirectional state synchronization** between PHP and JavaScript without full page reloads, using a simple `createState`/`setState` API.
 
 ---
 
-## 1️⃣ Define State in PHP
+## 🚀 Quick Start
 
-Inside your component function, you define state like this:
-
-```php
+```php title="Basic Counter Component"
+<?php
 use function phpSPA\Component\createState;
 
-$counter = createState('count', 0); // 'count' is the unique state key
-```
-
-* `'count'` is the **state key** — it identifies what part of state you're working with.
-* `0` is the default value used on first load.
-* `$counter()` gets the current value (after any updates from frontend).
-
----
-
-## 2️⃣ Use the Value in Your Component
-
-```php
-return <<<HTML
-   <div>
-      <h1>Counter: $counter</h1>
-      <button id="increment">Increment</button>
-   </div>
-
-   <script data-type="phpspa/script">
-      document.getElementById('increment').addEventListener('click', () => {
-         phpspa.setState('count', $counter + 1);
-      });
-   </script>
-HTML;
-```
-
-* When the user clicks the button, the frontend tells the backend: **"Set `counter` to new value."**
-* phpSPA runs the component again (on the server) with the updated state.
-* The new HTML is swapped in automatically — **without a full page reload**.
-
----
-
-## 🔄 What Just Happened?
-
-Here’s the full cycle of `createState()` and `phpspa.setState()`:
-
-| Step                                 | What Happens                             |
-| ------------------------------------ | ---------------------------------------- |
-| 1. PHP: `createState('count', 0)`    | Registers the state with a default value |
-| 2. JS: `phpspa.setState('count', 5)` | Sends new state value to server          |
-| 3. phpSPA re-renders                 | Component gets re-run with `count = 5`   |
-| 4. Result                            | HTML updates without reloading the page  |
-
----
-
-## ⚠️ Notes
-
-* The **first argument** is always the **state key**.
-* Each state key is **shared globally** across all components — if you use the same key in different components, it will be shared.
-* `setState()` always returns a promise — you can `.then()` it to do something after render.
-
----
-
-## 🛠 Updating State from PHP
-
-You’re not limited to frontend updates — you can also update state **inside your PHP component** by calling the state function with a new value:
-
-```php
-$counter = createState('count', 0);
-
-if (someCondition()) {
-    $counter(4); // This updates the 'count' state on the server
+function Counter() {
+    $count = createState('counter', 0); // Key + initial value
+    
+    return <<<HTML
+        <div>
+            <h2>Count: {$count}</h2>
+            <button onclick="phpspa.setState('counter', {$count} + 1)">
+                Increment
+            </button>
+        </div>
+    HTML;
 }
-
-$count = $counter(); // Now $count is 4
 ```
 
-### 🔄 Why Use This?
-
-* Set state based on form submissions or backend logic
-* Reset or initialize values after an action
-* Fully control flow without needing JavaScript
-
-> ☝️ After setting the value, you can still access the **updated value** by calling the function again.
+```mermaid
+sequenceDiagram
+    Frontend->>Backend: phpspa.setState('counter', 1)
+    Backend->>Component: Re-render with new state
+    Backend->>Frontend: Updated HTML
+    Frontend->>DOM: Smart diff update
+```
 
 ---
 
-## ✅ Full Working Counter Component
+## 📌 Core Concepts
+
+### State Creation
 
 ```php
-use phpSPA\Component;
-use function phpSPA\Component\createState;
+<?php
+$user = createState('auth.user', null); // Global key
+$theme = createState('ui.theme', 'dark'); // Namespaced key
+```
 
-function Counter(): string
-{
-   $counter = createState('count', 0);
+### State Access
 
-   return <<<HTML
-      <div>
-         <h2>Count: $counter</h2>
-         <button id="inc">Count</button>
-      </div>
+| Context   | Syntax              | Example                                |
+| --------- | ------------------- | -------------------------------------- |
+| PHP Read  | `$state()`          | `$current = $user()`                   |
+| PHP Write | `$state(newValue)`  | `$user(['id' => 42])`                  |
+| JS Update | `phpspa.setState()` | `phpspa.setState('ui.theme', 'light')` |
 
-      <script data-type="phpspa/script">
-         document.getElementById('inc').addEventListener('click', () => {
-            phpspa.setState('count', $counter + 1);
-         });
-      </script>
-   HTML;
+---
+
+## 🛠 Advanced Patterns
+
+### State Initialization
+
+```php title="Bootstrapping from backend"
+<?php
+$initialData = fetchFromDatabase();
+$data = createState('app.data', $initialData);
+```
+
+### State Validation
+
+```php title="Type-safe state"
+<?php
+$quantity = createState('cart.quantity', 1);
+if (is_numeric($_POST['qty'])) {
+    $quantity((int)$_POST['qty']); // Only accept integers
 }
+```
 
-return (new Component('Counter'))
-   ->route('/counter')
-   ->method('GET')
-   ->title('Counter Example');
+### Derived State
+
+```php title="Computed values"
+<?php
+$items = createState('cart.items', []);
+$total = count($items()); // Reactively updates
 ```
 
 ---
 
-## ⚠️ Manual Setup: Including `createState` Without Composer
+## 🔄 Lifecycle Flow
 
-If you’re **not using Composer**, or for some reason the autoloading isn't working correctly, you’ll need to manually include the `createState` function.
+1. **Initial Render**  
+   PHP creates state with default values
+2. **Frontend Update**  
+   JavaScript calls `phpspa.setState(key, value)`
+3. **Server Reconciliation**  
+   phpSPA re-renders component with new state
+4. **DOM Update**  
+   Only changed portions update via morphdom
 
-### ✅ Step 1: Include the `createState` File
-
-Make sure you add this at the top of your component file:
-
-```php
-include_once __DIR__ . '/vendor/dconco/phpspa/app/core/Component/createState.php';
+```mermaid
+graph TD
+    A[Initial State] --> B[Component Render]
+    B --> C[Frontend Interaction]
+    C --> D[setState Call]
+    D --> E[Server Re-render]
+    E --> F[DOM Patch]
 ```
 
-Adjust the path if you're not using `vendor/` or if you're keeping `phpSPA` somewhere else.
+---
 
-### ✅ Step 2: Import the Function Namespace
+## ⚠️ Common Pitfalls
 
-Right after your `include_once`, don’t forget to **import the namespace** for the state function:
+1. **Key Collisions**  
+   Use namespaced keys (`module.value`) for shared state
+2. **Async States**  
+   `setState` returns a Promise - use `.then()` for post-update logic
+3. **Missing Imports**  
+   Ensure proper Composer setup or manual includes
 
-```php
+```php title="Manual include (non-Composer)"
+<?php
+include_once __DIR__.'/phpspa/core/Component/createState.php';
 use function phpSPA\Component\createState;
 ```
 
-> ☝️ `createState` is defined in a namespaced file — you must use `use function` or it won’t work.
+---
+
+## 🧪 Real-World Example
+
+```php title="Shopping Cart"
+<?php
+function Cart() {
+    $items = createState('cart.items', []);
+    $total = array_sum(array_column($items(), 'price'));
+
+    return <<<HTML
+        <div class="cart">
+            <h3>Cart Total: \${$total}</h3>
+            <ul>
+                {$items()->map(fn($i) => "<li>{$i['name']}</li>")}
+            </ul>
+            <button onclick="addItem()">Add Sample</button>
+        </div>
+
+        <script data-type="phpspa/script">
+            function addItem() {
+                phpspa.setState('cart.items', [
+                    ...{$items()},
+                    {name: 'Sample', price: 9.99}
+                ]);
+            }
+        </script>
+    HTML;
+}
+```
 
 ---
 
-➡️ Up next: [Per-Component Scripts and Styles in PHP](./18-component-script-and-styles.md)
+➡️ **Next Up**: [Per-Component Scripts and Styles :material-arrow-right:](./18-component-script-and-styles.md){ .md-button .md-button--primary }

@@ -1,95 +1,103 @@
+Got it! Let me correct the documentation to accurately reflect how phpSPA's component scripts and styles work:
+
+```markdown
 # 🎯 Per-Component Scripts and Styles in PHP
 
-In phpSPA, you can attach custom JavaScript and CSS styles **directly from your PHP components**, and they’ll be injected automatically when that component is rendered.
-
-This helps keep logic **encapsulated per route**, avoiding bloated global files.
-
----
-
-## 🧠 Why use this?
-
-Because phpSPA swaps out components dynamically on route changes, you might want certain styles or scripts to only load **when their corresponding component is active**.
-
-phpSPA handles that for you by allowing you to define:
-
-* Per-component JavaScript via `$component->script()`
-* Per-component CSS via `$component->styleSheet()`
+!!! info "Component-Specific Assets"
+    phpSPA allows you to define JavaScript and CSS that executes **only when the component renders**, with automatic scoping to prevent global conflicts.
 
 ---
 
-## 🧾 Add JavaScript with `$component->script()`
+## 🚀 Basic Usage
 
-Use this method to define JS logic that should run when this component is rendered.
-
-```php
-$comp->script(fn() => <<<JS
-    console.log("Dashboard component loaded");
-
-    document.getElementById("refresh").addEventListener("click", () => {
-        phpspa.reload();
-    });
+```php title="Adding scripts and styles"
+$component = new Component("Example");
+$component->script(fn() => <<<JS
+    // This runs every time component renders
+    console.log("Component rendered at: " + new Date().toLocaleTimeString());
 JS);
-```
 
-This script will be wrapped automatically and attached to the DOM **only while this component is active**.
-
-You can call `.script()` multiple times; phpSPA will append them in the order you define.
-
----
-
-## 🎨 Add Styles with `$component->styleSheet()`
-
-Want to add scoped styles just for one route? Use:
-
-```php
-$comp->styleSheet(fn() => <<<CSS
-    .dashboard-title {
-        font-size: 24px;
-        font-weight: bold;
-    }
-
-    #refresh {
-        margin-top: 10px;
+$component->styleSheet(fn() => <<<CSS
+    /* Scoped to this component only */
+    .component-header { 
+        color: var(--primary);
     }
 CSS);
-```
-
-This CSS will be injected into a `<style data-type="phpspa/css">` block and removed automatically when the component unmounts.
-
-Like with `.script()`, you can call `.styleSheet()` multiple times.
-
----
-
-## ✨ Example Usage
-
-```php
-$dashboard = new Component("Dashboard");
-
-$dashboard->route("/dashboard");
-$dashboard->title("Dashboard");
-
-$dashboard->styleSheet(fn() => <<<CSS
-    body {
-        background-color: #f5f5f5;
-    }
-CSS);
-
-$dashboard->script(fn() => <<<JS
-    console.log("Welcome to the dashboard!");
-JS);
 ```
 
 ---
 
 ## 🔍 How It Works
 
-Behind the scenes, phpSPA scans for any registered styles and scripts on the server side and outputs them into:
+1. **On Render**:
+   - PHP processes the component
+   - Scripts/styles are collected and injected into the output
+2. **On Client**:
+   - Scripts execute **once** after component HTML loads
+   - Styles apply only to the current component
 
-* `<style data-type="phpspa/css">...</style>`
-* `<script data-type="phpspa/script">...</script>`
-
-The frontend JavaScript part (`phpspa-js`) handles mounting and cleanup as you navigate between components.
+```mermaid
+sequenceDiagram
+    Server->>Client: Sends rendered HTML
+    Client->>Client: Executes component script
+    Client->>DOM: Applies component styles
+```
 
 ---
 
-➡️ Up next: [Handling Loading State](./19-handling-loading-states.md)
+## 📌 Key Characteristics
+
+- **Scripts**:
+  - Run after component HTML is inserted
+  - Don't return values
+  - Execute on every render
+  - Scoped to component's lifetime
+
+- **Styles**:
+  - Automatically scoped to component
+  - Don't persist after navigation
+  - Can be overridden by global styles
+
+---
+
+## 🛠 Practical Example
+
+```php title="Form Component"
+$form = new Component("ContactForm");
+$form->styleSheet(fn() => <<<CSS
+    .form-input {
+        border: 2px solid #eee;
+        padding: 8px;
+    }
+CSS);
+
+$form->script(fn() => <<<JS
+    document.querySelector('.form-input').addEventListener('focus', () => {
+        this.style.borderColor = 'blue';
+    });
+JS);
+```
+
+---
+
+## ⚠️ Important Notes
+
+1. Scripts **don't**:
+   - Have mount/unmount callbacks
+   - Automatically clean up event listeners
+   - Return values
+
+2. For cleanup, manually remove listeners:
+
+```php
+<?php
+$component->script(fn() => <<<JS
+    const input = document.querySelector('.form-input');
+    const handler = () => console.log('Focused');
+    input.addEventListener('focus', handler);
+JS);
+```
+
+---
+
+➡️ **Next Up**: [Handling Loading States :material-arrow-right:](./19-handling-loading-states.md){ .md-button .md-button--primary }
