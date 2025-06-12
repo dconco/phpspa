@@ -7,9 +7,6 @@ build:
    tools:
       python: "3.11"
    jobs:
-      post_create_environment:
-         # Install poetry
-         - pip install poetry
       post_install:
          # Install dependencies
          - pip install -r requirements.txt

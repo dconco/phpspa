@@ -1,9 +1,9 @@
 site_name: phpSPA Documentation
-site_description: A lightweight, component-based PHP library for building Single Page Applications (SPAs) without relying on heavy frontend frameworks.
+site_description: Build Native PHP SPAs Without JavaScript Frameworks
 site_author: Dave Conco
 site_url: https://phpspa.readthedocs.io
 
-# Repository (optional - replace with your repo)
+# Repository (replace with your repo)
 repo_name: dconco/phpspa
 repo_url: https://github.com/dconco/phpspa
 edit_uri: edit/main/docs/
@@ -32,41 +32,29 @@ theme:
       - navigation.top
       - search.highlight
       - search.share
-      - toc.follow
       - content.code.copy
 
-# Markdown extensions for syntax highlighting and more
+# Markdown extensions
 markdown_extensions:
    # Code highlighting
-   - codehilite:
-        use_pygments: true
-        css_class: highlight
+   - pymdownx.highlight:
+        anchor_linenums: true
+   - pymdownx.inlinehilite
    - pymdownx.superfences:
         custom_fences:
            - name: mermaid
              class: mermaid
-             format: !!python/name:pymdownx.superfences.fence_code_format
-   - pymdownx.highlight:
-        anchor_linenums: true
-        line_spans: __span
-        pygments_lang_class: true
-   - pymdownx.inlinehilite
+             format:
+                !!python/name:pymdownx.superfences.fence_code_format # Other useful extensions
 
-   # Other useful extensions
    - toc:
         permalink: true
-        toc_depth: 3
    - admonition
    - pymdownx.details
    - pymdownx.tabbed:
         alternate_style: true
-   - pymdownx.emoji:
-        emoji_index: !!python/name:materialx.emoji.twemoji
-        emoji_generator: !!python/name:materialx.emoji.to_svg
    - attr_list
-   - md_in_html
    - tables
-   - footnotes
 
 # Navigation structure
 nav:
@@ -97,10 +85,7 @@ nav:
 
 # Plugins
 plugins:
-   - search:
-        separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
-   - minify:
-        minify_html: true
+   - search
 
 # Extra configuration
 extra:

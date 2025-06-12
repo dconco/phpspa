@@ -1,4 +1,4 @@
-# 📘 phpSPA Documentation – Home
+# 📘 phpSPA Documentation
 
 ## 🏠 Introduction
 
