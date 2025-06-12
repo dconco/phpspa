@@ -9,7 +9,7 @@ phpSPA provides seamless, JavaScript-powered page transitions without reloads. Y
 Ensure the phpSPA JavaScript file is loaded in your layout (before the closing `</body>` tag):
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/phpspa-js/dist/phpspa.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/phpspa-js"></script>
 ```
 
 This enables dynamic routing, component swapping, `<Link />`, state updates, and more.

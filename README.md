@@ -100,7 +100,7 @@ require 'path/to/phpspa/core/Component.php';
 ### 🌐 JS Engine (CDN)
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/phpspa-js/dist/phpspa.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/phpspa-js"></script>
 ```
 
 ---
@@ -118,7 +118,7 @@ function layout() {
         </head>
         <body>
             <div id="app">__CONTENT__</div>
-            <script src="https://cdn.jsdelivr.net/npm/phpspa-js/dist/phpspa.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/phpspa-js"></script>
         </body>
     </html>
     HTML;
