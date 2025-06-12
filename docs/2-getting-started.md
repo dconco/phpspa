@@ -1,85 +1,120 @@
 # 🚀 Getting Started
 
-Welcome! Let’s get phpSPA running step by step — no rush, no pressure.
+Welcome! Let's get phpSPA running step by step — no rush, no pressure.
 
----
+!!! tip "Before You Begin"
+    Make sure you have PHP 7.4+ installed on your system. phpSPA works best with modern PHP versions.
 
 ## 📦 Installation
 
-### Option 1: Composer (Recommended)
+=== "Composer (Recommended)"
 
-If you’re using Composer (which you probably should), install phpSPA like this:
+    If you're using Composer (which you probably should), install phpSPA like this:
 
-```bash
-composer require dconco/phpspa
-```
+    ```bash
+    composer require dconco/phpspa
+    ```
 
-Done ✅
+    !!! success "That's it!"
+        phpSPA is now ready to use in your project!
 
----
+=== "Manual Setup"
 
-### Option 2: Manual Setup
+    Not using Composer? No problem.
 
-Not using Composer? No problem.
+    1. **Download the repository:**
+       ```bash
+       git clone https://github.com/dconco/phpspa.git
+       ```
 
-1. Download or clone the phpSPA repo from GitHub:
+    2. **Locate the core files:**
+       Inside the repo, the two main classes you'll need are:
+       - `path/to/phpspa/app/core/App.php`
+       - `path/to/phpspa/app/core/Component.php`
 
-   ```bash
-   git clone https://github.com/dconco/phpspa.git
-   ```
+    3. **Include them in your project:**
+       ```php
+        <?php
+        require 'path/to/phpspa/core/App.php';
+        require 'path/to/phpspa/core/Component.php';
+        
+        use phpSPA\App;
+        use phpSPA\Component;
+       ```
 
-2. Inside the repo, the two main classes you’ll need are:
-
-   * `path/to/phpspa/app/core/App.php`
-   * `path/to/phpspa/app/core/Component.php`
-
-3. Require them manually in your project:
-
-   ```php
-   require_once "path/to/phpspa/app/core/App.php";
-   require_once "path/to/phpspa/app/core/Component.php";
-   ```
-
----
+    !!! warning "Manual Setup Considerations"
+        When using manual setup, you'll need to manage dependencies yourself. Composer is highly recommended for easier maintenance.
 
 ## 🧱 The Basic Setup
 
-To use phpSPA, you’ll define two things:
+To use phpSPA, you'll define two main components:
 
-1. A **layout** – this is the main HTML structure of your page.
-2. An **App instance** – it uses your layout and loads components into it.
+1. **Layout** – the main HTML structure of your page
+2. **App instance** – uses your layout and loads components into it
 
-Here’s a super basic example:
+Here's a minimal working example:
 
-```php
+```php title="Basic phpSPA Setup"
+<?php
 use phpSPA\App;
 
 function layout() {
     return <<<HTML
-        <html>
+        <!DOCTYPE html>
+        <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>My phpSPA App</title>
+            </head>
             <body>
                 <div id="app">
                     __CONTENT__
                 </div>
+                <script src="https://cdn.jsdelivr.net/npm/phpspa-js"></script>
             </body>
         </html>
     HTML;
 }
 
-$app = new App(layout);
-$app->defaultTargetID('app'); // Optional, defines where dynamic content will go
+$app = new App('layout');
+$app->defaultTargetID('app'); // Optional: defines where dynamic content loads
+?>
 ```
 
-### 🧠 What’s happening here?
+!!! info "Understanding the Code"
+    - `layout()` returns the HTML shell of your page
+    - `__CONTENT__` is a special placeholder that gets replaced with component HTML
+    - `defaultTargetID()` sets the element ID where content updates during navigation
 
-* `layout()` returns the HTML shell of your page.
-* Inside the layout, `__CONTENT__` is a special placeholder. It’ll be replaced with your component’s HTML.
-* `defaultTargetID()` sets the element ID where content will update when navigating between components.
+### 🔍 Code Breakdown
+
+| Component           | Purpose                | Required   |
+| ------------------- | ---------------------- | ---------- |
+| `layout()`          | Defines page structure | ✅ Yes      |
+| `__CONTENT__`       | Content placeholder    | ✅ Yes      |
+| `defaultTargetID()` | Navigation target      | ❌ Optional |
+
+!!! example "Try It Out"
+    Copy the code above into a new PHP file and run it to see phpSPA in action!
+
+## 🎯 Quick Start Checklist
+
+- [ ] Install phpSPA via Composer or manual setup
+- [ ] Create your layout function
+- [ ] Initialize the App instance
+- [ ] Set default target ID (optional)
+- [ ] Create your first component
+
+## 🔧 What's Next?
+
+Once your app is set up, you're ready to create dynamic components that make phpSPA shine!
+
+[Continue to: Creating Your First Component :material-arrow-right:](./3-creating-your-first-component.md){ .md-button .md-button--primary }
 
 ---
 
-## 🔧 What’s Next?
-
-Once your app is set up, the next step is to create a component.
-
-➡️ [Continue to: Creating Your First Component](./3-creating-your-first-component.md)
+!!! question "Need Help?"
+    - Check out our [FAQ section](#)
+    - Browse [example projects](#)
+    - Join our [community discussions](https://github.com/dconco/phpspa/discussions)

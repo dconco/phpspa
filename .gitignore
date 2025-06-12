@@ -6,6 +6,7 @@
 /.idea
 /.vscode
 /venve
+/site
 .log
 .env
 .env.dev
