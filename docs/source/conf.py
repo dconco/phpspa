@@ -31,5 +31,5 @@ source_suffix = {
 
 html_theme = 'furo'
 html_static_path = ['_static']
-pygments_style = "sphinx" # or "monokai", "tango", "friendly"
+pygments_style = "monokai" # or "sphinx", "tango", "friendly"
 highlight_language = "php"
