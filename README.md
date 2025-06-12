@@ -1,4 +1,4 @@
-# 📄 **phpSPA - Build Native PHP SPAs Without JavaScript Frameworks**
+# 📦 **phpSPA - Build Native PHP SPAs Without JavaScript Frameworks**
 
 ## 📛 **Name**
 
