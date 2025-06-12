@@ -1,104 +1,144 @@
 # 📬 Request Handling in phpSPA
 
-phpSPA provides a built-in `Request` object that simplifies access to query parameters, form inputs, file uploads, authentication headers, and more.
+!!! abstract "Unified Input Access"
+    phpSPA's `Request` object provides secure, consistent access to all input sources - forms, queries, files, and headers - through a simple interface.
 
-You can access the request object by adding `$request` as an argument in your component functions:
+---
 
-```php
-function LoginComponent($path = [], $request = null) {
-   $username = $request("username"); // gets from $_REQUEST['username']
+## 🚀 Quick Start
+
+```php title="Basic Request Usage"
+<?php
+function ContactForm($path = [], $request = new Request()) {
+    $name = $request("name"); // Gets from $_POST or $_GET
+    $email = $request("email", "default@example.com"); // With fallback
+    
+    return "Hello $name ($email)";
 }
 ```
 
 ---
 
-## 🔑 Getting Request Parameters
+## 🔍 Core Features
 
-You can access any form or query input using the `Request` object like a function:
+### 📥 Input Parameters
 
-```php
-$username = $request("username"); // checks $_REQUEST
-$password = $request("password", "default"); // with default fallback
+```php title="Accessing form/query data"
+// Optional with default
+$page = $request("page", 1);;
 ```
 
-This method automatically validates the input for safety.
+### 📁 File Uploads
 
----
+```php title="Handling uploads"
+<?php
+$avatar = $request->files("avatar");
 
-## 📂 Handling File Uploads
-
-Use `$request->files()` to access uploaded files. You can fetch all files or a specific one by name:
-
-```php
-$file = $request->files("avatar");
-
-if ($file) {
-   move_uploaded_file($file["tmp_name"], "uploads/" . $file["name"]);
+if ($avatar && $avatar["error"] === UPLOAD_ERR_OK) {
+    move_uploaded_file($avatar["tmp_name"], "uploads/" .  $avatar["name"]);
 }
 ```
 
-Returns `null` if the file doesn't exist or failed to upload.
+### 🔐 Authentication
 
----
-
-## 🔐 API Key Validation
-
-If you're building APIs, you can validate API keys directly from headers:
-
-```php
-if ($request->apiKey("X-My-Api-Key")) {
-   // Valid API key present
-}
-```
-
-The header name defaults to `'Api-Key'` if not specified.
-
----
-
-## 🧾 Getting Auth Credentials
-
-The `$request->auth()` method gives you access to Basic Auth or Bearer tokens (from headers):
-
-```php
+```php title="Auth header handling"
+<?php
 $auth = $request->auth();
 
-$basicUser = $auth->basic["user"];
-$bearerToken = $auth->bearer;
+// Basic Auth
+$username = $auth->basic["username"];
+
+// Bearer Token
+$token = $auth->bearer;
 ```
 
-Useful for building protected endpoints or user sessions.
-
 ---
 
-## 🧭 Parsing Query Parameters
+## 🛠 Advanced Usage
 
-You can also get structured query string data using `urlQuery()`:
+### 🔎 API Development
 
-```php
-$params = $request->urlQuery();       // returns object of all query params
-$token = $request->urlQuery("token"); // gets one query param
+```php title="API endpoint example"
+<?php
+function ApiHandler($path, $request) {
+    // Verify API key
+    if (!$request->apiKey("X-API-Key")) {
+        return json_response(["error" => "Unauthorized"], 401);
+    }
+    
+    // Get JSON payload
+    $data = $request->json();
+    
+    return process_data($data);
+}
 ```
 
-This parses `?key=value` style queries and returns validated values.
+### 🔗 Query Parameters
+
+```php title="URL query parsing"
+<?php
+// /search?q=term&page=2
+$search = $request->urlQuery("q");
+$page = $request->urlQuery("page") ?? 1;
+```
+
+### 📦 JSON Payloads
+
+```php title="JSON request bodies"
+$data = $request->json();
+$userId = $data["user"]["id"] ?? null;
+```
 
 ---
 
-## ⚠️ CSRF Protection
+## ⚠️ Security Notes
 
-CSRF protection is **not yet included**. A dedicated token and validation system will be available in the next version.
+!!! danger "CSRF Protection"
+    ```php
+    // Coming in v1.2
+    // $token = $request->csrfToken();
+    // $request->validateCsrf($token);
+    ```
+
+!!! success "Automatic Input Validation"
+    ```php
+    // All inputs are pre-validated by phpSPA
+    $username = $request("username"); // Already sanitized
+    $email = $request("email"); // Safe for database use
+    ```
+
+    phpSPA automatically:
+    - Filters all incoming data
+    - Converts to appropriate types
+    - Handles special characters safely
 
 ---
 
-## ✅ Summary
+## 📋 Request Methods Cheat Sheet
 
-| Feature             | Usage                             |
-| ------------------- | --------------------------------- |
-| Input parameter     | `$request("key", $default)`       |
-| File upload         | `$request->files("input_name")`   |
-| API key check       | `$request->apiKey("Header-Name")` |
-| Auth (Basic/Bearer) | `$request->auth()`                |
-| Parsed URL query    | `$request->urlQuery("key")`       |
+| Method             | Description         | Example                 |
+| ------------------ | ------------------- | ----------------------- |
+| `$request(key)`    | Get input parameter | `$request("email")`     |
+| `->files(name)`    | File upload         | `->files("avatar")`     |
+| `->json()`         | JSON payload        | `->json()["user"]`      |
+| `->auth()`         | Auth headers        | `->auth()->bearer`      |
+| `->apiKey(header)` | API key check       | `->apiKey("X-API-Key")` |
+
+```mermaid
+graph TD
+    A[Request] --> B[Form Data]
+    A --> C[Query Params]
+    A --> D[File Uploads]
+    A --> E[Headers]
+    A --> F[JSON Body]
+    B --> G[Validation]
+    C --> G
+    D --> G
+    E --> G
+    F --> G
+    G --> H[Secure Output]
+```
 
 ---
 
-➡️ Up next: [Final Notes](./final-notes.md)
+➡️ **Next Up**: [Final Notes :material-arrow-right:](./final-notes.md){ .md-button .md-button--primary }

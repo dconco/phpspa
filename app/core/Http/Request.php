@@ -139,4 +139,30 @@ class Request
       }
       return $cl->$name;
    }
+
+
+   /**
+    * Retrieves the request body as an associative array.
+    *
+    * This method parses the raw POST body data and returns it as an associative array.
+    * If a specific parameter is provided, it returns only that parameter's value.
+    *
+    * @param ?string $name The name of the body parameter to retrieve.
+    * @return mixed The json data or null if parsing fails.
+    */
+   public function json (?string $name = null)
+   {
+      $data = json_decode(file_get_contents('php://input'), true);
+
+      if ($data === null || json_last_error() !== JSON_ERROR_NONE)
+      {
+         return null;
+      }
+
+      if ($name !== null)
+      {
+         return $this->validate($data[$name]);
+      }
+      return $this->validate($data);
+   }
 }
