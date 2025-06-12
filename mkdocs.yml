@@ -24,7 +24,7 @@ theme:
         primary: blue
         accent: blue
         toggle:
-           icon: material/brightness-4
+           icon: material/brightness-5
            name: Switch to light mode
    features:
       - navigation.tabs

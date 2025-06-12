@@ -199,7 +199,7 @@ Looking for a complete guide to phpSPA?
 
 🔗 **Read the full tutorial and advanced usage on Read the Docs**:
 
-👉 [https://phpspa.readthedocs.io](https://phpspa.readthedocs.io)
+👉 **[https://phpspa.readthedocs.io](https://phpspa.readthedocs.io)**
 
 The docs include:
 

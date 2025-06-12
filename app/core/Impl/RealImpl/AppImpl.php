@@ -8,7 +8,7 @@ use phpSPA\Router\MapRoute;
 use phpSPA\Helper\LinkTagFormatter;
 use phpSPA\Helper\CallableInspector;
 
-abstract class AppImpl extends Component
+abstract class AppImpl
 {
    /**
     * The layout of the application.
@@ -87,18 +87,21 @@ abstract class AppImpl extends Component
    {
       foreach ($this->components as $component)
       {
-         $caseSensitive = $component->caseSensitive ?? $this->defaultCaseSensitive;
-         $targetID = $component->targetID ?? $this->defaultTargetID;
+         $route = CallableInspector::getProperty($component, 'route');
+         $method = CallableInspector::getProperty($component, 'method');
+         $caseSensitive = CallableInspector::getProperty($component, 'caseSensitive') ?? $this->defaultCaseSensitive;
+         $targetID = CallableInspector::getProperty($component, 'targetID') ?? $this->defaultTargetID;
+         $componentFunction = CallableInspector::getProperty($component, 'component');
+         $scripts = CallableInspector::getProperty($component, 'scripts');
+         $stylesheets = CallableInspector::getProperty($component, 'stylesheets');
+         $title = CallableInspector::getProperty($component, 'title');
 
-         if (!isset($component->route)) continue;
+         if (!$route || !$componentFunction || !is_callable($componentFunction)) continue;
 
          $router = (new MapRoute())
-         ->match($component->method, $component->route, $caseSensitive);
+         ->match($method, $route, $caseSensitive);
 
-         if (!$router)
-         {
-            continue; // Skip if no match found
-         }
+         if (!$router) continue; // Skip if no match found
 
          $request = new Request();
 
@@ -143,29 +146,29 @@ abstract class AppImpl extends Component
           * @param array $router An associative array containing 'params' and 'request' to be passed as arguments.
           */
 
-         if (CallableInspector::hasParam($component->component, 'path') && CallableInspector::hasParam($component->component, 'request'))
+         if (CallableInspector::hasParam($componentFunction, 'path') && CallableInspector::hasParam($componentFunction, 'request'))
          {
-            $componentOutput = call_user_func($component->component, path: $router['params'], request: $request);
+            $componentOutput = call_user_func($componentFunction, path: $router['params'], request: $request);
          }
-         elseif (CallableInspector::hasParam($component->component, 'path'))
+         elseif (CallableInspector::hasParam($componentFunction, 'path'))
          {
-            $componentOutput = call_user_func($component->component, path: $router['params']);
+            $componentOutput = call_user_func($componentFunction, path: $router['params']);
          }
-         elseif (CallableInspector::hasParam($component->component, 'request'))
+         elseif (CallableInspector::hasParam($componentFunction, 'request'))
          {
-            $componentOutput = call_user_func($component->component, request: $request);
+            $componentOutput = call_user_func($componentFunction, request: $request);
          }
          else
          {
-            $componentOutput = call_user_func($component->component);
+            $componentOutput = call_user_func($componentFunction);
          }
 
          $componentOutput = LinkTagFormatter::format($componentOutput);
 
          // If the component has a script, execute it
-         if (!empty($component->scripts))
+         if (!empty($scripts))
          {
-            foreach ($component->scripts as $script)
+            foreach ($scripts as $script)
             {
                if (is_callable($script))
                {
@@ -180,9 +183,9 @@ abstract class AppImpl extends Component
          }
 
          // If the component has a style, execute it
-         if (!empty($component->stylesheets))
+         if (!empty($stylesheets))
          {
-            foreach ($component->stylesheets as $style)
+            foreach ($stylesheets as $style)
             {
                if (is_callable($style))
                {
@@ -198,21 +201,21 @@ abstract class AppImpl extends Component
 
          if (strtolower($_SERVER['REQUEST_METHOD']) === 'phpspa_get')
          {
-            $info = [ 'content' => $componentOutput, 'title' => $component->title, 'targetID' => $targetID ];
+            $info = [ 'content' => $componentOutput, 'title' => $title, 'targetID' => $targetID ];
             print_r(json_encode($info));
          }
          else
          {
             $layoutOutput = LinkTagFormatter::format($layoutOutput);
 
-            if ($component->title)
+            if ($title)
             {
                $layoutOutput = preg_replace_callback(
                  '/<title([^>]*)>.*?<\/title>/si',
-                 function ($matches) use ($component)
+                 function ($matches) use ($title)
                  {
                     // $matches[1] contains any attributes inside the <title> tag
-                    return '<title' . $matches[1] . '>' . $component->title . '</title>';
+                    return '<title' . $matches[1] . '>' . $title . '</title>';
                  },
                  $layoutOutput,
                );

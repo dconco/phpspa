@@ -31,4 +31,53 @@ class CallableInspector
       }
       return false;
    }
+
+   /**
+    * Retrieves the value of a specified property from a given class or object.
+    *
+    * @param object|string $class    The object instance or class name from which to retrieve the property.
+    * @param string        $property The name of the property to retrieve.
+    * @return mixed                  The value of the specified property, or null if not found.
+    */
+   public static function getProperty (object|string $classOrObject, string $property): mixed
+   {
+      $reflection = new \ReflectionClass($classOrObject);
+
+      if (!$reflection->hasProperty($property))
+      {
+         return null;
+      }
+
+      $prop = $reflection->getProperty($property);
+      $prop->setAccessible(true);
+
+      try
+      {
+         // For static properties or when passing a class name
+         if (is_string($classOrObject) && $prop->isStatic())
+         {
+            $value = $prop->getValue();
+         }
+         // For instance properties
+         else if (is_object($classOrObject))
+         {
+            if (!$prop->isInitialized($classOrObject))
+            {
+               return null;
+            }
+            $value = $prop->getValue($classOrObject);
+         }
+         // Invalid case - instance property accessed with class name
+         else
+         {
+            throw new \LogicException("Cannot access non-static property '$property' without an object instance");
+         }
+
+         return $value;
+      }
+      finally
+      {
+         $prop->setAccessible(false); // Ensure accessibility is always reset
+      }
+   }
 }

@@ -37,6 +37,12 @@ class StateManagement
       return is_array($value) ? json_encode($value) : (string) $value;
    }
 
+   /**
+    * Applies the given closure to each item in the state, returning a new collection with the results.
+    *
+    * @param Closure $closure The closure to apply to each item.
+    * @return mixed The resulting collection after applying the closure.
+    */
    public function map (Closure $closure)
    {
       $value = $_SESSION["__phpspa_state_{$this->stateKey}"] ?? $this->value;
@@ -50,6 +56,10 @@ class StateManagement
             $newValue .= $closure($item, $key);
          }
          return $newValue;
+      }
+      else
+      {
+         throw new \RuntimeException('map() can only be used on array state values.');
       }
    }
 }
