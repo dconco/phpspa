@@ -6,6 +6,8 @@
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Version](https://img.shields.io/badge/version-1.0.0-green.svg)
+[![Documentation](https://readthedocs.org/projects/phpspa/badge/?version=latest)](https://phpspa.readthedocs.io)
+[![GitHub stars](https://img.shields.io/github/stars/dconco/phpspa?style=social)](https://github.com/dconco/phpspa)
 
 ---
 
@@ -188,6 +190,33 @@ phpspa.on("load", ({ success }) => hideLoader());
 ```
 
 ---
+Congrats! That’s a huge milestone 🎉
+
+Here's a clean, professional section you can add to your GitHub `README.md` so visitors can access the full phpSPA documentation:
+
+---
+
+## 📚 Full Documentation
+
+Looking for a complete guide to phpSPA?
+
+🔗 **Read the full tutorial and advanced usage on Read the Docs**:
+
+👉 [https://phpspa.readthedocs.io](https://phpspa.readthedocs.io)
+
+The docs include:
+
+* 📦 Installation (Composer & Manual)
+* 🧩 Component system
+* 🔁 Routing & page transitions
+* 🧠 Global state management
+* ✨ Layouts, nesting, and loaders
+* 🛡️ CSRF protection
+* 🧪 Practical examples & best practices
+
+Whether you're just getting started or building something advanced, the documentation will walk you through every step.
+
+---
 
 ## 📘 License
 
@@ -199,5 +228,18 @@ MIT License © [dconco](https://github.com/dconco)
 
 **Dave Conco**
 Simple, fast, and native PHP – just the way we like it.
+
+---
+
+## 🌟 Give Me a Star
+
+If you like this project, show some love 💙
+Your support helps more developers discover **phpSPA**!
+
+[![GitHub stars](https://img.shields.io/github/stars/dconco/phpspa?style=social)](https://github.com/dconco/phpspa)
+
+👉 [Click here to star the repo](https://github.com/dconco/phpspa)
+
+Thank you! 😊
 
 ---
