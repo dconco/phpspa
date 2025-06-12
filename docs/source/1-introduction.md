@@ -26,11 +26,11 @@ All without requiring JavaScript frameworks or a build step.
 
 If you're a PHP developer who wants:
 
-✅ A modern, dynamic user experience (like SPAs)
-✅ To avoid full page reloads on navigation
-✅ To stay within the comfort of PHP
-✅ No complex build tools, no virtual DOMs
-✅ A component-based structure like React — but in PHP
+* ✅ A modern, dynamic user experience (like SPAs)
+* ✅ To avoid full page reloads on navigation
+* ✅ To stay within the comfort of PHP
+* ✅ No complex build tools, no virtual DOMs
+* ✅ A component-based structure like React — but in PHP
 
 Then **phpSPA is for you**.
 
