@@ -6,9 +6,10 @@ In phpSPA, each route is tied to a **component**, and every component is just a 
 
 ## 🛠️ Defining a Component
 
-Here’s a simple component:
+Here's a simple component:
 
 ```php
+<?php
 function Home() {
     return "<h1>Welcome to the homepage!</h1>";
 }
@@ -17,13 +18,14 @@ function Home() {
 To make this available to your app:
 
 ```php
+<?php
 use phpSPA\Component;
-
 $home = new Component('Home');
 $home->route("/");
 ```
 
-> 🔸 `Component` takes the function **callable**, not its return value or a string. So don’t call it — just pass the function itself.
+!!! info "Component Function Tip"
+    `Component` takes the function **callable**, not its return value or a string. So don't call it — just pass the function itself.
 
 ---
 
@@ -41,7 +43,8 @@ You can also allow **multiple methods** using a pipe `|` separator:
 $login->method("GET|POST");
 ```
 
-* This is especially useful for components that handle form submissions (`POST`) and normal page loads (`GET`).
+!!! tip "Form Handling"
+    This is especially useful for components that handle form submissions (`POST`) and normal page loads (`GET`).
 
 ---
 
@@ -53,14 +56,14 @@ Want to change the `<title>` when this component is loaded?
 $home->title("Home Page");
 ```
 
-> This automatically updates `document.title` in the browser when this component is shown.
+!!! note "Automatic Title Updates"
+    This automatically updates `document.title` in the browser when this component is shown.
 
 ---
 
 ## 🎯 Setting a Target Area (Optional)
 
-By default, components render into the app's default target area
-(e.g., set using `$app->defaultTargetID("main")`).
+By default, components render into the app's default target area (e.g., set using `$app->defaultTargetID("main")`).
 
 But if you want a component to render elsewhere (like a specific div), override it:
 
@@ -70,13 +73,17 @@ $home->targetID("content");
 
 That tells phpSPA to update the element with ID `#content` when this route loads.
 
-> ⚠️ Use this for modals, sidebars, or custom layout sections.
+!!! warning "Custom Layout Usage"
+    Use this for modals, sidebars, or custom layout sections.
 
 ---
 
 ## 🔁 Full Example
 
-```php
+Here's everything put together:
+
+```php title="Complete Component Setup"
+<?php
 use phpSPA\Component;
 
 function Login() {
@@ -92,16 +99,43 @@ $login->targetID("main"); // Optional if it matches default
 
 ---
 
-## 🧠 Summary
+## 🧠 Quick Reference
 
-| What You Can Do         | How                              |           |
-| ----------------------- | -------------------------------- | --------- |
-| Register a component    | `$comp = new Component('MyFn');` |           |
-| Set its route           | `$comp->route("/about");`        |           |
-| Allow HTTP methods      | \`\$comp->method("GET            | POST");\` |
-| Set browser title       | `$comp->title("Page Title");`    |           |
-| Change where it renders | `$comp->targetID("sidebar");`    |           |
+| Action               | Method            | Example                          |
+| -------------------- | ----------------- | -------------------------------- |
+| Register a component | `new Component()` | `$comp = new Component('MyFn');` |
+| Set its route        | `->route()`       | `$comp->route("/about");`        |
+| Allow HTTP methods   | `->method()`      | `$comp->method("GET\|POST");`    |
+| Set browser title    | `->title()`       | `$comp->title("Page Title");`    |
+| Change render target | `->targetID()`    | `$comp->targetID("sidebar");`    |
+
+!!! example "Common Patterns"
+    === "Basic Page"
+        ```php
+        <?php
+        $home = new Component('Home');
+        $home->route("/");
+        $home->title("Welcome");
+        ```
+
+    === "Form Handler"
+        ```php
+        <?php
+        $contact = new Component('ContactForm');
+        $contact->route("/contact");
+        $contact->method("GET|POST");
+        $contact->title("Contact Us");
+        ```
+    
+    === "Modal Content"
+        ```php
+        <?php
+        $modal = new Component('ProfileModal');
+        $modal->route("/profile/edit");
+        $modal->targetID("modal-container");
+        ```
 
 ---
 
-➡️ Next up: 📦 [Component Nesting](./10-component-nesting.md)
+!!! success "What's Next?"
+    Ready to build more complex layouts? Check out **[Component Nesting](./10-component-nesting.md)** to learn how components can work together!

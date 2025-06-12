@@ -252,7 +252,7 @@ function UserProfile(array $path = [], Request $request = null) {
 
 Now that you understand basic routing, let's explore advanced route patterns and parameter validation.
 
-[Route Patterns & Parameter Types →](./5-route-patterns-and-param-types.md){ .md-button .md-button--primary }
+[Route Patterns & Parameter Types :material-arrow-right:](./5-route-patterns-and-param-types.md){ .md-button .md-button--primary }
 
 ---
 
