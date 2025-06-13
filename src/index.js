@@ -25,7 +25,7 @@
  * - This library assumes server-rendered HTML responses with placeholder target IDs.
  *
  * @author Dave Conco
- * @version 1.0.0
+ * @version 1.1.1
  * @license MIT
  */
 (function () {
@@ -291,9 +291,7 @@ class phpspa {
             top: scrollY,
             left: scrollX,
          };
-
          const url = new URL(location.href);
-         phpspa.emit("beforeload", { route: url });
 
          const response = await fetch(url, {
             method: "PHPSPA_GET",

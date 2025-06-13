@@ -25,14 +25,14 @@ class LinkTagFormatter
 	/**
 	 * Formats a given tag into a specific format.
 	 *
-	 * @param mixed $tag The tag to be formatted.
+	 * @param mixed $content The tag to be formatted.
 	 * @return mixed The formatted tag.
 	 */
-	static public function format ($tag)
+	static public function format (&$content): void
 	{
 		$pattern = '/<Link(S?)\s+([^>]+)\/?\/>/';
 
-		$formattedContent = preg_replace_callback(
+		$content = preg_replace_callback(
 		 $pattern,
 		 function ($matches)
 		 {
@@ -70,8 +70,7 @@ class LinkTagFormatter
 
 			 return '<a href="' . $to . '" ' . trim($attributes) . ' data-type="phpspa-link-tag">' . $label . '</a>';
 		 },
-		 $tag,
+		 $content,
 		);
-		return $formattedContent;
 	}
 }

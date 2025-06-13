@@ -20,7 +20,8 @@
         },
         "files": [
             "app/core/Component/createState.php",
-            "app/core/Component/import.php"
+            "app/core/Component/import.php",
+            "app/core/Component/Link.php"
         ]
     },
     "authors": [

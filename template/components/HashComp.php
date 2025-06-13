@@ -1,9 +1,9 @@
 <?php
 
-function HashComp ($children)
+function HashComp ($children, $id, $class)
 {
    return <<<HTML
-      <div id=hashID>
+      <div id="{$id}" class="{$class}">
          <p>{$children}</p>
       </div>
    HTML;

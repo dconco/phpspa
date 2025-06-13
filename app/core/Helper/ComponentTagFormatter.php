@@ -2,70 +2,65 @@
 
 namespace phpSPA\Helper;
 
-/**
- * Class ComponentTagFormatter
- *
- * Responsible for formatting and generating HTML link tags.
- * Typically used to create `<Component />` elements for use.
- *
- * @package phpSPA\Helper
- */
-class ComponentTagFormatter
+use phpSPA\Exceptions\AppException;
+
+trait ComponentTagFormatter
 {
-   /**
-    * Constructor.
-    *
-    * This constructor is a placeholder for any necessary initialization for
-    * the class.
-    */
-   public function __construct ()
+   static private function parseAttributesToArray ($attributesString)
    {
+      $attributes = [];
+      $pattern = '/([a-zA-Z_-]+)\s*=\s*(?|"([^"]*)"|\'([^\']*)\')/';
+
+      // Remove newlines and excessive spaces for easier parsing
+      $normalized = preg_replace('/\s+/', ' ', trim($attributesString));
+
+      if (preg_match_all($pattern, $normalized, $matches, PREG_SET_ORDER))
+      {
+         foreach ($matches as $match)
+         {
+            $attributes[$match[1]] = $match[2];
+         }
+      }
+
+      return $attributes;
    }
 
-   static public function format ($dom)
+   /**
+    * Formats the given DOM structure.
+    *
+    * @param mixed $dom Reference to the DOM object or structure to be formatted.
+    * @return void
+    */
+   static protected function format (&$dom)
    {
-      $pattern = '/<Link(S?)\s+([^>]+)\/?\/>/';
+      $pattern = '/<([A-Z][a-zA-Z0-9]*)([^>]*)(?:\/>|>([\s\S]*?)<\/\1>)/';
 
-      $formattedContent = preg_replace_callback(
-       $pattern,
-       function ($matches)
-       {
-          $attributes = $matches[2]; // Extract the attributes: 'path="hello" name="value" id=1 role=["admin", "user"]'
- 
-          $labelPattern = '/label=["|\']([^"]+)["|\']/';
-          $toPattern = '/to=["|\']([^"]+)["|\']/';
+      $dom = preg_replace_callback($pattern, function ($matches)
+      {
+         $matches = array_map('trim', $matches);
 
-          // Extract the 'label' attribute value using a regular expression
-          $attributes = preg_replace_callback(
-           $labelPattern,
-           function ($matches)
-          {
-             global $label;
-             $label = $matches[1];
-             return null;
-          },
-           $attributes,
-          );
+         if (strpos($matches[1], '.'))
+         {
+            $matches[1] = str_replace('.', '\\', $matches[1]);
+         }
 
-          // Extract the 'to' attribute value using a regular expression
-          $attributes = preg_replace_callback(
-           $toPattern,
-           function ($matches)
-          {
-             global $to;
-             $to = $matches[1];
-             return null;
-          },
-           $attributes,
-          );
+         if (!function_exists($matches[1]))
+         {
+            throw new AppException("Component Function {$matches[1]} does not exist.");
+         }
 
-          global $label;
-          global $to;
+         $args = self::parseAttributesToArray($matches[2]);
+         if (isset($matches[3])) $args['children'] = $matches[3];
 
-          return '<a href="' . $to . '" ' . trim($attributes) . ' data-type="phpspa-link-tag">' . $label . '</a>';
-       },
-       $dom,
-      );
-      return $formattedContent;
+         foreach (array_keys($args) as $key)
+         {
+            if (!CallableInspector::hasParam($matches[1], $key))
+            {
+               throw new AppException("Component Function {$matches[1]} does not accept property '{$key}'.");
+            }
+         }
+
+         return call_user_func_array($matches[1], $args);
+      }, $dom);
    }
 }

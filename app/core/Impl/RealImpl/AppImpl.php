@@ -5,11 +5,13 @@ namespace phpSPA\Impl\RealImpl;
 use phpSPA\Component;
 use phpSPA\Http\Request;
 use phpSPA\Router\MapRoute;
-use phpSPA\Helper\LinkTagFormatter;
 use phpSPA\Helper\CallableInspector;
+use phpSPA\Helper\ComponentTagFormatter;
 
 abstract class AppImpl
 {
+   use ComponentTagFormatter;
+
    /**
     * The layout of the application.
     *
@@ -162,8 +164,7 @@ abstract class AppImpl
          {
             $componentOutput = call_user_func($componentFunction);
          }
-
-         $componentOutput = LinkTagFormatter::format($componentOutput);
+         static::format($componentOutput);
 
          // If the component has a script, execute it
          if (!empty($scripts))
@@ -206,8 +207,6 @@ abstract class AppImpl
          }
          else
          {
-            $layoutOutput = LinkTagFormatter::format($layoutOutput);
-
             if ($title)
             {
                $layoutOutput = preg_replace_callback(

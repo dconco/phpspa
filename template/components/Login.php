@@ -7,7 +7,7 @@ include_once 'HashComp.php';
 
 function Login (): string
 {
-   $hashComp = HashComp(children: "This is an Hashed element");
+   // $hashComp = HashComp(children: "This is an Hashed element");
 
    $loginDetails = createState('login', [
       'username' => null,
@@ -56,8 +56,9 @@ function Login (): string
             <br />
             {$buttonHtml}
          </form>
-         <!-- <Hash children="This is an Hashed element" /> -->
-         $hashComp;
+         <HashComp id="hashID" class="hash">
+            This is an Hashed element
+         </HashComp>
       </div>
 
       <script data-type="phpspa/script">
