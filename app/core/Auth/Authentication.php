@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace phpspa\Http\Auth;
+namespace phpspa\Core\Auth;
 
 trait Authentication
 {

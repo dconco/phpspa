@@ -1,6 +1,6 @@
 <?php
 
-namespace phpSPA\Utils;
+namespace phpSPA\Core\Utils;
 
 /**
  * Class ImportedFile

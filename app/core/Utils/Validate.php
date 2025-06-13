@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace phpSPA\Utils;
+namespace phpSPA\Core\Utils;
 
 trait Validate
 {

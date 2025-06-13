@@ -1,8 +1,6 @@
 <?php
 
-namespace phpSPA\Impl\RealImpl;
-
-use phpSPA\Component;
+namespace phpSPA\Core\Impl\RealImpl;
 
 abstract class ComponentImpl
 {
@@ -66,13 +64,13 @@ abstract class ComponentImpl
     */
    protected array $stylesheets = [];
 
-   public function title (string $title): Component
+   public function title (string $title): self
    {
       $this->title = $title;
       return $this;
    }
 
-   public function method (string $method): Component
+   public function method (string $method): self
    {
       $this->method = $method;
 
@@ -83,37 +81,37 @@ abstract class ComponentImpl
       return $this;
    }
 
-   public function route (array|string $route): Component
+   public function route (array|string $route): self
    {
       $this->route = $route;
       return $this;
    }
 
-   public function targetID (string $targetID): Component
+   public function targetID (string $targetID): self
    {
       $this->targetID = $targetID;
       return $this;
    }
 
-   public function caseSensitive (): Component
+   public function caseSensitive (): self
    {
       $this->caseSensitive = true;
       return $this;
    }
 
-   public function caseInsensitive (): Component
+   public function caseInsensitive (): self
    {
       $this->caseSensitive = false;
       return $this;
    }
 
-   public function script (callable $script): Component
+   public function script (callable $script): self
    {
       $this->scripts[] = $script;
       return $this;
    }
 
-   public function styleSheet (callable $style): Component
+   public function styleSheet (callable $style): self
    {
       $this->stylesheets[] = $style;
       return $this;

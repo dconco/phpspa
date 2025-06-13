@@ -1,6 +1,6 @@
 <?php
 
-namespace phpSPA\Helper;
+namespace phpSPA\Core\Helper;
 
 use Closure;
 

@@ -86,3 +86,17 @@ Include the JS engine:
 — Maintained by [Dave Conco](https://github.com/dconco)
 
 ---
+
+# v1.1.0
+
+* Added file import `phpSPA\Component\import()` function for importing files (images) to html. See: [File Import Utility](https://phpspa.readthedocs.io/en/latest/v1.1/1-file-import-utility)
+
+* Added `map()` method to state management, can now map array to html elements, `$stateItems->map(fn (item) => "<li>{$item}</li>")`. See: [Mapping In State Management](https://phpspa.readthedocs.io/en/latest/v1.1/2-mapping-in-state-management)
+
+* Added component to be accessible by html tags, `<Component />`, both inline tags and block tags `<Component></Component`. See: [Using Component Functions By HTML Tags](https://phpspa.readthedocs.io/en/latest/v1.1/3-using-component-functions-by-html-tags)
+
+* Created component function `<Link />`, and made it be under the `phpSPA\Component` namespace. See: [Link Component](https://phpspa.readthedocs.io/en/latest/v1.1/4-link-component)
+
+## Deprecated
+
+* Using `<Link />` tag without importing the function namespace is deprecated. You must import the namespace in other to use the component function, `use function phpSPA\Component\Link;` See: [Deprecated Link Component](https://phpspa.readthedocs.io/en/latest/v1.1/4-link-component/#deprecated)

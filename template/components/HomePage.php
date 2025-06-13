@@ -1,9 +1,8 @@
 <?php
 
 use phpSPA\Component;
-use phpSPA\Http\Request;
 
-use function phpSPA\Component\Link;
+use phpSPA\Http\Request;
 use function phpSPA\Component\import;
 use function phpSPA\Component\createState;
 
@@ -20,7 +19,7 @@ return (new Component(function (Request $request): string
          <p>Welcome to my PHP SPA project! @$name</p>
          <br />
          <button onclick="phpspa.setState('counter', $counter + 1)">Counter: $counter</button>
-         <Link to="./login#hashID">GO TO LOGIN</Link>
+         <Link to="./login#hashID" id="link-elem">GO TO LOGIN</Link>
       </div>
    HTML;
 }))

@@ -1,6 +1,6 @@
 <?php
 
-namespace phpSPA\Helper;
+namespace phpSPA\Core\Helper;
 use ReflectionFunction;
 
 /**
@@ -22,6 +22,7 @@ class CallableInspector
    public static function hasParam (callable $func, string $paramName): bool
    {
       $ref = new ReflectionFunction($func);
+
       foreach ($ref->getParameters() as $param)
       {
          if ($param->getName() === $paramName)

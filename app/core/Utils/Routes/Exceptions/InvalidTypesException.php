@@ -1,9 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace phpSPA\Utils\Routes\Exceptions;
+namespace phpSPA\Core\Utils\Routes\Exceptions;
 
 use Closure;
-use phpSPA\App;
 use phpSPA\Exceptions\AppException;
 
 class InvalidTypesException extends AppException
@@ -96,24 +95,24 @@ class InvalidTypesException extends AppException
    {
       http_response_code($code);
 
-      if (App::$handleInvalidParameterType)
+      // if (App::$handleInvalidParameterType)
+      // {
+      //    print_r((App::$handleInvalidParameterType)($typeGotten));
+      //    exit();
+      // }
+      // else
+      // {
+      if (!$message)
       {
-         print_r((App::$handleInvalidParameterType)($typeGotten));
-         exit();
+         $requested = implode(', ', $typeRequested);
+         return new self(
+          "Invalid request parameter type. {{$requested}} requested, but got {{$typeGotten}}",
+         );
       }
       else
       {
-         if (!$message)
-         {
-            $requested = implode(', ', $typeRequested);
-            return new self(
-             "Invalid request parameter type. {{$requested}} requested, but got {{$typeGotten}}",
-            );
-         }
-         else
-         {
-            return new self($message);
-         }
+         return new self($message);
       }
+      // }
    }
 }

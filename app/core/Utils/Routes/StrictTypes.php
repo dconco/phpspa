@@ -1,9 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace phpSPA\Utils\Routes;
+namespace phpSPA\Core\Utils\Routes;
 
-use phpSPA\Exceptions\AppException;
-use phpSPA\Utils\Routes\Exceptions\InvalidTypesException;
+use phpSPA\Core\Utils\Routes\Exceptions\InvalidTypesException;
 
 /**
  * Trait StrictTypes
@@ -66,11 +65,11 @@ trait StrictTypes
 		{
 			return match ($typeOfNeedle)
 			{
-				  'INT' => (int) $needle,
-				  'BOOL' => filter_var($needle, FILTER_VALIDATE_BOOLEAN),
-				  'FLOAT' => (float) $needle,
-				  'ARRAY' => json_decode($needle, true),
-				  default => $needle,
+					'INT' => (int) $needle,
+					'BOOL' => filter_var($needle, FILTER_VALIDATE_BOOLEAN),
+					'FLOAT' => (float) $needle,
+					'ARRAY' => json_decode($needle, true),
+					default => $needle,
 			};
 		}
 
@@ -148,72 +147,72 @@ trait StrictTypes
 		 * MATCH INT<MIN, MAX>
 		 */
 		if (preg_match('/INT<(\d+)(?:,\s*(\d+))?>/', $haystack, $matches) && $typeOfNeedle === 'INT')
-		{
-			$min = (int) $matches[1];
-			$max = (int) $matches[2] ?? null;
-			$needle = (int) $needle;
+{
+$min = (int) $matches[1];
+$max = (int) $matches[2] ?? null;
+$needle = (int) $needle;
 
-			if ((!$max && $min < $needle) || $max && ($needle < $min || $needle > $max))
-			{
-				return false;
-				// $requested = !$max ? "INT min ($min)" : "INT min ($min), max($max)";
-				// throw new AppException("Invalid request parameter type. {{$requested}} requested, but got {{$needle}}");
-			}
-			return true;
-		}
+if ((!$max && $min < $needle) || $max && ($needle < $min || $needle> $max))
+   {
+   return false;
+   // $requested = !$max ? "INT min ($min)" : "INT min ($min), max($max)";
+   // throw new AppException("Invalid request parameter type. {{$requested}} requested, but got {{$needle}}");
+   }
+   return true;
+   }
 
-		InvalidTypesException::catchInvalidStrictTypes($haystack);
-		return false;
-	}
+   InvalidTypesException::catchInvalidStrictTypes($haystack);
+   return false;
+   }
 
 
-	/**
-	 * Determines the type of a given string.
-	 *
-	 * This method analyzes the input string and returns a string representing its type.
-	 * The possible return values are:
-	 * - 'FLOAT' if the string represents a floating-point number.
-	 * - 'INT' if the string represents an integer.
-	 * - 'BOOL' if the string represents a boolean value ('true' or 'false').
-	 * - 'ALPHA' if the string contains only alphabetic characters.
-	 * - 'ALNUM' if the string contains only alphanumeric characters.
-	 * - 'JSON' if the string is a valid JSON object.
-	 * - 'ARRAY' if the string is a valid JSON array.
-	 * - 'STRING' if the string does not match any of the above types.
-	 *
-	 * @param string $string The input string to be analyzed.
-	 * @return string The type of the input string.
-	 */
-	protected static function typeOfString (string $string): string
-	{
-		$decoded = json_decode($string, false);
+   /**
+   * Determines the type of a given string.
+   *
+   * This method analyzes the input string and returns a string representing its type.
+   * The possible return values are:
+   * - 'FLOAT' if the string represents a floating-point number.
+   * - 'INT' if the string represents an integer.
+   * - 'BOOL' if the string represents a boolean value ('true' or 'false').
+   * - 'ALPHA' if the string contains only alphabetic characters.
+   * - 'ALNUM' if the string contains only alphanumeric characters.
+   * - 'JSON' if the string is a valid JSON object.
+   * - 'ARRAY' if the string is a valid JSON array.
+   * - 'STRING' if the string does not match any of the above types.
+   *
+   * @param string $string The input string to be analyzed.
+   * @return string The type of the input string.
+   */
+   protected static function typeOfString (string $string): string
+   {
+   $decoded = json_decode($string, false);
 
-		if (is_numeric($string))
-		{
-			return strpos($string, '.') !== false ? 'FLOAT' : 'INT';
-		}
-		elseif (filter_var($string, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) !== null)
-		{
-			return 'BOOL';
-		}
-		elseif (ctype_alpha($string))
-		{
-			return 'ALPHA';
-		}
-		elseif (ctype_alnum($string))
-		{
-			return 'ALNUM';
-		}
-		elseif (json_last_error() === JSON_ERROR_NONE)
-		{
-			return match (gettype($decoded))
-			{
-				  'object' => 'JSON',
-				  'array' => 'ARRAY',
-				  default => 'STRING',
-			};
-		}
+   if (is_numeric($string))
+   {
+   return strpos($string, '.') !== false ? 'FLOAT' : 'INT';
+   }
+   elseif (filter_var($string, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) !== null)
+   {
+   return 'BOOL';
+   }
+   elseif (ctype_alpha($string))
+   {
+   return 'ALPHA';
+   }
+   elseif (ctype_alnum($string))
+   {
+   return 'ALNUM';
+   }
+   elseif (json_last_error() === JSON_ERROR_NONE)
+   {
+   return match (gettype($decoded))
+   {
+   'object' => 'JSON',
+   'array' => 'ARRAY',
+   default => 'STRING',
+   };
+   }
 
-		return 'STRING';
-	}
-}
+   return 'STRING';
+   }
+   }

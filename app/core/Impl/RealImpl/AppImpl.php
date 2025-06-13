@@ -1,12 +1,13 @@
 <?php
 
-namespace phpSPA\Impl\RealImpl;
+namespace phpSPA\Core\Impl\RealImpl;
 
 use phpSPA\Component;
 use phpSPA\Http\Request;
-use phpSPA\Router\MapRoute;
-use phpSPA\Helper\CallableInspector;
-use phpSPA\Helper\ComponentTagFormatter;
+use phpSPA\Core\Router\MapRoute;
+use phpSPA\Core\Helper\CallableInspector;
+use phpSPA\Core\Utils\Formatter\LinkTagFormatter;
+use phpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 
 abstract class AppImpl
 {

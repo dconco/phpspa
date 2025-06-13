@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace phpSPA\Router;
+namespace phpSPA\Core\Router;
 
 use phpSPA\App;
 use phpSPA\Interfaces\MapInterface;
@@ -16,8 +16,8 @@ use phpSPA\Interfaces\MapInterface;
  */
 class MapRoute implements MapInterface
 {
-   use \phpSPA\Utils\Validate;
-   use \phpSPA\Utils\Routes\StrictTypes;
+   use \phpSPA\Core\Utils\Validate;
+   use \phpSPA\Core\Utils\Routes\StrictTypes;
 
    /**
     * @var string|array $route The route(s) to be mapped.

@@ -1,6 +1,6 @@
 <?php
 
-namespace phpSPA\Utils\Formatter;
+namespace phpSPA\Core\Utils\Formatter;
 
 abstract class FormatBracketInterpolation
 {

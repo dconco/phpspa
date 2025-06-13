@@ -14,14 +14,15 @@
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "phpSPA\\": "app/core/",
+            "phpSPA\\": "app/client/",
+            "phpSPA\\Core\\": "app/core/",
             "phpSPA\\Interfaces\\": "app/interfaces/",
             "phpSPA\\Exceptions\\": "app/exceptions/"
         },
         "files": [
-            "app/core/Component/createState.php",
-            "app/core/Component/import.php",
-            "app/core/Component/Link.php"
+            "app/client/Component/import.php",
+            "app/client/Component/createState.php",
+            "app/client/Component/HTMLAttrInArrayToString.php"
         ]
     },
     "authors": [

@@ -2,7 +2,7 @@
 
 namespace phpSPA\Component;
 
-use phpSPA\Helper\StateManagement;
+use phpSPA\Core\Helper\StateManagement;
 
 function createState (string $stateKey, $default): StateManagement
 {

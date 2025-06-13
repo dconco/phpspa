@@ -2,7 +2,8 @@
 
 namespace phpSPA\Component;
 
-use phpSPA\Utils\ImportedFile;
+use phpSPA\Core\Helper\FileHandler;
+use phpSPA\Core\Utils\ImportedFile;
 use phpSPA\Exceptions\AppException;
 
 /**

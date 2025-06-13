@@ -13,8 +13,8 @@ use stdClass;
  */
 class Request
 {
-   use \phpSPA\Utils\Validate;
-   use \phpSPA\Http\Auth\Authentication;
+   use \phpSPA\Core\Utils\Validate;
+   use \phpSPA\Core\Auth\Authentication;
 
    /**
     * Invokes the request object to retrieve a parameter value by key.

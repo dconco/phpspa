@@ -9,10 +9,10 @@ namespace phpSPA;
  * essential functionality and structure for all components.
  *
  * @package phpSPA\Component
- * @extends \phpSPA\Impl\RealImpl\ComponentImpl
+ * @extends \phpSPA\Core\Impl\RealImpl\ComponentImpl
  * @implements \phpSPA\Interfaces\IComponent
  */
-class Component extends \phpSPA\Impl\RealImpl\ComponentImpl implements \phpSPA\Interfaces\IComponent
+class Component extends \phpSPA\Core\Impl\RealImpl\ComponentImpl implements \phpSPA\Interfaces\IComponent
 {
    /**
     * Constructor for the Component class.
