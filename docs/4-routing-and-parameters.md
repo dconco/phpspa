@@ -151,12 +151,14 @@ When calling a component from inside another component, you need default values:
     ```php title="Dashboard Using Nested Components"
     <?php
     function Dashboard(array $path = [], Request $request = null) {
+        $UserCard = 'UserCard'; // function name passed as variable value
+        
         return <<<HTML
             <div class="dashboard">
                 <h1>Admin Dashboard</h1>
                 <div class="widgets">
-                    {{ UserCard() }}
-                    {{ UserCard() }}
+                    {$UserCard()} <!-- Then Call the variable -->
+                    {$UserCard()}
                 </div>
             </div>
         HTML;

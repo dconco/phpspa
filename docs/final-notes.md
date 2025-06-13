@@ -22,6 +22,18 @@ $component->route("/path")        // Route binding
           ->meta("description", "My page"); // Meta tags
 ```
 
+* Components are regular PHP functions — no special syntax or templating engines.
+* Components can be reused or nested using:
+
+  ```php
+  <?php
+  $MyComponent = 'MyComponent'; // passed in function name as a variable to use
+
+  return <<<HTML
+     <div>{$MyComponent()}</div>
+  HTML;
+  ```
+
 ---
 
 ## 🛠️ Essential Patterns

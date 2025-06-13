@@ -295,6 +295,15 @@ Your support helps keep the project alive and growing! ❤️
 
 ---
 
+## 📘 Docs & Links
+
+- GitHub: [dconco/phpspa](https://github.com/dconco/phpspa)
+- JS Engine: [dconco/phpspa-js](https://github.com/dconco/phpspa-js)
+- Website: [https://phpspa.readthedocs.io](https://phpspa.readthedocs.io)
+- License: MIT
+
+---
+
 ## 📘 License
 
 MIT License © [dconco](https://github.com/dconco)

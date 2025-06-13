@@ -7,8 +7,6 @@ include_once 'HashComp.php';
 
 function Login (): string
 {
-   // $hashComp = HashComp(children: "This is an Hashed element");
-
    $loginDetails = createState('login', [
       'username' => null,
       'password' => null
@@ -78,7 +76,6 @@ function Login (): string
       </script>
    HTML;
 }
-
 
 return (new Component('Login'))
    ->method('POST|GET')

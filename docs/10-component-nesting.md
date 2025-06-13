@@ -14,9 +14,11 @@ function Sidebar() {
 }
 
 function Dashboard(array $path = [], $request = null) {
+    $Sidebar = 'Sidebar'; // function name passed to variable value
+
     return <<<HTML
         <div>
-            {{ Sidebar() }}
+            {$Sidebar()} <!-- Then Call the variable -->
             <main>Dashboard main content</main>
         </div>
     HTML;
@@ -37,11 +39,15 @@ function Dashboard(array $path = [], $request = null) {
 use phpSPA\Http\Request;
 
 function Wrapper($path = [], Request $request = new Request()) {
+    $Header = 'Header'; // function name passed to variable value
+    $Footer = 'Footer';
+    $MainContent = 'MainContent';
+
     return <<<HTML
         <div>
-           {{ Header() }}
-            <section>{MainContent($path, $request)}</section>
-           {{ Footer() }}
+           {$Header()}
+            <section>{$MainContent($path, $request)}</section>
+           {$Footer()}
         </div>
     HTML;
 }
