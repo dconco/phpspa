@@ -12,7 +12,18 @@ use phpSPA\Interfaces\MapInterface;
  * It extends the Controller class and implements the MapInterface interface.
  *
  * @author dconco <info@dconco.dev>
- * @package phpSPA\Router
+ * @copyright 2025 Dave Conco
+ * @package phpSPA\Core\Router
+ * @license MIT
+ * @var string|array $route
+ * @var string $request_uri
+ * @var array $method
+ * @var bool $caseSensitive
+ * @use \phpSPA\Core\Utils\Validate
+ * @use \phpSPA\Core\Utils\Routes\StrictTypes
+ * @implements MapInterface
+ * @package phpSPA\Core\Router
+ * @static
  */
 class MapRoute implements MapInterface
 {
@@ -46,6 +57,7 @@ class MapRoute implements MapInterface
     *
     * @param string $method The HTTP method(s) to match, separated by '|'.
     * @param string|array $route The route pattern(s) to match.
+    * @param bool $caseSensitive Set if routes match should be case-sensitive
     * @return bool|array Returns false if no match is found, or an array with the matched method, route, and parameters if a match is found.
     *
     * The function performs the following steps:

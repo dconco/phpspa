@@ -10,6 +10,11 @@ use phpSPA\Exceptions\AppException;
  * Embeds file contents as base64 data URI
  * 
  * @param string $file Path to file to import
+ * @author dconco <concodave@gmail.com>
+ * @copyright 2025 Dave Conco
+ * @see https://phpspa.readthedocs.io/en/latest/v1.1/1-file-import-utility
+ * @since v1.1.0
+ * @package phpSPA\Component
  * @return string Data URI (format: data:<mime-type>;base64,<content>)
  * @throws AppException If file doesn't exist or can't be read
  */

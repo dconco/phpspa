@@ -10,6 +10,13 @@ use stdClass;
  *
  * This class is typically used to encapsulate all information about an incoming
  * HTTP request, such as GET, POST, and server variables.
+ * 
+ * @category phpSPA\Http
+ * @author dconco <concodave@gmail.com>
+ * @copyright 2025 Dave Conco
+ * @see https://phpspa.readthedocs.io/en/latest/20-request-handling
+ * @use \phpSPA\Core\Utils\Validate
+ * @use \phpSPA\Core\Auth\Authentication
  */
 class Request
 {

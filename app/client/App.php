@@ -9,6 +9,11 @@ namespace phpSPA;
  * Handles layout composition, component mounting, and rendering flow.
  *
  * @package phpSPA
+ * @author dconco <concodave@gmail.com>
+ * @copyright 2025 Dave Conco
+ * @license MIT
+ * @see https://phpspa.readthedocs.io/en/latest/1-introduction
+ * @link https://phpspa.readthedocs.io/en/latest/1-introduction
  * @extends \phpSPA\Core\Impl\RealImpl\AppImpl
  * @implements \phpSPA\Interfaces\phpSpaInterface
  */

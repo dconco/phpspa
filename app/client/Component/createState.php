@@ -2,18 +2,19 @@
 
 namespace phpSPA\Component;
 
-use phpSPA\Core\Helper\StateManagement;
+use phpSPA\Core\Helper\StateManager;
 
 /**
- * Summary of phpSPA\Component\createState
- * 
  * @param string $stateKey
  * @param mixed $default
  * @see https://phpspa.readthedocs.io/en/latest/17-state-management.md
- * @return StateManagement
+ * @author dconco <concodave@gmail.com>
+ * @copyright 2025 Dave Conco
+ * @package phpSPA\Component
+ * @return StateManager
  */
-function createState (string $stateKey, $default): StateManagement
+function createState (string $stateKey, $default): StateManager
 {
    if (session_status() < 2) session_start();
-   return new StateManagement($stateKey, $default);
+   return new StateManager($stateKey, $default);
 }

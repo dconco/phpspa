@@ -6,9 +6,21 @@ use phpSPA\Component;
 use phpSPA\Http\Request;
 use phpSPA\Core\Router\MapRoute;
 use phpSPA\Core\Helper\CallableInspector;
-use phpSPA\Core\Utils\Formatter\LinkTagFormatter;
 use phpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 
+/**
+ * @author dconco <concodave@gmail.com>
+ * @copyright 2025 Dave Conco
+ * @license MIT
+ * @var callable $layout
+ * @var string $defaultTargetID
+ * @var array $components
+ * @var bool $defaultCaseSensitive
+ * @staticvar string $request_uri
+ * @var mixed $renderedData
+ * @use ComponentTagFormatter
+ * @abstract
+ */
 abstract class AppImpl
 {
    use ComponentTagFormatter;
@@ -205,6 +217,7 @@ abstract class AppImpl
          {
             $info = [ 'content' => $componentOutput, 'title' => $title, 'targetID' => $targetID ];
             print_r(json_encode($info));
+            exit;
          }
          else
          {
@@ -222,10 +235,10 @@ abstract class AppImpl
             }
 
             $this->renderedData = str_replace('__CONTENT__', "\n<div data-phpspa-target>" . $componentOutput . "</div>\n", $layoutOutput);
-            print_r($this->renderedData);
-         }
 
-         exit;
+            print_r($this->renderedData);
+            exit;
+         }
       }
    }
 }

@@ -4,6 +4,11 @@ namespace phpSPA\Core\Helper;
 
 use phpSPA\Exceptions\AppException;
 
+/**
+ * @author dconco <concodave@gmail.com>
+ * @copyright 2025 Dave Conco
+ * @package phpSPA\Core\Helper
+ */
 class FileHandler
 {
    /**
@@ -43,29 +48,29 @@ class FileHandler
          {
             return match ($file_ext)
             {
-                        'css' => 'text/css',
-                        'txt' => 'text/plain',
-                        'csv' => 'text/csv',
-                        'htm' => 'text/htm',
-                        'html' => 'text/html',
-                        'php' => 'text/html',
-                        'xml' => 'text/xml',
-                        'js' => 'application/javascript',
-                        'pdf' => 'application/pdf',
-                        'doc' => 'application/msword',
-                        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                        'xls' => 'application/vnd.ms-excel',
-                        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                        'json' => 'application/json',
-                        'md' => 'text/markdown',
-                        'ppt' => 'application/mspowerpoint',
-                        'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-                        'swf' => 'application/x-shockwave-flash',
-                        'ai' => 'application/postscript',
-                        'odt' => 'application/vnd.oasis.opendocument.text',
-                        'png' => 'image/png',
-                        'jpg' => 'image/jpeg',
-                        default => 'text/plain',
+                           'css' => 'text/css',
+                           'txt' => 'text/plain',
+                           'csv' => 'text/csv',
+                           'htm' => 'text/htm',
+                           'html' => 'text/html',
+                           'php' => 'text/html',
+                           'xml' => 'text/xml',
+                           'js' => 'application/javascript',
+                           'pdf' => 'application/pdf',
+                           'doc' => 'application/msword',
+                           'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                           'xls' => 'application/vnd.ms-excel',
+                           'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                           'json' => 'application/json',
+                           'md' => 'text/markdown',
+                           'ppt' => 'application/mspowerpoint',
+                           'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                           'swf' => 'application/x-shockwave-flash',
+                           'ai' => 'application/postscript',
+                           'odt' => 'application/vnd.oasis.opendocument.text',
+                           'png' => 'image/png',
+                           'jpg' => 'image/jpeg',
+                           default => 'text/plain',
             };
          }
          else

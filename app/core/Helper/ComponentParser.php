@@ -2,6 +2,13 @@
 
 namespace phpSPA\Core\Helper;
 
+/**
+ * @author dconco <concodave@gmail.com>
+ * @copyright 2025 Dave Conco
+ * @package phpSPA\Core\Helper
+ * @var string|array $attributes
+ * @static
+ */
 trait ComponentParser
 {
    protected static string|array $attributes;

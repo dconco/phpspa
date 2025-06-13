@@ -18,7 +18,7 @@ function Login (): string
 
    $buttonHtml = "<button id=\"btn\" $buttonDisabled>$loadingText</button>";
 
-   $username = $loginDetails()['username'];
+   $username = "$loginDetails"['username'];
    $password = $loginDetails()['password'];
 
    if (!empty($username) && !empty($password))
@@ -27,9 +27,9 @@ function Login (): string
       if ($username !== 'admin' && $password !== 'admin')
       {
          http_response_code(401);
-         return 'Incorrect Login Details';
+         return "Incorrect Login Details: <br>Username: $username<br>Password: $password";
       }
-      return 'Login Successful';
+      return "Login Successful:<br>Username: $username<br>Password: $password";
    }
 
    return <<<HTML

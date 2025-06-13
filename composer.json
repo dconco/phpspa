@@ -20,9 +20,9 @@
             "phpSPA\\Exceptions\\": "app/exceptions/"
         },
         "files": [
-            "app/client/Component/Link.php",
             "app/client/Component/import.php",
             "app/client/Component/createState.php",
+            "app/core/Impl/Const/StateConstant.php",
             "app/client/Component/HTMLAttrInArrayToString.php"
         ]
     },

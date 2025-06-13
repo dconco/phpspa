@@ -2,6 +2,20 @@
 
 namespace phpSPA\Core\Impl\RealImpl;
 
+/**
+ * @author dconco <concodave@gmail.com>
+ * @copyright 2025 Dave Conco
+ * @license MIT
+ * @var callable $component
+ * @var ?string $title
+ * @var string $method GET|VIEW
+ * @var string $route
+ * @var ?string $targetID
+ * @var ?string $caseSensitive
+ * @var callable[] $scripts
+ * @var callable[] $stylesheets
+ * @abstract
+ */
 abstract class ComponentImpl
 {
    /**

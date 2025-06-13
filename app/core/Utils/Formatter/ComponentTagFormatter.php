@@ -5,6 +5,13 @@ namespace phpSPA\Core\Utils\Formatter;
 use phpSPA\Exceptions\AppException;
 use phpSPA\Core\Helper\CallableInspector;
 
+/**
+ * @author dconco <concodave@gmail.com>
+ * @copyright 2025 Dave Conco
+ * @license MIT
+ * @use \phpSPA\Core\Helper\ComponentParser
+ * @static
+ */
 trait ComponentTagFormatter
 {
    use \phpSPA\Core\Helper\ComponentParser;
@@ -24,7 +31,12 @@ trait ComponentTagFormatter
          // var_dump($matches);
          $matches = array_map('trim', $matches);
 
+         /**
+          * @code
+          * @deprecated This code will soon be removed
+          */
          if ($matches[1] === 'Link') $matches[1] = 'phpSPA.Component.Link';
+         /** @endcode */
 
          if (strpos($matches[1], '.'))
          {

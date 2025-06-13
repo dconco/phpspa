@@ -4,17 +4,23 @@ namespace phpSPA\Core\Helper;
 
 use Closure;
 
+use const phpSPA\Core\Impl\Const\STATE_HANDLE;
+use const phpSPA\Core\Impl\Const\REGISTER_STATE_HANDLE;
+
 /**
- * Class StateManagement
+ * Class StateManager
  *
  * Provides methods and utilities for managing application state.
  * This class is responsible for handling state transitions, storing state data,
  * and providing access to state information throughout the application lifecycle.
  *
- * @package phpSPA\Helper
+ * @package phpSPA\Core\Helper
  * @author dconco <concodave@gmail.com>
+ * @copyright 2025 Dave Conco
+ * @var string $stateKey
+ * @var mixed $value
  */
-class StateManagement
+class StateManager
 {
    private string $stateKey;
    private $value;
@@ -27,15 +33,15 @@ class StateManagement
     */
    public function __construct (string $stateKey, $default)
    {
-      $this->value = $_SESSION["__phpspa_state_{$stateKey}"] ?? $default;
+      $this->value = $_SESSION[STATE_HANDLE . $stateKey] ?? $default;
       $this->stateKey = $stateKey;
-      $_SESSION["__phpspa_state_{$stateKey}"] = $_SESSION["__phpspa_state_{$stateKey}"] ?? $default;
+      $_SESSION[STATE_HANDLE . $stateKey] = $_SESSION[STATE_HANDLE . $stateKey] ?? $default;
 
-      $reg = unserialize($_SESSION["__registered_phpspa_states"] ?? serialize([]));
+      $reg = unserialize($_SESSION[REGISTER_STATE_HANDLE] ?? serialize([]));
       if (!in_array($stateKey, $reg))
       {
          array_push($reg, $stateKey);
-         $_SESSION["__registered_phpspa_states"] = serialize($reg);
+         $_SESSION[REGISTER_STATE_HANDLE] = serialize($reg);
       }
    }
 
@@ -49,10 +55,10 @@ class StateManagement
     */
    public function __invoke ($value = null)
    {
-      if (!$value) return $_SESSION["__phpspa_state_{$this->stateKey}"];
+      if (!$value) return $_SESSION[STATE_HANDLE . $this->stateKey];
 
       $this->value = $value;
-      $_SESSION["__phpspa_state_{$this->stateKey}"] = $value;
+      $_SESSION[STATE_HANDLE . $this->stateKey] = $value;
    }
 
    /**
@@ -62,7 +68,7 @@ class StateManagement
     */
    public function __tostring ()
    {
-      $value = $_SESSION["__phpspa_state_{$this->stateKey}"] ?? $this->value;
+      $value = $_SESSION[STATE_HANDLE . $this->stateKey] ?? $this->value;
       return is_array($value) ? json_encode($value) : $value;
    }
 
@@ -74,7 +80,7 @@ class StateManagement
     */
    public function map (Closure $closure)
    {
-      $value = $_SESSION["__phpspa_state_{$this->stateKey}"] ?? $this->value;
+      $value = $_SESSION[STATE_HANDLE . $this->stateKey] ?? $this->value;
 
       if (is_array($value))
       {
