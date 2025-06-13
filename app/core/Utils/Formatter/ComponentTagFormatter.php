@@ -24,6 +24,8 @@ trait ComponentTagFormatter
          // var_dump($matches);
          $matches = array_map('trim', $matches);
 
+         if ($matches[1] === 'Link') $matches[1] = 'phpSPA.Component.Link';
+
          if (strpos($matches[1], '.'))
          {
             $matches[1] = str_replace('.', '\\', $matches[1]);

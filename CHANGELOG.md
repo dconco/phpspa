@@ -99,4 +99,4 @@ Include the JS engine:
 
 ## Deprecated
 
-* Using `<Link />` tag without importing the function namespace is deprecated. You must import the namespace in other to use the component function, `use function phpSPA\Component\Link;` See: [Deprecated Link Component](https://phpspa.readthedocs.io/en/latest/v1.1/4-link-component/#deprecated)
+* Using HTML `<Link />` tag without the function namespace is deprecated. You must use the namespace in other to use the component function, `<PhpSPA.Component.Link />` See: [Deprecated HTML Link](https://phpspa.readthedocs.io/en/latest/v1.1/4-link-component/#deprecated)
