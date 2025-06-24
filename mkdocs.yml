@@ -88,7 +88,7 @@ nav:
         - Request Handling: 20-request-handling.md
    - Final Notes: final-notes.md
    - New Version (v1.1.0):
-        - Introduction to v1.1: ./v1.1/index.md
+        - Introduction: ./v1.1/index.md
         - File Import Utility: ./v1.1/1-file-import-utility.md
         - State Management - map(): ./v1.1/2-mapping-in-state-management.md
         - Using Component Functions via HTML Tags: ./v1.1/3-using-component-functions-by-html-tags.md
