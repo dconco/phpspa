@@ -5,7 +5,7 @@
 Client-side navigation component for SPA transitions:
 
 ```html
-<Navigate to="/path" state="push" />
+<Navigate path="/path" state="push" />
 ```
 
 ## Basic Usage
@@ -13,20 +13,20 @@ Client-side navigation component for SPA transitions:
 ### Push State (Default)
 
 ```html
-<Navigate to="/dashboard" />
+<Navigate path="/dashboard" />
 ```
 
 ### Replace State
 
 ```html
-<Navigate to="/login" state="replace" />
+<Navigate path="/login" state="replace" />
 ```
 
 ## Component Attributes
 
 | Attribute | Type   | Default  | Description                             |
 | --------- | ------ | -------- | --------------------------------------- |
-| `to`      | string | -        | **Required** target path                |
+| `path`    | string | -        | **Required** target path                |
 | `state`   | string | `"push"` | Navigation behavior (`push`, `replace`) |
 
 ## State Options
@@ -43,7 +43,7 @@ Client-side navigation component for SPA transitions:
 ```html
 <form>
   <!-- form fields -->
-  <Navigate to="/thank-you" state="replace" />
+  <Navigate path="/thank-you" state="replace" />
 </form>
 ```
 
@@ -51,9 +51,9 @@ Client-side navigation component for SPA transitions:
 
 ```html
 <?php if ($authenticated): ?>
-  <Navigate to="/dashboard" />
+  <Navigate path="/dashboard" />
 <?php else: ?>
-  <Navigate to="/login" state="replace" />
+  <Navigate path="/login" state="replace" />
 <?php endif; ?>
 ```
 
@@ -64,12 +64,12 @@ Client-side navigation component for SPA transitions:
    ```html
    <!-- Good: At interaction points -->
    <button onclick="submitForm()">
-     <Navigate to="/next" state="replace" />
+     <Navigate path="/next" state="replace" />
    </button>
 
    <!-- Bad: Random placement -->
    <div>
-     <Navigate to="/unexpected" /> <!-- Might trigger accidentally -->
+     <Navigate path="/unexpected" /> <!-- Might trigger accidentally -->
    </div>
    ```
 
@@ -80,8 +80,8 @@ Client-side navigation component for SPA transitions:
 3. **Combine with Links**
 
    ```html
-   <Link to="/cart">
-     <Navigate to="/cart-sidebar" state="replace" />
+   <Link path="/cart">
+     <Navigate path="/cart-sidebar" state="replace" />
      View Cart
    </Link>
    ```

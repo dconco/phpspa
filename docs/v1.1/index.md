@@ -13,7 +13,7 @@
   → [Documentation](./5-link-component.md)
 
 - **Navigation Component**  
-  `<Navigate to="/path" state="push" />` for SPA routing  
+  `<Navigate path="/path" state="push" />` for SPA routing  
   → [Documentation](./8-navigate-component.md)
 
 ### Utilities
