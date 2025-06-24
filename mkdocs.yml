@@ -87,7 +87,16 @@ nav:
         - Handling Loading States: 19-handling-loading-states.md
         - Request Handling: 20-request-handling.md
    - Final Notes: final-notes.md
-   - New Version (v1.1.0): ./v1.1/index.md
+   - New Version (v1.1.0):
+        - Introduction to v1.1: ./v1.1/index.md
+        - File Import Utility: ./v1.1/1-file-import-utility.md
+        - State Management - map(): ./v1.1/2-mapping-in-state-management.md
+        - Using Component Functions via HTML Tags: ./v1.1/3-using-component-functions-by-html-tags.md
+        - Component Basics: ./v1.1/4-component-basics.md
+        - Link Component: ./v1.1/5-link-component.md
+        - HTML Attribute Array to String Conversion: ./v1.1/6-html-attribute-array-to-string-conversion.md
+        - Redirect Function: ./v1.1/7-redirect-function.md
+        - Navigate Component: ./v1.1/8-navigate-component.md
 
 # Plugins
 plugins:
