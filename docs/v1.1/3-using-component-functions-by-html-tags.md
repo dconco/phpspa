@@ -50,11 +50,11 @@ Components can now be accessed directly through HTML-style tags in templates:
 
 ## Conversion Rules
 
-| HTML Attribute   | PHP Equivalent               |
-| ---------------- | ---------------------------- |
-| `name="value"`   | `'name' => 'value'`          |
-| `:items="$data"` | `'items' => $data` (raw PHP) |
-| `slot-content`   | Becomes children elements    |
+| HTML Attribute  | PHP Equivalent               |
+| --------------- | ---------------------------- |
+| `name="value"`  | `'name' => 'value'`          |
+| `items="$data"` | `'items' => $data` (raw PHP) |
+| `slot-content`  | Becomes children elements    |
 
 ## Examples
 
