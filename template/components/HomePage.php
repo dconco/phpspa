@@ -18,10 +18,14 @@ return (new Component(function (Request $request): string
          <img src="{$icon}" />
          <p>Welcome to my PHP SPA project! @$name</p>
          <br />
-         <button onclick="phpspa.setState('counter', $counter + 1)">Counter: $counter</button>
+         <button onclick="setState('counter', $counter + 1)">Counter: $counter</button>
          <Link to="./login#hashID" id="link-elem">GO TO LOGIN</Link>
       </div>
    HTML;
 }))
    ->title('Home Page')
-   ->route('/phpspa/template');
+   ->route('/phpspa/template')
+
+   ->script(fn () => <<<JS
+         console.log('Script Mounted');
+      JS);

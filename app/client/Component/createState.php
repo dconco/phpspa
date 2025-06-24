@@ -15,6 +15,11 @@ use phpSPA\Core\Helper\StateManager;
  */
 function createState (string $stateKey, $default): StateManager
 {
-   if (session_status() < 2) session_start();
+   if (session_status() < 2) {
+      if (session_status() == PHP_SESSION_ACTIVE) {
+         session_destroy();
+      }
+      session_start();
+   }
    return new StateManager($stateKey, $default);
 }

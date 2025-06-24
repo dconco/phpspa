@@ -139,7 +139,12 @@ abstract class AppImpl
          }
          else
          {
-            if (session_status() < 2) session_start();
+            if (session_status() < 2) {
+               if (session_status() == PHP_SESSION_ACTIVE) {
+                  session_destroy();
+               }
+               session_start();
+            }
             $reg = unserialize($_SESSION["__registered_phpspa_states"] ?? serialize([]));
             foreach ($reg as $r)
             {

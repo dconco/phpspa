@@ -43,6 +43,7 @@ class StateManager
          array_push($reg, $stateKey);
          $_SESSION[REGISTER_STATE_HANDLE] = serialize($reg);
       }
+      session_write_close();
    }
 
    /**
@@ -59,6 +60,7 @@ class StateManager
 
       $this->value = $value;
       $_SESSION[STATE_HANDLE . $this->stateKey] = $value;
+      session_write_close();
    }
 
    /**

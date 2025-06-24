@@ -25,7 +25,7 @@
  * - This library assumes server-rendered HTML responses with placeholder target IDs.
  *
  * @author Dave Conco
- * @version 1.1.1
+ * @version 1.1.2
  * @license MIT
  */
 (function () {
@@ -62,6 +62,31 @@
             document.getElementById(state.targetID) ?? document.body;
 
          targetElement.innerHTML = state.content;
+
+         function runInlineScripts(container) {
+            const scripts = container.querySelectorAll(
+               "script[data-type='phpspa/script']"
+            );
+
+            scripts.forEach((script) => {
+               const newScript = document.createElement("script");
+               newScript.textContent = `(function() {\n${script.textContent}\n})();`;
+               document.head.appendChild(newScript).remove();
+            });
+         }
+
+         function runInlineStyles(container) {
+            const styles = container.querySelectorAll(
+               "style[data-type='phpspa/css']"
+            );
+
+            styles.forEach((style) => {
+               const newStyle = document.createElement("style");
+               newStyle.textContent = style.textContent;
+               document.head.appendChild(newStyle).remove();
+            });
+         }
+
          runInlineStyles(targetElement);
          runInlineScripts(targetElement);
       } else {
@@ -78,7 +103,6 @@
  *
  * @class phpspa
  *
- * @property {?Function} onLoad - Optional callback to be executed when the SPA is loaded.
  * @property {Object} _events - Internal event registry for custom event handling.
  *
  * @method navigate
@@ -148,7 +172,14 @@ class phpspa {
             .text()
             .then((res) => {
                try {
-                  let json = JSON.parse(res);
+                  let json;
+
+                  if (res == "" || !res.startsWith("{")) {
+                     json = res ?? "";
+                  } else {
+                     json = JSON.parse(res);
+                  }
+
                   phpspa.emit("load", {
                      route: url,
                      success: true,
@@ -157,13 +188,15 @@ class phpspa {
                   call(json);
                } catch (e) {
                   let data = res ?? "";
+                  console.log("jj");
                   phpspa.emit("load", { route: url, success: false, error: e });
                   call(data);
                }
             })
-            .catch((e) =>
-               phpspa.emit("load", { route: url, success: false, error: e })
-            );
+            .catch((e) => {
+               console.log("ss");
+               phpspa.emit("load", { route: url, success: false, error: e });
+            });
 
          function call(data) {
             if (
@@ -201,6 +234,30 @@ class phpspa {
                scroll({
                   top: hashedElement.offsetTop,
                   left: hashedElement.offsetLeft,
+               });
+            }
+
+            function runInlineScripts(container) {
+               const scripts = container.querySelectorAll(
+                  "script[data-type='phpspa/script']"
+               );
+
+               scripts.forEach((script) => {
+                  const newScript = document.createElement("script");
+                  newScript.textContent = `(function() {\n${script.textContent}\n})();`;
+                  document.head.appendChild(newScript).remove();
+               });
+            }
+
+            function runInlineStyles(container) {
+               const styles = container.querySelectorAll(
+                  "style[data-type='phpspa/css']"
+               );
+
+               styles.forEach((style) => {
+                  const newStyle = document.createElement("style");
+                  newStyle.textContent = style.textContent;
+                  document.head.appendChild(newStyle).remove();
                });
             }
 
@@ -297,6 +354,7 @@ class phpspa {
             method: "PHPSPA_GET",
             body: JSON.stringify({ stateKey, value }),
             mode: "same-origin",
+            redirect: "follow",
             keepalive: true,
          });
 
@@ -343,10 +401,40 @@ class phpspa {
 
             scroll(currentScroll);
 
+            function runInlineScripts(container) {
+               const scripts = container.querySelectorAll(
+                  "script[data-type='phpspa/script']"
+               );
+
+               scripts.forEach((script) => {
+                  const newScript = document.createElement("script");
+                  newScript.textContent = `(function() {\n${script.textContent}\n})();`;
+                  document.head.appendChild(newScript).remove();
+               });
+            }
+
+            function runInlineStyles(container) {
+               const styles = container.querySelectorAll(
+                  "style[data-type='phpspa/css']"
+               );
+
+               styles.forEach((style) => {
+                  const newStyle = document.createElement("style");
+                  newStyle.textContent = style.textContent;
+                  document.head.appendChild(newStyle).remove();
+               });
+            }
+
             runInlineStyles(targetElement);
             runInlineScripts(targetElement);
          }
       });
+   }
+}
+
+if (typeof setState !== "function") {
+   function setState(stateKey, value) {
+      return phpspa.setState(stateKey, value);
    }
 }
 
@@ -355,25 +443,3 @@ class phpspa {
       window.phpspa = phpspa;
    }
 })();
-
-function runInlineScripts(container) {
-   const scripts = container.querySelectorAll(
-      "script[data-type='phpspa/script']"
-   );
-
-   scripts.forEach((script) => {
-      const newScript = document.createElement("script");
-      newScript.textContent = `(function() {\n${script.textContent}\n})();`;
-      document.head.appendChild(newScript).remove();
-   });
-}
-
-function runInlineStyles(container) {
-   const styles = container.querySelectorAll("style[data-type='phpspa/css']");
-
-   styles.forEach((style) => {
-      const newStyle = document.createElement("style");
-      newStyle.textContent = style.textContent;
-      document.head.appendChild(newStyle).remove();
-   });
-}

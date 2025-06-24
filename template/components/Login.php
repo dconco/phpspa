@@ -18,18 +18,22 @@ function Login (): string
 
    $buttonHtml = "<button id=\"btn\" $buttonDisabled>$loadingText</button>";
 
-   $username = "$loginDetails"['username'];
+   $username = $loginDetails()['username'];
    $password = $loginDetails()['password'];
 
    if (!empty($username) && !empty($password))
    {
       sleep(2);
-      if ($username !== 'admin' && $password !== 'admin')
+      if ($username !== 'admin' || $password !== 'admin')
       {
          http_response_code(401);
          return "Incorrect Login Details: <br>Username: $username<br>Password: $password";
       }
-      return "Login Successful:<br>Username: $username<br>Password: $password";
+
+      return <<<HTML
+         Login Successful:<br>Username: $username<br>Password: $password
+         <PhpSPA.Component.Navigate path="dashboard" />
+      HTML;
    }
 
    return <<<HTML
@@ -68,9 +72,9 @@ function Login (): string
             const password = document.getElementById('password').value;
 
             if (username.trim() !== '' && password.trim() !== '') {
-               phpspa.setState('loading', "true")
-                  .then(() => phpspa.setState('login', { username, password }))
-                  .then(() => phpspa.setState('loading', "false"));
+               setState('loading', "true")
+                  .then(() => setState('login', { username, password }))
+                  .then(() => setState('loading', "false"));
             }
          })
       </script>
@@ -81,8 +85,4 @@ return (new Component('Login'))
    ->method('POST|GET')
    ->title('Login Page')
    ->route('/phpspa/template/login')
-   ->caseInsensitive()
-
-   ->script(fn () => <<<JS
-         console.log('Script Mounted');
-      JS);
+   ->caseInsensitive();
