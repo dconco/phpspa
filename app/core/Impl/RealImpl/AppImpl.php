@@ -238,6 +238,7 @@ abstract class AppImpl
                  $layoutOutput,
                );
             }
+            static::format($layoutOutput);
 
             $this->renderedData = str_replace('__CONTENT__', "\n<div data-phpspa-target>" . $componentOutput . "</div>\n", $layoutOutput);
 
