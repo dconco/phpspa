@@ -3,15 +3,17 @@
 namespace phpSPA\Component;
 
 /**
- * @param string $to
- * @param string $children
- * @param string ...$HtmlAttr
+ * Renders a link component for client-side navigation.
+ *
+ * @param string $to The destination URL or route.
+ * @param string $children The inner HTML or text content of the link.
+ * @param string ...$HtmlAttr Additional HTML attributes for the anchor tag.
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @see https://phpspa.readthedocs.io/en/latest/v1.1/4-link-component
  * @since v1.1.0
  * @package phpSPA\Component
- * @return string
+ * @return string The rendered HTML anchor element as a string.
  */
 function Link (string $to, string $children, string ...$HtmlAttr): string
 {

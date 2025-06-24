@@ -14,6 +14,13 @@ return (new Component(function (Request $request): string
    $icon = import(__DIR__ . '/../../site/assets/images/favicon.png');
 
    return <<<HTML
+      <style data-type="phpspa/css">
+         body {
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+         }
+      </style>
+
       <div>
          <img src="{$icon}" />
          <p>Welcome to my PHP SPA project! @$name</p>
