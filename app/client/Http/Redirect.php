@@ -9,6 +9,7 @@ namespace phpSPA\Http;
  *
  * @param string $url The URL to redirect to.
  * @param int $code The HTTP status code for the redirect (e.g., 301, 302).
+ * @package phpSPA\Http
  * @see https://phpspa.readthedocs.io/en/latest/v1.1/6-redirect-funtion.md
  * @return never This function does not return; it terminates script execution.
  */

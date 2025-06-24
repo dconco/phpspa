@@ -87,6 +87,7 @@ nav:
         - Handling Loading States: 19-handling-loading-states.md
         - Request Handling: 20-request-handling.md
    - Final Notes: final-notes.md
+   - New Version (v1.1.0): ./v1.1/index.md
 
 # Plugins
 plugins:

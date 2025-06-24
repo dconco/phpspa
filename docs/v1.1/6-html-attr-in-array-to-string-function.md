@@ -130,5 +130,4 @@ function Alert(array $props = []) {
 
 ## Next
 
-- [Component Basics](/component-basics)
-- [Link Component](/5-link-component)
+- [Redirect Function](./7-redirect-function.md)
