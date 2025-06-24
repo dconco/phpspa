@@ -41,8 +41,8 @@
 - `<Link>` component now requires full namespace:  
 
   ```diff
-  - <Link href="/old">
-  + <PhpSPA.Component.Link to="/new">
+  - <Link to="/old" label="Button" />
+  + <PhpSPA.Component.Link to="/new" children="Button" />
   ```
 
   [Migration Guide](./5-link-component.md#deprecated)
