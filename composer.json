@@ -20,12 +20,13 @@
             "phpSPA\\Exceptions\\": "app/exceptions/"
         },
         "files": [
-            "app/client/Component/import.php",
-            "app/client/Component/Navigate.php",
             "app/client/Component/createState.php",
+            "app/client/Component/HTMLAttrInArrayToString.php",
+            "app/client/Component/import.php",
+            "app/client/Component/Link.php",
+            "app/client/Component/Navigate.php",
             "app/core/Impl/Const/StateConstant.php",
-            "app/client/Http/Redirect.php",
-            "app/client/Component/HTMLAttrInArrayToString.php"
+            "app/client/Http/Redirect.php"
         ]
     },
     "authors": [
