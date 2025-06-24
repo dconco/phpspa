@@ -87,7 +87,7 @@ nav:
         - Handling Loading States: 19-handling-loading-states.md
         - Request Handling: 20-request-handling.md
    - Final Notes: final-notes.md
-   - New Version (v1.1.0):
+   - Latest Version (v1.1.0):
         - Introduction: ./v1.1/index.md
         - File Import Utility: ./v1.1/1-file-import-utility.md
         - State Management - map(): ./v1.1/2-mapping-in-state-management.md
