@@ -171,31 +171,59 @@ class phpspa {
          response
             .text()
             .then((res) => {
-               try {
-                  let json;
+               let data;
 
-                  if (res == "" || !res.startsWith("{")) {
-                     json = res ?? "";
-                  } else {
-                     json = JSON.parse(res);
+               if (res && res.trim().startsWith("{")) {
+                  try {
+                     data = JSON.parse(res);
+                  } catch (e) {
+                     data = res;
                   }
-
-                  phpspa.emit("load", {
-                     route: url,
-                     success: true,
-                     error: false,
-                  });
-                  call(json);
-               } catch (e) {
-                  let data = res ?? "";
-                  console.log("jj");
-                  phpspa.emit("load", { route: url, success: false, error: e });
-                  call(data);
+               } else {
+                  data = res || ""; // Handle empty responses
                }
+
+               // Emit success event
+               phpspa.emit("load", {
+                  route: url,
+                  success: true,
+                  error: false,
+               });
+
+               call(data);
             })
             .catch((e) => {
-               console.log("ss");
-               phpspa.emit("load", { route: url, success: false, error: e });
+               // Last-ditch effort: Check if `response` exists with partial data
+               if (response.body) {
+                  response
+                     .text() // Try reading again
+                     .then((fallbackRes) => {
+                        phpspa.emit("load", {
+                           route: url,
+                           success: false,
+                           error: e.message || "Partial response",
+                           fallback: true,
+                        });
+                        call(fallbackRes || ""); // Send whatever we got
+                     })
+                     .catch(() => {
+                        // Total failure (no response at all)
+                        phpspa.emit("load", {
+                           route: url,
+                           success: false,
+                           error: e.message || "Complete request failure",
+                        });
+                        call(""); // Hard fallback
+                     });
+               } else {
+                  // No response body at all
+                  phpspa.emit("load", {
+                     route: url,
+                     success: false,
+                     error: e.message || "No response from server",
+                  });
+                  call("");
+               }
             });
 
          function call(data) {
@@ -361,18 +389,39 @@ class phpspa {
          response
             .text()
             .then((res) => {
-               try {
-                  let json = JSON.parse(res);
-                  resolve();
-                  call(json);
-               } catch (e) {
-                  let data = res ?? "";
-                  reject(e);
-                  call(data);
+               let data;
+
+               if (res && res.trim().startsWith("{")) {
+                  try {
+                     data = JSON.parse(res);
+                  } catch (e) {
+                     data = res;
+                  }
+               } else {
+                  data = res || ""; // Handle empty responses
                }
+
+               resolve();
+               call(data);
             })
             .catch((e) => {
-               reject(e);
+               reject(e.message);
+
+               // Last-ditch effort: Check if `response` exists with partial data
+               if (response.body) {
+                  response
+                     .text() // Try reading again
+                     .then((fallbackRes) => {
+                        call(fallbackRes || ""); // Send whatever we got
+                     })
+                     .catch(() => {
+                        // Total failure (no response at all)
+                        call(""); // Hard fallback
+                     });
+               } else {
+                  // No response body at all
+                  call("");
+               }
             });
 
          function call(data) {

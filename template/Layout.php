@@ -6,7 +6,7 @@ return fn () => <<<HTML
          <title>PHP SPA PROJECT BY DCONCO</title>
       </head>
       <body>
-         <div id=app>
+         <div id="app">
             __CONTENT__
          </div>
 
