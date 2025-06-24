@@ -135,3 +135,7 @@ phpspa.setState("cart.items", [
 3. **Performance**:
    - For complex objects, consider granular updates
    - Batch multiple updates when possible
+
+## See Also
+
+- [Using Component Functions via HTML Tags](./3-using-component-functions-by-html-tags.md)

@@ -162,3 +162,7 @@ try {
 2. Verify file types before processing
 3. Use `isImage()` for image-specific handling
 4. Store large files directly rather than using data URIs
+
+## See Also
+
+- [State Management - map()](./2-mapping-in-state-management.md)
