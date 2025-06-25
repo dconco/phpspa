@@ -132,19 +132,14 @@ abstract class AppImpl
             {
                if (!empty($body['stateKey']) && !empty($body['value']))
                {
-                  if (session_status() < 2) session_start();
+                  if (session_status() === PHP_SESSION_NONE) session_start();
                   $_SESSION["__phpspa_state_{$body['stateKey']}"] = $body['value'];
                }
             }
          }
          else
          {
-            if (session_status() < 2) {
-               if (session_status() == PHP_SESSION_ACTIVE) {
-                  session_destroy();
-               }
-               session_start();
-            }
+            if (session_status() === PHP_SESSION_NONE) session_start();
             $reg = unserialize($_SESSION["__registered_phpspa_states"] ?? serialize([]));
             foreach ($reg as $r)
             {
