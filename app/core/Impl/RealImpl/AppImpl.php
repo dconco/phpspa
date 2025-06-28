@@ -113,8 +113,12 @@ abstract class AppImpl
 				'component',
 			);
 			$scripts = CallableInspector::getProperty($component, 'scripts');
-			$stylesheets = CallableInspector::getProperty($component, 'stylesheets');
+			$stylesheets = CallableInspector::getProperty(
+				$component,
+				'stylesheets',
+			);
 			$title = CallableInspector::getProperty($component, 'title');
+			$reloadTime = CallableInspector::getProperty($component, 'reloadTime');
 
 			if (!$componentFunction || !is_callable($componentFunction)) {
 				continue;
@@ -152,7 +156,8 @@ abstract class AppImpl
 						if (session_status() === PHP_SESSION_NONE) {
 							session_start();
 						}
-						$_SESSION["__phpspa_state_{$body['stateKey']}"] = $body['value'];
+						$_SESSION["__phpspa_state_{$body['stateKey']}"] =
+							$body['value'];
 					}
 				}
 			} else {
@@ -244,6 +249,9 @@ abstract class AppImpl
 					'title' => $title,
 					'targetID' => $targetID,
 				];
+				if ($reloadTime > 0) {
+					$info['reloadTime'] = $reloadTime;
+				}
 				print_r(json_encode($info));
 				exit();
 			} else {
@@ -257,11 +265,16 @@ abstract class AppImpl
 						$layoutOutput,
 					);
 				}
+				$tt = '';
 				static::format($layoutOutput);
+
+				if ($reloadTime > 0) {
+					$tt = " phpspa-reload-time=\"$reloadTime\"";
+				}
 
 				$this->renderedData = str_replace(
 					'__CONTENT__',
-					"\n<div data-phpspa-target>" . $componentOutput . "</div>\n",
+					"\n<div data-phpspa-target$tt>" . $componentOutput . "</div>\n",
 					$layoutOutput,
 				);
 

@@ -118,6 +118,8 @@ extra:
         link: https://x.com/dave_conco
       - icon: fontawesome/brands/discord
         link: https://discord.gg/FeVQs73C
+      - icon: fontawesome/brands/youtube
+        link: https://youtube.com/@daveconco
    version:
       provider: mike
 

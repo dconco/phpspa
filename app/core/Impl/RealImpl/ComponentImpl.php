@@ -18,116 +18,128 @@ namespace phpSPA\Core\Impl\RealImpl;
  */
 abstract class ComponentImpl
 {
-   /**
-    * The callable component that defines the behavior of this component.
-    *
-    * @var callable $component
-    */
-   protected $component;
+	/**
+	 * The callable component that defines the behavior of this component.
+	 *
+	 * @var callable $component
+	 */
+	protected $component;
+
+	/**
+	 * The title of the component.
+	 * This can be used for display purposes, such as in a header or navigation.
+	 *
+	 * @var string|null $title The title can be a string or null if not set.
+	 */
+	protected ?string $title = null;
+
+	/**
+	 * The HTTP method to be used for the component's request.
+	 *
+	 * @var string $method Defaults to 'GET|VIEW'.
+	 */
+	protected string $method = 'GET|VIEW';
+
+	/**
+	 * The route associated with the component to be rendered.
+	 *
+	 * @var array|string $route
+	 */
+	protected string $route;
+
+	/**
+	 * The ID of the target element associated with this component.
+	 * This is typically used to specify where the component's content should be rendered in the DOM.
+	 *
+	 * @var string|null The target element's ID, or null if to use the default target.
+	 */
+	protected ?string $targetID = null;
+
+	/**
+	 * Indicates whether the component should treat values as case sensitive.
+	 *
+	 * @var bool|null If true, case sensitivity is enabled; if false, it is disabled; if null, the default behavior is used.
+	 */
+	protected ?bool $caseSensitive = null;
+
+	/**
+	 * The scripts to be executed when the component is mounted.
+	 * This can be used to add interactivity or dynamic behavior to the component.
+	 *
+	 * @var callable[] $scripts
+	 */
+	protected array $scripts = [];
+
+	/**
+	 * The styles to be executed when the component is mounted.
+	 * This can be used to add interactivity or dynamic behavior to the component.
+	 *
+	 * @var callable[] $stylesheets
+	 */
+	protected array $stylesheets = [];
 
    /**
-    * The title of the component.
-    * This can be used for display purposes, such as in a header or navigation.
-    *
-    * @var string|null $title The title can be a string or null if not set.
-    */
-   protected ?string $title = null;
-
-   /**
-    * The HTTP method to be used for the component's request.
+    * This registers the route to be called every particular interval provided.
     * 
-    * @var string $method Defaults to 'GET|VIEW'.
+    * @var int $reloadTime
     */
-   protected string $method = 'GET|VIEW';
+	protected int $reloadTime = 0;
 
-   /**
-    * The route associated with the component to be rendered.
-    *
-    * @var array|string $route
-    */
-   protected string $route;
+	public function title(string $title): self
+	{
+		$this->title = $title;
+		return $this;
+	}
 
-   /**
-    * The ID of the target element associated with this component.
-    * This is typically used to specify where the component's content should be rendered in the DOM.
-    * 
-    * @var string|null The target element's ID, or null if to use the default target.
-    */
-   protected ?string $targetID = null;
+	public function method(string $method): self
+	{
+		$this->method = $method;
 
-   /**
-    * Indicates whether the component should treat values as case sensitive.
-    *
-    * @var bool|null If true, case sensitivity is enabled; if false, it is disabled; if null, the default behavior is used.
-    */
-   protected ?bool $caseSensitive = null;
+		if (strtolower($_SERVER['REQUEST_METHOD']) === 'phpspa_get') {
+			$this->method = $method . '|' . strtoupper('phpspa_get');
+		}
+		return $this;
+	}
 
-   /**
-    * The scripts to be executed when the component is mounted.
-    * This can be used to add interactivity or dynamic behavior to the component.
-    *
-    * @var callable[] $scripts
-    */
-   protected array $scripts = [];
+	public function route(array|string $route): self
+	{
+		$this->route = $route;
+		return $this;
+	}
 
-   /**
-    * The styles to be executed when the component is mounted.
-    * This can be used to add interactivity or dynamic behavior to the component.
-    *
-    * @var callable[] $stylesheets
-    */
-   protected array $stylesheets = [];
+	public function targetID(string $targetID): self
+	{
+		$this->targetID = $targetID;
+		return $this;
+	}
 
-   public function title (string $title): self
-   {
-      $this->title = $title;
-      return $this;
-   }
+	public function caseSensitive(): self
+	{
+		$this->caseSensitive = true;
+		return $this;
+	}
 
-   public function method (string $method): self
-   {
-      $this->method = $method;
+	public function caseInsensitive(): self
+	{
+		$this->caseSensitive = false;
+		return $this;
+	}
 
-      if (strtolower($_SERVER['REQUEST_METHOD']) === 'phpspa_get')
-      {
-         $this->method = $method . '|' . strtoupper('phpspa_get');
-      }
-      return $this;
-   }
+	public function script(callable $script): self
+	{
+		$this->scripts[] = $script;
+		return $this;
+	}
 
-   public function route (array|string $route): self
-   {
-      $this->route = $route;
-      return $this;
-   }
+	public function styleSheet(callable $style): self
+	{
+		$this->stylesheets[] = $style;
+		return $this;
+	}
 
-   public function targetID (string $targetID): self
-   {
-      $this->targetID = $targetID;
-      return $this;
-   }
-
-   public function caseSensitive (): self
-   {
-      $this->caseSensitive = true;
-      return $this;
-   }
-
-   public function caseInsensitive (): self
-   {
-      $this->caseSensitive = false;
-      return $this;
-   }
-
-   public function script (callable $script): self
-   {
-      $this->scripts[] = $script;
-      return $this;
-   }
-
-   public function styleSheet (callable $style): self
-   {
-      $this->stylesheets[] = $style;
-      return $this;
-   }
+	public function reload(int $milliseconds): self
+	{
+		$this->reloadTime = $milliseconds;
+		return $this;
+	}
 }

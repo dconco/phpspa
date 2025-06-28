@@ -2,3 +2,7 @@ src/ export-ignore
 dist/ export-ignore
 template/ export-ignore
 docs/ export-ignore
+mkdocs.yml export-ignore
+requirements.txt export-ignore
+.readthedocs.yaml export-ignore
+TODO.md export-ignore
