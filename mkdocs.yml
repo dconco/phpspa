@@ -34,7 +34,7 @@ theme:
       - search.share
       - content.code.annotate
       - content.code.copy
-   custom_dir: overrides/
+   custom_dir: docs/overrides/
 
 # Markdown extensions
 markdown_extensions:
@@ -110,6 +110,8 @@ extra:
         link: https://github.com/dconco/phpspa
       - icon: fontawesome/brands/twitter
         link: https://x.com/dave_conco
+      - icon: fontawesome/brands/discord
+        link: https://discord.gg/FeVQs73C
    version:
       provider: mike
 
