@@ -10,24 +10,24 @@ phpSPA is designed to seamlessly integrate with your existing PHP applications a
 
 Instead of full page reloads, update only specific sections of your application. Perfect for:
 
-- **Chat applications** - Update message areas without refreshing user lists
-- **Dashboard widgets** - Refresh data tables while keeping navigation intact
-- **E-commerce filters** - Update product listings without losing filter states
-- **Admin panels** - Dynamic content management without page jumps
+-  **Chat applications** - Update message areas without refreshing user lists
+-  **Dashboard widgets** - Refresh data tables while keeping navigation intact
+-  **E-commerce filters** - Update product listings without losing filter states
+-  **Admin panels** - Dynamic content management without page jumps
 
 ### ⚡ **Enhanced User Experience**
 
-- **Instant responses** - No more waiting for full page reloads
-- **Smooth transitions** - Maintain user context and scroll positions
-- **Reduced bandwidth** - Only transfer the content that changes
-- **Mobile-friendly** - Faster interactions on slower connections
+-  **Instant responses** - No more waiting for full page reloads
+-  **Smooth transitions** - Maintain user context and scroll positions
+-  **Reduced bandwidth** - Only transfer the content that changes
+-  **Mobile-friendly** - Faster interactions on slower connections
 
 ### 🛠️ **Developer Benefits**
 
-- **Familiar PHP syntax** - No need to learn complex JavaScript frameworks
-- **Framework agnostic** - Works with Laravel, Symfony, CodeIgniter, and more
-- **SEO-friendly** - Server-side rendering ensures search engine compatibility
-- **Progressive enhancement** - Gracefully degrades without JavaScript
+-  **Familiar PHP syntax** - No need to learn complex JavaScript frameworks
+-  **Framework agnostic** - Works with Laravel, Symfony, CodeIgniter, and more
+-  **SEO-friendly** - Server-side rendering ensures search engine compatibility
+-  **Progressive enhancement** - Gracefully degrades without JavaScript
 
 ## Integration Scenarios
 
@@ -84,27 +84,27 @@ Add sophisticated SPA functionality to any PHP application, regardless of archit
 
 ### 💬 **Real-time Communication**
 
-- **Chat systems** - Update conversations without page refreshes
-- **Comment sections** - Dynamic comment loading and posting
-- **Notification centers** - Live notification updates
+-  **Chat systems** - Update conversations without page refreshes
+-  **Comment sections** - Dynamic comment loading and posting
+-  **Notification centers** - Live notification updates
 
 ### 📊 **Data Management**
 
-- **Admin dashboards** - Dynamic charts and statistics
-- **Data tables** - Sorting, filtering, and pagination without reloads
-- **Form wizards** - Multi-step forms with smooth transitions
+-  **Admin dashboards** - Dynamic charts and statistics
+-  **Data tables** - Sorting, filtering, and pagination without reloads
+-  **Form wizards** - Multi-step forms with smooth transitions
 
 ### 🛒 **E-commerce Features**
 
-- **Product catalogs** - Dynamic filtering and searching
-- **Shopping carts** - Real-time cart updates
-- **Checkout processes** - Seamless multi-step checkout
+-  **Product catalogs** - Dynamic filtering and searching
+-  **Shopping carts** - Real-time cart updates
+-  **Checkout processes** - Seamless multi-step checkout
 
 ### 📱 **Interactive Interfaces**
 
-- **Tab systems** - Content switching without page loads
-- **Modal dialogs** - Dynamic content loading
-- **Infinite scroll** - Progressive content loading
+-  **Tab systems** - Content switching without page loads
+-  **Modal dialogs** - Dynamic content loading
+-  **Infinite scroll** - Progressive content loading
 
 ## Integration Approaches
 
@@ -112,81 +112,78 @@ Add sophisticated SPA functionality to any PHP application, regardless of archit
 
 Start small by converting specific sections:
 
-- Identify high-interaction areas in your application
-- Replace traditional form submissions with phpSPA components
-- Gradually expand to more sections as you become comfortable
+-  Identify high-interaction areas in your application
+-  Replace traditional form submissions with phpSPA components
+-  Gradually expand to more sections as you become comfortable
 
 ### 🏢 **Framework-Specific Integration**
 
 Leverage your framework's strengths:
 
-- Use existing models, services, and business logic
-- Maintain your current authentication and authorization systems
-- Keep your established routing and middleware patterns
+-  Use existing models, services, and business logic
+-  Maintain your current authentication and authorization systems
+-  Keep your established routing and middleware patterns
 
 ### 🔧 **Hybrid Approach**
 
 Combine traditional server-side rendering with dynamic sections:
 
-- Static content remains server-rendered for SEO
-- Interactive elements become phpSPA components
-- Best of both worlds - performance and user experience
+-  Static content remains server-rendered for SEO
+-  Interactive elements become phpSPA components
+-  Best of both worlds - performance and user experience
 
 ## Getting Started
 
 Choose your integration path:
 
-<div class="integration-grid">
-
 ### [🟢 Laravel Integration →](./laravel-integration.md)
 
 **Most Popular Choice**
 
-- Seamless Eloquent integration
-- Works with existing Blade templates
-- Maintains Laravel's routing system
-- Perfect for modern Laravel applications
+-  Seamless Eloquent integration
+-  Works with existing Blade templates
+-  Maintains Laravel's routing system
+-  Perfect for modern Laravel applications
 
 ### [🔵 Symfony Integration →](./symfony-integration.md)
 
 **Enterprise Ready**
 
-- Compatible with Symfony's service container
-- Works alongside Twig templates
-- Maintains Symfony's security features
-- Ideal for complex enterprise applications
+-  Compatible with Symfony's service container
+-  Works alongside Twig templates
+-  Maintains Symfony's security features
+-  Ideal for complex enterprise applications
 
 ### [🟡 CodeIgniter Integration →](./codeigniter-integration.md)
 
 **Legacy Modernization**
 
-- Easy integration with CI's MVC pattern
-- Maintains existing database connections
-- Works with CI's libraries and helpers
-- Perfect for modernizing legacy applications
+-  Easy integration with CI's MVC pattern
+-  Maintains existing database connections
+-  Works with CI's libraries and helpers
+-  Perfect for modernizing legacy applications
 
 ### [🟠 Pure PHP Integration →](./pure-php-integration.md)
 
 **Maximum Flexibility**
 
-- No framework dependencies
-- Works with any PHP application
-- Custom implementation options
-- Complete control over integration
+-  No framework dependencies
+-  Works with any PHP application
+-  Custom implementation options
+-  Complete control over integration
 
-</div>
 
 ## What You'll Learn
 
 Each integration guide covers:
 
-- ✅ **Installation and setup** specific to your framework
-- ✅ **Component creation** following framework conventions
-- ✅ **Routing configuration** to handle phpSPA requests
-- ✅ **State management** within your framework's context
-- ✅ **Best practices** for optimal performance and maintainability
-- ✅ **Real-world examples** with complete working code
-- ✅ **Troubleshooting** common integration issues
+-  ✅ **Installation and setup** specific to your framework
+-  ✅ **Component creation** following framework conventions
+-  ✅ **Routing configuration** to handle phpSPA requests
+-  ✅ **State management** within your framework's context
+-  ✅ **Best practices** for optimal performance and maintainability
+-  ✅ **Real-world examples** with complete working code
+-  ✅ **Troubleshooting** common integration issues
 
 ## Ready to Transform Your Application?
 

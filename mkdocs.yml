@@ -88,6 +88,12 @@ nav:
         - Handling Loading States: 19-handling-loading-states.md
         - Request Handling: 20-request-handling.md
    - Final Notes: final-notes.md
+   - Integrations:
+        - Introduction: ./integrations/index.md
+        - 🟢 Laravel Integration: ./integrations/laravel-integration.md
+        - 🔵 Symfony Integration: ./integrations/symfony-integration.md
+        - 🟡 CodeIgniter Integration: ./integrations/codeigniter-integration.md
+        - 🟠 Pure PHP Integration: ./integrations/pure-php-integration.md
    - Latest Version (v1.1.0):
         - Introduction: ./v1.1/index.md
         - File Import Utility: ./v1.1/1-file-import-utility.md
