@@ -172,7 +172,6 @@ Choose your integration path:
 -  Custom implementation options
 -  Complete control over integration
 
-
 ## What You'll Learn
 
 Each integration guide covers:

@@ -492,7 +492,7 @@ return (new Component(fn () => {
     return <<<HTML
         <div class="admin-header">
             <h2>Welcome, {$admin_name}</h2>
-            <a href="/logout">Logout</a>
+            <PhpSPA.Component.Link to="/logout">Logout</PhpSPA.Component.Link>
         </div>
         <div class="admin-content">
             <!-- Admin content here -->

@@ -89,7 +89,7 @@ nav:
         - Request Handling: 20-request-handling.md
    - Final Notes: final-notes.md
    - Integrations:
-        - Introduction: ./integrations/index.md
+        - 🌱 Introduction: ./integrations/index.md
         - 🟢 Laravel Integration: ./integrations/laravel-integration.md
         - 🔵 Symfony Integration: ./integrations/symfony-integration.md
         - 🟡 CodeIgniter Integration: ./integrations/codeigniter-integration.md

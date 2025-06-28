@@ -286,7 +286,7 @@ function TaskBoardComp(string $default = 'false', Request $request = new Request
     $projectService = $GLOBALS['symfony_services']['projectService'] ?? null;
 
     if ($taskService && $projectService) {
-        $project = $request->get('project');
+        $project = $request('project');
         $tasks = $taskService->getTasksByProject($project);
         $projectData = $projectService->getProject($project);
 
@@ -369,7 +369,7 @@ Create `templates/dashboard/wrapper.html.twig`:
     <div class="container-fluid">
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
             <div class="container-fluid">
-                <PhpSPA.Component.Link class="navbar-brand" to="#">{{ pageTitle }}</PhpSPA.Component.Link>
+                <a class="navbar-brand" href="#">{{ pageTitle }}</a>
                 <span class="navbar-text">
                     Welcome, {{ app.user.username|default('Guest') }}
                 </span>
