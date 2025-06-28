@@ -34,6 +34,7 @@ theme:
       - search.share
       - content.code.annotate
       - content.code.copy
+   custom_dir: overrides/
 
 # Markdown extensions
 markdown_extensions:

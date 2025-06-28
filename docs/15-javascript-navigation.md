@@ -45,7 +45,7 @@ phpspa.navigate("/login", "replace");
 ## 🔗 The `<Link>` Component
 
 ```html title="SPA-enabled links"
-<Link to="/about" label="About Us" class="nav-link" />
+<Link to="/about" children="About Us" class="nav-link" />
 ```
 
 **Rendered As:**
