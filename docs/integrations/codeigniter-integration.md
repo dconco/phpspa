@@ -482,7 +482,7 @@ return (new Component(fn () => {
             <div class="login-required">
                 <h3>Access Denied</h3>
                 <p>Please log in to access the admin panel.</p>
-                <a href="/login">Login</a>
+                <PhpSPA.Component.Link to="/login" children="Login" />
             </div>
         HTML;
     }

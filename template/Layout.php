@@ -11,7 +11,7 @@ return fn () => <<<HTML
          </div>
 
          <!-- phpSPA JS PLUGIN -->
-         <script src="../src/index.js"></script>
+         <script src="/src/index.js"></script>
          <!-- <script src="https://cdn.jsdelivr.net/npm/phpspa-js"></script> -->
 
          <script>

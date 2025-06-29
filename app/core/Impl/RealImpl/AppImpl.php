@@ -73,6 +73,8 @@ abstract class AppImpl
 	 */
 	private $renderedData;
 
+	private array $cors = [];
+
 	public function defaultTargetID(string $targetID): void
 	{
 		$this->defaultTargetID = $targetID;
@@ -97,8 +99,34 @@ abstract class AppImpl
 		}
 	}
 
+	public function cors(array $data)
+	{
+		$this->cors = $data;
+	}
+
 	public function run(): void
 	{
+		if (!headers_sent()) {
+			foreach ($this->cors as $key => $value) {
+				$key =
+					'Access-Control-' . str_replace('_', '-', ucwords($key, '_'));
+				$value = is_array($value) ? implode(', ', $value) : $value;
+
+				$header_value =
+					$key .
+					': ' .
+					(is_bool($value) ? var_export($value, true) : $value);
+				header($header_value);
+			}
+		}
+
+		/**
+		 * Handle preflight requests (OPTIONS method)
+		 */
+		if (strtolower($_SERVER['REQUEST_METHOD']) === 'options') {
+			exit();
+		}
+
 		foreach ($this->components as $component) {
 			$route = CallableInspector::getProperty($component, 'route');
 			$method = CallableInspector::getProperty($component, 'method');
@@ -148,20 +176,46 @@ abstract class AppImpl
 			$layoutOutput = call_user_func($this->layout);
 			$componentOutput = '';
 
-			if (strtolower($_SERVER['REQUEST_METHOD']) === 'phpspa_get') {
-				$body = json_decode(file_get_contents('php://input'), true);
+			if (strtolower($request->requestedWith() ?: '') === 'phpspa_request') {
+				$body = json_decode($_REQUEST['phpspa_body'] ?? '', true);
 
-				if ($body !== null && json_last_error() === JSON_ERROR_NONE) {
+				if (
+					isset($_REQUEST['phpspa_body']) &&
+					json_last_error() === JSON_ERROR_NONE
+				) {
 					if (!empty($body['stateKey']) && !empty($body['value'])) {
-						if (session_status() === PHP_SESSION_NONE) {
+						if (
+							session_status() === PHP_SESSION_NONE &&
+							!headers_sent()
+						) {
 							session_start();
 						}
 						$_SESSION["__phpspa_state_{$body['stateKey']}"] =
 							$body['value'];
 					}
 				}
+
+				$body = json_decode(
+					$_REQUEST['phpspa_call_php_function'] ?? '',
+					true,
+				);
+				if (
+					isset($_REQUEST['phpspa_call_php_function']) &&
+					json_last_error() === JSON_ERROR_NONE
+				) {
+					try {
+						$res = call_user_func_array(
+							$body['functionName'],
+							$body['args'],
+						);
+						print_r(json_encode(['response' => $res]));
+					} catch (\Exception $e) {
+						print_r($e->getMessage());
+					}
+					exit();
+				}
 			} else {
-				if (session_status() === PHP_SESSION_NONE) {
+				if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
 					session_start();
 				}
 				$reg = unserialize(
@@ -243,7 +297,7 @@ abstract class AppImpl
 				}
 			}
 
-			if (strtolower($_SERVER['REQUEST_METHOD']) === 'phpspa_get') {
+			if (strtolower($request->requestedWith() ?: '') === 'phpspa_request') {
 				$info = [
 					'content' => $componentOutput,
 					'title' => $title,

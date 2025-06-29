@@ -2,8 +2,15 @@
 
 ## v1.1.2
 
--  Made `route` method to be optional, if route is not provided for each component, it'll render it, provided the request method matches the component method.
--  Added `reload(int $milliseconds = 0)` method to `phpSPA\Component` class, it'll keep reloading that particular component every particular interval provider.
+-  ✨ Made `route()` method optional in component definition
+
+-  ✨ Added `reload(int $milliseconds = 0)` method for auto-refreshing components
+
+-  ✨ Added `phpspa.__call()` JavaScript function for direct PHP function calls
+
+-  ✨ Added `cors()` method to App class for CORS configuration
+
+[View Latest Documentation](https://phpspa.readthedocs.io/en/latest/v1.1.2)
 
 ## v1.1.1
 

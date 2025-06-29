@@ -41,18 +41,15 @@
 			}
 
 			if (target.hasAttribute('phpspa-reload-time')) {
-				state['reloadTime'] = target
-					.getAttribute('phpspa-reload-time')
-					.parseInt()
+				state['reloadTime'] = Number(
+					target.getAttribute('phpspa-reload-time')
+				)
 			}
 
 			history.replaceState(state, document.title, location.href)
 
 			if (target.hasAttribute('phpspa-reload-time')) {
-				setTimeout(
-					() => phpspa.navigate(new URL(location.href), 'replace'),
-					state.reloadTime
-				)
+				setTimeout(phpspa.reloadComponent, state.reloadTime)
 			}
 		}
 	})
@@ -78,11 +75,8 @@
 			targetElement.innerHTML = state.content
 			phpspa.runAll(targetElement)
 
-			if (state?.reloadTime !== null) {
-				setTimeout(
-					() => phpspa.navigate(new URL(location.href), 'replace'),
-					state.reloadTime
-				)
+			if (typeof state['reloadTime'] !== 'undefined') {
+				setTimeout(phpspa.reloadComponent, state.reloadTime)
 			}
 		} else {
 			phpspa.navigate(new URL(location.href), 'replace')
@@ -99,6 +93,7 @@
  * @class phpspa
  *
  * @property {Object} _events - Internal event registry for custom event handling.
+ * @property {Set} _executedScripts - Track executed scripts to prevent re-execution.
  *
  * @method navigate
  * @static
@@ -156,8 +151,11 @@ class phpspa {
 		phpspa.emit('beforeload', { route: url })
 
 		fetch(url, {
-			method: 'PHPSPA_GET',
+			headers: {
+				'X-Requested-With': 'PHPSPA_REQUEST',
+			},
 			mode: 'same-origin',
+			redirect: 'follow',
 			keepalive: true,
 		})
 			.then(response => {
@@ -197,6 +195,7 @@ class phpspa {
 					.text()
 					.then(fallbackRes => {
 						let data
+
 						try {
 							// If it looks like JSON, parse it
 							data = fallbackRes.trim().startsWith('{')
@@ -257,8 +256,8 @@ class phpspa {
 				content: data?.content ?? data,
 			}
 
-			if (data?.reloadTime !== null) {
-				stateData['reloadTime'] = data.reloadTime.parseInt()
+			if (typeof data['reloadTime'] !== 'undefined') {
+				stateData['reloadTime'] = data.reloadTime
 			}
 
 			if (state === 'push') {
@@ -278,8 +277,8 @@ class phpspa {
 
 			phpspa.runAll(targetElement)
 
-			if (data?.reloadTime !== null) {
-				setTimeout(() => phpspa.navigate(url, 'replace'), state.reloadTime)
+			if (typeof data['reloadTime'] !== 'undefined') {
+				setTimeout(phpspa.reloadComponent, state.reloadTime)
 			}
 		}
 	}
@@ -365,11 +364,15 @@ class phpspa {
 				top: scrollY,
 				left: scrollX,
 			}
-			const url = new URL(location.href)
 
-			fetch(url, {
-				method: 'PHPSPA_GET',
-				body: JSON.stringify({ stateKey, value }),
+			const url = new URL(location.href)
+			const json = JSON.stringify({ stateKey, value })
+			const uri = encodeURI(`${url}?phpspa_body=${json}`)
+
+			fetch(uri, {
+				headers: {
+					'X-Requested-With': 'PHPSPA_REQUEST',
+				},
 				mode: 'same-origin',
 				redirect: 'follow',
 				keepalive: true,
@@ -449,15 +452,6 @@ class phpspa {
 
 				targetElement.innerHTML = data?.content ?? data
 
-				const stateData = {
-					url: url?.href ?? url,
-					title: data?.title ?? document.title,
-					targetID: data?.targetID ?? targetElement.id,
-					content: data?.content ?? data,
-				}
-
-				history.replaceState(stateData, stateData.title, url)
-
 				scroll(currentScroll)
 			}
 		})
@@ -471,7 +465,8 @@ class phpspa {
 
 			scripts.forEach(script => {
 				const newScript = document.createElement('script')
-				newScript.textContent = `(function() {\n${script.textContent}\n})();`
+				// newScript.textContent = `(function() {\n${script.textContent}\n})();`
+				newScript.textContent = script.textContent
 				document.head.appendChild(newScript).remove()
 			})
 		}
@@ -491,7 +486,168 @@ class phpspa {
 		runInlineStyles(container)
 		runInlineScripts(container)
 	}
-}
+
+	static reloadComponent() {
+		const currentScroll = {
+			top: scrollY,
+			left: scrollX,
+		}
+
+		fetch(new URL(location.href), {
+			headers: {
+				'X-Requested-With': 'PHPSPA_REQUEST',
+			},
+			mode: 'same-origin',
+			redirect: 'follow',
+			keepalive: true,
+		})
+			.then(response => {
+				response
+					.text()
+					.then(res => {
+						let data
+
+						if (res && res.trim().startsWith('{')) {
+							try {
+								data = JSON.parse(res)
+							} catch (e) {
+								data = res
+							}
+						} else {
+							data = res || '' // Handle empty responses
+						}
+
+						call(data)
+					})
+					.catch(e => {
+						callError(e)
+					})
+			})
+			.catch(e => {
+				callError(e)
+			})
+
+		function callError(e) {
+			// Check if the error contains a response (e.g., HTTP 4xx/5xx with a body)
+			if (e.response) {
+				// Try extracting text/JSON from the error response
+				e.response
+					.text()
+					.then(fallbackRes => {
+						let data
+
+						try {
+							// If it looks like JSON, parse it
+							data = fallbackRes.trim().startsWith('{')
+								? JSON.parse(fallbackRes)
+								: fallbackRes
+						} catch (parseError) {
+							// Fallback to raw text if parsing fails
+							data = fallbackRes
+						}
+
+						call(data || '') // Pass the fallback data
+					})
+					.catch(() => {
+						// Failed to read error response body
+						call('')
+					})
+			} else {
+				// No response attached (network error, CORS, etc.)
+				call('')
+			}
+		}
+
+		function call(data) {
+			if (
+				'string' === typeof data?.title ||
+				'number' === typeof data?.title
+			) {
+				document.title = data.title
+			}
+
+			let targetElement =
+				document.getElementById(data?.targetID) ??
+				document.getElementById(history.state?.targetID) ??
+				document.body
+
+			targetElement.innerHTML = data?.content ?? data
+
+			phpspa.runAll(targetElement)
+
+			scroll(currentScroll)
+
+			if (typeof data['reloadTime'] !== 'undefined') {
+				setTimeout(phpspa.reloadComponent, data.reloadTime)
+			}
+		}
+	}
+
+	static async __call(functionName, ...args) {
+		const currentScroll = {
+			top: scrollY,
+			left: scrollX,
+		}
+
+		const url = new URL(location.href)
+		const json = JSON.stringify({ functionName, args })
+		const uri = encodeURI(`${url}?phpspa_call_php_function=${json}`)
+
+		try {
+			const response = await fetch(uri, {
+				headers: {
+					'X-Requested-With': 'PHPSPA_REQUEST',
+				},
+				mode: 'same-origin',
+				redirect: 'follow',
+				keepalive: true,
+			})
+
+			const res = await response.text()
+
+			let data
+			if (res && res.trim().startsWith('{')) {
+				try {
+					data = JSON.parse(res)
+					data = data.response
+				} catch (e) {
+					data = res
+				}
+			} else {
+				data = res || '' // Handle empty responses
+			}
+
+			return data
+		} catch (e) {
+			// Check if the error contains a response (e.g., HTTP 4xx/5xx with a body)
+			if (e.response) {
+				try {
+					const fallbackRes = await e.response.text()
+					let data
+					try {
+						// If it looks like JSON, parse it
+						data = fallbackRes.trim().startsWith('{')
+							? JSON.parse(fallbackRes)
+							: fallbackRes
+
+						data = data['response'] || data
+					} catch (parseError) {
+						// Fallback to raw text if parsing fails
+						data = fallbackRes
+					}
+
+					return data
+				} catch {
+					// Failed to read error response body
+					return ''
+				}
+			} else {
+				// No response attached (network error, CORS, etc.)
+				return ''
+			}
+		}
+	} // end method
+} // end class
 
 if (typeof setState !== 'function') {
 	function setState(stateKey, value) {

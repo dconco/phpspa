@@ -20,6 +20,6 @@ use phpSPA\Core\Helper\StateManager;
  */
 function createState (string $stateKey, $default): StateManager
 {
-   if (session_status() === PHP_SESSION_NONE) session_start();
+   if (session_status() === PHP_SESSION_NONE && !headers_sent()) session_start();
    return new StateManager($stateKey, $default);
 }

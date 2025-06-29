@@ -77,7 +77,6 @@ class MapRoute implements MapInterface
       self::$method = explode('|', $method);
       self::$method = array_map('trim', self::$method);
       self::$method = array_map('strtoupper', self::$method);
-      self::$method[] = 'PHPSPA_GET';
       self::$caseSensitive = $caseSensitive;
 
       /**
@@ -241,7 +240,7 @@ class MapRoute implements MapInterface
 
                // checks if the requested method is of the given route
                if (
-               !in_array($_SERVER['REQUEST_METHOD'], self::$method) &&
+               !in_array(strtoupper($_SERVER['REQUEST_METHOD']), self::$method) &&
                !in_array('*', self::$method)
                )
                {
@@ -254,7 +253,7 @@ class MapRoute implements MapInterface
          }
 
          return [
-          'method' => $_SERVER['REQUEST_METHOD'],
+          'method' => strtoupper($_SERVER['REQUEST_METHOD']),
           'route' => self::$route,
           'params_value' => $req_value,
           'params' => $req,
@@ -301,7 +300,7 @@ class MapRoute implements MapInterface
       )
       {
          if (
-         !in_array($_SERVER['REQUEST_METHOD'], self::$method) &&
+         !in_array(strtoupper($_SERVER['REQUEST_METHOD']), self::$method) &&
          !in_array('*', self::$method)
          )
          {
@@ -310,7 +309,7 @@ class MapRoute implements MapInterface
          }
 
          return [
-          'method' => $_SERVER['REQUEST_METHOD'],
+          'method' => strtoupper($_SERVER['REQUEST_METHOD']),
           'route' => self::$route,
          ];
       }

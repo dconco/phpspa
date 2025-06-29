@@ -139,6 +139,29 @@ class Request
 	}
 
 	/**
+	 * Retrieves headers from the request.
+	 *
+	 * This method returns the headers sent with the HTTP request. If a specific header name is provided,
+	 * it will return the value of that header; otherwise, it returns all headers as an object.
+	 *
+	 * @param ?string $name The header name to retrieve. If omitted, returns all headers.
+	 * @return mixed The header, or a specific header value if `$name` is provided.
+	 */
+	public function header(?string $name = null)
+	{
+		$headers = getallheaders() ?: apache_request_headers();
+
+		if (!$name) {
+			return $this->validate($headers);
+		}
+		if (isset($headers[$name])) {
+			return $this->validate($headers[$name]);
+		} else {
+			return null;
+		}
+	}
+
+	/**
 	 * Retrieves the request body as an associative array.
 	 *
 	 * This method parses the raw POST body data and returns it as an associative array.
@@ -231,7 +254,9 @@ class Request
 	public function session(?string $key = null)
 	{
 		// Start the session if it's not already started
-		session_status() === PHP_SESSION_NONE && session_start();
+		if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+			session_start();
+		}
 
 		// If no key is provided, return all session data as an object
 		if (!$key) {
@@ -264,8 +289,12 @@ class Request
 	public function ip(): string
 	{
 		// Check for forwarded IP addresses from proxies or load balancers
-		if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-			return $_SERVER['HTTP_X_FORWARDED_FOR'];
+		if (
+			isset($_SERVER['HTTP_X_FORWARDED_FOR']) ||
+			$this->header('X-Forwarded-For')
+		) {
+			return $_SERVER['HTTP_X_FORWARDED_FOR'] ?:
+				$this->header('X-Forwarded-For');
 		}
 		return $_SERVER['REMOTE_ADDR'];
 	}
@@ -279,8 +308,9 @@ class Request
 	 */
 	public function isAjax(): bool
 	{
-		return strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') ===
-			'xmlhttprequest';
+		return strtolower(
+			$_SERVER['HTTP_X_REQUESTED_WITH'] ?? $this->header('X-Requested-With'),
+		) === 'xmlhttprequest';
 	}
 
 	/**
@@ -304,14 +334,14 @@ class Request
 	{
 		return $_SERVER['SERVER_PROTOCOL'];
 	}
-	
+
 	/**
 	 * Checks if the request method matches a given method.
 	 *
 	 * @param string $method The HTTP method to check.
 	 * @return bool True if the request method matches, false otherwise.
 	 */
-	public function isMethod (string $method): bool
+	public function isMethod(string $method): bool
 	{
 		return strtoupper($this->method()) === strtoupper($method);
 	}
@@ -321,10 +351,10 @@ class Request
 	 *
 	 * @return bool True if the request is HTTPS, false otherwise.
 	 */
-	public function isHttps (): bool
+	public function isHttps(): bool
 	{
 		return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
-		 $_SERVER['SERVER_PORT'] == 443;
+			$_SERVER['SERVER_PORT'] == 443;
 	}
 
 	/**
@@ -332,7 +362,7 @@ class Request
 	 *
 	 * @return int The request time as a Unix timestamp.
 	 */
-	public function requestTime (): int
+	public function requestTime(): int
 	{
 		return (int) $_SERVER['REQUEST_TIME'];
 	}
@@ -344,10 +374,10 @@ class Request
 	 *
 	 * @return string|null The content type, or null if not set.
 	 */
-	public function contentType (): ?string
+	public function contentType(): ?string
 	{
 		return $this->header('Content-Type') ??
-		 ($_SERVER['CONTENT_TYPE'] ?? null);
+			($_SERVER['CONTENT_TYPE'] ?? null);
 	}
 
 	/**
@@ -357,15 +387,20 @@ class Request
 	 *
 	 * @return int|null The content length, or null if not set.
 	 */
-	public function contentLength (): ?int
+	public function contentLength(): ?int
 	{
 		return isset($_SERVER['CONTENT_LENGTH'])
-		 ? (int) $_SERVER['CONTENT_LENGTH']
-		 : null;
+			? (int) $_SERVER['CONTENT_LENGTH']
+			: null;
 	}
 
-	public function csrf ()
+	public function csrf()
 	{
-		return $this->header('X-CSRF-TOKEN') ?: $this->header('X-Csrf-Token');
+		return $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $this->header('X-CSRF-TOKEN') ?:
+			$this->header('X-Csrf-Token');
+	}
+	
+	public function requestedWith() {
+	   return $_SERVER['HTTP_X_REQUESTED_WITH'] ?? $this->header('X-Requested-With');
 	}
 }

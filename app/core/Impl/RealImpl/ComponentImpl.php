@@ -45,7 +45,7 @@ abstract class ComponentImpl
 	 *
 	 * @var array|string $route
 	 */
-	protected string $route;
+	protected array|string $route;
 
 	/**
 	 * The ID of the target element associated with this component.

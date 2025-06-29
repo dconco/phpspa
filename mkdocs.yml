@@ -94,7 +94,7 @@ nav:
         - 🔵 Symfony Integration: ./integrations/symfony-integration.md
         - 🟡 CodeIgniter Integration: ./integrations/codeigniter-integration.md
         - 🟠 Pure PHP Integration: ./integrations/pure-php-integration.md
-   - Latest Version (v1.1.0):
+   - Version (v1.1.0):
         - Introduction: ./v1.1/index.md
         - File Import Utility: ./v1.1/1-file-import-utility.md
         - State Management - map(): ./v1.1/2-mapping-in-state-management.md
@@ -104,6 +104,7 @@ nav:
         - HTML Attribute Array to String Conversion: ./v1.1/6-html-attribute-array-to-string-conversion.md
         - Redirect Function: ./v1.1/7-redirect-function.md
         - Navigate Component: ./v1.1/8-navigate-component.md
+   - Latest Version (v1.1.2): ./v1.1.2/index.md
 
 # Plugins
 plugins:

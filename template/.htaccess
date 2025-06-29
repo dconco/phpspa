@@ -15,6 +15,6 @@
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ - [L]
 
-    # Otherwise, pass to app.php
-    RewriteRule ^(.*)$ app.php?uri=$1 [QSA,L]
+    # Otherwise, pass to index.php
+    RewriteRule ^(.*)$ index.php?uri=$1 [QSA,L]
 </IfModule>
