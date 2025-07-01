@@ -1,6 +1,6 @@
 <?php
 
-return fn () => <<<HTML
+return fn() => <<<HTML
    <html>
       <head>
          <title>PHP SPA PROJECT BY DCONCO</title>
@@ -11,7 +11,7 @@ return fn () => <<<HTML
          </div>
 
          <!-- phpSPA JS PLUGIN -->
-         <script src="/src/index.js"></script>
+         <script type="text/javascript" src="https://unpkg.com/phpspa-js"></script>
          <!-- <script src="https://cdn.jsdelivr.net/npm/phpspa-js"></script> -->
 
          <script>

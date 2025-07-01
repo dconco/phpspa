@@ -4,9 +4,13 @@ namespace phpSPA\Core\Impl\RealImpl;
 
 use phpSPA\Component;
 use phpSPA\Http\Request;
+use phpSPA\Http\Session;
 use phpSPA\Core\Router\MapRoute;
 use phpSPA\Core\Helper\CallableInspector;
 use phpSPA\Core\Utils\Formatter\ComponentTagFormatter;
+
+use const phpSPA\Core\Impl\Const\STATE_HANDLE;
+use const phpSPA\Core\Impl\Const\REGISTER_STATE_HANDLE;
 
 /**
  * @author dconco <concodave@gmail.com>
@@ -184,14 +188,17 @@ abstract class AppImpl
 					json_last_error() === JSON_ERROR_NONE
 				) {
 					if (!empty($body['stateKey']) && !empty($body['value'])) {
-						if (
-							session_status() === PHP_SESSION_NONE &&
-							!headers_sent()
-						) {
-							session_start();
+						Session::start();
+
+						$reg = unserialize(
+							Session::get(REGISTER_STATE_HANDLE, serialize([])),
+						);
+						if (in_array($body['stateKey'], $reg)) {
+							Session::set(
+								STATE_HANDLE . $body['stateKey'],
+								serialize($body['value']),
+							);
 						}
-						$_SESSION["__phpspa_state_{$body['stateKey']}"] =
-							$body['value'];
 					}
 				}
 
@@ -215,15 +222,13 @@ abstract class AppImpl
 					exit();
 				}
 			} else {
-				if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-					session_start();
-				}
+				Session::start();
+
 				$reg = unserialize(
-					$_SESSION['__registered_phpspa_states'] ?? serialize([]),
+					Session::get(REGISTER_STATE_HANDLE, serialize([])),
 				);
-				foreach ($reg as $r) {
-					unset($_SESSION["__phpspa_state_$r"]);
-				}
+				$keys = array_map(fn($key) => STATE_HANDLE . $key, $reg);
+				Session::remove($keys);
 			}
 
 			/**

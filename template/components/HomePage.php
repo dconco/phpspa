@@ -23,7 +23,7 @@ return (new Component(function (Request $request): string {
 		      <img src="{$icon}" />
 		      <p>Welcome to my PHP SPA project! @$name</p>
 		      <br />
-		      <button onclick="setState('counter', $counter + 1)">Counter: $counter</button>
+		      <button id="btn" onclick="setState('counter', $counter + 1)">Counter: $counter</button>
 		      <Link to="./login#hashID" id="link-elem">GO TO LOGIN</Link>
 		      <br>
 		      <button onclick="phpspa.navigate('/counter')">Counter</button>
@@ -35,6 +35,9 @@ return (new Component(function (Request $request): string {
 
 	->script(
 		fn() => <<<JS
+		   let btn = document.getElementById('btn');
+		   btn.onclick = () => alert('btn clicked')
+
 		   alert('Script Mounted');
 		   phpspa.__call("d", "ss")
 		JS,
