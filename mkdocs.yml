@@ -87,6 +87,7 @@ nav:
         - Component Script and Styles: 18-component-script-and-styles.md
         - Handling Loading States: 19-handling-loading-states.md
         - Request Handling: 20-request-handling.md
+   - phpSPA Hooks: hooks-event.md
    - Final Notes: final-notes.md
    - Integrations:
         - 🌱 Introduction: ./integrations/index.md
