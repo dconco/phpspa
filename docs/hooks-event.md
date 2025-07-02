@@ -12,6 +12,7 @@ Hooks are just PHP functions that use `createState()` and return state variables
 The fundamental pattern for creating a phpSPA hook:
 
 ```php
+<?php
 function useHookName($param1 = defaultValue, $param2 = defaultValue) {
     $state = createState("unique_key", $initialValue);
 
@@ -28,6 +29,7 @@ function useHookName($param1 = defaultValue, $param2 = defaultValue) {
 When you use a state variable directly in a string context, phpSPA automatically converts it to a JSON string:
 
 ```php
+<?php
 function useCounter($initialValue = 0) {
     $count = createState("counter", $initialValue);
     return $count;
@@ -43,6 +45,7 @@ echo "Count: {$counter}"; // Outputs: "Count: 5" (automatically converted)
 To get the actual array/object value without conversion, call the state as a function:
 
 ```php
+<?php
 $counter = useCounter([1, 2, 3]);
 $rawArray = $counter(); // Returns actual array [1, 2, 3]
 $stringValue = $counter; // Returns string (JSON) when used in string context
@@ -55,6 +58,7 @@ $stringValue = $counter; // Returns string (JSON) when used in string context
 A simple counter with increment/decrement functionality:
 
 ```php
+<?php
 function useCounter($initialValue = 0, $step = 1) {
     $count = createState("counter", $initialValue);
 
@@ -65,6 +69,7 @@ function useCounter($initialValue = 0, $step = 1) {
 Usage in component:
 
 ```php
+<?php
 function CounterComponent() {
     $counter = useCounter(0, 2);
 
@@ -84,6 +89,7 @@ function CounterComponent() {
 Boolean state management with toggle functionality:
 
 ```php
+<?php
 function useToggle($initialValue = false, $stateKey = "toggle") {
     $isToggled = createState($stateKey, $initialValue);
 
@@ -94,6 +100,7 @@ function useToggle($initialValue = false, $stateKey = "toggle") {
 Usage:
 
 ```php
+<?php
 function ToggleComponent() {
     $isVisible = useToggle(false, "visibility");
 
@@ -115,6 +122,7 @@ function ToggleComponent() {
 Array state management with common operations:
 
 ```php
+<?php
 function useArray($initialArray = [], $stateKey = "array") {
     $array = createState($stateKey, $initialArray);
 
@@ -125,6 +133,7 @@ function useArray($initialArray = [], $stateKey = "array") {
 Usage:
 
 ```php
+<?php
 function TodoListComponent() {
     $todos = useArray([], "todos");
     $currentTodos = $todos(); // Get raw array
@@ -150,6 +159,7 @@ function TodoListComponent() {
 Form state management:
 
 ```php
+<?php
 function useForm($initialData = [], $stateKey = "form") {
     $formData = createState($stateKey, $initialData);
 
@@ -160,6 +170,7 @@ function useForm($initialData = [], $stateKey = "form") {
 Usage:
 
 ```php
+<?php
 function ContactForm() {
     $form = useForm([
         'name' => '',
@@ -203,6 +214,7 @@ function ContactForm() {
 ### Hook with Multiple Return Values
 
 ```php
+<?php
 function useCounterWithHistory($initialValue = 0) {
     $count = createState("counter_value", $initialValue);
     $history = createState("counter_history", [$initialValue]);
@@ -217,6 +229,7 @@ function useCounterWithHistory($initialValue = 0) {
 Usage:
 
 ```php
+<?php
 function AdvancedCounter() {
     $counter = useCounterWithHistory(0);
 
@@ -238,6 +251,7 @@ function AdvancedCounter() {
 ### Conditional Hook Usage
 
 ```php
+<?php
 function useAuth($checkSession = true) {
     if (!$checkSession) {
         return createState("guest_mode", true);
@@ -264,6 +278,7 @@ function useAuth($checkSession = true) {
 ### 2. State Keys
 
 ```php
+<?php
 // ✅ Good: Unique and descriptive state keys
 function useUserProfile($userId) {
     $profile = createState("user_profile_{$userId}", null);
@@ -280,6 +295,7 @@ function useUserProfile($userId) {
 ### 3. Default Parameters
 
 ```php
+<?php
 // ✅ Good: Provide sensible defaults
 function useCounter($initialValue = 0, $step = 1, $stateKey = "counter") {
     // Implementation
@@ -294,6 +310,7 @@ function useToggle($initialValue = false, $stateKey = "toggle") {
 ### 4. Return Consistency
 
 ```php
+<?php
 // ✅ Good: Consistent return pattern
 function useCounter($initialValue = 0) {
     $count = createState("counter", $initialValue);
@@ -317,6 +334,7 @@ function useForm($initialData = []) {
 You can use hooks within other hooks:
 
 ```php
+<?php
 function useCounterWithToggle($initialCount = 0) {
     $counter = useCounter($initialCount, 1, "composed_counter");
     $isVisible = useToggle(true, "counter_visibility");
@@ -358,6 +376,7 @@ let value = await phpspa.__call('useCounter', 0)
 ### Loading State Hook
 
 ```php
+<?php
 function useLoading($initialState = false, $stateKey = "loading") {
     $isLoading = createState($stateKey, $initialState);
     return $isLoading;
@@ -367,6 +386,7 @@ function useLoading($initialState = false, $stateKey = "loading") {
 ### API Data Hook
 
 ```php
+<?php
 function useApiData($endpoint, $stateKey = null) {
     $key = $stateKey ?? "api_" . md5($endpoint);
     $data = createState($key, null);
@@ -384,6 +404,7 @@ function useApiData($endpoint, $stateKey = null) {
 ### Local Storage Sync Hook
 
 ```php
+<?php
 function useLocalStorage($key, $defaultValue = null, $stateKey = null) {
     $stateKey = $stateKey ?? "localStorage_" . $key;
     $value = createState($stateKey, $defaultValue);
@@ -403,6 +424,7 @@ function useLocalStorage($key, $defaultValue = null, $stateKey = null) {
 ### Debugging Tips
 
 ```php
+<?php
 function useDebugCounter($initialValue = 0) {
     $count = createState("debug_counter", $initialValue);
 
@@ -418,6 +440,7 @@ function useDebugCounter($initialValue = 0) {
 If you're converting from class-based components to hooks:
 
 ```php
+<?php
 // Before: Class-based approach
 class CounterComponent {
     private $count;
@@ -447,4 +470,4 @@ function CounterComponent() {
 !!! success "Next Steps"
 Now that you understand phpSPA hooks, try creating your own custom hooks for common patterns in your application. Remember to keep them focused, reusable, and well-named!
 
-!!! info "Related Documentation" - [State Management](./17-state-management.md) - Core state concepts
+!!! info "Related Documentation" - [State Management](./17-state-management/) - Core state concepts

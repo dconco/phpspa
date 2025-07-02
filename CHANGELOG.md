@@ -4,7 +4,7 @@
 
 - Updated phpSPA core from frontent to use the `Request` class instead of just global request `$_REQUEST`
 
-- Added Hooks Event Documentation. [View Docs](https://phpspa.readthedocs.io/en/latest/hooks-event.md)
+- Added Hooks Event Documentation. [View Docs](https://phpspa.readthedocs.io/en/latest/hooks-event/)
 
 ## v1.1.3
 
