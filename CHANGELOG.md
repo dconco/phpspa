@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v1.1.4
+
+- Updated phpSPA core from frontent to use the `Request` class instead of just global request `$_REQUEST`
+
+- Added Hooks Event Documentation. [View Docs](https://phpspa.readthedocs.io/en/latest/hooks-event.md)
+
 ## v1.1.3
 
 -  Added new `Session` utility class in `phpSPA\Http` namespace for comprehensive session management

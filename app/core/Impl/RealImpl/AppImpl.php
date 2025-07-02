@@ -181,10 +181,9 @@ abstract class AppImpl
 			$componentOutput = '';
 
 			if (strtolower($request->requestedWith() ?: '') === 'phpspa_request') {
-				$body = json_decode($_REQUEST['phpspa_body'] ?? '', true);
+				$body = json_decode($request->get('phpspa_body') ?? '', true);
 
-				if (
-					isset($_REQUEST['phpspa_body']) &&
+				if ($request->get('phpspa_body') !== null &&
 					json_last_error() === JSON_ERROR_NONE
 				) {
 					if (!empty($body['stateKey']) && !empty($body['value'])) {
@@ -203,11 +202,11 @@ abstract class AppImpl
 				}
 
 				$body = json_decode(
-					$_REQUEST['phpspa_call_php_function'] ?? '',
+					$request->get('phpspa_call_php_function') ?? '',
 					true,
 				);
 				if (
-					isset($_REQUEST['phpspa_call_php_function']) &&
+					$request->get('phpspa_call_php_function') !== null &&
 					json_last_error() === JSON_ERROR_NONE
 				) {
 					try {
