@@ -22,7 +22,7 @@ trait StrictTypes
 	{
 		$is_typed_string = false;
 
-		$haystack = array_map(function ($type) {
+		$haystack = array_map(function ($type) use (&$is_typed_string) {
 			$t = strtoupper(trim($type));
 			if ('STRING' === $t) {
 				$is_typed_string = true;
@@ -63,7 +63,7 @@ trait StrictTypes
 	): int|bool|float|array|string {
 		$is_typed_string = false;
 
-		$types = array_map(function ($t) {
+		$types = array_map(function ($t) use (&$is_typed_string) {
 			$t = strtoupper(trim($t));
 
 			if ('STRING' === $t) {
@@ -135,7 +135,7 @@ trait StrictTypes
 				$eachTypes = preg_split('/\|(?![^<]*>)/', trim($eachArrayType));
 				$is_typed_string = false;
 
-				$eachTypes = array_map(function ($t) {
+				$eachTypes = array_map(function ($t) use (&$is_typed_string) {
 					$t = strtoupper(trim($t));
 
 					if ('STRING' === $t) {
@@ -236,5 +236,7 @@ trait StrictTypes
 		} elseif (ctype_alnum($string)) {
 			return 'ALNUM';
 		}
+
+		return 'STRING';
 	}
 }
