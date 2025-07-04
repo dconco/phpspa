@@ -30,11 +30,10 @@ First, create your Laravel route to accept phpSPA internal requests:
 ```php
 // routes/web.php
 Route::get('/chat', [ChatController::class, 'index'])->name('chat');
-Route::match(['get', 'post', 'phpspa_get'], '/chat', [ChatController::class, 'index']); // For phpSPA requests
 ```
 
 !!! note "phpSPA Internal Request"
-The phpSPA internal request is only for the Laravel routing so that it can accept the request, not declining it before getting to phpSPA. You must specify this in your Laravel route using `Route::match()` to accept phpSPA requests properly.
+To use Laravel routing, you don't have to specify custom route in each components.
 
 ### 2. Controller Implementation
 

@@ -102,7 +102,8 @@ trait StrictTypes
 	 */
 	private static function matches(string $needle, string $haystack): bool
 	{
-		$typeOfNeedle = self::typeOfString((string) $needle);
+		$is_typed_string = $haystack === 'STRING' ? true : false;
+		$typeOfNeedle = self::typeOfString((string) $needle, $is_typed_string);
 		$typeOfNeedle2 = $typeOfNeedle;
 		$needle2 = $needle;
 

@@ -1,10 +1,14 @@
 # CHANGELOG
 
+## v1.1.5
+
+-  Edited `StrictTypes` class and make the `string` class worked instead of `alnum` and `alpha`
+
 ## v1.1.4
 
-- Updated phpSPA core from frontent to use the `Request` class instead of just global request `$_REQUEST`
+-  Updated phpSPA core from frontent to use the `Request` class instead of just global request `$_REQUEST`
 
-- Added Hooks Event Documentation. [View Docs](https://phpspa.readthedocs.io/en/latest/hooks-event/)
+-  Added Hooks Event Documentation. [View Docs](https://phpspa.readthedocs.io/en/latest/hooks-event/)
 
 ## v1.1.3
 

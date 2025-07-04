@@ -106,7 +106,7 @@ phpSPA lets you enforce **types** on route parameters — so only valid values m
 | `bool`            | Boolean values                       | `true`, `false`      |
 | `string`          | Any plain text                       | `hello`, `user-name` |
 | `alpha`           | Only letters                         | `John`, `admin`      |
-| `alphanum`        | Letters and numbers only             | `user123`, `item42`  |
+| `alnum`        | Letters and numbers only             | `user123`, `item42`  |
 | `json`            | Must be valid JSON (auto-decoded)    | `{"key":"value"}`    |
 | `array`           | Accepts JSON arrays or query strings | `[1,2,3]`, `a,b,c`   |
 
