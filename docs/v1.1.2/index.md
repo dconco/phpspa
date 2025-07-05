@@ -15,10 +15,10 @@ A lightweight PHP Single Page Application framework for building dynamic web app
 
 ---
 
-## Installation
+## Update To `v1.1.2`
 
 ```bash
-composer require phpspa/phpspa
+composer update dconco/phpspa:v1.1.2
 ```
 
 ## Quick Start
@@ -198,7 +198,7 @@ return (new Component(function () {
 
     return <<<HTML
         <div>
-            <h2>Counter: {$counter()}</h2>
+            <h2>Counter: {$counter}</h2>
             <button onclick="increment()">+</button>
         </div>
     HTML;

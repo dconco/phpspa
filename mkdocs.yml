@@ -105,7 +105,7 @@ nav:
         - HTML Attribute Array to String Conversion: ./v1.1/6-html-attribute-array-to-string-conversion.md
         - Redirect Function: ./v1.1/7-redirect-function.md
         - Navigate Component: ./v1.1/8-navigate-component.md
-   - Latest Version (v1.1.2): ./v1.1.2/index.md
+   - Version (v1.1.2): ./v1.1.2/index.md
 
 # Plugins
 plugins:
