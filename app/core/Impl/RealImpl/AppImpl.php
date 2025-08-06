@@ -79,33 +79,49 @@ abstract class AppImpl
 
 	private array $cors = [];
 
-	public function defaultTargetID(string $targetID): void
+	public function defaultTargetID(string $targetID): self
 	{
 		$this->defaultTargetID = $targetID;
+		return $this;
 	}
 
-	public function defaultToCaseSensitive(): void
+	public function defaultToCaseSensitive(): self
 	{
 		$this->defaultCaseSensitive = true;
+		return $this;
 	}
 
-	public function attach(Component $component): void
+	public function attach(Component $component): self
 	{
 		$this->components[] = $component;
+		return $this;
 	}
 
-	public function detach(Component $component): void
+	public function detach(Component $component): self
 	{
 		$key = array_search($component, $this->components, true);
 
 		if ($key !== false) {
 			unset($this->components[$key]);
 		}
+		return $this;
 	}
 
-	public function cors(array $data)
+	public function cors(array $data = []): self
 	{
-		$this->cors = $data;
+		$this->cors = require __DIR__ . '/../../Config/Cors.php';
+
+		if (!empty($data)) {
+			$this->cors = array_merge_recursive($this->cors, $data);
+		}
+
+		foreach ($this->cors as $key => $value) {
+			if (is_array($value)) {
+				$this->cors[$key] = array_unique($value);
+			}
+		}
+
+		return $this;
 	}
 
 	public function run(): void
@@ -183,7 +199,8 @@ abstract class AppImpl
 			if (strtolower($request->requestedWith() ?: '') === 'phpspa_request') {
 				$body = json_decode($request->get('phpspa_body') ?? '', true);
 
-				if ($request->get('phpspa_body') !== null &&
+				if (
+					$request->get('phpspa_body') !== null &&
 					json_last_error() === JSON_ERROR_NONE
 				) {
 					if (!empty($body['stateKey']) && !empty($body['value'])) {
@@ -222,6 +239,7 @@ abstract class AppImpl
 				}
 			} else {
 				Session::start();
+				session_destroy();
 
 				$reg = unserialize(
 					Session::get(REGISTER_STATE_HANDLE, serialize([])),

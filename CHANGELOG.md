@@ -1,12 +1,95 @@
 # CHANGELOG
 
-## v1.1.5
+## v1.1.5 [Unreleased]
+
+### [Added]
+
+-  Support for class components (e.g., `<MyClass />`)
+-  Namespace support for class components (e.g., `<Namespace.Class />`)
+-  Classes require `__render` method for component rendering
+
+-  **Method Chaining Support to App Class**
+
+   You can now fluently chain multiple method calls on an App instance for cleaner and more expressive code.
+
+   **New Usage Example:**
+
+   ```php
+   $app = (new App(require 'Layout.php'))
+    ->attach(require 'components/Login.php')
+    ->defaultTargetID('app')
+    ->defaultToCaseSensitive()
+    ->cors()
+    ->run();
+   ```
+
+-  Initial release of `\phpSPA\Core\Helper\CSRFTokenManager` with core CSRF protection features.
+
+   -  Method `generateToken()`: Generates cryptographically secure tokens.
+   -  Method `getToken()`: Retrieves or generates a token.
+   -  Method `verifyToken()`: Validates tokens with timing-safe comparison.
+   -  Method `getHiddenInput()`: Outputs tokens as HTML hidden inputs.
+   -  Method `getMetaTag()`: Generates meta tags for AJAX/XHR requests.
+   -  Method `regenerateToken()`: Forces token regeneration.
+   -  Method `clearToken()`: Removes token and terminates execution (`never` return).
+
+-  New `<PhpSPA.Component.Csrf />` component for CSRF protection
+
+   -  Support for multiple named tokens with automatic cleanup
+   -  Built-in token expiration (1 hour default)
+   -  Automatic token generation and validation
+
+   **Features:**
+
+   -  Automatic token rotation
+   -  Prevents token reuse (optional via `$expireAfterUse`)
+   -  Limits stored tokens (10 max by default)
+   -  Timing-safe validation
+
+   **Security:**
+
+   -  Uses cryptographically secure `random_bytes()`
+   -  Implements `hash_equals()` to prevent timing attacks
+   -  Tokens automatically expire after 1 hour
+
+   **Example Workflow**
+
+   1. **In Form:**
+
+      ```php
+      <form>
+         <PhpSPA.Component.Csrf name="user-registration" />
+         <!-- other fields -->
+      </form>
+      ```
+
+   2. **On Submission:**
+
+      ```php
+      use phpSPA\Component\Csrf;
+
+      if (!Csrf::verify($request('csrf_token'), $request('csrf_form'))) {
+         die('Invalid CSRF token!');
+      }
+
+      // Process form...
+      ```
+
+### [Changed]
 
 -  Edited `StrictTypes` class and make the `string` class worked instead of `alnum` and `alpha`
 
+-  Made CORS configuration optional with default settings
+
+-  CORS method now loads default config when called (previously no defaults available)
+
+### [Removed]
+
+-  Removed deprecated `<Link />` Alias, use `<PhpSPA.Component.Link />` instead.
+
 ## v1.1.4
 
--  Updated phpSPA core from frontent to use the `Request` class instead of just global request `$_REQUEST`
+-  Updated phpSPA core from frontend to use the `Request` class instead of just global request `$_REQUEST`
 
 -  Added Hooks Event Documentation. [View Docs](https://phpspa.readthedocs.io/en/latest/hooks-event/)
 

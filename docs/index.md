@@ -15,8 +15,7 @@
 
 To empower PHP developers to create **modern, dynamic web apps** with the elegance of frontend SPA frameworks — but fully in PHP.
 
-!!! success "What Makes phpSPA Special"
-    * 🚫 No full-page reloads
+!!! success "What Makes phpSPA Special" \* 🚫 No full-page reloads
 
     * ⚡ Instant component swapping
 
@@ -30,8 +29,7 @@ To empower PHP developers to create **modern, dynamic web apps** with the elegan
 
 ## ✨ Key Features
 
-=== "Core Features"
-    * 🔄 **Dynamic Updates** - Feels like React, but it's PHP
+=== "Core Features" \* 🔄 **Dynamic Updates** - Feels like React, but it's PHP
 
     * 🧩 **Component Architecture** - Organize your code cleanly
 
@@ -43,8 +41,7 @@ To empower PHP developers to create **modern, dynamic web apps** with the elegan
 
     * 🪶 **Minimal JS** - Just one small file
 
-=== "Developer Experience"
-    * ✅ Fully PHP + HTML syntax
+=== "Developer Experience" \* ✅ Fully PHP + HTML syntax
 
     * ✅ No template engines required
 
@@ -70,17 +67,17 @@ graph TD
     C[Component] --> D[PHP function returning HTML]
     E[App] --> F[Registers and runs components]
     G[State] --> H[Manages reactive variables]
-    
+
     B --> I[Final Rendered Page]
     D --> I
     F --> I
     H --> I
 ```
 
-- **Layout** → The base HTML template with `__CONTENT__`
-- **Component** → A PHP function returning HTML
-- **App** → Registers and runs components based on routes
-- **State** → Simple mechanism for reactive variables
+-  **Layout** → The base HTML template with `__CONTENT__`
+-  **Component** → A PHP function returning HTML
+-  **App** → Registers and runs components based on routes
+-  **State** → Simple mechanism for reactive variables
 
 ---
 
@@ -143,7 +140,7 @@ require 'layout.php';
 require 'components.php';
 
 $app = new App('layout');
-$app->targetId('app');
+$app->defaultTargetID('app');
 
 $app->attach(
     (new Component('HomePage'))
@@ -163,7 +160,7 @@ $app->run();
 ```
 
 !!! tip "That's It!"
-    You now have a fully functional SPA with state management, routing, and dynamic updates — all in pure PHP!
+You now have a fully functional SPA with state management, routing, and dynamic updates — all in pure PHP!
 
 ---
 
@@ -178,7 +175,7 @@ $counter = createState("counter", 0);
 Update from the frontend:
 
 ```javascript
-phpspa.setState("counter", newValue);
+phpspa.setState('counter', newValue)
 ```
 
 The component automatically **re-renders** when state changes! 🎉
@@ -215,7 +212,7 @@ The component automatically **re-renders** when state changes! 🎉
     <?php
     require 'path/to/phpspa/core/App.php';
     require 'path/to/phpspa/core/Component.php';
-    
+
     use phpSPA\App;
     use phpSPA\Component;
     ```
@@ -235,8 +232,8 @@ The component automatically **re-renders** when state changes! 🎉
 ### JavaScript Events
 
 ```javascript
-phpspa.on("beforeload", ({ route }) => showLoader());
-phpspa.on("load", ({ success }) => hideLoader());
+phpspa.on('beforeload', ({ route }) => showLoader())
+phpspa.on('load', ({ success }) => hideLoader())
 ```
 
 ### CSRF Protection
@@ -257,19 +254,14 @@ Show different loaders for different components or routes.
 
 This documentation is organized to take you from beginner to expert:
 
-!!! info "Learning Path"
-    1. **[Introduction](1-introduction.md)** - Core concepts and philosophy
-    2. **[Getting Started](2-getting-started.md)** - Installation and setup
-    3. **[Creating Components](3-creating-your-first-component.md)** - Your first component
-    4. **[Routing](4-routing-and-parameters.md)** - URL handling and parameters
-    5. **[Advanced Features](17-state-management.md)** - State management and more
+!!! info "Learning Path" 1. **[Introduction](1-introduction.md)** - Core concepts and philosophy 2. **[Getting Started](2-getting-started.md)** - Installation and setup 3. **[Creating Components](3-creating-your-first-component.md)** - Your first component 4. **[Routing](4-routing-and-parameters.md)** - URL handling and parameters 5. **[Advanced Features](17-state-management.md)** - State management and more
 
 ---
 
 ## 🌟 Why Choose phpSPA?
 
-| Traditional PHP     | phpSPA                | React/Vue         |
-| ------------------- | --------------------- | ----------------- |
+| Traditional PHP     | phpSPA                 | React/Vue          |
+| ------------------- | ---------------------- | ------------------ |
 | Full page reloads   | ⚡ Instant updates     | ⚡ Instant updates |
 | No state management | 🧠 Built-in state      | 🧠 Complex state   |
 | Server-side only    | 🌐 Server + Client     | 🌐 Client-heavy    |
@@ -287,9 +279,9 @@ This documentation is organized to take you from beginner to expert:
 
 If you find phpSPA useful, please consider:
 
-- ⭐ **[Starring us on GitHub](https://github.com/dconco/phpspa)**
-- 📖 **Sharing this documentation**
-- 🐛 **Reporting bugs or suggesting features**
+-  ⭐ **[Starring us on GitHub](https://github.com/dconco/phpspa)**
+-  📖 **Sharing this documentation**
+-  🐛 **Reporting bugs or suggesting features**
 
 Your support helps keep the project alive and growing! ❤️
 
@@ -297,10 +289,10 @@ Your support helps keep the project alive and growing! ❤️
 
 ## 📘 Docs & Links
 
-- GitHub: [dconco/phpspa](https://github.com/dconco/phpspa)
-- JS Engine: [dconco/phpspa-js](https://github.com/dconco/phpspa-js)
-- Website: [https://phpspa.readthedocs.io](https://phpspa.readthedocs.io)
-- License: MIT
+-  GitHub: [dconco/phpspa](https://github.com/dconco/phpspa)
+-  JS Engine: [dconco/phpspa-js](https://github.com/dconco/phpspa-js)
+-  Website: [https://phpspa.readthedocs.io](https://phpspa.readthedocs.io)
+-  License: MIT
 
 ---
 

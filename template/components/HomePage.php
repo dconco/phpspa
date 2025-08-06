@@ -24,7 +24,7 @@ return (new Component(function (Request $request): string {
 		      <p>Welcome to my PHP SPA project! @$name</p>
 		      <br />
 		      <button id="btn" onclick="setState('counter', $counter + 1)">Counter: $counter</button>
-		      <Link to="./login#hashID" id="link-elem">GO TO LOGIN</Link>
+		      <PhpSPA.Component.Link to="./login#hashID" id="link-elem">GO TO LOGIN</PhpSPA.Component.Link>
 		      <br>
 		      <button onclick="phpspa.navigate('/counter')">Counter</button>
 		   </div>
