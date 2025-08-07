@@ -19,8 +19,8 @@ use phpSPA\Core\Helper\StateManager;
  * @package phpSPA\Component
  * @return StateManager      The state manager instance for the specified key.
  */
-function createState (string $stateKey, $default): StateManager
+function createState(string $stateKey, $default): StateManager
 {
-   if (!Session::isActive()) Session::start();
-   return new StateManager($stateKey, $default);
+	Session::start();
+	return new StateManager($stateKey, $default);
 }

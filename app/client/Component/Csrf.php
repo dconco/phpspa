@@ -39,7 +39,7 @@ class Csrf
 	{
 		Session::start();
 
-		$token = bin2hex(random_bytes(self::tokenLength));
+		$token = bin2hex(random_bytes(self::$tokenLength));
 		$tokenData = [
 			'token' => $token,
 			'created' => time(),
@@ -70,11 +70,11 @@ class Csrf
 	): bool {
 		Session::start();
 
-		if (empty(Session::get(self::sessionKey, [])[$formName])) {
+		if (empty(self::getSessionData()[$formName])) {
 			return false;
 		}
 
-		$storedTokenData = Session::get(self::sessionKey)[$formName];
+		$storedTokenData = self::getSessionData()[$formName];
 		$isValid = hash_equals($storedTokenData['token'], $token);
 
 		// Check token age (expire after 1 hour)
@@ -101,10 +101,10 @@ class Csrf
 	{
 		Session::start();
 
-		if (empty(Session::get(self::sessionKey, [])[$formName])) {
+		if (empty(self::getSessionData()[$formName])) {
 			return self::generate($formName);
 		}
-		return Session::get(self::sessionKey)[$formName]['token'];
+		return self::getSessionData()[$formName]['token'];
 	}
 
 	/**
@@ -137,9 +137,9 @@ class Csrf
 		string $formName,
 		array $tokenData,
 	): never {
-		$sessionData = Session::get(self::sessionKey, []);
+		$sessionData = self::getSessionData();
 		$sessionData[$formName] = $tokenData;
-		Session::set(self::sessionKey, $sessionData);
+		Session::set(self::$sessionKey, json_encode($sessionData));
 	}
 
 	/**
@@ -150,10 +150,10 @@ class Csrf
 	 */
 	private static function removeForm(string $formName): never
 	{
-		$sessionData = Session::get(self::sessionKey, []);
+		$sessionData = self::getSessionData();
 		unset($sessionData[$formName]);
 
-		Session::set(self::sessionKey, $sessionData);
+		Session::set(self::$sessionKey, json_encode($sessionData));
 	}
 
 	/**
@@ -163,13 +163,13 @@ class Csrf
 	 * - Tokens older than 1 hour (3600 seconds)
 	 * - Oldest tokens when total exceeds maxTokens limit
 	 */
-	private function cleanupTokens(): void
+	private static function cleanupTokens(): void
 	{
-		if (!Session::has(self::sessionKey)) {
+		if (!Session::has(self::$sessionKey)) {
 			return;
 		}
 
-		$tokens = Session::get(self::sessionKey);
+		$tokens = self::getSessionData();
 
 		// Remove expired tokens (older than 1 hour)
 		$maxAge = 3600;
@@ -182,8 +182,8 @@ class Csrf
 		}
 
 		// Limit total number of tokens
-		if (count(Session::get(self::sessionKey)) > self::maxTokens) {
-			$sessionData = Session::get(self::sessionKey);
+		if (count(self::getSessionData()) > self::$maxTokens) {
+			$sessionData = self::getSessionData();
 
 			// Sort by creation time and remove oldest
 			uasort($sessionData, function ($a, $b) {
@@ -191,9 +191,18 @@ class Csrf
 			});
 
 			Session::set(
-				self::sessionKey,
-				array_slice($sessionData - $this->maxTokens, null, true),
+				self::$sessionKey,
+				array_slice($sessionData - self::$maxTokens, null, true),
 			);
 		}
+	}
+
+	private static function getSessionData(): array
+	{
+		return json_decode(
+			Session::get(self::$sessionKey),
+			json_encode([]),
+			true,
+		);
 	}
 }

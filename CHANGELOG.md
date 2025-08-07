@@ -2,11 +2,59 @@
 
 ## v1.1.5 [Unreleased]
 
+![Note:] This PHPSPA version requires the [`dconco/phpspa-js`](https://github.com/dconco/phpspa-js) version above `v1.1.7` to be able to work
+
 ### [Added]
 
+-  Added `__call()` alias of `phpspa.__call()` but changed the logic on how it works:
+
+   -  You'll import the new created function `useFunction()` and provide the function you're to use as parameter, in your component:
+
+      ```php
+      <?php
+      // your Login component, make sure it's global function (or namespaced)
+      function Login($args) { return "<h2>Login Component</h2>"; }
+
+      // in your main component
+
+      // make sure you include the use function namespace
+      use function phpSPA\Component\useFunction;
+
+      $loginApi = useFunction('Login'); // Login since it's not in a namespace, if it is then include them together, eg '\Namespace\Login'
+
+      return <<<HTML
+         <script data-type="phpspa/script">
+            htmlElement.onclick = () => {
+               __call({$loginApi->token}, "Arguments")
+            }
+         </script>
+      HTML;
+      ```
+
+-  Provided direct PHP integration for calling PHP function from JS.
+
+   -  If you want a faster method, than calling manual with JS, use this:
+
+      ```php
+       // in your component, related to the earlier example.
+       $loginApi = useFunction('Login'); // the function to call
+
+       return <<<HTML
+         <script data-type="phpspa/script">
+            htmlElement.onclick = () => $loginApi; // this generates the JavaScript code
+
+            // to get the result (running with async)
+            htmlElement.onclick = async () => {
+               const response = await $loginApi('arguments'); // if there's argument, it'll like this
+               console.log(response) // outputs the response from the Login function
+            }
+         </script>
+       HTML;
+      ```
+
 -  Support for class components (e.g., `<MyClass />`)
--  Namespace support for class components (e.g., `<Namespace.Class />`)
--  Classes require `__render` method for component rendering
+
+-  Namespace support for class components (e.g., `<Namespace.Class />`)- Classes require `__render` method for component rendering
 
 -  **Method Chaining Support to App Class**
 
@@ -26,30 +74,43 @@
 -  Initial release of `\phpSPA\Core\Helper\CSRFTokenManager` with core CSRF protection features.
 
    -  Method `generateToken()`: Generates cryptographically secure tokens.
+
    -  Method `getToken()`: Retrieves or generates a token.
+
    -  Method `verifyToken()`: Validates tokens with timing-safe comparison.
+
    -  Method `getHiddenInput()`: Outputs tokens as HTML hidden inputs.
+
    -  Method `getMetaTag()`: Generates meta tags for AJAX/XHR requests.
+
    -  Method `regenerateToken()`: Forces token regeneration.
+
    -  Method `clearToken()`: Removes token and terminates execution (`never` return).
 
 -  New `<PhpSPA.Component.Csrf />` component for CSRF protection
 
    -  Support for multiple named tokens with automatic cleanup
+
    -  Built-in token expiration (1 hour default)
+
    -  Automatic token generation and validation
 
    **Features:**
 
    -  Automatic token rotation
+
    -  Prevents token reuse (optional via `$expireAfterUse`)
+
    -  Limits stored tokens (10 max by default)
+
    -  Timing-safe validation
 
    **Security:**
 
    -  Uses cryptographically secure `random_bytes()`
+
    -  Implements `hash_equals()` to prevent timing attacks
+
    -  Tokens automatically expire after 1 hour
 
    **Example Workflow**
@@ -76,6 +137,10 @@
       ```
 
 ### [Changed]
+
+-  Changed how JS -> PHP connection core logic works
+
+-  Made `__call()` function directly from Js x10 more secured
 
 -  Edited `StrictTypes` class and make the `string` class worked instead of `alnum` and `alpha`
 

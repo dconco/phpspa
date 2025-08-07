@@ -25,7 +25,7 @@
  * - This library assumes server-rendered HTML responses with placeholder target IDs.
  *
  * @author Dave Conco
- * @version 1.1.3
+ * @version 1.1.7
  * @license MIT
  */
 ;(function () {
@@ -154,7 +154,7 @@ class phpspa {
 			headers: {
 				'X-Requested-With': 'PHPSPA_REQUEST',
 			},
-			mode: 'same-origin',
+			mode: 'cors',
 			redirect: 'follow',
 			keepalive: true,
 		})
@@ -366,14 +366,14 @@ class phpspa {
 			}
 
 			const url = new URL(location.href)
-			const json = JSON.stringify({ stateKey, value })
-			const uri = encodeURI(`${url}?phpspa_body=${json}`)
+			const json = JSON.stringify({ state: { key, value } })
 
-			fetch(uri, {
+			fetch(url, {
 				headers: {
 					'X-Requested-With': 'PHPSPA_REQUEST',
+					Authorization: `Bearer ${btoa(json)}`,
 				},
-				mode: 'same-origin',
+				mode: 'cors',
 				redirect: 'follow',
 				keepalive: true,
 			})
@@ -381,6 +381,8 @@ class phpspa {
 					response
 						.text()
 						.then(res => {
+							console.log(res)
+							return
 							let data
 
 							if (res && res.trim().startsWith('{')) {
@@ -497,7 +499,7 @@ class phpspa {
 			headers: {
 				'X-Requested-With': 'PHPSPA_REQUEST',
 			},
-			mode: 'same-origin',
+			mode: 'cors',
 			redirect: 'follow',
 			keepalive: true,
 		})
@@ -583,22 +585,22 @@ class phpspa {
 		}
 	}
 
-	static async __call(functionName, ...args) {
+	static async __call(token, ...args) {
 		const currentScroll = {
 			top: scrollY,
 			left: scrollX,
 		}
 
 		const url = new URL(location.href)
-		const json = JSON.stringify({ functionName, args })
-		const uri = encodeURI(`${url}?phpspa_call_php_function=${json}`)
+		const json = JSON.stringify({ __call: { token, args } })
 
 		try {
-			const response = await fetch(uri, {
+			const response = await fetch(url, {
 				headers: {
 					'X-Requested-With': 'PHPSPA_REQUEST',
+					Authorization: `Bearer ${btoa(json)}`,
 				},
-				mode: 'same-origin',
+				mode: 'cors',
 				redirect: 'follow',
 				keepalive: true,
 			})
@@ -652,6 +654,12 @@ class phpspa {
 if (typeof setState !== 'function') {
 	function setState(stateKey, value) {
 		return phpspa.setState(stateKey, value)
+	}
+}
+
+if (typeof __call !== 'function') {
+	function __call(functionName, ...args) {
+		return phpspa.__call(functionName, ...args)
 	}
 }
 

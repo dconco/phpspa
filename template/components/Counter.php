@@ -16,7 +16,7 @@ return (new Component(function () {
 	    <button id="btn">
 	        Clicks: {$counter}
 	    </button>
-	HTML;
+HTML;
 }))
 	->route(['/phpspa/template/counter', '/counter'])
 	->title('Counter Component')
@@ -29,5 +29,5 @@ return (new Component(function () {
 		      let res = await phpspa.__call('HelloWorld', 'Dave')
 		      alert(res.data)
 		   })
-		JS,
+JS
 	);

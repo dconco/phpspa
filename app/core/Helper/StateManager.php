@@ -4,9 +4,7 @@ namespace phpSPA\Core\Helper;
 
 use Closure;
 use phpSPA\Http\Session;
-
 use const phpSPA\Core\Impl\Const\STATE_HANDLE;
-use const phpSPA\Core\Impl\Const\REGISTER_STATE_HANDLE;
 
 /**
  * Class StateManager
@@ -24,7 +22,7 @@ use const phpSPA\Core\Impl\Const\REGISTER_STATE_HANDLE;
 class StateManager
 {
 	private string $stateKey;
-	private string $value;
+	private mixed $value;
 
 	/**
 	 * Initializes the state with a given key and a default value.
@@ -34,18 +32,15 @@ class StateManager
 	 */
 	public function __construct(string $stateKey, $default)
 	{
-		$this->stateKey = $stateKey;
-		$this->value = Session::get(
-			STATE_HANDLE . $stateKey,
-			serialize($default),
+		$sessionData = json_decode(
+			Session::get(STATE_HANDLE, json_encode([])),
+			true,
 		);
-		Session::set(STATE_HANDLE . $stateKey, $this->value);
+		$sessionData[$stateKey] = $sessionData[$stateKey] ?? $default;
+		$this->value = $sessionData[$stateKey];
+		$this->stateKey = $stateKey;
 
-		$reg = unserialize(Session::get(REGISTER_STATE_HANDLE, serialize([])));
-		if (!in_array($stateKey, $reg)) {
-			array_push($reg, $stateKey);
-		}
-		Session::set(REGISTER_STATE_HANDLE, serialize($reg));
+		Session::set(STATE_HANDLE, json_encode($sessionData));
 	}
 
 	/**
@@ -58,14 +53,20 @@ class StateManager
 	 */
 	public function __invoke($value = null)
 	{
+		$sessionData = json_decode(
+			Session::get(STATE_HANDLE, serialize([])),
+			true,
+		);
+
 		if (!$value) {
-			return unserialize(
-				Session::get(STATE_HANDLE . $this->stateKey, $this->value),
-			);
+			return $sessionData[$this->stateKey] ?? $this->value;
 		}
 
-		$this->value = serialize($value);
-		Session::set(STATE_HANDLE . $this->stateKey, $this->value);
+		$this->value = $value;
+		$sessionData[$this->stateKey] = $value;
+		Session::set(STATE_HANDLE, json_encode($sessionData));
+
+		return $this->value;
 	}
 
 	/**
@@ -75,9 +76,11 @@ class StateManager
 	 */
 	public function __toString()
 	{
-		$value = unserialize(
-			Session::get(STATE_HANDLE . $this->stateKey, $this->value),
+		$sessionData = json_decode(
+			Session::get(STATE_HANDLE, json_encode([])),
+			true,
 		);
+		$value = $sessionData[$this->stateKey] ?? $this->value;
 		return is_array($value) ? json_encode($value) : $value;
 	}
 
@@ -89,9 +92,11 @@ class StateManager
 	 */
 	public function map(Closure $closure)
 	{
-		$value = unserialize(
-			Session::get(STATE_HANDLE . $this->stateKey, $this->value),
+		$sessionData = json_decode(
+			Session::get(STATE_HANDLE, json_encode([])),
+			true,
 		);
+		$value = $sessionData[$this->stateKey] ?? $this->value;
 
 		if (is_array($value)) {
 			$newValue = '';

@@ -12,6 +12,7 @@ return [
 	'allow_methods' => [
 		'GET',
 		'POST',
+		'VIEW',
 		'PUT',
 		'PATCH',
 		'DELETE',
@@ -29,7 +30,6 @@ return [
 		'Authorization',
 		'X-Api-Key',
 		'X-Csrf-Token',
-		'X-App-Context',
 		'X-Requested-With',
 	],
 

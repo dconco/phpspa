@@ -5,11 +5,14 @@ namespace phpSPA\Core\Impl\RealImpl;
 use phpSPA\Component;
 use phpSPA\Http\Request;
 use phpSPA\Http\Session;
+use phpSPA\Component\Csrf;
 use phpSPA\Core\Router\MapRoute;
+use phpSPA\Core\Helper\CSRFTokenManager;
 use phpSPA\Core\Helper\CallableInspector;
 use phpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 
 use const phpSPA\Core\Impl\Const\STATE_HANDLE;
+use const phpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
 use const phpSPA\Core\Impl\Const\REGISTER_STATE_HANDLE;
 
 /**
@@ -28,6 +31,7 @@ use const phpSPA\Core\Impl\Const\REGISTER_STATE_HANDLE;
 abstract class AppImpl
 {
 	use ComponentTagFormatter;
+	use \phpSPA\Core\Utils\Validate;
 
 	/**
 	 * The layout of the application.
@@ -196,42 +200,41 @@ abstract class AppImpl
 			$layoutOutput = call_user_func($this->layout);
 			$componentOutput = '';
 
-			if (strtolower($request->requestedWith() ?: '') === 'phpspa_request') {
-				$body = json_decode($request->get('phpspa_body') ?? '', true);
+			if ($request->requestedWith() ?? '' === 'PHPSPA_REQUEST') {
+				$data = json_decode($request->auth()->bearer ?? '', true);
+				$data = $this->validate($data);
 
-				if (
-					$request->get('phpspa_body') !== null &&
-					json_last_error() === JSON_ERROR_NONE
-				) {
-					if (!empty($body['stateKey']) && !empty($body['value'])) {
+				if (isset($data['state'])) {
+					if (
+						!empty($data['state']['key']) &&
+						!empty($data['state']['value'])
+					) {
 						Session::start();
 
-						$reg = unserialize(
-							Session::get(REGISTER_STATE_HANDLE, serialize([])),
+						$sessionData = json_decode(
+							Session::get(STATE_HANDLE, json_encode([])),
+							true,
 						);
-						if (in_array($body['stateKey'], $reg)) {
-							Session::set(
-								STATE_HANDLE . $body['stateKey'],
-								serialize($body['value']),
-							);
-						}
+						$sessionData[$data['state']['key']] = $data['state']['value'];
+						Session::set(STATE_HANDLE, json_encode($sessionData));
 					}
 				}
 
-				$body = json_decode(
-					$request->get('phpspa_call_php_function') ?? '',
-					true,
-				);
-				if (
-					$request->get('phpspa_call_php_function') !== null &&
-					json_last_error() === JSON_ERROR_NONE
-				) {
+				if (isset($data['__call'])) {
 					try {
-						$res = call_user_func_array(
-							$body['functionName'],
-							$body['args'],
-						);
-						print_r(json_encode(['response' => $res]));
+						$token = json_decode($data['__call']['token'], true);
+						$functionName = $token[0];
+						$token = $token[1];
+
+						if (Csrf::verify($token, $functionName, false)) {
+							$res = call_user_func_array(
+								$functionName,
+								$data['__call']['args'],
+							);
+							print_r(json_encode(['response' => $res]));
+						} else {
+							throw new \Exception('Invalid or Expired Token');
+						}
 					} catch (\Exception $e) {
 						print_r($e->getMessage());
 					}
@@ -239,13 +242,8 @@ abstract class AppImpl
 				}
 			} else {
 				Session::start();
-				session_destroy();
-
-				$reg = unserialize(
-					Session::get(REGISTER_STATE_HANDLE, serialize([])),
-				);
-				$keys = array_map(fn($key) => STATE_HANDLE . $key, $reg);
-				Session::remove($keys);
+				Session::remove(STATE_HANDLE);
+				Session::remove(CALL_FUNC_HANDLE);
 			}
 
 			/**
@@ -319,7 +317,7 @@ abstract class AppImpl
 				}
 			}
 
-			if (strtolower($request->requestedWith() ?: '') === 'phpspa_request') {
+			if ($request->requestedWith() ?? '' === 'PHPSPA_REQUEST') {
 				$info = [
 					'content' => $componentOutput,
 					'title' => $title,
