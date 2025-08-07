@@ -12,7 +12,7 @@ return fn() => <<<HTML
 
          <!-- phpSPA JS PLUGIN -->
          <!-- <script type="text/javascript" src="https://unpkg.com/phpspa-js"></script> -->
-         <script type="text/javascript" src="/src/ind.js"></script>
+         <script type="text/javascript" src="/src/index.js"></script>
 
          <script>
             phpspa.on("beforeload", ({ route }) => {
