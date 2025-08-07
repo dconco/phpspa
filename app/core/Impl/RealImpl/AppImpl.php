@@ -7,13 +7,11 @@ use phpSPA\Http\Request;
 use phpSPA\Http\Session;
 use phpSPA\Component\Csrf;
 use phpSPA\Core\Router\MapRoute;
-use phpSPA\Core\Helper\CSRFTokenManager;
 use phpSPA\Core\Helper\CallableInspector;
-use phpSPA\Core\Utils\Formatter\ComponentTagFormatter;
-
 use const phpSPA\Core\Impl\Const\STATE_HANDLE;
+
 use const phpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
-use const phpSPA\Core\Impl\Const\REGISTER_STATE_HANDLE;
+use phpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 
 /**
  * @author dconco <concodave@gmail.com>
@@ -147,9 +145,8 @@ abstract class AppImpl
 		/**
 		 * Handle preflight requests (OPTIONS method)
 		 */
-		if (strtolower($_SERVER['REQUEST_METHOD']) === 'options') {
+		if (strtolower($_SERVER['REQUEST_METHOD']) === 'options')
 			exit();
-		}
 
 		foreach ($this->components as $component) {
 			$route = CallableInspector::getProperty($component, 'route');
@@ -172,9 +169,8 @@ abstract class AppImpl
 			$title = CallableInspector::getProperty($component, 'title');
 			$reloadTime = CallableInspector::getProperty($component, 'reloadTime');
 
-			if (!$componentFunction || !is_callable($componentFunction)) {
+			if (!$componentFunction || !is_callable($componentFunction))
 				continue;
-			}
 
 			if (!$route) {
 				$m = explode('|', $method);
@@ -183,16 +179,11 @@ abstract class AppImpl
 
 				if (
 					!in_array(strtolower($_SERVER['REQUEST_METHOD']), $m) &&
-					!in_array('*', self::$method)
-				) {
-					continue;
-				}
+					!in_array('*', $method)
+				) continue;
 			} else {
 				$router = (new MapRoute())->match($method, $route, $caseSensitive);
-
-				if (!$router) {
-					continue;
-				} // Skip if no match found
+				if (!$router) continue;// Skip if no match found
 			}
 
 			$request = new Request();
@@ -222,7 +213,9 @@ abstract class AppImpl
 
 				if (isset($data['__call'])) {
 					try {
-						$token = json_decode($data['__call']['token'], true);
+						$token = $data['__call']['token'];
+						print_r($token);
+						exit;
 						$functionName = $token[0];
 						$token = $token[1];
 

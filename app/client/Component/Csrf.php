@@ -131,12 +131,12 @@ class Csrf
 	 *
 	 * @param string $formName Name of the form to register
 	 * @param array $tokenData Token data including token string and timestamp
-	 * @return never
+	 * @return void
 	 */
 	private static function registerForm(
 		string $formName,
 		array $tokenData,
-	): never {
+	): void {
 		$sessionData = self::getSessionData();
 		$sessionData[$formName] = $tokenData;
 		Session::set(self::$sessionKey, json_encode($sessionData));
@@ -146,14 +146,14 @@ class Csrf
 	 * Removes a form token from session storage
 	 *
 	 * @param string $formName Name of the form to remove
-	 * @return never
+	 * @return void
 	 */
-	private static function removeForm(string $formName): never
+	private static function removeForm(string $formName): void
 	{
 		$sessionData = self::getSessionData();
 		unset($sessionData[$formName]);
 
-		Session::set(self::$sessionKey, json_encode($sessionData));
+		Session::set(self::$sessionKey, json_encode((new self())->validate($sessionData)));
 	}
 
 	/**
@@ -192,17 +192,14 @@ class Csrf
 
 			Session::set(
 				self::$sessionKey,
-				array_slice($sessionData - self::$maxTokens, null, true),
+				(new self())->validate(array_slice($sessionData, self::$maxTokens, null, true)),
 			);
 		}
 	}
 
 	private static function getSessionData(): array
 	{
-		return json_decode(
-			Session::get(self::$sessionKey),
-			json_encode([]),
-			true,
-		);
+		$s = htmlspecialchars_decode(Session::get(self::$sessionKey, json_encode([])), ENT_COMPAT);
+		return json_decode($s, true);
 	}
 }

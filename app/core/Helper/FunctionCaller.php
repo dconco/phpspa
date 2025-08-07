@@ -16,7 +16,7 @@ use const phpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  */
 class FunctionCaller
 {
-	 string $token;
+	public string $token;
 
 	function __construct(callable $function)
 	{
@@ -25,7 +25,7 @@ class FunctionCaller
 		Csrf::$sessionKey = CALL_FUNC_HANDLE;
 		$token = Csrf::generate($funcName);
 
-		$this->token = serialize([$funcName, $token]);
+		$this->token = json_encode([$funcName, $token]);
 	}
 
 	function __toString()

@@ -16,5 +16,6 @@ $app = (new App(require 'Layout.php'))
 	->defaultTargetID('app')
 	->defaultToCaseSensitive()
 
-	->cors()
-	->run();
+	->cors();
+
+$app->run();
