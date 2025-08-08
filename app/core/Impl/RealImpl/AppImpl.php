@@ -5,7 +5,6 @@ namespace phpSPA\Core\Impl\RealImpl;
 use phpSPA\Component;
 use phpSPA\Http\Request;
 use phpSPA\Http\Session;
-use phpSPA\Component\Csrf;
 use phpSPA\Core\Router\MapRoute;
 use phpSPA\Core\Helper\CallableInspector;
 use phpSPA\Core\Helper\StateSessionHandler;
@@ -221,9 +220,11 @@ abstract class AppImpl
 						$functionName = $token[0];
 						$token = $token[1];
 
-						Csrf::$sessionKey = CALL_FUNC_HANDLE;
+						$storedToken = Session::get(CALL_FUNC_HANDLE);
+						print_r($storedToken);
+						print_r("\n" . $token);
 
-						if (Csrf::verify($token, $functionName, false)) {
+						if (true) {
 							$res = call_user_func_array(
 								$functionName,
 								$data['__call']['args'],

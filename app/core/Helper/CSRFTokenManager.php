@@ -26,10 +26,10 @@ class CSRFTokenManager
 	 * @return string The generated token (hex-encoded)
 	 * @throws \RuntimeException If random_bytes() fails to generate entropy
 	 */
-	static function generateToken(): string
+	function generateToken(): string
 	{
-		$token = bin2hex(random_bytes(self::$tokenLength));
-		Session::set(self::$sessionKey, $token);
+		$token = bin2hex(random_bytes($this->tokenLength));
+		Session::set($this->sessionKey, $token);
 
 		return $token;
 	}
@@ -39,9 +39,9 @@ class CSRFTokenManager
 	 *
 	 * @return string|null The stored token, or a newly generated one if empty
 	 */
-	static function getToken(): ?string
+	function getToken(): ?string
 	{
-		return Session::get(self::$sessionKey, self::generateToken());
+		return Session::get($this->sessionKey, $this->generateToken());
 	}
 
 	/**
@@ -50,10 +50,10 @@ class CSRFTokenManager
 	 * @param string $token The token to verify
 	 * @return bool True if tokens match (timing-safe comparison), false otherwise
 	 */
-	static function verifyToken(string $token): bool
+	function verifyToken(string $token): bool
 	{
-		return Session::has(self::$sessionKey)
-			? hash_equals(Session::get(self::$sessionKey), $token)
+		return Session::has($this->sessionKey)
+			? hash_equals(Session::get($this->sessionKey), $token)
 			: false;
 	}
 
@@ -62,12 +62,12 @@ class CSRFTokenManager
 	 *
 	 * @return string HTML input element (e.g., `<input type="hidden" name="csrf_token" value="abc123">`)
 	 */
-	static function getHiddenInput(): string
+	function getHiddenInput(): string
 	{
-		$token = self::getToken();
+		$token = $this->getToken();
 		return sprintf(
 			'<input type="hidden" name="csrf_token" value="%s">',
-			(new static())->validate($token),
+			$this->validate($token),
 		);
 	}
 
@@ -76,12 +76,12 @@ class CSRFTokenManager
 	 *
 	 * @return string HTML meta tag (e.g., `<meta name="csrf-token" content="abc123">`)
 	 */
-	static function getMetaTag(): string
+	function getMetaTag(): string
 	{
-		$token = self::getToken();
+		$token = $this->getToken();
 		return sprintf(
 			'<meta name="csrf-token" content="%s">',
-			(new static())->validate($token),
+			$this->validate($token),
 		);
 	}
 
@@ -90,18 +90,18 @@ class CSRFTokenManager
 	 *
 	 * @return string The new token
 	 */
-	static function regenerateToken(): string
+	function regenerateToken(): string
 	{
-		return self::generateToken();
+		return $this->generateToken();
 	}
 
 	/**
 	 * Clears the CSRF token from the session.
 	 *
-	 * @return never
+	 * @return void
 	 */
-	static function clearToken(): never
+	function clearToken(): void
 	{
-		Session::remove(self::$sessionKey);
+		Session::remove($this->sessionKey);
 	}
 }

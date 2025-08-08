@@ -155,7 +155,7 @@ class phpspa {
 				'X-Requested-With': 'PHPSPA_REQUEST',
 			},
 			mode: 'cors',
-			credentials: 'include',
+
 			redirect: 'follow',
 			keepalive: true,
 		})
@@ -375,7 +375,7 @@ class phpspa {
 					Authorization: `Bearer ${btoa(json)}`,
 				},
 				mode: 'cors',
-				credentials: 'include',
+
 				redirect: 'follow',
 				keepalive: true,
 			})
@@ -513,7 +513,7 @@ class phpspa {
 				'X-Requested-With': 'PHPSPA_REQUEST',
 			},
 			mode: 'cors',
-			credentials: 'include',
+
 			redirect: 'follow',
 			keepalive: true,
 		})
@@ -615,7 +615,7 @@ class phpspa {
 					Authorization: `Bearer ${btoa(json)}`,
 				},
 				mode: 'cors',
-				credentials: 'include',
+
 				redirect: 'follow',
 				keepalive: true,
 			})

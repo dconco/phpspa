@@ -4,7 +4,6 @@ namespace phpSPA\Core\Helper;
 
 use Closure;
 use phpSPA\Http\Session;
-use phpSPA\Component\Csrf;
 use const phpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
 
 /**
@@ -22,9 +21,12 @@ class FunctionCaller
 	{
 		$funcName = $this->getCallableName($function);
 
-		Csrf::$sessionKey = CALL_FUNC_HANDLE;
-		$token = Csrf::getToken($funcName);
-		Csrf::reset();
+		if (Session::has(CALL_FUNC_HANDLE)) {
+			$token = Session::get(CALL_FUNC_HANDLE);
+		} else {
+			$token = bin2hex(random_bytes(length: 32));
+			Session::set(CALL_FUNC_HANDLE, $token);
+		}
 
 		$this->token = base64_encode(json_encode([$funcName, $token]));
 	}
