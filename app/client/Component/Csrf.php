@@ -3,6 +3,7 @@
 namespace phpSPA\Component;
 
 use phpSPA\Http\Session;
+use phpSPA\Core\Helper\StateSessionHandler;
 
 /**
  * Secure CSRF (Cross-Site Request Forgery) protection component
@@ -37,8 +38,6 @@ class Csrf
 	 */
 	static function generate(string $formName): string
 	{
-		Session::start();
-
 		$token = bin2hex(random_bytes(self::$tokenLength));
 		$tokenData = [
 			'token' => $token,
@@ -68,8 +67,6 @@ class Csrf
 		string $formName,
 		bool $expireAfterUse = true,
 	): bool {
-		Session::start();
-
 		if (empty(self::getSessionData()[$formName])) {
 			return false;
 		}
@@ -99,8 +96,6 @@ class Csrf
 	 */
 	static function getToken(string $formName): string
 	{
-		Session::start();
-
 		if (empty(self::getSessionData()[$formName])) {
 			return self::generate($formName);
 		}
@@ -126,6 +121,11 @@ class Csrf
 		);
 	}
 
+	static function reset()
+	{
+		self::$sessionKey = '_csrf_tokens';
+	}
+
 	/**
 	 * Registers a new form token in the session storage
 	 *
@@ -139,7 +139,7 @@ class Csrf
 	): void {
 		$sessionData = self::getSessionData();
 		$sessionData[$formName] = $tokenData;
-		Session::set(self::$sessionKey, json_encode($sessionData));
+		self::setSessionData($sessionData);
 	}
 
 	/**
@@ -153,7 +153,7 @@ class Csrf
 		$sessionData = self::getSessionData();
 		unset($sessionData[$formName]);
 
-		Session::set(self::$sessionKey, json_encode((new self())->validate($sessionData)));
+		self::setSessionData($sessionData);
 	}
 
 	/**
@@ -190,16 +190,20 @@ class Csrf
 				return $a['created'] - $b['created'];
 			});
 
-			Session::set(
-				self::$sessionKey,
-				(new self())->validate(array_slice($sessionData, self::$maxTokens, null, true)),
+			self::setSessionData(
+				array_slice($sessionData, self::$maxTokens, null, true),
 			);
 		}
 	}
 
 	private static function getSessionData(): array
 	{
-		$s = htmlspecialchars_decode(Session::get(self::$sessionKey, json_encode([])), ENT_COMPAT);
-		return json_decode($s, true);
+		$s = StateSessionHandler::get(self::$sessionKey);
+		return $s;
+	}
+
+	private static function setSessionData(array $vv): void
+	{
+		StateSessionHandler::set(self::$sessionKey, $vv);
 	}
 }

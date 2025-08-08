@@ -28,8 +28,6 @@ class CSRFTokenManager
 	 */
 	static function generateToken(): string
 	{
-		Session::start();
-
 		$token = bin2hex(random_bytes(self::$tokenLength));
 		Session::set(self::$sessionKey, $token);
 
@@ -43,7 +41,6 @@ class CSRFTokenManager
 	 */
 	static function getToken(): ?string
 	{
-		Session::start();
 		return Session::get(self::$sessionKey, self::generateToken());
 	}
 
@@ -55,7 +52,6 @@ class CSRFTokenManager
 	 */
 	static function verifyToken(string $token): bool
 	{
-		Session::start();
 		return Session::has(self::$sessionKey)
 			? hash_equals(Session::get(self::$sessionKey), $token)
 			: false;
@@ -106,6 +102,6 @@ class CSRFTokenManager
 	 */
 	static function clearToken(): never
 	{
-		Session::start() && Session::remove(self::$sessionKey);
+		Session::remove(self::$sessionKey);
 	}
 }

@@ -2,7 +2,6 @@
 
 namespace phpSPA\Component;
 
-use phpSPA\Http\Session;
 use phpSPA\Core\Helper\FunctionCaller;
 
 /**
@@ -15,5 +14,5 @@ use phpSPA\Core\Helper\FunctionCaller;
  */
 function useFunction(callable $function): FunctionCaller
 {
-	return Session::start() && new FunctionCaller($function);
+	return new FunctionCaller($function);
 }

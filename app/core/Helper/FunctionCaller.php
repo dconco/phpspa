@@ -23,14 +23,15 @@ class FunctionCaller
 		$funcName = $this->getCallableName($function);
 
 		Csrf::$sessionKey = CALL_FUNC_HANDLE;
-		$token = Csrf::generate($funcName);
+		$token = Csrf::getToken($funcName);
+		Csrf::reset();
 
-		$this->token = json_encode([$funcName, $token]);
+		$this->token = base64_encode(json_encode([$funcName, $token]));
 	}
 
 	function __toString()
 	{
-		return "phpspa.__call({$this->token})";
+		return "phpspa.__call('{$this->token}')";
 	}
 
 	function __invoke()
@@ -39,10 +40,10 @@ class FunctionCaller
 		$args = func_get_args();
 
 		foreach ($args as $value) {
-			$arg .= ', ' . $value;
+			$arg .= ', ' . "'$value'";
 		}
 
-		return "phpspa.__call({$this->token}{$arg})";
+		return "phpspa.__call('{$this->token}'{$arg})";
 	}
 
 	private function getCallableName(callable $callable): string

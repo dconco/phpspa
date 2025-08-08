@@ -25,7 +25,7 @@
       return <<<HTML
          <script data-type="phpspa/script">
             htmlElement.onclick = () => {
-               __call({$loginApi->token}, "Arguments")
+               __call("{$loginApi->token}", "Arguments")
             }
          </script>
       HTML;

@@ -32,15 +32,13 @@ class StateManager
 	 */
 	public function __construct(string $stateKey, $default)
 	{
-		$sessionData = json_decode(
-			Session::get(STATE_HANDLE, json_encode([])),
-			true,
-		);
+		$sessionData = StateSessionHandler::get(STATE_HANDLE);
+
 		$sessionData[$stateKey] = $sessionData[$stateKey] ?? $default;
 		$this->value = $sessionData[$stateKey];
 		$this->stateKey = $stateKey;
 
-		Session::set(STATE_HANDLE, json_encode($sessionData));
+		StateSessionHandler::set(STATE_HANDLE, $sessionData);
 	}
 
 	/**
@@ -53,10 +51,7 @@ class StateManager
 	 */
 	public function __invoke($value = null)
 	{
-		$sessionData = json_decode(
-			Session::get(STATE_HANDLE, serialize([])),
-			true,
-		);
+		$sessionData = StateSessionHandler::get(STATE_HANDLE);
 
 		if (!$value) {
 			return $sessionData[$this->stateKey] ?? $this->value;
@@ -64,7 +59,7 @@ class StateManager
 
 		$this->value = $value;
 		$sessionData[$this->stateKey] = $value;
-		Session::set(STATE_HANDLE, json_encode($sessionData));
+		StateSessionHandler::set(STATE_HANDLE, $sessionData);
 
 		return $this->value;
 	}
@@ -76,10 +71,8 @@ class StateManager
 	 */
 	public function __toString()
 	{
-		$sessionData = json_decode(
-			Session::get(STATE_HANDLE, json_encode([])),
-			true,
-		);
+		$sessionData = StateSessionHandler::get(STATE_HANDLE);
+
 		$value = $sessionData[$this->stateKey] ?? $this->value;
 		return is_array($value) ? json_encode($value) : $value;
 	}
@@ -92,10 +85,7 @@ class StateManager
 	 */
 	public function map(Closure $closure)
 	{
-		$sessionData = json_decode(
-			Session::get(STATE_HANDLE, json_encode([])),
-			true,
-		);
+		$sessionData = StateSessionHandler::get(STATE_HANDLE);
 		$value = $sessionData[$this->stateKey] ?? $this->value;
 
 		if (is_array($value)) {

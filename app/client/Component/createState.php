@@ -2,7 +2,6 @@
 
 namespace phpSPA\Component;
 
-use phpSPA\Http\Session;
 use phpSPA\Core\Helper\StateManager;
 
 /**
@@ -21,6 +20,5 @@ use phpSPA\Core\Helper\StateManager;
  */
 function createState(string $stateKey, $default): StateManager
 {
-	Session::start();
 	return new StateManager($stateKey, $default);
 }
