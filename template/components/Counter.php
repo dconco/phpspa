@@ -29,7 +29,7 @@ HTML;
 		   let btn = document.getElementById('btn')
 
 		   btn.addEventListener('click', async () => {
-		      let res = await phpspa.__call({$caller->token}, 'Dave')
+		      let res = await phpspa.__call('{$caller->token}', 'Dave')
 		      alert(res.data)
 		   })
 		JS
