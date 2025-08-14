@@ -1,248 +1,155 @@
-# 📦 **phpSPA - Build Native PHP SPAs Without JavaScript Frameworks**
+<div align="center">
 
-## 📛 **Name**
+# 🧩 **phpSPA**
 
-**phpSPA** lets you build fast, interactive single-page apps using **pure PHP** — with dynamic routing, component architecture, and no full-page reloads. No JavaScript frameworks required.
+### *Component-Based PHP Library for Modern Web Applications*
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-[![JS Version](https://img.shields.io/badge/version-1.1.7-green.svg)](https://github.com/dconco/phpspa-js)
-[![Documentation](https://readthedocs.org/projects/phpspa/badge/?version=latest)](https://phpspa.readthedocs.io)
-[![GitHub stars](https://img.shields.io/github/stars/dconco/phpspa?style=social)](https://github.com/dconco/phpspa)
-[![PHP Version](https://img.shields.io/packagist/v/dconco/phpspa)](https://packagist.org/packages/dconco/phpspa)
-[![Total Downloads](https://img.shields.io/packagist/dt/dconco/phpspa)](https://packagist.org/packages/dconco/phpspa)
+**Build dynamic, interactive web applications using reusable PHP components with state management and SPA-like behavior — no JavaScript frameworks required.**
 
----
+<br>
 
-## 🎯 **Goal**
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.1.7-green.svg?style=for-the-badge)](https://github.com/dconco/phpspa-js)
+[![Documentation](https://img.shields.io/badge/docs-read%20the%20docs-blue.svg?style=for-the-badge)](https://phpspa.readthedocs.io)
+[![GitHub stars](https://img.shields.io/github/stars/dconco/phpspa?style=for-the-badge&color=yellow)](https://github.com/dconco/phpspa)
+[![PHP Version](https://img.shields.io/packagist/v/dconco/phpspa?style=for-the-badge&color=purple)](https://packagist.org/packages/dconco/phpspa)
+[![Downloads](https://img.shields.io/packagist/dt/dconco/phpspa?style=for-the-badge&color=orange)](https://packagist.org/packages/dconco/phpspa)
 
-To empower PHP developers to create **modern, dynamic web apps** with the elegance of frontend SPA frameworks — but fully in PHP.
+<br>
 
--  🚫 No full-page reloads
--  ⚡ Instant component swapping
--  🧱 Clean, function-based components
--  🌍 Real SPA behavior via History API
--  🧠 Now with **State Management**!
+## ✨ **Key Features**
 
----
+<table>
+<tr>
+<td align="center" width="25%">
+<strong>🧩 Components</strong><br>
+<em>Reusable & Modular</em><br>
+Build once, use everywhere
+</td>
+<td align="center" width="25%">
+<strong>🧠 State</strong><br>
+<em>Reactive Updates</em><br>
+Auto-sync state changes
+</td>
+<td align="center" width="25%">
+<strong>⚡ Performance</strong><br>
+<em>Zero Full Reloads</em><br>
+SPA-like experience
+</td>
+<td align="center" width="25%">
+<strong>🎯 Simple</strong><br>
+<em>Minimal Setup</em><br>
+Works out of the box
+</td>
+</tr>
+</table>
 
-## 🧱 **Core Features**
-
--  🔄 Dynamic content updates — feels like React
--  🧩 Component-based PHP architecture
--  🔗 URL routing (client + server synced)
--  🧠 **Built-in State Management**
--  ⚙️ Lifecycle support for loaders, metadata, etc.
--  🪶 Minimal JS: one small file
--  🔁 Graceful fallback (no JS? Still works)
-
----
-
-## ✨ Features
-
--  ✅ Fully PHP + HTML syntax
--  ✅ No template engines required
--  ✅ Dynamic GET & POST routing
--  ✅ Server-rendered SEO-ready output
--  ✅ Per-component and global loading indicators
--  ✅ Supports Composer or manual usage
--  ✅ **State system**: update UI reactively from JS
-
----
-
-## 🧠 Concept
-
--  **Layout** → The base HTML (with `__CONTENT__`)
--  **Component** → A PHP function returning HTML
--  **App** → Registers and runs components based on routes
--  **State** → Simple mechanism to manage reactive variables across requests
+</div>
 
 ---
 
-## 🧩 State Management
+## 🚀 **Quick Start**
 
-You can create persistent state variables inside your components using:
-
-```php
-$counter = createState("counter", 0);
-```
-
-Update state from the frontend:
-
-```js
-phpspa.setState('counter', newValue)
-```
-
-This will automatically **re-render** the component on update.
-
----
-
-## 📦 Installation
-
-### 1. Via Composer (Recommended)
+### Install
 
 ```bash
 composer require dconco/phpspa
 ```
 
-Include the autoloader:
+### Create Component
 
 ```php
-require 'vendor/autoload.php';
-```
-
-### 2. Manual
-
-Include the core files:
-
-```php
-require 'path/to/phpspa/core/App.php';
-require 'path/to/phpspa/core/Component.php';
-```
-
----
-
-### 🌐 JS Engine (CDN)
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/phpspa-js"></script>
-```
-
----
-
-## 🚀 **Getting Started (with Live Counter)**
-
-```php
-<?php
-// layout.php
-function layout() {
-    return <<<HTML
-    <html>
-        <head>
-            <title>My Live App</title>
-        </head>
-        <body>
-            <div id="app">__CONTENT__</div>
-            <script src="https://cdn.jsdelivr.net/npm/phpspa-js"></script>
-        </body>
-    </html>
-    HTML;
-}
-```
-
-```php
-<?php
-// components.php
 function HomePage() {
     $counter = createState("count", 0);
-
     return <<<HTML
         <h1>Counter: {$counter}</h1>
-        <button onclick="phpspa.setState('count', {$counter} + 1)">Increase</button>
-        <button onclick="phpspa.setState('count', 0)">Reset</button>
-        <br><br>
-        <Link to="/login" label="Go to Login" />
-    HTML;
-}
-
-function LoginPage() {
-    return <<<HTML
-        <h2>Login</h2>
-        <form method="post">
-            <input name="username" placeholder="Username"><br>
-            <input name="password" type="password" placeholder="Password"><br>
-            <button type="submit">Login</button>
-        </form>
+        <button onclick="phpspa.setState('count', {$counter} + 1)">+</button>
+        <Component.Link to="/about" label="About" />
     HTML;
 }
 ```
 
-```php
-<?php
-// index.php
-require 'layout.php';
-require 'components.php';
+### Setup App
 
+```php
 $app = new App('layout');
 $app->targetId('app');
-
-$app->attach(
-    (new Component('HomePage'))
-        ->title('Home')
-        ->method('GET')
-        ->route('/')
-);
-
-$app->attach(
-    (new Component('LoginPage'))
-        ->title('Login')
-        ->method('GET|POST')
-        ->route('/login')
-);
-
+$app->attach((new Component('HomePage'))->route('/'));
 $app->run();
 ```
 
 ---
 
-## 🛠 JS Events
+## 🎨 **What You Get**
 
-```js
-phpspa.on('beforeload', ({ route }) => showLoader())
-phpspa.on('load', ({ success }) => hideLoader())
-```
-
----
-
-## 📚 Full Documentation
-
-Looking for a complete guide to phpSPA?
-
-🔗 **Read the full tutorial and advanced usage on Read the Docs**:
-
-👉 **[https://phpspa.readthedocs.io](https://phpspa.readthedocs.io)**
-
-The docs include:
-
--  📦 Installation (Composer & Manual)
--  🧩 Component system
--  🔁 Routing & page transitions
--  🧠 Global state management
--  ✨ Layouts, nesting, and loaders
--  🛡️ CSRF protection
--  🧪 Practical examples & best practices
-
-Whether you're just getting started or building something advanced, the documentation will walk you through every step.
-
----
-
-## 📘 Docs & Links
-
--  GitHub: [dconco/phpspa](https://github.com/dconco/phpspa)
--  JS Engine: [dconco/phpspa-js](https://github.com/dconco/phpspa-js)
--  Website: [https://phpspa.readthedocs.io](https://phpspa.readthedocs.io)
--  License: MIT
+<table>
+<tr>
+<td width="50%">
+<strong>🧱 Component Architecture</strong><br>
+Clean, reusable PHP components
+</td>
+<td width="50%">
+<strong>🔄 Reactive State</strong><br>
+Auto-updating UI with simple state management
+</td>
+</tr>
+<tr>
+<td>
+<strong>🌍 SPA Navigation</strong><br>
+Smooth page transitions without reloads
+</td>
+<td>
+<strong>🪶 Lightweight</strong><br>
+Just one small JavaScript file
+</td>
+</tr>
+<tr>
+<td>
+<strong>🛡️ SEO Ready</strong><br>
+Server-rendered for search engines
+</td>
+<td>
+<strong>⚙️ Framework Agnostic</strong><br>
+Works with any PHP setup
+</td>
+</tr>
+</table>
 
 ---
 
-## 📘 License
+## 📚 **Learn More**
 
-MIT License © [dconco](https://github.com/dconco)
+🔗 **[Complete Documentation](https://phpspa.readthedocs.io)** — Full tutorials, examples, and API reference
 
----
+👉 **[GitHub Repository](https://github.com/dconco/phpspa)** — Source code and issues
 
-## 🧑‍💻 Maintained by
-
-**Dave Conco**
-Simple, fast, and native PHP – just the way we like it.
+📦 **[Packagist](https://packagist.org/packages/dconco/phpspa)** — Installation and versions
 
 ---
 
-## 🌟 Give Me a Star
+<div align="center">
 
-If you find phpSPA useful, please consider giving it a star on GitHub! It helps others discover the project and keeps the momentum going 🚀
+## 👨‍💻 **Created by [Dave Conco](https://github.com/dconco)**
 
-👉 **[Give us a ⭐ on GitHub](https://github.com/dconco/phpspa)**
+*Building modern web applications with the simplicity of PHP*
 
-Your support means a lot! ❤️
+<table>
+<tr>
+<td align="center">
+<a href="https://github.com/dconco">
+<img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
+</a>
+</td>
+<td align="center">
+<a href="https://twitter.com/dconco">
+<img src="https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" alt="Twitter"/>
+</a>
+</td>
+</tr>
+</table>
 
----
+**⭐ If you find phpSPA useful, please give it a star!**
+
+[![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+
+</div>

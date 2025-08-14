@@ -7,9 +7,9 @@
 
 ### [Added]
 
--  Added `__call()` alias of `phpspa.__call()` but changed the logic on how it works:
+- Added `__call()` alias of `phpspa.__call()` but changed the logic on how it works:
 
-   -  You'll import the new created function `useFunction()` and provide the function you're to use as parameter, in your component:
+  - You'll import the new created function `useFunction()` and provide the function you're to use as parameter, in your component:
 
       ```php
       <?php
@@ -32,9 +32,9 @@
       HTML;
       ```
 
--  Provided direct PHP integration for calling PHP function from JS.
+- Provided direct PHP integration for calling PHP function from JS.
 
-   -  If you want a faster method, than calling manual with JS, use this:
+  - If you want a faster method, than calling manual with JS, use this:
 
       ```php
        // in your component, related to the earlier example.
@@ -53,13 +53,13 @@
        HTML;
       ```
 
--  Support for class components (e.g., `<MyClass />`)
+- Support for class components (e.g., `<MyClass />`)
 
--  Namespace support for class components (e.g., `<Namespace.Class />`)
+- Namespace support for class components (e.g., `<Namespace.Class />`)
 
--  Classes require `__render` method for component rendering
+- Classes require `__render` method for component rendering
 
--  **Method Chaining Support to App Class**
+- **Method Chaining Support to App Class**
 
    You can now fluently chain multiple method calls on an App instance for cleaner and more expressive code.
 
@@ -74,31 +74,31 @@
     ->run();
    ```
 
--  New `<Component.Csrf />` component for CSRF protection
+- New `<Component.Csrf />` component for CSRF protection
 
-   -  Support for multiple named tokens with automatic cleanup
+  - Support for multiple named tokens with automatic cleanup
 
-   -  Built-in token expiration (1 hour default)
+  - Built-in token expiration (1 hour default)
 
-   -  Automatic token generation and validation
+  - Automatic token generation and validation
 
    **Features:**
 
-   -  Automatic token rotation
+  - Automatic token rotation
 
-   -  Prevents token reuse (optional via `$expireAfterUse`)
+  - Prevents token reuse (optional via `$expireAfterUse`)
 
-   -  Limits stored tokens (10 max by default)
+  - Limits stored tokens (10 max by default)
 
-   -  Timing-safe validation
+  - Timing-safe validation
 
    **Security:**
 
-   -  Uses cryptographically secure `random_bytes()`
+  - Uses cryptographically secure `random_bytes()`
 
-   -  Implements `hash_equals()` to prevent timing attacks
+  - Implements `hash_equals()` to prevent timing attacks
 
-   -  Tokens automatically expire after 1 hour
+  - Tokens automatically expire after 1 hour
 
    **Example Workflow**
 
@@ -131,61 +131,61 @@
 
 ### [Changed]
 
--  JS now check and execute all scripts & styles from all component no matter the type (we are no more using data-type attributes)
+- JS now check and execute all scripts & styles from all component no matter the type (we are no more using data-type attributes)
 
--  `\phpSPA\Component` namespaces are now converted to `\Component` namespace.
+- `\phpSPA\Component` namespaces are now converted to `\Component` namespace.
 
--  Changed how JS -> PHP connection core logic works
+- Changed how JS -> PHP connection core logic works
 
--  Made `__call()` function directly from Js x10 more secured
+- Made `__call()` function directly from Js x10 more secured
 
--  Edited `StrictTypes` class and make the `string` class worked instead of `alnum` and `alpha`
+- Edited `StrictTypes` class and make the `string` class worked instead of `alnum` and `alpha`
 
--  Made CORS configuration optional with default settings
+- Made CORS configuration optional with default settings
 
--  CORS method now loads default config when called (previously no defaults available)
+- CORS method now loads default config when called (previously no defaults available)
 
 ### [Removed]
 
--  Removed `__CONTENT__` placehover. It now renders directly using the target ID
+- Removed `__CONTENT__` placehover. It now renders directly using the target ID
 
--  Removed deprecated `<Link />` Alias, use `<Component.Link />` instead.
+- Removed deprecated `<Link />` Alias, use `<Component.Link />` instead.
 
 ## v1.1.4
 
--  Updated phpSPA core from frontend to use the `Request` class instead of just global request `$_REQUEST`
+- Updated phpSPA core from frontend to use the `Request` class instead of just global request `$_REQUEST`
 
--  Added Hooks Event Documentation. [View Docs](https://phpspa.readthedocs.io/en/latest/hooks-event/)
+- Added Hooks Event Documentation. [View Docs](https://phpspa.readthedocs.io/en/latest/hooks-event/)
 
 ## v1.1.3
 
--  Added new `Session` utility class in `phpSPA\Http` namespace for comprehensive session management
+- Added new `Session` utility class in `phpSPA\Http` namespace for comprehensive session management
 
--  `Session::isActive()` - Check if session is currently active
+- `Session::isActive()` - Check if session is currently active
 
--  ✨ `Session::start()` - Start session with proper error handling
+- ✨ `Session::start()` - Start session with proper error handling
 
--  ✨ `Session::destroy()` - Destroy session with complete cleanup including cookies
+- ✨ `Session::destroy()` - Destroy session with complete cleanup including cookies
 
--  ✨ `Session::get()` - Retrieve session variables with default value support
+- ✨ `Session::get()` - Retrieve session variables with default value support
 
--  ✨ `Session::set()` - Set session variables
+- ✨ `Session::set()` - Set session variables
 
--  ✨ `Session::remove()` - Remove single or multiple session variables (supports array input)
+- ✨ `Session::remove()` - Remove single or multiple session variables (supports array input)
 
--  ✨ `Session::has()` - Check if session variable exists
+- ✨ `Session::has()` - Check if session variable exists
 
--  ✨ `Session::regenerateId()` - Regenerate session ID for security
+- ✨ `Session::regenerateId()` - Regenerate session ID for security
 
 ## v1.1.2
 
--  ✨ Made `route()` method optional in component definition
+- ✨ Made `route()` method optional in component definition
 
--  ✨ Added `reload(int $milliseconds = 0)` method for auto-refreshing components
+- ✨ Added `reload(int $milliseconds = 0)` method for auto-refreshing components
 
--  ✨ Added `phpspa.__call()` JavaScript function for direct PHP function calls
+- ✨ Added `phpspa.__call()` JavaScript function for direct PHP function calls
 
--  ✨ Added `cors()` method to App class for CORS configuration
+- ✨ Added `cors()` method to App class for CORS configuration
 
 [View Latest Documentation](https://phpspa.readthedocs.io/en/latest/v1.1.2)
 
@@ -195,25 +195,25 @@
 
 ## v1.1.0
 
--  ✨ Added file import `phpSPA\Component\import()` function for importing files (images) to html. @see [File Import Utility](https://phpspa.readthedocs.io/en/latest/v1.1/1-file-import-utility)
+- ✨ Added file import `phpSPA\Component\import()` function for importing files (images) to html. @see [File Import Utility](https://phpspa.readthedocs.io/en/latest/v1.1/1-file-import-utility)
 
--  ✨ Added `map()` method to state management, can now map array to html elements, `$stateItems->map(fn (item) => "<li>{$item}</li>")`. @see [Mapping In State Management](https://phpspa.readthedocs.io/en/latest/v1.1/2-mapping-in-state-management)
+- ✨ Added `map()` method to state management, can now map array to html elements, `$stateItems->map(fn (item) => "<li>{$item}</li>")`. @see [Mapping In State Management](https://phpspa.readthedocs.io/en/latest/v1.1/2-mapping-in-state-management)
 
--  ✨ Added component to be accessible by html tags, `<Component />`, both inline tags and block tags `<Component></Component`. @see [Using Component Functions By HTML Tags](https://phpspa.readthedocs.io/en/latest/v1.1/3-using-component-functions-by-html-tags)
+- ✨ Added component to be accessible by html tags, `<Component />`, both inline tags and block tags `<Component></Component`. @see [Using Component Functions By HTML Tags](https://phpspa.readthedocs.io/en/latest/v1.1/3-using-component-functions-by-html-tags)
 
--  ✨ Created component function `<Link />`, and made it be under the `phpSPA\Component` namespace. @see [Link Component](https://phpspa.readthedocs.io/en/latest/v1.1/4-link-component)
+- ✨ Created component function `<Link />`, and made it be under the `phpSPA\Component` namespace. @see [Link Component](https://phpspa.readthedocs.io/en/latest/v1.1/4-link-component)
 
--  ✨ Added `phpSPA\Component\HTMLAttrInArrayToString()` function, use it when converting `...$props` rest properties in a component as rest of HTML attributes. @see [HTML Attribute In Array To String Conversion](https://phpspa.readthedocs.io/en/latest/v1.1/5-html-attr-in-array-to-string-function)
+- ✨ Added `phpSPA\Component\HTMLAttrInArrayToString()` function, use it when converting `...$props` rest properties in a component as rest of HTML attributes. @see [HTML Attribute In Array To String Conversion](https://phpspa.readthedocs.io/en/latest/v1.1/5-html-attr-in-array-to-string-function)
 
--  ✨ Added function `phpSPA\Http\Redirect()` for redirecting to another URL. @see [Redirect Function](https://phpspa.readthedocs.io/en/latest/v1.1/6-redirect-function.md)
+- ✨ Added function `phpSPA\Http\Redirect()` for redirecting to another URL. @see [Redirect Function](https://phpspa.readthedocs.io/en/latest/v1.1/6-redirect-function.md)
 
--  ✨ Created component function `<PhpSPA.Component.Navigate />`, for handling browser's navigation through PHP. @see [Navigate Component](https://phpspa.readthedocs.io/en/latest/v1.1/7-navigate-component.md)
+- ✨ Created component function `<PhpSPA.Component.Navigate />`, for handling browser's navigation through PHP. @see [Navigate Component](https://phpspa.readthedocs.io/en/latest/v1.1/7-navigate-component.md)
 
--  ✨ Made JS `phpspa.setState()` available as just `setState()` function.
+- ✨ Made JS `phpspa.setState()` available as just `setState()` function.
 
 ### Deprecated
 
--  ✨ Using HTML `<Link />` tag without the function namespace is deprecated. You must use the namespace in other to use the component function, `<PhpSPA.Component.Link />` See: [Deprecated HTML Link](https://phpspa.readthedocs.io/en/latest/v1.1/4-link-component/#deprecated)
+- ✨ Using HTML `<Link />` tag without the function namespace is deprecated. You must use the namespace in other to use the component function, `<PhpSPA.Component.Link />` See: [Deprecated HTML Link](https://phpspa.readthedocs.io/en/latest/v1.1/4-link-component/#deprecated)
 
 ---
 
@@ -221,21 +221,21 @@
 
 ### 🧠 New in v1.0.0
 
--  🌟 **State Management**:
+- 🌟 **State Management**:
 
-   -  ✨ Define state in PHP with `createState('key', default)`.
-   -  ✨ Trigger re-renders from the frontend via `phpspa.setState('key', value)`.
-   -  ✨ Automatically updates server-rendered output in the target container.
+  - ✨ Define state in PHP with `createState('key', default)`.
+  - ✨ Trigger re-renders from the frontend via `phpspa.setState('key', value)`.
+  - ✨ Automatically updates server-rendered output in the target container.
 
--  🧩 **Scoped Component Styles & Scripts**:
+- 🧩 **Scoped Component Styles & Scripts**:
 
-   -  ✨ Use `<style data-type="phpspa/css">...</style>` and `<script data-type="phpspa/script">...</script>` inside your components.
-   -  ✨ Automatically injected and removed during navigation.
+  - ✨ Use `<style data-type="phpspa/css">...</style>` and `<script data-type="phpspa/script">...</script>` inside your components.
+  - ✨ Automatically injected and removed during navigation.
 
--  ⚙️ **Improved JS Lifecycle Events**:
+- ⚙️ **Improved JS Lifecycle Events**:
 
-   -  ✨ `phpspa.on("beforeload", callback)`
-   -  ✨ `phpspa.on("load", callback)`
+  - ✨ `phpspa.on("beforeload", callback)`
+  - ✨ `phpspa.on("load", callback)`
 
 ---
 
@@ -255,18 +255,18 @@ Include the JS engine:
 
 ## 🧱 Coming Soon
 
--  🛡️ CSRF protection helpers and automatic verification
--  🧪 Testing utilities for components
--  🌐 Built-in i18n tools
+- 🛡️ CSRF protection helpers and automatic verification
+- 🧪 Testing utilities for components
+- 🌐 Built-in i18n tools
 
 ---
 
 ## 📘 Docs & Links
 
--  GitHub: [dconco/phpspa](https://github.com/dconco/phpspa)
--  JS Engine: [dconco/phpspa-js](https://github.com/dconco/phpspa-js)
--  Website: [https://phpspa.readthedocs.io](https://phpspa.readthedocs.io)
--  License: MIT
+- GitHub: [dconco/phpspa](https://github.com/dconco/phpspa)
+- JS Engine: [dconco/phpspa-js](https://github.com/dconco/phpspa-js)
+- Website: [https://phpspa.readthedocs.io](https://phpspa.readthedocs.io)
+- License: MIT
 
 ---
 
