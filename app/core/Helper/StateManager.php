@@ -22,6 +22,7 @@ use const phpSPA\Core\Impl\Const\STATE_HANDLE;
 class StateManager
 {
 	private string $stateKey;
+
 	private mixed $value;
 
 	/**
@@ -32,13 +33,13 @@ class StateManager
 	 */
 	public function __construct(string $stateKey, $default)
 	{
-		$sessionData = StateSessionHandler::get(STATE_HANDLE);
+		$sessionData = SessionHandler::get(STATE_HANDLE);
 
 		$sessionData[$stateKey] = $sessionData[$stateKey] ?? $default;
 		$this->value = $sessionData[$stateKey];
 		$this->stateKey = $stateKey;
 
-		StateSessionHandler::set(STATE_HANDLE, $sessionData);
+		SessionHandler::set(STATE_HANDLE, $sessionData);
 	}
 
 	/**
@@ -51,7 +52,7 @@ class StateManager
 	 */
 	public function __invoke($value = null)
 	{
-		$sessionData = StateSessionHandler::get(STATE_HANDLE);
+		$sessionData = SessionHandler::get(STATE_HANDLE);
 
 		if (!$value) {
 			return $sessionData[$this->stateKey] ?? $this->value;
@@ -59,7 +60,7 @@ class StateManager
 
 		$this->value = $value;
 		$sessionData[$this->stateKey] = $value;
-		StateSessionHandler::set(STATE_HANDLE, $sessionData);
+		SessionHandler::set(STATE_HANDLE, $sessionData);
 
 		return $this->value;
 	}
@@ -71,7 +72,7 @@ class StateManager
 	 */
 	public function __toString()
 	{
-		$sessionData = StateSessionHandler::get(STATE_HANDLE);
+		$sessionData = SessionHandler::get(STATE_HANDLE);
 
 		$value = $sessionData[$this->stateKey] ?? $this->value;
 		return is_array($value) ? json_encode($value) : $value;
@@ -85,7 +86,7 @@ class StateManager
 	 */
 	public function map(Closure $closure)
 	{
-		$sessionData = StateSessionHandler::get(STATE_HANDLE);
+		$sessionData = SessionHandler::get(STATE_HANDLE);
 		$value = $sessionData[$this->stateKey] ?? $this->value;
 
 		if (is_array($value)) {

@@ -1,6 +1,7 @@
 <?php
 
 return fn() => <<<HTML
+   <!DOCTYPE html>
    <html>
       <head>
          <title>PHP SPA PROJECT BY DCONCO</title>

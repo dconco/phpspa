@@ -1,6 +1,6 @@
 <?php
 
-namespace phpSPA\Component;
+namespace Component;
 
 /**
  * Converts an associative array of HTML attributes into a string suitable for HTML tags.
@@ -13,12 +13,11 @@ namespace phpSPA\Component;
  * @since 1.1.0
  * @return string String of HTML attributes for use in HTML elements.
  */
-function HTMLAttrInArrayToString (array $HtmlAttr): string
+function HTMLAttrInArrayToString(array $HtmlAttr): string
 {
-   $attr = "";
-   foreach ($HtmlAttr as $AttrName => $AttrValue)
-   {
-      $attr .= "$AttrName=\"$AttrValue\" ";
-   }
-   return $attr;
+	$attr = '';
+	foreach ($HtmlAttr as $AttrName => $AttrValue) {
+		$attr .= "$AttrName=\"$AttrValue\" ";
+	}
+	return $attr;
 }

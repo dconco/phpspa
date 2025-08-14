@@ -4,7 +4,7 @@ namespace phpSPA\Core\Helper;
 
 use phpSPA\Http\Session;
 
-class StateSessionHandler
+class SessionHandler
 {
 	static function get(string $session): mixed
 	{
@@ -17,9 +17,9 @@ class StateSessionHandler
 		return $sessionData;
 	}
 
-	static function set(string $session, $vv): void
+	static function set(string $session, &$value): void
 	{
-		$v = serialize($vv);
+		$v = serialize($value);
 		Session::set($session, base64_encode($v));
 	}
 }

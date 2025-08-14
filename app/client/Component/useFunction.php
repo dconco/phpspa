@@ -1,6 +1,6 @@
 <?php
 
-namespace phpSPA\Component;
+namespace Component;
 
 use phpSPA\Core\Helper\FunctionCaller;
 
