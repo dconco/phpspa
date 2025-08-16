@@ -1,7 +1,7 @@
 <?php
 
 use phpSPA\Component;
-use function phpSPA\Component\createState;
+use function Component\createState;
 
 include_once 'HashComp.php';
 
@@ -30,7 +30,7 @@ function Login(): string
 
 		return <<<HTML
 		   Login Successful:<br>Username: $username<br>Password: $password
-		   <PhpSPA.Component.Navigate path="dashboard" />
+		   <Component.Navigate path="dashboard" />
 		HTML;
 	}
 

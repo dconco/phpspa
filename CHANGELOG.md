@@ -71,23 +71,7 @@
     ->run();
    ```
 
--  Initial release of `\phpSPA\Core\Helper\CSRFTokenManager` with core CSRF protection features.
-
-   -  Method `generateToken()`: Generates cryptographically secure tokens.
-
-   -  Method `getToken()`: Retrieves or generates a token.
-
-   -  Method `verifyToken()`: Validates tokens with timing-safe comparison.
-
-   -  Method `getHiddenInput()`: Outputs tokens as HTML hidden inputs.
-
-   -  Method `getMetaTag()`: Generates meta tags for AJAX/XHR requests.
-
-   -  Method `regenerateToken()`: Forces token regeneration.
-
-   -  Method `clearToken()`: Removes token and terminates execution (`never` return).
-
--  New `<PhpSPA.Component.Csrf />` component for CSRF protection
+-  New `<Component.Csrf />` component for CSRF protection
 
    -  Support for multiple named tokens with automatic cleanup
 
@@ -119,7 +103,7 @@
 
       ```php
       <form>
-         <PhpSPA.Component.Csrf name="user-registration" />
+         <Component.Csrf name="user-registration" />
          <!-- other fields -->
       </form>
       ```
@@ -127,7 +111,7 @@
    2. **On Submission:**
 
       ```php
-      use phpSPA\Component\Csrf;
+      use Component\Csrf;
 
       if (!Csrf::verify($request('csrf_token'), $request('csrf_form'))) {
          die('Invalid CSRF token!');
@@ -137,6 +121,10 @@
       ```
 
 ### [Changed]
+
+-  JS now check and execute all scripts & styles from all component no matter the type (we are no more using data-type attributes)
+
+-  `\phpSPA\Component` namespaces are now converted to `\Component` namespace.
 
 -  Changed how JS -> PHP connection core logic works
 
@@ -150,7 +138,7 @@
 
 ### [Removed]
 
--  Removed deprecated `<Link />` Alias, use `<PhpSPA.Component.Link />` instead.
+-  Removed deprecated `<Link />` Alias, use `<Component.Link />` instead.
 
 ## v1.1.4
 

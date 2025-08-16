@@ -7,7 +7,7 @@ use phpSPA\Http\Request;
 use phpSPA\Http\Session;
 use phpSPA\Core\Router\MapRoute;
 use phpSPA\Core\Helper\CallableInspector;
-use phpSPA\Core\Helper\StateSessionHandler;
+use phpSPA\Core\Helper\SessionHandler;
 use phpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 
 use const phpSPA\Core\Impl\Const\STATE_HANDLE;
@@ -197,18 +197,17 @@ abstract class AppImpl
 			$layoutOutput = call_user_func($this->layout);
 			$componentOutput = '';
 
-			if ($request->requestedWith() ?? '' === 'PHPSPA_REQUEST') {
+			if ($request->requestedWith() === 'PHPSPA_REQUEST') {
 				$data = json_decode($request->auth()->bearer ?? '', true);
 				$data = $this->validate($data);
 
 				if (isset($data['state'])) {
-					if (
-						!empty($data['state']['key']) &&
-						!empty($data['state']['value'])
-					) {
-						$sessionData = StateSessionHandler::get(STATE_HANDLE);
-						$sessionData[$data['state']['key']] = $data['state']['value'];
-						StateSessionHandler::set(STATE_HANDLE, $sessionData);
+					$state = $data['state'];
+
+					if (!empty($state['key']) && !empty($state['value'])) {
+						$sessionData = SessionHandler::get(STATE_HANDLE);
+						$sessionData[$state['key']] = $state['value'];
+						SessionHandler::set(STATE_HANDLE, $sessionData);
 					}
 				}
 
@@ -289,9 +288,7 @@ abstract class AppImpl
 
 						if (is_string($scriptValue) && !empty($scriptValue)) {
 							$componentOutput .=
-								"\n<script data-type=\"phpspa/script\">\n" .
-								$scriptValue .
-								"\n</script>\n";
+								"\n<script>\n" . $scriptValue . "\n</script>\n";
 						}
 					}
 				}
@@ -305,7 +302,7 @@ abstract class AppImpl
 
 						if (is_string($styleValue) && !empty($styleValue)) {
 							$componentOutput =
-								"<style data-type=\"phpspa/css\">\n" .
+								"<style>\n" .
 								$styleValue .
 								"\n</style>\n" .
 								$componentOutput;
@@ -314,9 +311,9 @@ abstract class AppImpl
 				}
 			}
 
-			if ($request->requestedWith() ?? '' === 'PHPSPA_REQUEST') {
+			if ($request->requestedWith() === 'PHPSPA_REQUEST') {
 				$info = [
-					'content' => $componentOutput,
+					'content' => base64_encode($componentOutput),
 					'title' => $title,
 					'targetID' => $targetID,
 				];
@@ -343,9 +340,24 @@ abstract class AppImpl
 					$tt = " phpspa-reload-time=\"$reloadTime\"";
 				}
 
-				$this->renderedData = str_replace(
-					'__CONTENT__',
-					"\n<div data-phpspa-target$tt>" . $componentOutput . "</div>\n",
+				$tag =
+					'/<(\w+)([^>]*id\s*=\s*["\']?' .
+					preg_quote($targetID, '/') .
+					'["\']?[^>]*)>.*?<\/\1>/si';
+
+				$this->renderedData = preg_replace_callback(
+					$tag,
+					function ($matches) use ($componentOutput, $tt) {
+						// $matches[1] contains the tag name, $matches[2] contains attributes with the target ID
+						return '<' .
+							$matches[1] .
+							$matches[2] .
+							" data-phpspa-target$tt>" .
+							$componentOutput .
+							'</' .
+							$matches[1] .
+							'>';
+					},
 					$layoutOutput,
 				);
 

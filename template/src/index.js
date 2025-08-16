@@ -28,72 +28,78 @@
  * @version 1.1.7
  * @license MIT
  */
-(function () {
-   window.addEventListener("DOMContentLoaded", () => {
-      const target = document.querySelector("[data-phpspa-target]");
+;(function () {
+	window.addEventListener('DOMContentLoaded', () => {
+		const __target = document.querySelector('[data-phpspa-target]')
 
-      if (target) {
-         const state = {
-            url: location.href,
-            title: document.title,
-            targetID: target.parentElement.id,
-            content: target.innerHTML,
-         };
+		if (__target) {
+			const __state = {
+				__url__: location.href,
+				__title__: document.title,
+				__targetID__: __target.parentElement.id,
+				__content__: btoa(__target.innerHTML),
+			}
 
-         if (target.hasAttribute("phpspa-reload-time")) {
-            state["reloadTime"] = Number(
-               target.getAttribute("phpspa-reload-time")
-            );
-         }
+			if (__target.hasAttribute('phpspa-reload-time')) {
+				__state['__reloadTime__'] = Number(
+					__target.getAttribute('phpspa-reload-time')
+				)
+			}
 
-         history.replaceState(state, document.title, location.href);
+			__PHPSPA_RUNTIME_MANAGER__.__replaceState__(
+				__state,
+				document.title,
+				location.href
+			)
 
-         if (target.hasAttribute("phpspa-reload-time")) {
-            setTimeout(phpspa.reloadComponent, state.reloadTime);
-         }
-      }
-   });
+			if (__target.hasAttribute('phpspa-reload-time')) {
+				setTimeout(phpspa.reloadComponent, __state.__reloadTime__)
+			}
+		}
+	})
 
-   document.addEventListener("click", (ev) => {
-      const info = ev.target.closest('a[data-type="phpspa-link-tag"]');
+	document.addEventListener('click', __ => {
+		const __info = __.target.closest('a[data-type="phpspa-link-tag"]')
 
-      if (info) {
-         ev.preventDefault();
-         phpspa.navigate(new URL(info.href, location.href), "push");
-      }
-   });
+		if (__info) {
+			__.preventDefault()
+			phpspa.navigate(new URL(__info.href, location.href), 'push')
+		}
+	})
 
-   window.addEventListener("popstate", (ev) => {
-      const state = ev.state;
+	window.addEventListener('popstate', __ => {
+		const __state = __.state
 
-      if (state && state.url && state.targetID && state.content) {
-         document.title = state.title ?? document.title;
+		if (
+			__state &&
+			__state.__url__ &&
+			__state.__targetID__ &&
+			__state.__content__
+		) {
+			document.title = __state.__title__ ?? document.title
 
-         let targetElement =
-            document.getElementById(state.targetID) ?? document.body;
+			let __targetElement =
+				document.getElementById(__state.__targetID__) ?? document.body
 
-         targetElement.innerHTML = state.content;
-         phpspa.runAll(targetElement);
+			__targetElement.innerHTML = atob(__state.__content__)
+			__PHPSPA_RUNTIME_MANAGER__.__run_all__(__targetElement)
 
-         if (typeof state["reloadTime"] !== "undefined") {
-            setTimeout(phpspa.reloadComponent, state.reloadTime);
-         }
-      } else {
-         phpspa.navigate(new URL(location.href), "replace");
-      }
+			if (typeof __state['__reloadTime__'] !== 'undefined') {
+				setTimeout(phpspa.reloadComponent, __state.__reloadTime__)
+			}
+		} else {
+			phpspa.navigate(new URL(location.href), 'replace')
+		}
 
-      history.scrollRestoration = "auto";
-   });
-})();
+		history.scrollRestoration = 'auto'
+	})
+})()
 
 /**
  * A static class for managing client-side navigation and state in a PHP-powered Single Page Application (SPA).
  * Provides methods for navigation, history manipulation, event handling, and dynamic content updates.
  *
  * @class phpspa
- *
- * @property {Object} _events - Internal event registry for custom event handling.
- * @property {Set} _executedScripts - Track executed scripts to prevent re-execution.
  *
  * @method navigate
  * @static
@@ -119,24 +125,8 @@
  * @param {Function} callback - The callback to execute when the event is emitted.
  * @description Registers an event listener for a custom event.
  *
- * @method emit
- * @static
- * @param {string} event - The event name to emit.
- * @param {Object} payload - The data to pass to event listeners.
- * @description Emits a custom event to all registered listeners.
  */
 class phpspa {
-<<<<<<< HEAD
-	/**
-	 * Internal event registry for custom events.
-	 * @type {Object}
-	 * @private
-	 */
-	static _events = {
-		beforeload: [],
-		load: [],
-	}
-
 	/**
 	 * Navigates to a given URL using PHPSPA's custom navigation logic.
 	 * Fetches the content via a custom HTTP method, updates the DOM, manages browser history,
@@ -149,138 +139,147 @@ class phpspa {
 	 * @fires phpspa#load - Emitted after attempting to load the new route, with success or error status.
 	 */
 	static navigate(url, state = 'push') {
-		phpspa.emit('beforeload', { route: url })
+		__PHPSPA_RUNTIME_MANAGER__.__emit__('beforeload', { route: url })
 
 		fetch(url, {
 			headers: {
 				'X-Requested-With': 'PHPSPA_REQUEST',
 			},
 			mode: 'cors',
-
 			redirect: 'follow',
 			keepalive: true,
 		})
 			.then(response => {
 				response
 					.text()
-					.then(res => {
-						let data
+					.then(__res => {
+						let __data
 
-						if (res && res.trim().startsWith('{')) {
+						if (__res && __res.trim().startsWith('{')) {
 							try {
-								data = JSON.parse(res)
+								__data = JSON.parse(__res)
 							} catch (e) {
-								data = res
+								__data = __res
 							}
 						} else {
-							data = res || '' // Handle empty responses
+							__data = __res || '' // Handle empty responses
 						}
 
 						// Emit success event
-						phpspa.emit('load', {
+						__PHPSPA_RUNTIME_MANAGER__.__emit__('load', {
 							route: url,
 							success: true,
 							error: false,
 						})
 
-						call(data)
+						__call__(__data)
 					})
-					.catch(e => callError(e))
+					.catch(__ => __callError__(__))
 			})
-			.catch(e => callError(e))
+			.catch(__ => __callError__(__))
 
-		function callError(e) {
+		function __callError__(__) {
 			// Check if the error contains a response (e.g., HTTP 4xx/5xx with a body)
-			if (e.response) {
+			if (__.response) {
 				// Try extracting text/JSON from the error response
-				e.response
+				__.response
 					.text()
-					.then(fallbackRes => {
-						let data
+					.then(__fallbackRes => {
+						let __data
 
 						try {
 							// If it looks like JSON, parse it
-							data = fallbackRes.trim().startsWith('{')
-								? JSON.parse(fallbackRes)
-								: fallbackRes
-						} catch (parseError) {
+							__data = __fallbackRes.trim().startsWith('{')
+								? JSON.parse(__fallbackRes)
+								: __fallbackRes
+						} catch (__parseError) {
 							// Fallback to raw text if parsing fails
-							data = fallbackRes
+							__data = __fallbackRes
 						}
 
-						phpspa.emit('load', {
+						__PHPSPA_RUNTIME_MANAGER__.__emit__('load', {
 							route: url,
 							success: false,
-							error: e.message || 'Server returned an error',
-							fallbackData: data, // Include the parsed/raw data
+							error: __.message || 'Server returned an error',
+							data: __data, // Include the parsed/raw data
 						})
-						call(data || '') // Pass the fallback data
+						__call__(__data || '') // Pass the fallback data
 					})
 					.catch(() => {
 						// Failed to read error response body
-						phpspa.emit('load', {
+						__PHPSPA_RUNTIME_MANAGER__.__emit__('load', {
 							route: url,
 							success: false,
-							error: e.message || 'Failed to read error response',
+							error: __.message || 'Failed to read error response',
 						})
-						call('')
+						__call__('')
 					})
 			} else {
 				// No response attached (network error, CORS, etc.)
-				phpspa.emit('load', {
+				__PHPSPA_RUNTIME_MANAGER__.__emit__('load', {
 					route: url,
 					success: false,
-					error: e.message || 'No connection to server',
+					error: __.message || 'No connection to server',
 				})
-				call('')
+				__call__('')
 			}
 		}
 
-		function call(data) {
+		function __call__(__data) {
 			if (
-				'string' === typeof data?.title ||
-				'number' === typeof data?.title
+				'string' === typeof __data?.title ||
+				'number' === typeof __data?.title
 			) {
-				document.title = data.title
+				document.title = __data.title
 			}
 
-			let targetElement =
-				document.getElementById(data?.targetID) ??
-				document.getElementById(history.state?.targetID) ??
+			let __targetElement =
+				document.getElementById(__data?.targetID) ??
+				document.getElementById(history.state?.__targetID__) ??
 				document.body
 
-			targetElement.innerHTML = data?.content ?? data
+			__targetElement.innerHTML = __data?.content
+				? atob(__data.content)
+				: __data
 
-			const stateData = {
-				url: url?.href ?? url,
-				title: data?.title ?? document.title,
-				targetID: data?.targetID ?? targetElement.id,
-				content: data?.content ?? data,
+			const __stateData = {
+				__url__: url?.href ?? url,
+				__title__: __data?.title ?? document.title,
+				__targetID__: __data?.targetID ?? __targetElement.id,
+				__content__: __data?.content ?? btoa(__data),
 			}
 
-			if (typeof data['reloadTime'] !== 'undefined') {
-				stateData['reloadTime'] = data.reloadTime
+			if (typeof __data['__reloadTime__'] !== 'undefined') {
+				__stateData['__reloadTime__'] = __data.reloadTime
 			}
 
 			if (state === 'push') {
-				history.pushState(stateData, stateData.title, url)
+				__PHPSPA_RUNTIME_MANAGER__.__pushState__(
+					__stateData,
+					__stateData.__title__,
+					url
+				)
 			} else if (state === 'replace') {
-				history.replaceState(stateData, stateData.title, url)
+				__PHPSPA_RUNTIME_MANAGER__.__replaceState__(
+					__stateData,
+					__stateData.__title__,
+					url
+				)
 			}
 
-			let hashedElement = document.getElementById(url?.hash?.substring(1))
+			let __hashedElement = document.getElementById(url?.hash?.substring(1))
 
-			if (hashedElement) {
+			if (__hashedElement) {
 				scroll({
-					top: hashedElement.offsetTop,
-					left: hashedElement.offsetLeft,
+					top: __hashedElement.offsetTop,
+					left: __hashedElement.offsetLeft,
 				})
 			}
 
-			phpspa.runAll(targetElement)
+			__PHPSPA_RUNTIME_MANAGER__.__run_all__(__targetElement)
 
-			if (typeof data['reloadTime'] !== 'undefined') {
-				setTimeout(phpspa.reloadComponent, state.reloadTime)
+			if (typeof __data['__reloadTime__'] !== 'undefined') {
+				setTimeout(phpspa.reloadComponent, __data.__reloadTime__)
 			}
 		}
 	}
@@ -314,7 +313,7 @@ class phpspa {
 	 * @static
 	 */
 	static reload() {
-		this.navigate(new URL(location.href), 'replace')
+		phpspa.navigate(new URL(location.href), 'replace')
 	}
 
 	/**
@@ -324,26 +323,10 @@ class phpspa {
 	 * @param {Function} callback - The function to call when the event is triggered.
 	 */
 	static on(event, callback) {
-		if (!this._events[event]) {
-			this._events[event] = []
+		if (!__PHPSPA_RUNTIME_MANAGER__.__events__[event]) {
+			__PHPSPA_RUNTIME_MANAGER__.__events__[event] = []
 		}
-		this._events[event].push(callback)
-	}
-
-	/**
-	 * Emits an event, invoking all registered callbacks for the specified event.
-	 *
-	 * @param {string} event - The name of the event to emit.
-	 * @param {Object} payload - The data to pass to each callback function.
-	 */
-	static emit(event, payload) {
-		const callbacks = this._events[event] || []
-
-		for (const callback of callbacks) {
-			if (typeof callback === 'function') {
-				callback(payload)
-			}
-		}
+		__PHPSPA_RUNTIME_MANAGER__.__events__[event].push(callback)
 	}
 
 	/**
@@ -361,150 +344,109 @@ class phpspa {
 	 *   .catch(err => console.error('Failed to update state:', err));
 	 */
 	static setState(key, value) {
-		return new Promise((resolve, reject) => {
-			let currentScroll = {
+		return new Promise((__resolve__, __reject__) => {
+			let __currentScroll = {
 				top: scrollY,
 				left: scrollX,
 			}
 
-			const url = new URL(location.href)
-			const json = JSON.stringify({ state: { key, value } })
+			const __url = new URL(location.href)
+			const __json = JSON.stringify({ state: { key, value } })
 
-			fetch(url, {
+			fetch(__url, {
 				headers: {
 					'X-Requested-With': 'PHPSPA_REQUEST',
-					Authorization: `Bearer ${btoa(json)}`,
+					Authorization: `Bearer ${btoa(__json)}`,
 				},
 				mode: 'cors',
-
 				redirect: 'follow',
 				keepalive: true,
 			})
-				.then(response => {
-					response
+				.then(__response => {
+					__response
 						.text()
-						.then(res => {
-							let data
+						.then(__res => {
+							let __data
 
-							if (res && res.trim().startsWith('{')) {
+							if (__res && __res.trim().startsWith('{')) {
 								try {
-									data = JSON.parse(res)
-								} catch (e) {
-									data = res
+									__data = JSON.parse(__res)
+								} catch (__) {
+									__data = __res
 								}
 							} else {
-								data = res || '' // Handle empty responses
+								__data = __res || '' // Handle empty responses
 							}
 
-							resolve()
-							call(data)
+							__resolve__()
+							__call__(__data)
 						})
-						.catch(e => {
-							reject(e.message)
-							callError(e)
+						.catch(__ => {
+							__reject__(__.message)
+							__callError__(__)
 						})
 				})
-				.catch(e => {
-					reject(e.message)
-					callError(e)
+				.catch(__ => {
+					__reject__(__.message)
+					__callError__(__)
 				})
 
-			function callError(e) {
+			function __callError__(__) {
 				// Check if the error contains a response (e.g., HTTP 4xx/5xx with a body)
-				if (e.response) {
+				if (__.response) {
 					// Try extracting text/JSON from the error response
-					e.response
+					__.response
 						.text()
-						.then(fallbackRes => {
-							let data
+						.then(__fallbackRes => {
+							let __data
 
 							try {
 								// If it looks like JSON, parse it
-								data = fallbackRes.trim().startsWith('{')
-									? JSON.parse(fallbackRes)
-									: fallbackRes
-							} catch (parseError) {
+								__data = __fallbackRes.trim().startsWith('{')
+									? JSON.parse(__fallbackRes)
+									: __fallbackRes
+							} catch (__parseError) {
 								// Fallback to raw text if parsing fails
-								data = fallbackRes
+								__data = __fallbackRes
 							}
 
-							call(data || '') // Pass the fallback data
+							__call__(__data || '') // Pass the fallback data
 						})
 						.catch(() => {
 							// Failed to read error response body
-							call('')
+							__call('')
 						})
 				} else {
 					// No response attached (network error, CORS, etc.)
-					call('')
+					__call('')
 				}
 			}
 
-			function call(data) {
+			function __call__(__data) {
 				if (
-					'string' === typeof data?.title ||
-					'number' === typeof data?.title
+					'string' === typeof __data?.title ||
+					'number' === typeof __data?.title
 				) {
-					document.title = data.title
+					document.title = __data.title
 				}
 
-				let targetElement =
-					document.getElementById(data?.targetID) ??
-					document.getElementById(history.state?.targetID) ??
+				let __targetElement =
+					document.getElementById(__data?.targetID) ??
+					document.getElementById(history.state?.__targetID__) ??
 					document.body
 
-				targetElement.innerHTML = data?.content ?? data
+				__targetElement.innerHTML = __data?.content
+					? atob(__data.content)
+					: __data
 
-				phpspa.runAll(targetElement)
-				scroll(currentScroll)
+				__PHPSPA_RUNTIME_MANAGER__.__run_all__(__targetElement)
+				scroll(__currentScroll)
 			}
 		})
 	}
 
-	static runAll(container) {
-		function runInlineScripts(container) {
-			const scripts = container.querySelectorAll(
-				"script[data-type='phpspa/script']"
-			)
-			const executedScripts = new Set()
-
-			scripts.forEach(script => {
-				const content = script.textContent.trim()
-
-				if (!executedScripts.has(content)) {
-					executedScripts.add(content)
-					const newScript = document.createElement('script')
-					newScript.textContent = `(function() {\n${script.textContent}\n})();`
-					document.head.appendChild(newScript).remove()
-				}
-			})
-		}
-
-		function runInlineStyles(container) {
-			const styles = container.querySelectorAll(
-				"style[data-type='phpspa/css']"
-			)
-
-			const executedStyle = new Set()
-
-			styles.forEach(style => {
-				const content = style.textContent.trim()
-
-				if (!executedStyle.has(content)) {
-					executedStyle.add(content)
-					const newStyle = document.createElement('style')
-					newStyle.textContent = style.textContent
-					document.head.appendChild(newStyle).remove()
-				}
-			})
-		}
-
-		runInlineStyles(container)
-		runInlineScripts(container)
-	}
-
 	static reloadComponent() {
-		const currentScroll = {
+		const __currentScroll = {
 			top: scrollY,
 			left: scrollX,
 		}
@@ -514,147 +456,145 @@ class phpspa {
 				'X-Requested-With': 'PHPSPA_REQUEST',
 			},
 			mode: 'cors',
-
 			redirect: 'follow',
 			keepalive: true,
 		})
-			.then(response => {
-				response
+			.then(__response => {
+				__response
 					.text()
-					.then(res => {
-						let data
+					.then(__res => {
+						let __data
 
-						if (res && res.trim().startsWith('{')) {
+						if (__res && __res.trim().startsWith('{')) {
 							try {
-								data = JSON.parse(res)
-							} catch (e) {
-								data = res
+								__data = JSON.parse(__res)
+							} catch (__) {
+								__data = __res
 							}
 						} else {
-							data = res || '' // Handle empty responses
+							__data = __res || '' // Handle empty responses
 						}
 
-						call(data)
+						__call__(__data)
 					})
-					.catch(e => {
-						callError(e)
+					.catch(__ => {
+						__callError__(__)
 					})
 			})
-			.catch(e => {
-				callError(e)
+			.catch(__ => {
+				__callError__(__)
 			})
 
-		function callError(e) {
+		function __callError__(__) {
 			// Check if the error contains a response (e.g., HTTP 4xx/5xx with a body)
-			if (e.response) {
+			if (__.response) {
 				// Try extracting text/JSON from the error response
-				e.response
+				__.response
 					.text()
-					.then(fallbackRes => {
-						let data
+					.then(__fallbackRes => {
+						let __data
 
 						try {
 							// If it looks like JSON, parse it
-							data = fallbackRes.trim().startsWith('{')
-								? JSON.parse(fallbackRes)
-								: fallbackRes
-						} catch (parseError) {
+							__data = __fallbackRes.trim().startsWith('{')
+								? JSON.parse(__fallbackRes)
+								: __fallbackRes
+						} catch (__) {
 							// Fallback to raw text if parsing fails
-							data = fallbackRes
+							__data = __fallbackRes
 						}
 
-						call(data || '') // Pass the fallback data
+						__call__(__data || '') // Pass the fallback data
 					})
-					.catch(() => {
+					.catch(__ => {
 						// Failed to read error response body
-						call('')
+						__call__('')
 					})
 			} else {
 				// No response attached (network error, CORS, etc.)
-				call('')
+				__call__('')
 			}
 		}
 
-		function call(data) {
+		function __call__(__data) {
 			if (
-				'string' === typeof data?.title ||
-				'number' === typeof data?.title
+				'string' === typeof __data?.title ||
+				'number' === typeof __data?.title
 			) {
-				document.title = data.title
+				document.title = __data.title
 			}
 
-			let targetElement =
-				document.getElementById(data?.targetID) ??
-				document.getElementById(history.state?.targetID) ??
+			let __targetElement =
+				document.getElementById(__data?.targetID) ??
+				document.getElementById(history.state?.__targetID__) ??
 				document.body
 
-			targetElement.innerHTML = data?.content ?? data
+			__targetElement.innerHTML = __data?.content
+				? atob(__data.content)
+				: __data
 
-			phpspa.runAll(targetElement)
+			__PHPSPA_RUNTIME_MANAGER__.__run_all__(__targetElement)
 
-			scroll(currentScroll)
+			scroll(__currentScroll)
 
-			if (typeof data['reloadTime'] !== 'undefined') {
-				setTimeout(phpspa.reloadComponent, data.reloadTime)
+			if (typeof __data['reloadTime'] !== 'undefined') {
+				setTimeout(phpspa.reloadComponent, __data.reloadTime)
 			}
 		}
 	}
 
 	static async __call(token, ...args) {
-		const currentScroll = {
-			top: scrollY,
-			left: scrollX,
-		}
-
-		const url = new URL(location.href)
-		const json = JSON.stringify({ __call: { token, args } })
+		const __url = new URL(location.href)
+		const __json = JSON.stringify({ __call: { token, args } })
 
 		try {
-			const response = await fetch(url, {
+			const __response = await fetch(__url, {
 				headers: {
 					'X-Requested-With': 'PHPSPA_REQUEST',
-					Authorization: `Bearer ${btoa(json)}`,
+					Authorization: `Bearer ${btoa(__json)}`,
 				},
 				mode: 'cors',
-
 				redirect: 'follow',
 				keepalive: true,
 			})
 
-			const res = await response.text()
+			let __data
+			const __res = await __response.text()
 
-			let data
-			if (res && res.trim().startsWith('{')) {
+			if (__res && __res.trim().startsWith('{')) {
 				try {
-					data = JSON.parse(res)
-					data = data.response
-				} catch (e) {
-					data = res
+					__data = JSON.parse(__res)
+					__data = __data['response'] ? atob(__data['response']) : __data
+				} catch (__) {
+					__data = __res
 				}
 			} else {
-				data = res || '' // Handle empty responses
+				__data = __res || '' // Handle empty responses
 			}
 
-			return data
-		} catch (e) {
+			return __data
+		} catch (__e) {
 			// Check if the error contains a response (e.g., HTTP 4xx/5xx with a body)
-			if (e.response) {
+			if (__e.response) {
 				try {
-					const fallbackRes = await e.response.text()
-					let data
+					let __data
+					const __fallbackRes = await __e.response.text()
+
 					try {
 						// If it looks like JSON, parse it
-						data = fallbackRes.trim().startsWith('{')
-							? JSON.parse(fallbackRes)
-							: fallbackRes
+						__data = __fallbackRes.trim().startsWith('{')
+							? JSON.parse(__fallbackRes)
+							: __fallbackRes
 
-						data = data['response'] || data
-					} catch (parseError) {
+						__data = __data['response']
+							? atob(__data['response'])
+							: __data
+					} catch (__) {
 						// Fallback to raw text if parsing fails
-						data = fallbackRes
+						__data = __fallbackRes
 					}
 
-					return data
+					return __data
 				} catch {
 					// Failed to read error response body
 					return ''
@@ -665,557 +605,136 @@ class phpspa {
 			}
 		}
 	} // end method
-=======
-   /**
-    * Internal event registry for custom events.
-    * @type {Object}
-    * @private
-    */
-   static _events = {
-      beforeload: [],
-      load: [],
-   };
-
-   /**
-    * Navigates to a given URL using PHPSPA's custom navigation logic.
-    * Fetches the content via a custom HTTP method, updates the DOM, manages browser history,
-    * emits lifecycle events, and executes inline scripts.
-    *
-    * @param {string|URL} url - The URL or path to navigate to.
-    * @param {"push"|"replace"} [state="push"] - Determines whether to push or replace the browser history state.
-    *
-    * @fires phpspa#beforeload - Emitted before loading the new route.
-    * @fires phpspa#load - Emitted after attempting to load the new route, with success or error status.
-    */
-   static navigate(url, state = "push") {
-      phpspa.emit("beforeload", { route: url });
-
-      fetch(url, {
-         headers: {
-            "X-Requested-With": "PHPSPA_REQUEST",
-         },
-         mode: "navigate",
-         credentials: "include",
-         redirect: "follow",
-         keepalive: true,
-      })
-         .then((response) => {
-            response
-               .text()
-               .then((res) => {
-                  let data;
-
-                  if (res && res.trim().startsWith("{")) {
-                     try {
-                        data = JSON.parse(res);
-                     } catch (e) {
-                        data = res;
-                     }
-                  } else {
-                     data = res || ""; // Handle empty responses
-                  }
-
-                  // Emit success event
-                  phpspa.emit("load", {
-                     route: url,
-                     success: true,
-                     error: false,
-                  });
-
-                  call(data);
-               })
-               .catch((e) => callError(e));
-         })
-         .catch((e) => callError(e));
-
-      function callError(e) {
-         // Check if the error contains a response (e.g., HTTP 4xx/5xx with a body)
-         if (e.response) {
-            // Try extracting text/JSON from the error response
-            e.response
-               .text()
-               .then((fallbackRes) => {
-                  let data;
-
-                  try {
-                     // If it looks like JSON, parse it
-                     data = fallbackRes.trim().startsWith("{")
-                        ? JSON.parse(fallbackRes)
-                        : fallbackRes;
-                  } catch (parseError) {
-                     // Fallback to raw text if parsing fails
-                     data = fallbackRes;
-                  }
-
-                  phpspa.emit("load", {
-                     route: url,
-                     success: false,
-                     error: e.message || "Server returned an error",
-                     fallbackData: data, // Include the parsed/raw data
-                  });
-                  call(data || ""); // Pass the fallback data
-               })
-               .catch(() => {
-                  // Failed to read error response body
-                  phpspa.emit("load", {
-                     route: url,
-                     success: false,
-                     error: e.message || "Failed to read error response",
-                  });
-                  call("");
-               });
-         } else {
-            // No response attached (network error, CORS, etc.)
-            phpspa.emit("load", {
-               route: url,
-               success: false,
-               error: e.message || "No connection to server",
-            });
-            call("");
-         }
-      }
-
-      function call(data) {
-         if (
-            "string" === typeof data?.title ||
-            "number" === typeof data?.title
-         ) {
-            document.title = data.title;
-         }
-
-         let targetElement =
-            document.getElementById(data?.targetID) ??
-            document.getElementById(history.state?.targetID) ??
-            document.body;
-
-         targetElement.innerHTML = data?.content ?? data;
-
-         const stateData = {
-            url: url?.href ?? url,
-            title: data?.title ?? document.title,
-            targetID: data?.targetID ?? targetElement.id,
-            content: data?.content ?? data,
-         };
-
-         if (typeof data["reloadTime"] !== "undefined") {
-            stateData["reloadTime"] = data.reloadTime;
-         }
-
-         if (state === "push") {
-            history.pushState(stateData, stateData.title, url);
-         } else if (state === "replace") {
-            history.replaceState(stateData, stateData.title, url);
-         }
-
-         let hashedElement = document.getElementById(url?.hash?.substring(1));
-
-         if (hashedElement) {
-            scroll({
-               top: hashedElement.offsetTop,
-               left: hashedElement.offsetLeft,
-            });
-         }
-
-         phpspa.runAll(targetElement);
-
-         if (typeof data["reloadTime"] !== "undefined") {
-            setTimeout(phpspa.reloadComponent, state.reloadTime);
-         }
-      }
-   }
-
-   /**
-    * Navigates back in the browser history.
-    *
-    * This static method calls `history.back()` to move the browser to the previous entry in the session history.
-    * The commented-out code suggests an intention to manage custom state and content restoration,
-    * but currently only the native browser history is used.
-    */
-   static back() {
-      history.back();
-   }
-
-   /**
-    * Navigates forward in the browser's session history.
-    *
-    * This static method calls the native `history.forward()` function to move the user forward by one entry in the session history stack.
-    *
-    * Note: The commented-out code suggests additional logic for handling custom state management and DOM updates, but it is currently inactive.
-    */
-   static forward() {
-      history.forward();
-   }
-
-   /**
-    * Reloads the current page by navigating to the current URL using the "replace" history mode.
-    * This does not add a new entry to the browser's history stack.
-    *
-    * @static
-    */
-   static reload() {
-      this.navigate(new URL(location.href), "replace");
-   }
-
-   /**
-    * Registers a callback function to be executed when the specified event is triggered.
-    *
-    * @param {string} event - The name of the event to listen for.
-    * @param {Function} callback - The function to call when the event is triggered.
-    */
-   static on(event, callback) {
-      if (!this._events[event]) {
-         this._events[event] = [];
-      }
-      this._events[event].push(callback);
-   }
-
-   /**
-    * Emits an event, invoking all registered callbacks for the specified event.
-    *
-    * @param {string} event - The name of the event to emit.
-    * @param {Object} payload - The data to pass to each callback function.
-    */
-   static emit(event, payload) {
-      const callbacks = this._events[event] || [];
-
-      for (const callback of callbacks) {
-         if (typeof callback === "function") {
-            callback(payload);
-         }
-      }
-   }
-
-   /**
-    * Updates the application state by sending a custom fetch request and updating the DOM accordingly.
-    *
-    * @param {string} stateKey - The key representing the state to update.
-    * @param {*} value - The new value to set for the specified state key.
-    * @returns {Promise<void>} A promise that resolves when the state is updated and the DOM is modified, or rejects if an error occurs.
-    *
-    * @fires phpspa#beforeload - Emitted before the state is loaded.
-    *
-    * @example
-    * phpspa.setState('user', { name: 'Alice' })
-    *   .then(() => console.log('State updated!'))
-    *   .catch(err => console.error('Failed to update state:', err));
-    */
-   static setState(key, value) {
-      return new Promise((resolve, reject) => {
-         let currentScroll = {
-            top: scrollY,
-            left: scrollX,
-         };
-
-         const url = new URL(location.href);
-         const json = JSON.stringify({ state: { key, value } });
-
-         fetch(url, {
-            headers: {
-               "X-Requested-With": "PHPSPA_REQUEST",
-               Authorization: `Bearer ${btoa(json)}`,
-            },
-            mode: "cors",
-            credentials: "include",
-            redirect: "follow",
-            keepalive: true,
-         })
-            .then((response) => {
-               response
-                  .text()
-                  .then((res) => {
-                     let data;
-
-                     if (res && res.trim().startsWith("{")) {
-                        try {
-                           data = JSON.parse(res);
-                        } catch (e) {
-                           data = res;
-                        }
-                     } else {
-                        data = res || ""; // Handle empty responses
-                     }
-
-                     resolve();
-                     call(data);
-                  })
-                  .catch((e) => {
-                     reject(e.message);
-                     callError(e);
-                  });
-            })
-            .catch((e) => {
-               reject(e.message);
-               callError(e);
-            });
-
-         function callError(e) {
-            // Check if the error contains a response (e.g., HTTP 4xx/5xx with a body)
-            if (e.response) {
-               // Try extracting text/JSON from the error response
-               e.response
-                  .text()
-                  .then((fallbackRes) => {
-                     let data;
-
-                     try {
-                        // If it looks like JSON, parse it
-                        data = fallbackRes.trim().startsWith("{")
-                           ? JSON.parse(fallbackRes)
-                           : fallbackRes;
-                     } catch (parseError) {
-                        // Fallback to raw text if parsing fails
-                        data = fallbackRes;
-                     }
-
-                     call(data || ""); // Pass the fallback data
-                  })
-                  .catch(() => {
-                     // Failed to read error response body
-                     call("");
-                  });
-            } else {
-               // No response attached (network error, CORS, etc.)
-               call("");
-            }
-         }
-
-         function call(data) {
-            if (
-               "string" === typeof data?.title ||
-               "number" === typeof data?.title
-            ) {
-               document.title = data.title;
-            }
-
-            let targetElement =
-               document.getElementById(data?.targetID) ??
-               document.getElementById(history.state?.targetID) ??
-               document.body;
-
-            targetElement.innerHTML = data?.content ?? data;
-
-            phpspa.runAll(targetElement);
-            scroll(currentScroll);
-         }
-      });
-   }
-
-   static runAll(container) {
-      function runInlineScripts(container) {
-         const scripts = container.querySelectorAll(
-            "script[data-type='phpspa/script']"
-         );
-         const executedScripts = new Set();
-
-         scripts.forEach((script) => {
-            const content = script.textContent.trim();
-
-            if (!executedScripts.has(content)) {
-               executedScripts.add(content);
-               const newScript = document.createElement("script");
-               newScript.textContent = `(function() {\n${script.textContent}\n})();`;
-               document.head.appendChild(newScript).remove();
-            }
-         });
-      }
-
-      function runInlineStyles(container) {
-         const styles = container.querySelectorAll(
-            "style[data-type='phpspa/css']"
-         );
-
-         const executedStyle = new Set();
-
-         styles.forEach((style) => {
-            const content = style.textContent.trim();
-
-            if (!executedStyle.has(content)) {
-               executedStyle.add(content);
-               const newStyle = document.createElement("style");
-               newStyle.textContent = style.textContent;
-               document.head.appendChild(newStyle).remove();
-            }
-         });
-      }
-
-      runInlineStyles(container);
-      runInlineScripts(container);
-   }
-
-   static reloadComponent() {
-      const currentScroll = {
-         top: scrollY,
-         left: scrollX,
-      };
-
-      fetch(new URL(location.href), {
-         headers: {
-            "X-Requested-With": "PHPSPA_REQUEST",
-         },
-         mode: "cors",
-         credentials: "include",
-         redirect: "follow",
-         keepalive: true,
-      })
-         .then((response) => {
-            response
-               .text()
-               .then((res) => {
-                  let data;
-
-                  if (res && res.trim().startsWith("{")) {
-                     try {
-                        data = JSON.parse(res);
-                     } catch (e) {
-                        data = res;
-                     }
-                  } else {
-                     data = res || ""; // Handle empty responses
-                  }
-
-                  call(data);
-               })
-               .catch((e) => {
-                  callError(e);
-               });
-         })
-         .catch((e) => {
-            callError(e);
-         });
-
-      function callError(e) {
-         // Check if the error contains a response (e.g., HTTP 4xx/5xx with a body)
-         if (e.response) {
-            // Try extracting text/JSON from the error response
-            e.response
-               .text()
-               .then((fallbackRes) => {
-                  let data;
-
-                  try {
-                     // If it looks like JSON, parse it
-                     data = fallbackRes.trim().startsWith("{")
-                        ? JSON.parse(fallbackRes)
-                        : fallbackRes;
-                  } catch (parseError) {
-                     // Fallback to raw text if parsing fails
-                     data = fallbackRes;
-                  }
-
-                  call(data || ""); // Pass the fallback data
-               })
-               .catch(() => {
-                  // Failed to read error response body
-                  call("");
-               });
-         } else {
-            // No response attached (network error, CORS, etc.)
-            call("");
-         }
-      }
-
-      function call(data) {
-         if (
-            "string" === typeof data?.title ||
-            "number" === typeof data?.title
-         ) {
-            document.title = data.title;
-         }
-
-         let targetElement =
-            document.getElementById(data?.targetID) ??
-            document.getElementById(history.state?.targetID) ??
-            document.body;
-
-         targetElement.innerHTML = data?.content ?? data;
-
-         phpspa.runAll(targetElement);
-
-         scroll(currentScroll);
-
-         if (typeof data["reloadTime"] !== "undefined") {
-            setTimeout(phpspa.reloadComponent, data.reloadTime);
-         }
-      }
-   }
-
-   static async __call(token, ...args) {
-      const url = new URL(location.href);
-      const json = JSON.stringify({ __call: { token, args } });
-
-      try {
-         const response = await fetch(url, {
-            headers: {
-               "X-Requested-With": "PHPSPA_REQUEST",
-               Authorization: `Bearer ${btoa(json)}`,
-            },
-            mode: "cors",
-            credentials: "include",
-            redirect: "follow",
-            keepalive: true,
-         });
-
-         const res = await response.text();
-
-         let data;
-         if (res && res.trim().startsWith("{")) {
-            try {
-               data = JSON.parse(res);
-               data = data.response;
-            } catch (e) {
-               data = res;
-            }
-         } else {
-            data = res || ""; // Handle empty responses
-         }
-
-         return data;
-      } catch (e) {
-         // Check if the error contains a response (e.g., HTTP 4xx/5xx with a body)
-         if (e.response) {
-            try {
-               const fallbackRes = await e.response.text();
-               let data;
-               try {
-                  // If it looks like JSON, parse it
-                  data = fallbackRes.trim().startsWith("{")
-                     ? JSON.parse(fallbackRes)
-                     : fallbackRes;
-
-                  data = data["response"] || data;
-               } catch (parseError) {
-                  // Fallback to raw text if parsing fails
-                  data = fallbackRes;
-               }
-
-               return data;
-            } catch {
-               // Failed to read error response body
-               return "";
-            }
-         } else {
-            // No response attached (network error, CORS, etc.)
-            return "";
-         }
-      }
-   } // end method
->>>>>>> d7adcef0a49fd56733c04f24027ea286b0ffd683
 } // end class
 
-if (typeof setState !== "function") {
-   function setState(stateKey, value) {
-      return phpspa.setState(stateKey, value);
-   }
+/**
+ * @class __PHPSPA_RUNTIME_MANAGER__
+ *
+ * @property {Object} __events__ - Internal event registry for custom event handling.
+ *
+ * @method __emit__
+ * @static
+ * @param {string} __event - The event name to emit.
+ * @param {Object} __payload - The data to pass to event listeners.
+ * @description Emits a custom event to all registered listeners.
+ */
+class __PHPSPA_RUNTIME_MANAGER__ {
+	static __executed_scripts__ = new Set()
+
+	static __executed_styles__ = new Set()
+
+	/**
+	 * Internal event registry for custom events.
+	 * @type {Object}
+	 * @private
+	 */
+	static __events__ = {
+		beforeload: [],
+		load: [],
+	}
+
+	static __run_all__(__container) {
+		function __runInlineScripts__(__container) {
+			const __scripts = __container.querySelectorAll('script')
+
+			__scripts.forEach(__script => {
+				const __content = btoa(__script.textContent.trim())
+
+				if (
+					!__PHPSPA_RUNTIME_MANAGER__.__executed_scripts__.has(__content)
+				) {
+					__PHPSPA_RUNTIME_MANAGER__.__executed_scripts__.add(__content)
+					const __newScript = document.createElement('script')
+
+					// Copy all attributes except data-type
+					for (let __attr of __script.attributes) {
+						__newScript.setAttribute(__attr.name, __attr.value)
+					}
+
+					// Check if original script has async attribute
+					const __isAsync = __script.hasAttribute('async')
+
+					if (__isAsync) {
+						__newScript.textContent = `(async function() {\n${__script.textContent}\n})();`
+					} else {
+						__newScript.textContent = `(function() {\n${__script.textContent}\n})();`
+					}
+
+					document.head.appendChild(__newScript).remove()
+				}
+			})
+		}
+
+		function __runInlineStyles__(__container) {
+			const __styles = __container.querySelectorAll('style')
+
+			__styles.forEach(__style => {
+				const __content = btoa(__style.textContent.trim())
+
+				if (
+					!__PHPSPA_RUNTIME_MANAGER__.__executed_styles__.has(__content)
+				) {
+					__PHPSPA_RUNTIME_MANAGER__.__executed_styles__.add(__content)
+					const __newStyle = document.createElement('style')
+
+					// Copy all attributes except data-type
+					for (let __attr of __style.attributes) {
+						__newStyle.setAttribute(__attr.name, __attr.value)
+					}
+
+					__newStyle.textContent = __style.textContent
+					document.head.appendChild(__newStyle).remove()
+				}
+			})
+		}
+
+		__runInlineStyles__(__container)
+		__runInlineScripts__(__container)
+	}
+
+	/**
+	 * Emits an event, invoking all registered callbacks for the specified event.
+	 *
+	 * @param {string} __event - The name of the event to emit.
+	 * @param {Object} __payload - The data to pass to each callback function.
+	 */
+	static __emit__(__event, __payload) {
+		const __callbacks = __PHPSPA_RUNTIME_MANAGER__.__events__[__event] || []
+
+		for (const __callback__ of __callbacks) {
+			if (typeof __callback__ === 'function') {
+				__callback__(__payload)
+			}
+		}
+	}
+
+	static __pushState__(...__state) {
+		try {
+			history.pushState(...__state)
+		} catch (e) {}
+	}
+
+	static __replaceState__(...__state) {
+		try {
+			history.replaceState(...__state)
+		} catch (e) {}
+	}
 }
 
-if (typeof __call !== "function") {
-   function __call(functionName, ...args) {
-      return phpspa.__call(functionName, ...args);
-   }
+if (typeof setState !== 'function') {
+	function setState(stateKey, value) {
+		return phpspa.setState(stateKey, value)
+	}
 }
 
-(function () {
-   if (typeof window.phpspa === "undefined") {
-      window.phpspa = phpspa;
-   }
-})();
+if (typeof __call !== 'function') {
+	function __call(functionName, ...args) {
+		return phpspa.__call(functionName, ...args)
+	}
+}
+
+;(function () {
+	if (typeof window.phpspa === 'undefined') {
+		window.phpspa = phpspa
+	}
+})()

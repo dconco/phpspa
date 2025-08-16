@@ -3,7 +3,7 @@
 use phpSPA\Component;
 
 return (new Component(function () {
-   $time = date("h:i:s");
+	$time = date('h:i:s');
 	return "Time: $time";
 }))
 	->route(['/phpspa/template/timer', '/timer'])

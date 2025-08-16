@@ -1,6 +1,6 @@
 <?php
 
-namespace phpSPA\Component;
+namespace Component;
 
 require_once 'createState.php';
 require_once 'HTMLAttrInArrayToString.php';

@@ -1,6 +1,6 @@
 <?php
 
-namespace phpSPA\Component;
+namespace Component;
 
 use phpSPA\Http\Session;
 use phpSPA\Core\Helper\StateSessionHandler;

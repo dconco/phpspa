@@ -26,7 +26,7 @@ trait ComponentTagFormatter
 	{
 		$pattern = '/<([A-Z][a-zA-Z0-9.]*)([^>]*)(?:\/>|>([\s\S]*?)<\/\1>)/';
 
-		$dom = preg_replace_callback(
+		$updatedDom = preg_replace_callback(
 			$pattern,
 			function ($matches) {
 				$matches = array_map('trim', $matches);
@@ -35,7 +35,7 @@ trait ComponentTagFormatter
 					$matches[1] = str_replace('.', '\\', $matches[1]);
 				}
 
-				if (!function_exists($matches[1]) && !class_exists($matches[1])) {
+				if (!function_exists($matches[1])) {
 					throw new AppException(
 						"Component Function {$matches[1]} does not exist.",
 					);
@@ -48,18 +48,28 @@ trait ComponentTagFormatter
 					self::$attributes['children'] = $matches[3];
 				}
 
+				// Recursively resolve children before calling the function
+				if (isset(self::$attributes['children'])) {
+					self::format(self::$attributes['children']);
+				}
+
 				foreach (array_keys(self::$attributes) as $attrKey) {
 					if (!CallableInspector::hasParam($matches[1], $attrKey)) {
 						// throw new AppException("Component Function {$matches[1]} does not accept property '{$attrKey}'.");
 					}
 				}
 
-				if (class_exists($matches[1])) {
-					$matches[1] = [$matches[1], '__render'];
-				}
 				return call_user_func_array($matches[1], self::$attributes);
 			},
 			$dom,
 		);
+
+		// If the DOM changed, run again recursively
+		if ($updatedDom !== $dom) {
+			$dom = $updatedDom;
+			self::format($dom);
+		} else {
+			$dom = $updatedDom; // final update
+		}
 	}
 }
