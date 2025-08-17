@@ -1,15 +1,13 @@
 <?php
 
-return fn() => <<<HTML
+return fn () => <<<HTML
    <!DOCTYPE html>
    <html>
       <head>
          <title>PHP SPA PROJECT BY DCONCO</title>
       </head>
       <body>
-         <div id="app">
-            __CONTENT__
-         </div>
+         <div id="app"></div>
 
          <!-- phpSPA JS PLUGIN -->
          <!-- <script type="text/javascript" src="https://unpkg.com/phpspa-js"></script> -->
