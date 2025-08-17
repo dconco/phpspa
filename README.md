@@ -71,18 +71,18 @@ Works out of the box
 </tr>
 </table>
 
-### **Step 1: Clone the Template**
+**Step 1: Clone the Template**
 ```bash
 git clone https://github.com/mrepol742/phpspa-example my-phpspa-app
 cd my-phpspa-app
 ```
 
-### **Step 2: Install Dependencies**
+**Step 2: Install Dependencies**
 ```bash
 composer install
 ```
 
-### **Step 3: Start Development Server**
+**Step 3: Start Development Server**
 ```bash
 composer start
 ```
