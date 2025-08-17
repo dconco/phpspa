@@ -48,7 +48,57 @@ Works out of the box
 
 ---
 
+## 🚀 **Getting Started**
+
+<div align="center">
+
+### 🎯 **Ready to Jump In? Start with our Template!**
+
+*Get up and running in 30 seconds with a complete phpSPA example*
+
+</div>
+
+<table>
+<tr>
+<td width="50%" align="center">
+<strong>📦 Clone Template</strong><br>
+<em>Pre-configured project structure</em>
+</td>
+<td width="50%" align="center">
+<strong>⚡ Instant Setup</strong><br>
+<em>Dependencies + server ready</em>
+</td>
+</tr>
+</table>
+
+### **Step 1: Clone the Template**
+```bash
+git clone https://github.com/mrepol742/phpspa-example my-phpspa-app
+cd my-phpspa-app
+```
+
+### **Step 2: Install Dependencies**
+```bash
+composer install
+```
+
+### **Step 3: Start Development Server**
+```bash
+composer start
+```
+
+<div align="center">
+
+🎉 **That's it!** Your phpSPA application is now running locally.
+
+**Open your browser and start building amazing components!**
+
+</div>
+
+---
+
 ## 🚀 **Quick Start**
+
 
 ### Install
 
