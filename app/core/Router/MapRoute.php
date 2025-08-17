@@ -244,8 +244,9 @@ class MapRoute implements MapInterface
                !in_array('*', self::$method)
                )
                {
-                  http_response_code(405);
-                  exit('Method Not Allowed');
+                  // http_response_code(405);
+                  // exit('Method Not Allowed');
+                  return false;
                }
 
                $req[$param_name] = $parsed_value;
@@ -304,8 +305,9 @@ class MapRoute implements MapInterface
          !in_array('*', self::$method)
          )
          {
-            http_response_code(405);
-            exit('Method Not Allowed');
+            // http_response_code(405);
+            // exit('Method Not Allowed');
+            return false;
          }
 
          return [
@@ -368,8 +370,9 @@ class MapRoute implements MapInterface
          !in_array('*', self::$method)
          )
          {
-            http_response_code(405);
-            exit('Method Not Allowed');
+            // http_response_code(405);
+            // exit('Method Not Allowed');
+            return false;
          }
 
          return [

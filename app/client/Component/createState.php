@@ -1,8 +1,7 @@
 <?php
 
-namespace phpSPA\Component;
+namespace Component;
 
-use phpSPA\Http\Session;
 use phpSPA\Core\Helper\StateManager;
 
 /**
@@ -19,8 +18,7 @@ use phpSPA\Core\Helper\StateManager;
  * @package phpSPA\Component
  * @return StateManager      The state manager instance for the specified key.
  */
-function createState (string $stateKey, $default): StateManager
+function createState(string $stateKey, $default): StateManager
 {
-   if (!Session::isActive()) Session::start();
-   return new StateManager($stateKey, $default);
+	return new StateManager($stateKey, $default);
 }

@@ -1,45 +1,41 @@
 {
-    "name": "dconco/phpspa",
-    "type": "library",
-    "description": "A lightweight, component-based PHP library for building Single Page Applications (SPAs) without relying on heavy frontend frameworks.",
-    "keywords": [
-        "php",
-        "spa",
-        "phpspa",
-        "js",
-        "jsx",
-        "javascript",
-        "component-library"
-    ],
-    "license": "MIT",
-    "autoload": {
-        "psr-4": {
-            "phpSPA\\": "app/client/",
-            "phpSPA\\Core\\": "app/core/",
-            "phpSPA\\Interfaces\\": "app/interfaces/",
-            "phpSPA\\Exceptions\\": "app/exceptions/"
-        },
-        "files": [
-            "app/client/Component/createState.php",
-            "app/client/Component/HTMLAttrInArrayToString.php",
-            "app/client/Component/import.php",
-            "app/client/Component/Link.php",
-            "app/client/Component/Navigate.php",
-            "app/core/Impl/Const/StateConstant.php",
-            "app/client/Http/Redirect.php"
-        ]
-    },
-    "authors": [
-        {
-            "name": "Dave Conco",
-            "email": "concodave@gmail.com",
-            "role": "Developer",
-            "homepage": "https://dconco.dev"
-        }
-    ],
-    "require": {
-        "php": "^8.2"
-    },
-    "prefer-stable": true,
-    "minimum-stability": "stable"
+	"name": "dconco/phpspa",
+	"type": "library",
+	"description": "A lightweight, component-based PHP library for building Single Page Applications (SPAs) without relying on heavy frontend frameworks.",
+	"keywords": [
+		"php",
+		"spa",
+		"phpspa",
+		"js",
+		"jsx",
+		"javascript",
+		"component-library"
+	],
+	"license": "MIT",
+	"autoload": {
+		"psr-4": {
+			"phpSPA\\": "app/client/",
+			"phpSPA\\Core\\": "app/core/",
+			"phpSPA\\Interfaces\\": "app/interfaces/",
+			"phpSPA\\Exceptions\\": "app/exceptions/"
+		},
+		"files": [
+			"app/core/Impl/Const/StateConstant.php",
+		   "app/client/Component/Component.php",
+			"app/client/Http/Redirect.php"
+		]
+	},
+	"authors": [
+		{
+			"name": "Dave Conco",
+			"email": "concodave@gmail.com",
+			"role": "Developer",
+			"homepage": "https://dconco.github.io"
+		}
+	],
+	"require": {
+		"php": "^8.2"
+	},
+	"prefer-stable": true,
+	"minimum-stability": "stable"
 }

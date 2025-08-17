@@ -1,12 +1,159 @@
 # CHANGELOG
 
-## v1.1.5
+## v1.1.5 [Unreleased]
+
+> [!IMPORTANT]
+> This PHPSPA version requires the [`dconco/phpspa-js`](https://github.com/dconco/phpspa-js) version above `v1.1.7` to be able to work
+
+### [Added]
+
+-  Added `__call()` alias of `phpspa.__call()` but changed the logic on how it works:
+
+   -  You'll import the new created function `useFunction()` and provide the function you're to use as parameter, in your component:
+
+      ```php
+      <?php
+      // your Login component, make sure it's global function (or namespaced)
+      function Login($args) { return "<h2>Login Component</h2>"; }
+
+      // in your main component
+
+      // make sure you include the use function namespace
+      use function Component\useFunction;
+
+      $loginApi = useFunction('Login'); // Login since it's not in a namespace, if it is then include them together, eg '\Namespace\Login'
+
+      return <<<HTML
+         <script data-type="phpspa/script">
+            htmlElement.onclick = () => {
+               __call("{$loginApi->token}", "Arguments")
+            }
+         </script>
+      HTML;
+      ```
+
+-  Provided direct PHP integration for calling PHP function from JS.
+
+   -  If you want a faster method, than calling manual with JS, use this:
+
+      ```php
+       // in your component, related to the earlier example.
+       $loginApi = useFunction('Login'); // the function to call
+
+       return <<<HTML
+         <script data-type="phpspa/script">
+            htmlElement.onclick = () => $loginApi; // this generates the JavaScript code
+
+            // to get the result (running with async)
+            htmlElement.onclick = async () => {
+               const response = await {$loginApi('arguments')}; // if there's argument, it'll like this
+               console.log(response) // outputs the response from the Login function
+            }
+         </script>
+       HTML;
+      ```
+
+-  Support for class components (e.g., `<MyClass />`)
+
+-  Namespace support for class components (e.g., `<Namespace.Class />`)
+
+-  Classes require `__render` method for component rendering
+
+-  **Method Chaining Support to App Class**
+
+   You can now fluently chain multiple method calls on an App instance for cleaner and more expressive code.
+
+   **New Usage Example:**
+
+   ```php
+   $app = (new App(require 'Layout.php'))
+    ->attach(require 'components/Login.php')
+    ->defaultTargetID('app')
+    ->defaultToCaseSensitive()
+    ->cors()
+    ->run();
+   ```
+
+-  New `<Component.Csrf />` component for CSRF protection
+
+   -  Support for multiple named tokens with automatic cleanup
+
+   -  Built-in token expiration (1 hour default)
+
+   -  Automatic token generation and validation
+
+   **Features:**
+
+   -  Automatic token rotation
+
+   -  Prevents token reuse (optional via `$expireAfterUse`)
+
+   -  Limits stored tokens (10 max by default)
+
+   -  Timing-safe validation
+
+   **Security:**
+
+   -  Uses cryptographically secure `random_bytes()`
+
+   -  Implements `hash_equals()` to prevent timing attacks
+
+   -  Tokens automatically expire after 1 hour
+
+   **Example Workflow**
+
+   1. **In Form:**
+
+      ```php
+      <form>
+         <Component.Csrf name="user-form" />
+         <!-- other fields -->
+      </form>
+      ```
+
+   2. **On Submission:**
+
+      ```php
+      use Component\Csrf;
+
+      $csrf = new Csrf("user-form"); // the csrf form name
+
+      if (!$csrf->verify())) {
+         die('Invalid CSRF token!');
+      }
+
+      // Process form...
+      ```
+
+   > [!NOTE]
+   > By default the CSRF token cannot to be used again after successful validation until the page is refreshed to get new token.
+   > To prevent this, pass false to the function parameter: `$csrf->verify(false)`
+
+### [Changed]
+
+-  JS now check and execute all scripts & styles from all component no matter the type (we are no more using data-type attributes)
+
+-  `\phpSPA\Component` namespaces are now converted to `\Component` namespace.
+
+-  Changed how JS -> PHP connection core logic works
+
+-  Made `__call()` function directly from Js x10 more secured
 
 -  Edited `StrictTypes` class and make the `string` class worked instead of `alnum` and `alpha`
 
+-  Made CORS configuration optional with default settings
+
+-  CORS method now loads default config when called (previously no defaults available)
+
+### [Removed]
+
+-  Removed `__CONTENT__` placehover. It now renders directly using the target ID
+
+-  Removed deprecated `<Link />` Alias, use `<Component.Link />` instead.
+
 ## v1.1.4
 
--  Updated phpSPA core from frontent to use the `Request` class instead of just global request `$_REQUEST`
+-  Updated phpSPA core from frontend to use the `Request` class instead of just global request `$_REQUEST`
 
 -  Added Hooks Event Documentation. [View Docs](https://phpspa.readthedocs.io/en/latest/hooks-event/)
 

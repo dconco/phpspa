@@ -1,7 +1,8 @@
 <?php
 
 use phpSPA\Component;
-use function phpSPA\Component\createState;
+use function Component\createState;
+use function Component\useFunction;
 
 function HelloWorld($name)
 {
@@ -9,25 +10,23 @@ function HelloWorld($name)
 }
 
 return (new Component(function () {
+	$caller = useFunction('HelloWorld');
 	$counter = createState('counter', 0);
-	$counter($counter() + 1);
 
 	return <<<HTML
-	    <button id="btn">
-	        Clicks: {$counter}
-	    </button>
+	      <button id="btn">
+	         Clicks: {$counter}
+	      </button>
+
+	      <script>
+	         const btn = document.getElementById('btn')
+
+	         btn.onclick = async () => {
+	            const res = await {$caller('dave')};
+	            alert(res.data)
+	         }
+	      </script>
 	HTML;
 }))
 	->route(['/phpspa/template/counter', '/counter'])
-	->title('Counter Component')
-
-	->script(
-		fn() => <<<JS
-		   let btn = document.getElementById('btn')
-
-		   btn.addEventListener('click', async () => {
-		      let res = await phpspa.__call('HelloWorld', 'Dave')
-		      alert(res.data)
-		   })
-		JS,
-	);
+	->title('Counter Component');

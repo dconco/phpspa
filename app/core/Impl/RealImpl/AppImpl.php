@@ -6,11 +6,13 @@ use phpSPA\Component;
 use phpSPA\Http\Request;
 use phpSPA\Http\Session;
 use phpSPA\Core\Router\MapRoute;
+use phpSPA\Core\Helper\CsrfManager;
+use phpSPA\Core\Helper\SessionHandler;
 use phpSPA\Core\Helper\CallableInspector;
 use phpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 
 use const phpSPA\Core\Impl\Const\STATE_HANDLE;
-use const phpSPA\Core\Impl\Const\REGISTER_STATE_HANDLE;
+use const phpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
 
 /**
  * @author dconco <concodave@gmail.com>
@@ -28,6 +30,7 @@ use const phpSPA\Core\Impl\Const\REGISTER_STATE_HANDLE;
 abstract class AppImpl
 {
 	use ComponentTagFormatter;
+	use \phpSPA\Core\Utils\Validate;
 
 	/**
 	 * The layout of the application.
@@ -79,33 +82,49 @@ abstract class AppImpl
 
 	private array $cors = [];
 
-	public function defaultTargetID(string $targetID): void
+	public function defaultTargetID(string $targetID): self
 	{
 		$this->defaultTargetID = $targetID;
+		return $this;
 	}
 
-	public function defaultToCaseSensitive(): void
+	public function defaultToCaseSensitive(): self
 	{
 		$this->defaultCaseSensitive = true;
+		return $this;
 	}
 
-	public function attach(Component $component): void
+	public function attach(Component $component): self
 	{
 		$this->components[] = $component;
+		return $this;
 	}
 
-	public function detach(Component $component): void
+	public function detach(Component $component): self
 	{
 		$key = array_search($component, $this->components, true);
 
 		if ($key !== false) {
 			unset($this->components[$key]);
 		}
+		return $this;
 	}
 
-	public function cors(array $data)
+	public function cors(array $data = []): self
 	{
-		$this->cors = $data;
+		$this->cors = require __DIR__ . '/../../Config/Cors.php';
+
+		if (!empty($data)) {
+			$this->cors = array_merge_recursive($this->cors, $data);
+		}
+
+		foreach ($this->cors as $key => $value) {
+			if (is_array($value)) {
+				$this->cors[$key] = array_unique($value);
+			}
+		}
+
+		return $this;
 	}
 
 	public function run(): void
@@ -163,13 +182,12 @@ abstract class AppImpl
 
 				if (
 					!in_array(strtolower($_SERVER['REQUEST_METHOD']), $m) &&
-					!in_array('*', self::$method)
+					!in_array('*', $method)
 				) {
 					continue;
 				}
 			} else {
 				$router = (new MapRoute())->match($method, $route, $caseSensitive);
-
 				if (!$router) {
 					continue;
 				} // Skip if no match found
@@ -180,54 +198,46 @@ abstract class AppImpl
 			$layoutOutput = call_user_func($this->layout);
 			$componentOutput = '';
 
-			if (strtolower($request->requestedWith() ?: '') === 'phpspa_request') {
-				$body = json_decode($request->get('phpspa_body') ?? '', true);
+			if ($request->requestedWith() === 'PHPSPA_REQUEST') {
+				$data = json_decode($request->auth()->bearer ?? '', true);
+				$data = $this->validate($data);
 
-				if ($request->get('phpspa_body') !== null &&
-					json_last_error() === JSON_ERROR_NONE
-				) {
-					if (!empty($body['stateKey']) && !empty($body['value'])) {
-						Session::start();
+				if (isset($data['state'])) {
+					$state = $data['state'];
 
-						$reg = unserialize(
-							Session::get(REGISTER_STATE_HANDLE, serialize([])),
-						);
-						if (in_array($body['stateKey'], $reg)) {
-							Session::set(
-								STATE_HANDLE . $body['stateKey'],
-								serialize($body['value']),
-							);
-						}
+					if (!empty($state['key']) && !empty($state['value'])) {
+						$sessionData = SessionHandler::get(STATE_HANDLE);
+						$sessionData[$state['key']] = $state['value'];
+						SessionHandler::set(STATE_HANDLE, $sessionData);
 					}
 				}
 
-				$body = json_decode(
-					$request->get('phpspa_call_php_function') ?? '',
-					true,
-				);
-				if (
-					$request->get('phpspa_call_php_function') !== null &&
-					json_last_error() === JSON_ERROR_NONE
-				) {
+				if (isset($data['__call'])) {
 					try {
-						$res = call_user_func_array(
-							$body['functionName'],
-							$body['args'],
-						);
-						print_r(json_encode(['response' => $res]));
+						$tokenData = base64_decode($data['__call']['token'] ?? '');
+						$tokenData = json_decode($tokenData);
+
+						$token = $tokenData[1];
+						$functionName = $tokenData[0];
+						$csrf = new CsrfManager($functionName, CALL_FUNC_HANDLE);
+
+						if ($csrf->verifyToken($token, false)) {
+							$res = call_user_func_array(
+								$functionName,
+								$data['__call']['args'],
+							);
+							print_r(json_encode(['response' => base64_encode(json_encode($res))]));
+						} else {
+							throw new \Exception('Invalid or Expired Token');
+						}
 					} catch (\Exception $e) {
 						print_r($e->getMessage());
 					}
 					exit();
 				}
 			} else {
-				Session::start();
-
-				$reg = unserialize(
-					Session::get(REGISTER_STATE_HANDLE, serialize([])),
-				);
-				$keys = array_map(fn($key) => STATE_HANDLE . $key, $reg);
-				Session::remove($keys);
+				Session::remove(STATE_HANDLE);
+				Session::remove(CALL_FUNC_HANDLE);
 			}
 
 			/**
@@ -276,9 +286,7 @@ abstract class AppImpl
 
 						if (is_string($scriptValue) && !empty($scriptValue)) {
 							$componentOutput .=
-								"\n<script data-type=\"phpspa/script\">\n" .
-								$scriptValue .
-								"\n</script>\n";
+								"\n<script>\n" . $scriptValue . "\n</script>\n";
 						}
 					}
 				}
@@ -292,7 +300,7 @@ abstract class AppImpl
 
 						if (is_string($styleValue) && !empty($styleValue)) {
 							$componentOutput =
-								"<style data-type=\"phpspa/css\">\n" .
+								"<style>\n" .
 								$styleValue .
 								"\n</style>\n" .
 								$componentOutput;
@@ -301,9 +309,9 @@ abstract class AppImpl
 				}
 			}
 
-			if (strtolower($request->requestedWith() ?: '') === 'phpspa_request') {
+			if ($request->requestedWith() === 'PHPSPA_REQUEST') {
 				$info = [
-					'content' => $componentOutput,
+					'content' => base64_encode($componentOutput),
 					'title' => $title,
 					'targetID' => $targetID,
 				];
@@ -330,9 +338,24 @@ abstract class AppImpl
 					$tt = " phpspa-reload-time=\"$reloadTime\"";
 				}
 
-				$this->renderedData = str_replace(
-					'__CONTENT__',
-					"\n<div data-phpspa-target$tt>" . $componentOutput . "</div>\n",
+				$tag =
+					'/<(\w+)([^>]*id\s*=\s*["\']?' .
+					preg_quote($targetID, '/') .
+					'["\']?[^>]*)>.*?<\/\1>/si';
+
+				$this->renderedData = preg_replace_callback(
+					$tag,
+					function ($matches) use ($componentOutput, $tt) {
+						// $matches[1] contains the tag name, $matches[2] contains attributes with the target ID
+						return '<' .
+							$matches[1] .
+							$matches[2] .
+							" data-phpspa-target$tt>" .
+							$componentOutput .
+							'</' .
+							$matches[1] .
+							'>';
+					},
 					$layoutOutput,
 				);
 

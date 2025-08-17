@@ -1,6 +1,7 @@
 <?php
 
 return fn() => <<<HTML
+   <!DOCTYPE html>
    <html>
       <head>
          <title>PHP SPA PROJECT BY DCONCO</title>
@@ -11,8 +12,8 @@ return fn() => <<<HTML
          </div>
 
          <!-- phpSPA JS PLUGIN -->
-         <script type="text/javascript" src="https://unpkg.com/phpspa-js"></script>
-         <!-- <script src="https://cdn.jsdelivr.net/npm/phpspa-js"></script> -->
+         <!-- <script type="text/javascript" src="https://unpkg.com/phpspa-js"></script> -->
+         <script type="text/javascript" src="/src/index.js"></script>
 
          <script>
             phpspa.on("beforeload", ({ route }) => {

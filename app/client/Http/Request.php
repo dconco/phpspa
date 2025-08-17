@@ -399,8 +399,10 @@ class Request
 		return $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $this->header('X-CSRF-TOKEN') ?:
 			$this->header('X-Csrf-Token');
 	}
-	
-	public function requestedWith() {
-	   return $_SERVER['HTTP_X_REQUESTED_WITH'] ?? $this->header('X-Requested-With');
+
+	public function requestedWith()
+	{
+		return $_SERVER['HTTP_X_REQUESTED_WITH'] ??
+			$this->header('X-Requested-With');
 	}
 }

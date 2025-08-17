@@ -1,6 +1,6 @@
 <?php
 
-namespace phpSPA\Component;
+namespace Component;
 
 /**
  * Renders a link component for client-side navigation.
@@ -15,11 +15,11 @@ namespace phpSPA\Component;
  * @package phpSPA\Component
  * @return string The rendered HTML anchor element as a string.
  */
-function Link (string $to, string $children, string ...$HtmlAttr): string
+function Link(string $to, string $children, string ...$HtmlAttr): string
 {
-   $attr = HTMLAttrInArrayToString($HtmlAttr);
+	$attr = HTMLAttrInArrayToString($HtmlAttr);
 
-   return <<<HTML
-      <a href="{$to}" data-type="phpspa-link-tag" $attr>{$children}</a>
-   HTML;
+	return <<<HTML
+	   <a href="{$to}" data-type="phpspa-link-tag" $attr>{$children}</a>
+	HTML;
 }

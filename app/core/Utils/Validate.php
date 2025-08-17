@@ -59,11 +59,7 @@ trait Validate
 		$validatedValue = (string) $value;
 
 		// Sanitize the string to prevent potential HTML injection issues
-		$sanitizedValue = htmlspecialchars(
-		 $validatedValue,
-		 ENT_QUOTES,
-		 'UTF-8',
-		);
+		$sanitizedValue = htmlspecialchars($validatedValue);
 		$type = gettype($value);
 
 		// Convert the sanitized string back to its original type based on the initial value's type

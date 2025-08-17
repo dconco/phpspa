@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace phpSPA\Http;
 
@@ -10,6 +10,8 @@ namespace phpSPA\Http;
  */
 class Session
 {
+	use \phpSPA\Core\Utils\Validate;
+
 	/**
 	 * Check if a session is currently active
 	 *
@@ -94,15 +96,16 @@ class Session
 	 *
 	 * @param string $key The session variable key
 	 * @param mixed $value The value to store
+	 * @param bool $raw If to store raw value
 	 * @return bool True if value was set, false if session not active
 	 */
-	public static function set(string $key, $value): bool
+	public static function set(string $key, $value, bool $raw = false): bool
 	{
 		if (!self::isActive()) {
 			return false;
 		}
 
-		$_SESSION[$key] = $value;
+		$_SESSION[$key] = $raw ? $value : (new static())->validate($value);
 		return true;
 	}
 
