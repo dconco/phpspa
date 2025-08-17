@@ -20,15 +20,9 @@ class FunctionCaller
 	function __construct(callable $function)
 	{
 		$funcName = $this->getCallableName($function);
+		$csrf = new CsrfManager($funcName, CALL_FUNC_HANDLE);
 
-		if (Session::has(CALL_FUNC_HANDLE)) {
-			$token = Session::get(CALL_FUNC_HANDLE);
-		} else {
-			$token = bin2hex(random_bytes(length: 32));
-			Session::set(CALL_FUNC_HANDLE, $token);
-		}
-
-		$this->token = base64_encode(json_encode([$funcName, $token]));
+		$this->token = base64_encode(json_encode([$funcName, $csrf->getToken()]));
 	}
 
 	function __toString()

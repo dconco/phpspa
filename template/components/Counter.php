@@ -9,9 +9,8 @@ function HelloWorld($name)
 	return ['data' => "Hello $name", 'id' => 3];
 }
 
-//$caller = useFunction('HelloWorld');
-
 return (new Component(function () {
+	$caller = useFunction('HelloWorld');
 	$counter = createState('counter', 0);
 
 	return <<<HTML
@@ -22,8 +21,9 @@ return (new Component(function () {
 	      <script>
 	         const btn = document.getElementById('btn')
 
-	         btn.onclick = () => {
-	            const res = setState('counter', $counter+1)
+	         btn.onclick = async () => {
+	            const res = await {$caller('dave')};
+	            alert(res)
 	         }
 	      </script>
 	HTML;

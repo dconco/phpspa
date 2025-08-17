@@ -6,8 +6,9 @@ use phpSPA\Component;
 use phpSPA\Http\Request;
 use phpSPA\Http\Session;
 use phpSPA\Core\Router\MapRoute;
-use phpSPA\Core\Helper\CallableInspector;
+use phpSPA\Core\Helper\CsrfManager;
 use phpSPA\Core\Helper\SessionHandler;
+use phpSPA\Core\Helper\CallableInspector;
 use phpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 
 use const phpSPA\Core\Impl\Const\STATE_HANDLE;
@@ -213,17 +214,14 @@ abstract class AppImpl
 
 				if (isset($data['__call'])) {
 					try {
-						$token = base64_decode($data['__call']['token'] ?? '');
-						$token = json_decode($token);
+						$tokenData = base64_decode($data['__call']['token'] ?? '');
+						$tokenData = json_decode($tokenData);
 
-						$functionName = $token[0];
-						$token = $token[1];
+						$token = $tokenData[1];
+						$functionName = $tokenData[0];
+						$csrf = new CsrfManager($functionName, CALL_FUNC_HANDLE);
 
-						$storedToken = Session::get(CALL_FUNC_HANDLE);
-						print_r($storedToken);
-						print_r("\n" . $token);
-
-						if (true) {
+						if ($csrf->verifyToken($token, false)) {
 							$res = call_user_func_array(
 								$functionName,
 								$data['__call']['args'],
