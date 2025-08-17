@@ -226,7 +226,7 @@ abstract class AppImpl
 								$functionName,
 								$data['__call']['args'],
 							);
-							print_r(json_encode(['response' => $res]));
+							print_r(json_encode(['response' => base64_encode(json_encode($res))]));
 						} else {
 							throw new \Exception('Invalid or Expired Token');
 						}

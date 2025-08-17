@@ -23,7 +23,7 @@ return (new Component(function () {
 
 	         btn.onclick = async () => {
 	            const res = await {$caller('dave')};
-	            alert(res)
+	            alert(res.data)
 	         }
 	      </script>
 	HTML;

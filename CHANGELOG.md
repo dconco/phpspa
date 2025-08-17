@@ -147,6 +147,8 @@
 
 ### [Removed]
 
+-  Removed `__CONTENT__` placehover. It now renders directly using the target ID
+
 -  Removed deprecated `<Link />` Alias, use `<Component.Link />` instead.
 
 ## v1.1.4

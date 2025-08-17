@@ -29,68 +29,97 @@
  * @license MIT
  */
 ;(function () {
+	/**
+	 * Initialize phpSPA when DOM is ready
+	 * Sets up the initial browser history state with the current page content
+	 */
 	window.addEventListener('DOMContentLoaded', () => {
-		const __target = document.querySelector('[data-phpspa-target]')
+		const targetElement = document.querySelector('[data-phpspa-target]')
 
-		if (__target) {
-			const __state = {
-				__url__: location.href,
-				__title__: document.title,
-				__targetID__: __target.parentElement.id,
-				__content__: btoa(__target.innerHTML),
+		if (targetElement) {
+			// Create initial state object with current page data
+			const initialState = {
+				url: location.href,
+				title: document.title,
+				targetId: targetElement.parentElement.id,
+				content: btoa(targetElement.innerHTML), // Base64 encode HTML content
 			}
 
-			if (__target.hasAttribute('phpspa-reload-time')) {
-				__state['__reloadTime__'] = Number(
-					__target.getAttribute('phpspa-reload-time')
+			// Check if component has auto-reload functionality
+			if (targetElement.hasAttribute('phpspa-reload-time')) {
+				initialState.reloadTime = Number(
+					targetElement.getAttribute('phpspa-reload-time')
 				)
 			}
 
-			__PHPSPA_RUNTIME_MANAGER__.__replaceState__(
-				__state,
+			// Replace current history state with phpSPA data
+			RuntimeManager.replaceState(
+				initialState,
 				document.title,
 				location.href
 			)
 
-			if (__target.hasAttribute('phpspa-reload-time')) {
-				setTimeout(phpspa.reloadComponent, __state.__reloadTime__)
+			// Set up auto-reload if specified
+			if (targetElement.hasAttribute('phpspa-reload-time')) {
+				setTimeout(phpspa.reloadComponent, initialState.reloadTime)
 			}
 		}
 	})
 
-	document.addEventListener('click', __ => {
-		const __info = __.target.closest('a[data-type="phpspa-link-tag"]')
+	/**
+	 * Handle clicks on phpSPA navigation links
+	 * Intercepts clicks on elements with data-type="phpspa-link-tag"
+	 * and routes them through the SPA navigation system
+	 */
+	document.addEventListener('click', event => {
+		const spaLink = event.target.closest('a[data-type="phpspa-link-tag"]')
 
-		if (__info) {
-			__.preventDefault()
-			phpspa.navigate(new URL(__info.href, location.href), 'push')
+		if (spaLink) {
+			// Prevent default browser navigation
+			event.preventDefault()
+
+			// Navigate using phpSPA system
+			phpspa.navigate(new URL(spaLink.href, location.href), 'push')
 		}
 	})
 
-	window.addEventListener('popstate', __ => {
-		const __state = __.state
+	/**
+	 * Handle browser back/forward button navigation
+	 * Restores page content when user navigates through browser history
+	 */
+	window.addEventListener('popstate', event => {
+		const navigationState = event.state
 
+		// Check if we have valid phpSPA state data
 		if (
-			__state &&
-			__state.__url__ &&
-			__state.__targetID__ &&
-			__state.__content__
+			navigationState &&
+			navigationState.url &&
+			navigationState.targetId &&
+			navigationState.content
 		) {
-			document.title = __state.__title__ ?? document.title
+			// Restore page title
+			document.title = navigationState.title ?? document.title
 
-			let __targetElement =
-				document.getElementById(__state.__targetID__) ?? document.body
+			// Find target container or fallback to body
+			const targetContainer =
+				document.getElementById(navigationState.targetId) ?? document.body
 
-			__targetElement.innerHTML = atob(__state.__content__)
-			__PHPSPA_RUNTIME_MANAGER__.__run_all__(__targetElement)
+			// Decode and restore HTML content
+			targetContainer.innerHTML = atob(navigationState.content)
 
-			if (typeof __state['__reloadTime__'] !== 'undefined') {
-				setTimeout(phpspa.reloadComponent, __state.__reloadTime__)
+			// Execute any inline scripts and styles in the restored content
+			RuntimeManager.runAll(targetContainer)
+
+			// Restart auto-reload timer if needed
+			if (typeof navigationState.reloadTime !== 'undefined') {
+				setTimeout(phpspa.reloadComponent, navigationState.reloadTime)
 			}
 		} else {
+			// No valid state found - navigate to current URL to refresh
 			phpspa.navigate(new URL(location.href), 'replace')
 		}
 
+		// Enable automatic scroll restoration
 		history.scrollRestoration = 'auto'
 	})
 })()
@@ -139,8 +168,10 @@ class phpspa {
 	 * @fires phpspa#load - Emitted after attempting to load the new route, with success or error status.
 	 */
 	static navigate(url, state = 'push') {
-		__PHPSPA_RUNTIME_MANAGER__.__emit__('beforeload', { route: url })
+		// Emit beforeload event for loading indicators
+		RuntimeManager.emit('beforeload', { route: url })
 
+		// Fetch content from the server with phpSPA headers
 		fetch(url, {
 			headers: {
 				'X-Requested-With': 'PHPSPA_REQUEST',
@@ -152,144 +183,151 @@ class phpspa {
 			.then(response => {
 				response
 					.text()
-					.then(__res => {
-						let __data
+					.then(responseText => {
+						let responseData
 
-						if (__res && __res.trim().startsWith('{')) {
+						// Try to parse JSON response, fallback to raw text
+						if (responseText && responseText.trim().startsWith('{')) {
 							try {
-								__data = JSON.parse(__res)
-							} catch (e) {
-								__data = __res
+								responseData = JSON.parse(responseText)
+							} catch (parseError) {
+								responseData = responseText
 							}
 						} else {
-							__data = __res || '' // Handle empty responses
+							responseData = responseText || '' // Handle empty responses
 						}
 
-						// Emit success event
-						__PHPSPA_RUNTIME_MANAGER__.__emit__('load', {
+						// Emit successful load event
+						RuntimeManager.emit('load', {
 							route: url,
 							success: true,
 							error: false,
 						})
 
-						__call__(__data)
+						processResponse(responseData)
 					})
-					.catch(__ => __callError__(__))
+					.catch(error => handleError(error))
 			})
-			.catch(__ => __callError__(__))
+			.catch(error => handleError(error))
 
-		function __callError__(__) {
-			// Check if the error contains a response (e.g., HTTP 4xx/5xx with a body)
-			if (__.response) {
-				// Try extracting text/JSON from the error response
-				__.response
+		/**
+		 * Handles errors that occur during navigation requests
+		 * @param {Error} error - The error object from the failed request
+		 */
+		function handleError(error) {
+			// Check if the error has a response body (HTTP 4xx/5xx errors)
+			if (error.response) {
+				error.response
 					.text()
-					.then(__fallbackRes => {
-						let __data
+					.then(fallbackResponse => {
+						let errorData
 
 						try {
-							// If it looks like JSON, parse it
-							__data = __fallbackRes.trim().startsWith('{')
-								? JSON.parse(__fallbackRes)
-								: __fallbackRes
-						} catch (__parseError) {
-							// Fallback to raw text if parsing fails
-							__data = __fallbackRes
+							// Attempt to parse error response as JSON
+							errorData = fallbackResponse.trim().startsWith('{')
+								? JSON.parse(fallbackResponse)
+								: fallbackResponse
+						} catch (parseError) {
+							// If parsing fails, use raw text
+							errorData = fallbackResponse
 						}
 
-						__PHPSPA_RUNTIME_MANAGER__.__emit__('load', {
+						RuntimeManager.emit('load', {
 							route: url,
 							success: false,
-							error: __.message || 'Server returned an error',
-							data: __data, // Include the parsed/raw data
+							error: error.message || 'Server returned an error',
+							data: errorData,
 						})
-						__call__(__data || '') // Pass the fallback data
+
+						processResponse(errorData || '')
 					})
 					.catch(() => {
 						// Failed to read error response body
-						__PHPSPA_RUNTIME_MANAGER__.__emit__('load', {
+						RuntimeManager.emit('load', {
 							route: url,
 							success: false,
-							error: __.message || 'Failed to read error response',
+							error: error.message || 'Failed to read error response',
 						})
-						__call__('')
+						processResponse('')
 					})
 			} else {
-				// No response attached (network error, CORS, etc.)
-				__PHPSPA_RUNTIME_MANAGER__.__emit__('load', {
+				// Network error, CORS issue, or other connection problems
+				RuntimeManager.emit('load', {
 					route: url,
 					success: false,
-					error: __.message || 'No connection to server',
+					error: error.message || 'No connection to server',
 				})
-				__call__('')
+				processResponse('')
 			}
 		}
 
-		function __call__(__data) {
+		/**
+		 * Processes the server response and updates the DOM
+		 * @param {string|Object} responseData - The processed response data
+		 */
+		function processResponse(responseData) {
+			// Update document title if provided
 			if (
-				'string' === typeof __data?.title ||
-				'number' === typeof __data?.title
+				typeof responseData?.title === 'string' ||
+				typeof responseData?.title === 'number'
 			) {
-				document.title = __data.title
+				document.title = responseData.title
 			}
 
-			let __targetElement =
-				document.getElementById(__data?.targetID) ??
-				document.getElementById(history.state?.__targetID__) ??
+			// Find target element for content replacement
+			const targetElement =
+				document.getElementById(responseData?.targetID) ??
+				document.getElementById(history.state?.targetID) ??
 				document.body
 
-			__targetElement.innerHTML = __data?.content
-				? atob(__data.content)
-				: __data
+			// Update content - decode base64 if provided, otherwise use raw data
+			targetElement.innerHTML = responseData?.content
+				? atob(responseData.content)
+				: responseData
 
-			const __stateData = {
-				__url__: url?.href ?? url,
-				__title__: __data?.title ?? document.title,
-				__targetID__: __data?.targetID ?? __targetElement.id,
-				__content__: __data?.content ?? btoa(__data),
+			// Prepare state data for browser history
+			const stateData = {
+				url: url?.href ?? url,
+				title: responseData?.title ?? document.title,
+				targetID: responseData?.targetID ?? targetElement.id,
+				content: responseData?.content ?? btoa(responseData),
 			}
 
-			if (typeof __data['__reloadTime__'] !== 'undefined') {
-				__stateData['__reloadTime__'] = __data.reloadTime
+			// Include reload time if specified
+			if (typeof responseData.reloadTime !== 'undefined') {
+				stateData.reloadTime = responseData.reloadTime
 			}
 
+			// Update browser history
 			if (state === 'push') {
-				__PHPSPA_RUNTIME_MANAGER__.__pushState__(
-					__stateData,
-					__stateData.__title__,
-					url
-				)
+				RuntimeManager.pushState(stateData, stateData.title, url)
 			} else if (state === 'replace') {
-				__PHPSPA_RUNTIME_MANAGER__.__replaceState__(
-					__stateData,
-					__stateData.__title__,
-					url
-				)
+				RuntimeManager.replaceState(stateData, stateData.title, url)
 			}
 
-			let __hashedElement = document.getElementById(url?.hash?.substring(1))
+			// Handle URL fragments (hash navigation)
+			const hashElement = document.getElementById(url?.hash?.substring(1))
 
-			if (__hashedElement) {
+			if (hashElement) {
 				scroll({
-					top: __hashedElement.offsetTop,
-					left: __hashedElement.offsetLeft,
+					top: hashElement.offsetTop,
+					left: hashElement.offsetLeft,
 				})
 			}
 
-			__PHPSPA_RUNTIME_MANAGER__.__run_all__(__targetElement)
+			// Execute any inline scripts and styles in the new content
+			RuntimeManager.runAll(targetElement)
 
-			if (typeof __data['__reloadTime__'] !== 'undefined') {
-				setTimeout(phpspa.reloadComponent, __data.__reloadTime__)
+			// Set up auto-reload if specified
+			if (typeof responseData.reloadTime !== 'undefined') {
+				setTimeout(phpspa.reloadComponent, responseData.reloadTime)
 			}
 		}
 	}
 
 	/**
 	 * Navigates back in the browser history.
-	 *
-	 * This static method calls `history.back()` to move the browser to the previous entry in the session history.
-	 * The commented-out code suggests an intention to manage custom state and content restoration,
-	 * but currently only the native browser history is used.
+	 * Uses the native browser history API.
 	 */
 	static back() {
 		history.back()
@@ -297,10 +335,7 @@ class phpspa {
 
 	/**
 	 * Navigates forward in the browser's session history.
-	 *
-	 * This static method calls the native `history.forward()` function to move the user forward by one entry in the session history stack.
-	 *
-	 * Note: The commented-out code suggests additional logic for handling custom state management and DOM updates, but it is currently inactive.
+	 * Uses the native browser history API.
 	 */
 	static forward() {
 		history.forward()
@@ -309,8 +344,6 @@ class phpspa {
 	/**
 	 * Reloads the current page by navigating to the current URL using the "replace" history mode.
 	 * This does not add a new entry to the browser's history stack.
-	 *
-	 * @static
 	 */
 	static reload() {
 		phpspa.navigate(new URL(location.href), 'replace')
@@ -323,20 +356,19 @@ class phpspa {
 	 * @param {Function} callback - The function to call when the event is triggered.
 	 */
 	static on(event, callback) {
-		if (!__PHPSPA_RUNTIME_MANAGER__.__events__[event]) {
-			__PHPSPA_RUNTIME_MANAGER__.__events__[event] = []
+		if (!RuntimeManager.events[event]) {
+			RuntimeManager.events[event] = []
 		}
-		__PHPSPA_RUNTIME_MANAGER__.__events__[event].push(callback)
+		RuntimeManager.events[event].push(callback)
 	}
 
 	/**
 	 * Updates the application state by sending a custom fetch request and updating the DOM accordingly.
+	 * Preserves the current scroll position during the update.
 	 *
-	 * @param {string} stateKey - The key representing the state to update.
+	 * @param {string} key - The key representing the state to update.
 	 * @param {*} value - The new value to set for the specified state key.
-	 * @returns {Promise<void>} A promise that resolves when the state is updated and the DOM is modified, or rejects if an error occurs.
-	 *
-	 * @fires phpspa#beforeload - Emitted before the state is loaded.
+	 * @returns {Promise<void>} A promise that resolves when the state is updated successfully.
 	 *
 	 * @example
 	 * phpspa.setState('user', { name: 'Alice' })
@@ -344,113 +376,127 @@ class phpspa {
 	 *   .catch(err => console.error('Failed to update state:', err));
 	 */
 	static setState(key, value) {
-		return new Promise((__resolve__, __reject__) => {
-			let __currentScroll = {
+		return new Promise((resolve, reject) => {
+			// Preserve current scroll position
+			const currentScroll = {
 				top: scrollY,
 				left: scrollX,
 			}
 
-			const __url = new URL(location.href)
-			const __json = JSON.stringify({ state: { key, value } })
+			const currentUrl = new URL(location.href)
+			const statePayload = JSON.stringify({ state: { key, value } })
 
-			fetch(__url, {
+			// Send state update request with authorization header
+			fetch(currentUrl, {
 				headers: {
 					'X-Requested-With': 'PHPSPA_REQUEST',
-					Authorization: `Bearer ${btoa(__json)}`,
+					Authorization: `Bearer ${btoa(statePayload)}`,
 				},
 				mode: 'cors',
 				redirect: 'follow',
 				keepalive: true,
 			})
-				.then(__response => {
-					__response
+				.then(response => {
+					response
 						.text()
-						.then(__res => {
-							let __data
+						.then(responseText => {
+							let responseData
 
-							if (__res && __res.trim().startsWith('{')) {
+							// Parse response as JSON if possible
+							if (responseText && responseText.trim().startsWith('{')) {
 								try {
-									__data = JSON.parse(__res)
-								} catch (__) {
-									__data = __res
+									responseData = JSON.parse(responseText)
+								} catch (parseError) {
+									responseData = responseText
 								}
 							} else {
-								__data = __res || '' // Handle empty responses
+								responseData = responseText || ''
 							}
 
-							__resolve__()
-							__call__(__data)
+							resolve()
+							updateContent(responseData)
 						})
-						.catch(__ => {
-							__reject__(__.message)
-							__callError__(__)
+						.catch(error => {
+							reject(error.message)
+							handleStateError(error)
 						})
 				})
-				.catch(__ => {
-					__reject__(__.message)
-					__callError__(__)
+				.catch(error => {
+					reject(error.message)
+					handleStateError(error)
 				})
 
-			function __callError__(__) {
-				// Check if the error contains a response (e.g., HTTP 4xx/5xx with a body)
-				if (__.response) {
-					// Try extracting text/JSON from the error response
-					__.response
+			/**
+			 * Handles errors during state update requests
+			 * @param {Error} error - The error that occurred
+			 */
+			function handleStateError(error) {
+				if (error.response) {
+					error.response
 						.text()
-						.then(__fallbackRes => {
-							let __data
+						.then(fallbackResponse => {
+							let errorData
 
 							try {
-								// If it looks like JSON, parse it
-								__data = __fallbackRes.trim().startsWith('{')
-									? JSON.parse(__fallbackRes)
-									: __fallbackRes
-							} catch (__parseError) {
-								// Fallback to raw text if parsing fails
-								__data = __fallbackRes
+								errorData = fallbackResponse.trim().startsWith('{')
+									? JSON.parse(fallbackResponse)
+									: fallbackResponse
+							} catch (parseError) {
+								errorData = fallbackResponse
 							}
 
-							__call__(__data || '') // Pass the fallback data
+							updateContent(errorData || '')
 						})
 						.catch(() => {
-							// Failed to read error response body
-							__call('')
+							updateContent('')
 						})
 				} else {
-					// No response attached (network error, CORS, etc.)
-					__call('')
+					updateContent('')
 				}
 			}
 
-			function __call__(__data) {
+			/**
+			 * Updates the DOM content and restores scroll position
+			 * @param {string|Object} responseData - The response data to process
+			 */
+			function updateContent(responseData) {
+				// Update title if provided
 				if (
-					'string' === typeof __data?.title ||
-					'number' === typeof __data?.title
+					typeof responseData?.title === 'string' ||
+					typeof responseData?.title === 'number'
 				) {
-					document.title = __data.title
+					document.title = responseData.title
 				}
 
-				let __targetElement =
-					document.getElementById(__data?.targetID) ??
-					document.getElementById(history.state?.__targetID__) ??
+				// Find target element and update content
+				const targetElement =
+					document.getElementById(responseData?.targetID) ??
+					document.getElementById(history.state?.targetID) ??
 					document.body
 
-				__targetElement.innerHTML = __data?.content
-					? atob(__data.content)
-					: __data
+				targetElement.innerHTML = responseData?.content
+					? atob(responseData.content)
+					: responseData
 
-				__PHPSPA_RUNTIME_MANAGER__.__run_all__(__targetElement)
-				scroll(__currentScroll)
+				// Execute scripts and styles, then restore scroll position
+				RuntimeManager.runAll(targetElement)
+				scroll(currentScroll)
 			}
 		})
 	}
 
+	/**
+	 * Reloads the current component content while preserving scroll position.
+	 * Useful for refreshing dynamic content without full page navigation.
+	 */
 	static reloadComponent() {
-		const __currentScroll = {
+		// Save current scroll position
+		const currentScroll = {
 			top: scrollY,
 			left: scrollX,
 		}
 
+		// Fetch current page content
 		fetch(new URL(location.href), {
 			headers: {
 				'X-Requested-With': 'PHPSPA_REQUEST',
@@ -459,280 +505,373 @@ class phpspa {
 			redirect: 'follow',
 			keepalive: true,
 		})
-			.then(__response => {
-				__response
+			.then(response => {
+				response
 					.text()
-					.then(__res => {
-						let __data
+					.then(responseText => {
+						let responseData
 
-						if (__res && __res.trim().startsWith('{')) {
+						// Parse response
+						if (responseText && responseText.trim().startsWith('{')) {
 							try {
-								__data = JSON.parse(__res)
-							} catch (__) {
-								__data = __res
+								responseData = JSON.parse(responseText)
+							} catch (parseError) {
+								responseData = responseText
 							}
 						} else {
-							__data = __res || '' // Handle empty responses
+							responseData = responseText || ''
 						}
 
-						__call__(__data)
+						updateComponentContent(responseData)
 					})
-					.catch(__ => {
-						__callError__(__)
+					.catch(error => {
+						handleComponentError(error)
 					})
 			})
-			.catch(__ => {
-				__callError__(__)
+			.catch(error => {
+				handleComponentError(error)
 			})
 
-		function __callError__(__) {
-			// Check if the error contains a response (e.g., HTTP 4xx/5xx with a body)
-			if (__.response) {
-				// Try extracting text/JSON from the error response
-				__.response
+		/**
+		 * Handles errors during component reload
+		 * @param {Error} error - The error that occurred
+		 */
+		function handleComponentError(error) {
+			if (error.response) {
+				error.response
 					.text()
-					.then(__fallbackRes => {
-						let __data
+					.then(fallbackResponse => {
+						let errorData
 
 						try {
-							// If it looks like JSON, parse it
-							__data = __fallbackRes.trim().startsWith('{')
-								? JSON.parse(__fallbackRes)
-								: __fallbackRes
-						} catch (__) {
-							// Fallback to raw text if parsing fails
-							__data = __fallbackRes
+							errorData = fallbackResponse.trim().startsWith('{')
+								? JSON.parse(fallbackResponse)
+								: fallbackResponse
+						} catch (parseError) {
+							errorData = fallbackResponse
 						}
 
-						__call__(__data || '') // Pass the fallback data
+						updateComponentContent(errorData || '')
 					})
-					.catch(__ => {
-						// Failed to read error response body
-						__call__('')
+					.catch(() => {
+						updateComponentContent('')
 					})
 			} else {
-				// No response attached (network error, CORS, etc.)
-				__call__('')
+				updateComponentContent('')
 			}
 		}
 
-		function __call__(__data) {
+		/**
+		 * Updates the component content and handles auto-reload
+		 * @param {string|Object} responseData - The response data
+		 */
+		function updateComponentContent(responseData) {
+			// Update title if provided
 			if (
-				'string' === typeof __data?.title ||
-				'number' === typeof __data?.title
+				typeof responseData?.title === 'string' ||
+				typeof responseData?.title === 'number'
 			) {
-				document.title = __data.title
+				document.title = responseData.title
 			}
 
-			let __targetElement =
-				document.getElementById(__data?.targetID) ??
-				document.getElementById(history.state?.__targetID__) ??
+			// Find target and update content
+			const targetElement =
+				document.getElementById(responseData?.targetID) ??
+				document.getElementById(history.state?.targetID) ??
 				document.body
 
-			__targetElement.innerHTML = __data?.content
-				? atob(__data.content)
-				: __data
+			targetElement.innerHTML = responseData?.content
+				? atob(responseData.content)
+				: responseData
 
-			__PHPSPA_RUNTIME_MANAGER__.__run_all__(__targetElement)
+			// Execute scripts and restore scroll
+			RuntimeManager.runAll(targetElement)
+			scroll(currentScroll)
 
-			scroll(__currentScroll)
-
-			if (typeof __data['reloadTime'] !== 'undefined') {
-				setTimeout(phpspa.reloadComponent, __data.reloadTime)
+			// Set up next auto-reload if specified
+			if (typeof responseData.reloadTime !== 'undefined') {
+				setTimeout(phpspa.reloadComponent, responseData.reloadTime)
 			}
 		}
 	}
 
+	/**
+	 * Makes an authenticated call to the server with a token and arguments.
+	 * Used for server-side function calls from the client.
+	 *
+	 * @param {string} token - The authentication token for the call
+	 * @param {...any} args - Arguments to pass to the server function
+	 * @returns {Promise<string>} The decoded response from the server
+	 */
 	static async __call(token, ...args) {
-		const __url = new URL(location.href)
-		const __json = JSON.stringify({ __call: { token, args } })
+		const currentUrl = new URL(location.href)
+		const callPayload = JSON.stringify({ __call: { token, args } })
 
 		try {
-			const __response = await fetch(__url, {
+			const response = await fetch(currentUrl, {
 				headers: {
 					'X-Requested-With': 'PHPSPA_REQUEST',
-					Authorization: `Bearer ${btoa(__json)}`,
+					Authorization: `Bearer ${btoa(callPayload)}`,
 				},
 				mode: 'cors',
 				redirect: 'follow',
 				keepalive: true,
 			})
 
-			let __data
-			const __res = await __response.text()
+			const responseText = await response.text()
+			let responseData
 
-			if (__res && __res.trim().startsWith('{')) {
+			// Parse and decode response
+			if (responseText && responseText.trim().startsWith('{')) {
 				try {
-					__data = JSON.parse(__res)
-					__data = __data['response'] ? atob(__data['response']) : __data
-				} catch (__) {
-					__data = __res
+					responseData = JSON.parse(responseText)
+					responseData = responseData?.response
+						? JSON.parse(atob(responseData.response))
+						: responseData
+				} catch (parseError) {
+					responseData = responseText
 				}
 			} else {
-				__data = __res || '' // Handle empty responses
+				responseData = responseText || ''
 			}
 
-			return __data
-		} catch (__e) {
-			// Check if the error contains a response (e.g., HTTP 4xx/5xx with a body)
-			if (__e.response) {
+			return responseData
+		} catch (error) {
+			// Handle errors with response bodies
+			if (error.response) {
 				try {
-					let __data
-					const __fallbackRes = await __e.response.text()
+					const fallbackResponse = await error.response.text()
+					let errorData
 
 					try {
-						// If it looks like JSON, parse it
-						__data = __fallbackRes.trim().startsWith('{')
-							? JSON.parse(__fallbackRes)
-							: __fallbackRes
+						errorData = fallbackResponse.trim().startsWith('{')
+							? JSON.parse(fallbackResponse)
+							: fallbackResponse
 
-						__data = __data['response']
-							? atob(__data['response'])
-							: __data
-					} catch (__) {
-						// Fallback to raw text if parsing fails
-						__data = __fallbackRes
+						errorData = errorData?.response
+							? JSON.parse(atob(errorData.response))
+							: errorData
+					} catch (parseError) {
+						errorData = fallbackResponse
 					}
 
-					return __data
+					return errorData
 				} catch {
-					// Failed to read error response body
 					return ''
 				}
 			} else {
-				// No response attached (network error, CORS, etc.)
+				// Network errors or other issues
 				return ''
 			}
 		}
-	} // end method
-} // end class
+	}
+}
 
 /**
- * @class __PHPSPA_RUNTIME_MANAGER__
+ * Runtime Manager for phpSPA
  *
- * @property {Object} __events__ - Internal event registry for custom event handling.
+ * Handles script execution, style injection, event management, and browser history
+ * for the phpSPA framework. Uses an obscure class name to avoid conflicts.
  *
- * @method __emit__
- * @static
- * @param {string} __event - The event name to emit.
- * @param {Object} __payload - The data to pass to event listeners.
- * @description Emits a custom event to all registered listeners.
+ * @class RuntimeManager
  */
-class __PHPSPA_RUNTIME_MANAGER__ {
-	static __executed_scripts__ = new Set()
-
-	static __executed_styles__ = new Set()
-
+class RuntimeManager {
 	/**
-	 * Internal event registry for custom events.
-	 * @type {Object}
+	 * Tracks executed scripts to prevent duplicates
+	 * @type {Set<string>}
 	 * @private
 	 */
-	static __events__ = {
+	static executedScripts = new Set()
+
+	/**
+	 * Tracks executed styles to prevent duplicates
+	 * @type {Set<string>}
+	 * @private
+	 */
+	static executedStyles = new Set()
+
+	/**
+	 * Internal event registry for custom events
+	 * @type {Object<string, Function[]>}
+	 * @private
+	 */
+	static events = {
 		beforeload: [],
 		load: [],
 	}
 
-	static __run_all__(__container) {
-		function __runInlineScripts__(__container) {
-			const __scripts = __container.querySelectorAll('script')
-
-			__scripts.forEach(__script => {
-				const __content = btoa(__script.textContent.trim())
-
-				if (
-					!__PHPSPA_RUNTIME_MANAGER__.__executed_scripts__.has(__content)
-				) {
-					__PHPSPA_RUNTIME_MANAGER__.__executed_scripts__.add(__content)
-					const __newScript = document.createElement('script')
-
-					// Copy all attributes except data-type
-					for (let __attr of __script.attributes) {
-						__newScript.setAttribute(__attr.name, __attr.value)
-					}
-
-					// Check if original script has async attribute
-					const __isAsync = __script.hasAttribute('async')
-
-					if (__isAsync) {
-						__newScript.textContent = `(async function() {\n${__script.textContent}\n})();`
-					} else {
-						__newScript.textContent = `(function() {\n${__script.textContent}\n})();`
-					}
-
-					document.head.appendChild(__newScript).remove()
-				}
-			})
-		}
-
-		function __runInlineStyles__(__container) {
-			const __styles = __container.querySelectorAll('style')
-
-			__styles.forEach(__style => {
-				const __content = btoa(__style.textContent.trim())
-
-				if (
-					!__PHPSPA_RUNTIME_MANAGER__.__executed_styles__.has(__content)
-				) {
-					__PHPSPA_RUNTIME_MANAGER__.__executed_styles__.add(__content)
-					const __newStyle = document.createElement('style')
-
-					// Copy all attributes except data-type
-					for (let __attr of __style.attributes) {
-						__newStyle.setAttribute(__attr.name, __attr.value)
-					}
-
-					__newStyle.textContent = __style.textContent
-					document.head.appendChild(__newStyle).remove()
-				}
-			})
-		}
-
-		__runInlineStyles__(__container)
-		__runInlineScripts__(__container)
+	/**
+	 * Executes inline scripts and styles within a container element
+	 * Processes all script and style tags, preventing duplicate execution
+	 *
+	 * @param {HTMLElement} container - The container element to search for scripts and styles
+	 */
+	static runAll(container) {
+		this.runInlineScripts(container)
+		this.runInlineStyles(container)
 	}
 
 	/**
-	 * Emits an event, invoking all registered callbacks for the specified event.
+	 * Processes and executes inline scripts within a container
+	 * Creates isolated scopes using IIFE to prevent variable conflicts
 	 *
-	 * @param {string} __event - The name of the event to emit.
-	 * @param {Object} __payload - The data to pass to each callback function.
+	 * @param {HTMLElement} container - The container to search for script elements
+	 * @private
 	 */
-	static __emit__(__event, __payload) {
-		const __callbacks = __PHPSPA_RUNTIME_MANAGER__.__events__[__event] || []
+	static runInlineScripts(container) {
+		const scripts = container.querySelectorAll('script')
 
-		for (const __callback__ of __callbacks) {
-			if (typeof __callback__ === 'function') {
-				__callback__(__payload)
+		scripts.forEach(script => {
+			// Use base64 encoded content as unique identifier
+			const contentHash = btoa(script.textContent.trim())
+
+			// Skip if this script has already been executed
+			if (!this.executedScripts.has(contentHash)) {
+				this.executedScripts.add(contentHash)
+
+				// Create new script element
+				const newScript = document.createElement('script')
+
+				// Copy all attributes except the data-type identifier
+				for (const attribute of script.attributes) {
+					newScript.setAttribute(attribute.name, attribute.value)
+				}
+
+				// Check if script should run in async context
+				const isAsync = script.hasAttribute('async')
+
+				// Wrap in IIFE to create isolated scope
+				if (isAsync) {
+					newScript.textContent = `(async function() {\n${script.textContent}\n})();`
+				} else {
+					newScript.textContent = `(function() {\n${script.textContent}\n})();`
+				}
+
+				// Execute and immediately remove from DOM
+				document.head.appendChild(newScript).remove()
+			}
+		})
+	}
+
+	/**
+	 * Processes and injects inline styles within a container
+	 * Prevents duplicate style injection by tracking content hashes
+	 *
+	 * @param {HTMLElement} container - The container to search for style elements
+	 * @private
+	 */
+	static runInlineStyles(container) {
+		const styles = container.querySelectorAll('style')
+
+		styles.forEach(style => {
+			// Use base64 encoded content as unique identifier
+			const contentHash = btoa(style.textContent.trim())
+
+			// Skip if this style has already been injected
+			if (!this.executedStyles.has(contentHash)) {
+				this.executedStyles.add(contentHash)
+
+				// Create new style element
+				const newStyle = document.createElement('style')
+
+				// Copy all attributes except the data-type identifier
+				for (const attribute of style.attributes) {
+					newStyle.setAttribute(attribute.name, attribute.value)
+				}
+
+				// Copy style content and inject into head
+				newStyle.textContent = style.textContent
+				document.head.appendChild(newStyle).remove()
+			}
+		})
+	}
+
+	/**
+	 * Emits a custom event to all registered listeners
+	 * Used for lifecycle events like 'beforeload' and 'load'
+	 *
+	 * @param {string} eventName - The name of the event to emit
+	 * @param {Object} payload - The data to pass to event listeners
+	 */
+	static emit(eventName, payload) {
+		const callbacks = this.events[eventName] || []
+
+		// Execute all registered callbacks for this event
+		for (const callback of callbacks) {
+			if (typeof callback === 'function') {
+				try {
+					callback(payload)
+				} catch (error) {
+					// Log callback errors but don't break the chain
+					console.error(`Error in ${eventName} event callback:`, error)
+				}
 			}
 		}
 	}
 
-	static __pushState__(...__state) {
+	/**
+	 * Safely pushes a new state to browser history
+	 * Wraps in try-catch to handle potential browser restrictions
+	 *
+	 * @param {...any} stateArgs - Arguments to pass to history.pushState
+	 */
+	static pushState(...stateArgs) {
 		try {
-			history.pushState(...__state)
-		} catch (e) {}
+			history.pushState(...stateArgs)
+		} catch (error) {
+			// Silently handle history API restrictions
+			console.warn('Failed to push history state:', error.message)
+		}
 	}
 
-	static __replaceState__(...__state) {
+	/**
+	 * Safely replaces current browser history state
+	 * Wraps in try-catch to handle potential browser restrictions
+	 *
+	 * @param {...any} stateArgs - Arguments to pass to history.replaceState
+	 */
+	static replaceState(...stateArgs) {
 		try {
-			history.replaceState(...__state)
-		} catch (e) {}
+			history.replaceState(...stateArgs)
+		} catch (error) {
+			// Silently handle history API restrictions
+			console.warn('Failed to replace history state:', error.message)
+		}
 	}
 }
 
+/**
+ * Global helper function for updating application state
+ * Provides a convenient shorthand for phpspa.setState()
+ *
+ * @param {string} key - The state key to update
+ * @param {any} value - The new value for the state key
+ * @returns {Promise<void>} Promise that resolves when state is updated
+ */
 if (typeof setState !== 'function') {
-	function setState(stateKey, value) {
-		return phpspa.setState(stateKey, value)
+	function setState(key, value) {
+		return phpspa.setState(key, value)
 	}
 }
 
+/**
+ * Global helper function for making server calls
+ * Provides a convenient shorthand for phpspa.__call()
+ *
+ * @param {string} token - The function token/identifier
+ * @param {...any} args - Arguments to pass to the server function
+ * @returns {Promise<string>} Promise that resolves with the server response
+ */
 if (typeof __call !== 'function') {
-	function __call(functionName, ...args) {
-		return phpspa.__call(functionName, ...args)
+	function __call(token, ...args) {
+		return phpspa.__call(token, ...args)
 	}
 }
 
+/**
+ * Initialize phpSPA global object
+ * Makes the phpspa class available globally for easy access
+ */
 ;(function () {
 	if (typeof window.phpspa === 'undefined') {
 		window.phpspa = phpspa
