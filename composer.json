@@ -6,9 +6,8 @@
 		"php",
 		"spa",
 		"phpspa",
-		"js",
 		"jsx",
-		"javascript",
+		"component-based",
 		"component-library"
 	],
 	"license": "MIT",
@@ -21,7 +20,7 @@
 		},
 		"files": [
 			"app/core/Impl/Const/StateConstant.php",
-		   "app/client/Component/Component.php",
+			"app/client/Component/Component.php",
 			"app/client/Http/Redirect.php"
 		]
 	},

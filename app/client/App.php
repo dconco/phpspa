@@ -3,6 +3,7 @@
 namespace phpSPA;
 
 use phpSPA\Http\Session;
+use phpSPA\Core\Config\CompressionConfig;
 
 /**
  *
@@ -21,21 +22,52 @@ use phpSPA\Http\Session;
  * @implements \phpSPA\Interfaces\phpSpaInterface
  */
 class App extends \phpSPA\Core\Impl\RealImpl\AppImpl implements
-	\phpSPA\Interfaces\phpSpaInterface
+    \phpSPA\Interfaces\phpSpaInterface
 {
-	/**
-	 * App constructor.
-	 *
-	 * Initializes the App instance with the specified layout.
-	 *
-	 * @param callable $layout The name of the layout to be used by the application.
-	 */
-	public function __construct(callable $layout)
-	{
-		Session::start();
-		$this->layout = $layout;
-		self::$request_uri = urldecode(
-			parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH),
-		);
-	}
+    /**
+     * App constructor.
+     *
+     * Initializes the App instance with the specified layout.
+     *
+     * @param callable $layout The name of the layout to be used by the application.
+     * @param bool $autoInitCompression Whether to auto-initialize compression settings
+     */
+    public function __construct(callable $layout, bool $autoInitCompression = true)
+    {
+        Session::start();
+        $this->layout = $layout;
+        self::$request_uri = urldecode(
+            parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH),
+        );
+
+        // Initialize HTML compression based on environment
+        if ($autoInitCompression) {
+            CompressionConfig::autoDetect();
+        }
+    }
+
+    /**
+     * Configure HTML compression manually
+     *
+     * @param int $level Compression level (0=none, 1=basic, 2=aggressive, 3=extreme)
+     * @param bool $gzip Enable gzip compression
+     * @return self
+     */
+    public function compression(int $level, bool $gzip = true): self
+    {
+        CompressionConfig::custom($level, $gzip);
+        return $this;
+    }
+
+    /**
+     * Set compression based on environment
+     *
+     * @param string $environment Environment: 'development', 'staging', 'production'
+     * @return self
+     */
+    public function compressionEnvironment(string $environment): self
+    {
+        CompressionConfig::initialize($environment);
+        return $this;
+    }
 }
