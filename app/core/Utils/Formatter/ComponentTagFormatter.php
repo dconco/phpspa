@@ -22,7 +22,7 @@ trait ComponentTagFormatter
 	 * @param mixed $dom Reference to the DOM object or structure to be formatted.
 	 * @return void
 	 */
-	protected static function format(&$dom)
+	protected static function format(string $dom): string
 	{
 		$pattern = '/<([A-Z][a-zA-Z0-9.]*)([^>]*)(?:\/>|>([\s\S]*?)<\/\1>)/';
 
@@ -41,35 +41,34 @@ trait ComponentTagFormatter
 					);
 				}
 
-				self::$attributes = $matches[2];
-				self::parseAttributesToArray();
+				// Parse attributes
+				$attributes = self::parseAttributesToArray($matches[2]);
 
 				if (isset($matches[3])) {
-					self::$attributes['children'] = $matches[3];
+					// Recursively process children FIRST and capture the result
+					$processedChildren = self::format($matches[3]);
+
+					// Now assign the processed children
+					$attributes['children'] = $processedChildren;
 				}
 
-				// Recursively resolve children before calling the function
-				if (isset(self::$attributes['children'])) {
-					self::format(self::$attributes['children']);
-				}
-
-				foreach (array_keys(self::$attributes) as $attrKey) {
+				// Validate parameters
+				foreach (array_keys($attributes) as $attrKey) {
 					if (!CallableInspector::hasParam($matches[1], $attrKey)) {
 						// throw new AppException("Component Function {$matches[1]} does not accept property '{$attrKey}'.");
 					}
 				}
 
-				return call_user_func_array($matches[1], self::$attributes);
+				return call_user_func_array($matches[1], $attributes);
 			},
 			$dom,
 		);
 
 		// If the DOM changed, run again recursively
 		if ($updatedDom !== $dom) {
-			$dom = $updatedDom;
-			self::format($dom);
-		} else {
-			$dom = $updatedDom; // final update
+			return self::format($updatedDom);
 		}
+
+		return $updatedDom;
 	}
 }

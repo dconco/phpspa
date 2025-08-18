@@ -226,7 +226,11 @@ abstract class AppImpl
 								$functionName,
 								$data['__call']['args'],
 							);
-							print_r(json_encode(['response' => base64_encode(json_encode($res))]));
+							print_r(
+								json_encode([
+									'response' => base64_encode(json_encode($res)),
+								]),
+							);
 						} else {
 							throw new \Exception('Invalid or Expired Token');
 						}
@@ -276,7 +280,7 @@ abstract class AppImpl
 			} else {
 				$componentOutput = call_user_func($componentFunction);
 			}
-			static::format($componentOutput);
+			$componentOutput = static::format($componentOutput);
 
 			// If the component has a script, execute it
 			if (!empty($scripts)) {
@@ -332,7 +336,7 @@ abstract class AppImpl
 					);
 				}
 				$tt = '';
-				static::format($layoutOutput);
+				$layoutOutput = static::format($layoutOutput);
 
 				if ($reloadTime > 0) {
 					$tt = " phpspa-reload-time=\"$reloadTime\"";
