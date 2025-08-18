@@ -160,6 +160,42 @@ abstract class HtmlCompressor
             $html,
         );
 
+        // Minify JavaScript inside script tags
+        $html = preg_replace_callback(
+            '/<script[^>]*>(.*?)<\/script>/si',
+            function ($matches) {
+                $scriptTag = $matches[0];
+                $jsContent = $matches[1];
+
+                // Only minify if it's not an external script (has content)
+                if (trim($jsContent)) {
+                    $minifiedJs = self::minifyJavaScript($jsContent);
+                    return str_replace($jsContent, $minifiedJs, $scriptTag);
+                }
+
+                return $scriptTag;
+            },
+            $html
+        );
+
+        // Minify CSS inside style tags
+        $html = preg_replace_callback(
+            '/<style[^>]*>(.*?)<\/style>/si',
+            function ($matches) {
+                $styleTag = $matches[0];
+                $cssContent = $matches[1];
+
+                // Only minify if it has content
+                if (trim($cssContent)) {
+                    $minifiedCss = self::minifyCSS($cssContent);
+                    return str_replace($cssContent, $minifiedCss, $styleTag);
+                }
+
+                return $styleTag;
+            },
+            $html
+        );
+
         return $html;
     }
 
@@ -172,6 +208,42 @@ abstract class HtmlCompressor
     private static function extremeMinify(string $html): string
     {
         $html = self::aggressiveMinify($html);
+
+        // Enhanced JavaScript minification for extreme level
+        $html = preg_replace_callback(
+            '/<script[^>]*>(.*?)<\/script>/si',
+            function ($matches) {
+                $scriptTag = $matches[0];
+                $jsContent = $matches[1];
+
+                // Only minify if it's not an external script (has content)
+                if (trim($jsContent)) {
+                    $minifiedJs = self::extremeMinifyJavaScript($jsContent);
+                    return str_replace($jsContent, $minifiedJs, $scriptTag);
+                }
+
+                return $scriptTag;
+            },
+            $html
+        );
+
+        // Enhanced CSS minification for extreme level
+        $html = preg_replace_callback(
+            '/<style[^>]*>(.*?)<\/style>/si',
+            function ($matches) {
+                $styleTag = $matches[0];
+                $cssContent = $matches[1];
+
+                // Only minify if it has content
+                if (trim($cssContent)) {
+                    $minifiedCss = self::extremeMinifyCSS($cssContent);
+                    return str_replace($cssContent, $minifiedCss, $styleTag);
+                }
+
+                return $styleTag;
+            },
+            $html
+        );
 
         // Remove all newlines and extra spaces
         $html = str_replace(["\r\n", "\r", "\n", "\t"], '', $html);
@@ -186,6 +258,141 @@ abstract class HtmlCompressor
         $html = preg_replace('/<\s+/', '<', $html);
 
         return $html;
+    }
+
+    /**
+     * Minify JavaScript code
+     *
+     * @param string $js JavaScript content
+     * @return string Minified JavaScript
+     */
+    private static function minifyJavaScript(string $js): string
+    {
+        // Remove single-line comments (but preserve URLs and regex)
+        $js = preg_replace('/(?<!:)\/\/(?![^\r\n]*["\']).*$/m', '', $js);
+
+        // Remove multi-line comments (but preserve license blocks and regex)
+        $js = preg_replace('/\/\*(?![*!]).*?\*\//s', '', $js);
+
+        // Remove leading and trailing whitespace from lines
+        $js = preg_replace('/^\s+|\s+$/m', '', $js);
+
+        // Remove empty lines
+        $js = preg_replace('/^\s*\n/m', '', $js);
+
+        // Collapse multiple spaces into single space (but preserve strings)
+        $js = preg_replace_callback(
+            '/(["\'])(?:(?=(\\\\?))\2.)*?\1|(\s+)/',
+            function ($matches) {
+                if (isset($matches[1])) {
+                    // This is a string literal, don't modify
+                    return $matches[0];
+                } else {
+                    // This is whitespace, collapse to single space
+                    return ' ';
+                }
+            },
+            $js
+        );
+
+        // Remove spaces around operators (be careful with strings)
+        $js = preg_replace_callback(
+            '/(["\'])(?:(?=(\\\\?))\2.)*?\1|(\s*([=+\-*\/&|<>!]+)\s*)/',
+            function ($matches) {
+                if (isset($matches[1])) {
+                    // This is a string literal, don't modify
+                    return $matches[0];
+                } else {
+                    // This is an operator, remove surrounding spaces
+                    return $matches[4];
+                }
+            },
+            $js
+        );
+
+        // Remove spaces around semicolons, commas, braces, brackets
+        $js = preg_replace_callback(
+            '/(["\'])(?:(?=(\\\\?))\2.)*?\1|(\s*([;,{}()\[\]:])\s*)/',
+            function ($matches) {
+                if (isset($matches[1])) {
+                    // This is a string literal, don't modify
+                    return $matches[0];
+                } else {
+                    // Remove spaces around punctuation
+                    return $matches[4];
+                }
+            },
+            $js
+        );
+
+        // Remove unnecessary semicolons before closing braces
+        $js = preg_replace('/;\s*}/', '}', $js);
+
+        // Insert semicolons where line joining could break code
+        $js = self::insertSemicolonsWhereNeeded($js);
+
+        // Trim and remove final newlines
+        return trim($js);
+    }
+
+    /**
+     * Minify CSS code
+     *
+     * @param string $css CSS content
+     * @return string Minified CSS
+     */
+    private static function minifyCSS(string $css): string
+    {
+        // Remove CSS comments
+        $css = preg_replace('/\/\*.*?\*\//s', '', $css);
+
+        // Remove leading and trailing whitespace from lines
+        $css = preg_replace('/^\s+|\s+$/m', '', $css);
+
+        // Remove empty lines
+        $css = preg_replace('/^\s*\n/m', '', $css);
+
+        // Collapse multiple whitespace into single space
+        $css = preg_replace('/\s+/', ' ', $css);
+
+        // Remove spaces around selectors, braces, and declarations
+        $css = preg_replace('/\s*{\s*/', '{', $css);
+        $css = preg_replace('/\s*}\s*/', '}', $css);
+        $css = preg_replace('/\s*;\s*/', ';', $css);
+        $css = preg_replace('/\s*:\s*/', ':', $css);
+        $css = preg_replace('/\s*,\s*/', ',', $css);
+
+        // Remove last semicolon before closing brace
+        $css = preg_replace('/;(?=\s*})/', '', $css);
+
+        // Remove unnecessary quotes around font names and URLs (when safe)
+        $css = preg_replace('/(["\'])([a-zA-Z0-9-_]+)\1/', '$2', $css);
+
+        // Convert zero values (0px, 0em, etc.) to just 0
+        $css = preg_replace('/\b0+(px|em|rem|%|pt|pc|in|cm|mm|ex|ch|vw|vh|vmin|vmax)\b/', '0', $css);
+
+        // Remove leading zeros from decimal values
+        $css = preg_replace('/\b0+(\.\d+)/', '$1', $css);
+
+        // Convert RGB values to shorter hex when possible
+        $css = preg_replace_callback(
+            '/rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/',
+            function ($matches) {
+                $r = sprintf('%02x', $matches[1]);
+                $g = sprintf('%02x', $matches[2]);
+                $b = sprintf('%02x', $matches[3]);
+
+                // Convert to short hex if possible
+                if ($r[0] === $r[1] && $g[0] === $g[1] && $b[0] === $b[1]) {
+                    return '#' . $r[0] . $g[0] . $b[0];
+                }
+
+                return '#' . $r . $g . $b;
+            },
+            $css
+        );
+
+        return trim($css);
     }
 
     /**
@@ -244,6 +451,115 @@ abstract class HtmlCompressor
     {
         $compressed = self::compress($content);
         return base64_encode($compressed);
+    }
+
+    /**
+     * Advanced JavaScript minification for extreme level
+     *
+     * @param string $js JavaScript content
+     * @return string Minified JavaScript
+     */
+    private static function extremeMinifyJavaScript(string $js): string
+    {
+        // Start with aggressive minification
+        $js = self::minifyJavaScript($js);
+
+        // Remove all unnecessary spaces around operators
+        $js = preg_replace('/\s*([+\-*\/=<>!&|%,;:?])\s*/', '$1', $js);
+
+        // Remove spaces around parentheses
+        $js = preg_replace('/\s*\(\s*/', '(', $js);
+        $js = preg_replace('/\s*\)\s*/', ')', $js);
+
+        // Remove spaces around brackets
+        $js = preg_replace('/\s*\[\s*/', '[', $js);
+        $js = preg_replace('/\s*\]\s*/', ']', $js);
+
+        // Remove spaces around braces
+        $js = preg_replace('/\s*\{\s*/', '{', $js);
+        $js = preg_replace('/\s*\}\s*/', '}', $js);
+
+        // Remove spaces after commas and semicolons
+        $js = preg_replace('/[,;]\s+/', ',', $js);
+        $js = str_replace(';,', ',', $js); // Fix any semicolon+comma issues
+
+        // Remove spaces around dots
+        $js = preg_replace('/\s*\.\s*/', '.', $js);
+
+        // Remove extra spaces (multiple spaces to single space)
+        $js = preg_replace('/\s+/', ' ', $js);
+
+        // Ensure semicolons exist where statements abut
+        $js = self::insertSemicolonsWhereNeeded($js);
+
+        // Remove leading/trailing whitespace
+        $js = trim($js);
+
+        return $js;
+    }
+
+    /**
+     * Insert semicolons at risky boundaries where newline-based ASI would have applied.
+     *
+     * Examples handled:
+     *   - ")" or "]" followed immediately by an identifier (e.g., ")btn" ➜ ");btn")
+     *   - identifier/number followed immediately by a statement-starting keyword (e.g., "x=1const" ➜ "x=1;const")
+     *
+     * We deliberately avoid inserting before else/catch/finally to not break if/try chains.
+     */
+    private static function insertSemicolonsWhereNeeded(string $js): string
+    {
+        // 1) After closing paren/brace/bracket before an identifier start
+        //    - common case: ")btn" ➜ ");btn"
+        $js = preg_replace('/\)(?=[$_A-Za-z])/', ');', $js);
+        $js = preg_replace('/\](?=[$_A-Za-z])/', '];', $js);
+
+        // Avoid breaking "}else", "}catch", "}finally" by not inserting before those keywords
+        // Only insert when next token is an identifier that is NOT else/catch/finally/while
+        $js = preg_replace('/\}(?=\s*(?!else\b)(?!catch\b)(?!finally\b)(?!while\b)[$_A-Za-z])/', '};', $js);
+
+        // 2) Before statement-starting keywords when previous token ends with ident/number/]/)/}
+        //    (allow a single whitespace between previous token and keyword)
+        //    Exclude 'while' to preserve do{...}while() structure.
+        $stmtKeywords = '(?:const|let|var|function|class|async|await|import|export|return|throw|switch|for|do|try|if|new|yield)';
+        $js = preg_replace('/([$_A-Za-z0-9\)\]\}`])\s*(?=' . $stmtKeywords . '\b)/', '$1;', $js);
+
+        // 3) Before IIFE starts: if previous token ends with ident/number/]/)/}, and next is (function|((...)) or (async
+        //    This avoids accidental calls due to line-joining: `a=1\n(function(){})()` => `a=1;(function(){})()`
+        $js = preg_replace('/([$_A-Za-z0-9\)\]\}`])\s*(?=\((?:function|async|\())/', '$1;', $js);
+
+        // Join back pairs we must not split
+        $js = str_replace('async;function', 'async function', $js);
+        $js = str_replace('else;if', 'else if', $js);
+
+        return $js;
+    }
+
+    /**
+     * Advanced CSS minification for extreme level
+     *
+     * @param string $css CSS content
+     * @return string Minified CSS
+     */
+    private static function extremeMinifyCSS(string $css): string
+    {
+        // Start with aggressive minification
+        $css = self::minifyCSS($css);
+
+        // Remove all unnecessary spaces around operators and symbols
+        $css = preg_replace('/\s*([{}:;,>+~])\s*/', '$1', $css);
+
+        // Remove spaces around parentheses
+        $css = preg_replace('/\s*\(\s*/', '(', $css);
+        $css = preg_replace('/\s*\)\s*/', ')', $css);
+
+        // Remove any remaining multiple spaces
+        $css = preg_replace('/\s+/', ' ', $css);
+
+        // Remove leading/trailing whitespace
+        $css = trim($css);
+
+        return $css;
     }
 
     /**

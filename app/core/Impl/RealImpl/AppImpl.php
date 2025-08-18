@@ -2,6 +2,7 @@
 
 namespace phpSPA\Core\Impl\RealImpl;
 
+use phpSPA\App;
 use phpSPA\Component;
 use phpSPA\Http\Request;
 use phpSPA\Http\Session;
@@ -83,25 +84,25 @@ abstract class AppImpl
 
     private array $cors = [];
 
-    public function defaultTargetID(string $targetID): self
+    public function defaultTargetID(string $targetID): App
     {
         $this->defaultTargetID = $targetID;
         return $this;
     }
 
-    public function defaultToCaseSensitive(): self
+    public function defaultToCaseSensitive(): App
     {
         $this->defaultCaseSensitive = true;
         return $this;
     }
 
-    public function attach(Component $component): self
+    public function attach(Component $component): App
     {
         $this->components[] = $component;
         return $this;
     }
 
-    public function detach(Component $component): self
+    public function detach(Component $component): App
     {
         $key = array_search($component, $this->components, true);
 
@@ -111,7 +112,7 @@ abstract class AppImpl
         return $this;
     }
 
-    public function cors(array $data = []): self
+    public function cors(array $data = []): App
     {
         $this->cors = require __DIR__ . '/../../Config/Cors.php';
 
