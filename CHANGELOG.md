@@ -67,7 +67,7 @@
       HTML;
       ```
 
-2. Provided direct PHP integration for calling PHP function from JS.
+3. Provided direct PHP integration for calling PHP function from JS.
 
    - If you want a faster method, than calling manual with JS, use this:
 
@@ -88,13 +88,13 @@
        HTML;
       ```
 
-3. Support for class components (e.g., `<MyClass />`)
+4. Support for class components (e.g., `<MyClass />`)
 
-4. Namespace support for class components (e.g., `<Namespace.Class />`)
+5. Namespace support for class components (e.g., `<Namespace.Class />`)
 
-5. Classes require `__render` method for component rendering
+6. Classes require `__render` method for component rendering
 
-6. **Method Chaining Support to App Class**
+7. **Method Chaining Support to App Class**
 
    You can now fluently chain multiple method calls on an App instance for cleaner and more expressive code.
 
@@ -109,7 +109,7 @@
       ->run();
    ```
 
-7. New `<Component.Csrf />` component for CSRF protection
+8. New `<Component.Csrf />` component for CSRF protection
 
 - Support for multiple named tokens with automatic cleanup
 
