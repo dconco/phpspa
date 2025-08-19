@@ -7,7 +7,7 @@ namespace phpSPA;
  *
  * This class serves as the core component within the phpSPA framework, providing
  * essential functionality and structure for all components.
- * 
+ *
  * Features in v1.1.5:
  * - Support for class components with __render method
  * - Namespace support for component organization
@@ -24,15 +24,15 @@ namespace phpSPA;
  */
 class Component extends \phpSPA\Core\Impl\RealImpl\ComponentImpl implements \phpSPA\Interfaces\IComponent
 {
-   /**
-    * Constructor for the Component class.
-    *
-    * Initializes the component with a callable that defines the component function.
-    *
-    * @param callable $component The callable representing the component logic.
-    */
-   public function __construct (callable $component)
-   {
-      $this->component = $component;
-   }
+    /**
+     * Constructor for the Component class.
+     *
+     * Initializes the component with a callable that defines the component function.
+     *
+     * @param callable $component The callable representing the component logic.
+     */
+    public function __construct(callable $component)
+    {
+        $this->component = $component;
+    }
 }

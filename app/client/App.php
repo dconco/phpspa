@@ -11,7 +11,7 @@ use phpSPA\Core\Config\CompressionConfig;
  *
  * The main application class for phpSPA.
  * Handles layout composition, component mounting, and rendering flow.
- * 
+ *
  * Features in v1.1.5:
  * - Method chaining for fluent configuration
  * - HTML compression and minification
