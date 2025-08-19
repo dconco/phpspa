@@ -3,6 +3,9 @@
 require_once '../vendor/autoload.php';
 
 use phpSPA\App;
+use phpSPA\Compression\Compressor;
+
+var_dump(Compressor::supportsGzip());
 
 /* Initialize a new Application */
 $app = (new App(require 'Layout.php'))
@@ -15,6 +18,9 @@ $app = (new App(require 'Layout.php'))
 
 	->defaultTargetID('app')
 	->defaultToCaseSensitive()
+
+	/*->compression(Compressor::LEVEL_EXTREME, false)*/
+	->compressionEnvironment(Compressor::ENV_PRODUCTION)
 
 	->cors();
 
