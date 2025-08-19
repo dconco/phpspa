@@ -5,6 +5,19 @@ namespace phpSPA\Interfaces;
 use phpSPA\App;
 use phpSPA\Component;
 
+/**
+ * Core phpSPA application interface
+ *
+ * This interface defines the essential contract for phpSPA applications,
+ * including methods for initialization, configuration, and core functionality
+ * such as routing, CORS handling, and component management.
+ *
+ * @package phpSPA\Interfaces
+ * @author dconco <concodave@gmail.com>
+ * @copyright 2025 Dave Conco
+ * @license MIT
+ * @since v1.0.0
+ */
 interface phpSpaInterface
 {
     /**

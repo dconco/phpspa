@@ -17,16 +17,24 @@ use const phpSPA\Core\Impl\Const\STATE_HANDLE;
 use const phpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
 
 /**
+ * Core application implementation class
+ *
+ * This abstract class provides the foundational implementation for the phpSPA
+ * application framework. It handles layout management, component registration,
+ * routing, and rendering logic that powers the single-page application experience.
+ *
+ * @package phpSPA\Core\Impl\RealImpl
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
+ * @since v1.0.0
  * @var callable $layout
  * @var string $defaultTargetID
  * @var array $components
  * @var bool $defaultCaseSensitive
  * @staticvar string $request_uri
  * @var mixed $renderedData
- * @use ComponentTagFormatter
+ * @uses ComponentTagFormatter
  * @abstract
  */
 abstract class AppImpl
