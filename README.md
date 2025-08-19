@@ -14,7 +14,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/dconco/phpspa?style=for-the-badge&color=yellow)](https://github.com/dconco/phpspa)
 [![PHP Version](https://img.shields.io/packagist/v/dconco/phpspa?style=for-the-badge&color=purple)](https://packagist.org/packages/dconco/phpspa)
 [![Downloads](https://img.shields.io/packagist/dt/dconco/phpspa?style=for-the-badge&color=orange)](https://packagist.org/packages/dconco/phpspa)
-[![PHP Tests](https://github.com/dconco/phpspa/actions/workflows/php-tests.yml/badge.svg?branch=main)](https://github.com/dconco/phpspa/actions/workflows/php-tests.yml)
+[![PHP Tests](https://github.com/dconco/phpspa/actions/workflows/php-tests.yml/badge.svg?branch=://github.com/dconco/phpspa/actions/workflows/php-tests.yml)
 
 <br>
 
