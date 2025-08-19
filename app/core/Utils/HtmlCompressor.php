@@ -15,14 +15,14 @@ use phpSPA\Compression\Compressor;
  * @copyright 2025 Dave Conco
  * @license MIT
  */
-abstract class HtmlCompressor
+trait HtmlCompressor
 {
     /**
      * Current compression level
      *
      * @var int
      */
-    private static int $compressionLevel = 1;
+    private static int $compressionLevel = 1; // Default to LEVEL_AUTO
 
     /**
      * Whether to use gzip compression

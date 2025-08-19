@@ -1,17 +1,21 @@
 <?php
 
-require_once 'vendor/autoload.php';
 use phpSPA\Compression\Compressor;
-use phpSPA\Core\Utils\HtmlCompressor;
+
+echo "\n================ JS COMPRESSION TEST STARTED ==================\n\n";
+
+$test2_successful = true;
 
 function compressJs(string $js): string
 {
-    HtmlCompressor::setLevel(Compressor::LEVEL_EXTREME);
+    Compressor::setLevel(Compressor::LEVEL_EXTREME);
     $input = "<script>" . $js . "</script>";
-    return HtmlCompressor::compress($input);
+    return Compressor::compress($input);
 }
 
-$tests = [
+function run_semicolon_tests(): bool
+{
+    $tests = [
     [
         'name' => 'paren close then identifier: )btn -> );btn',
         'js' => "const btn=document.getElementById('btn')\nbtn.onclick=async()=>{console.log('x')}",
@@ -210,29 +214,35 @@ $tests = [
         'mustContain' => ["}else{"],
         'mustNotContain' => ["};else{"],
     ],
-];
+    ];
 
-$allPassed = true;
-foreach ($tests as $t) {
-    $out = compressJs($t['js']);
-    $pass = true;
-    foreach ($t['mustContain'] as $needle) {
-        if (strpos($out, $needle) === false) {
-            $pass = false;
+    $allPassed = true;
+    foreach ($tests as $t) {
+        $out = compressJs($t['js']);
+        $pass = true;
+        foreach ($t['mustContain'] as $needle) {
+            if (strpos($out, $needle) === false) {
+                $pass = false;
+            }
         }
-    }
-    foreach ($t['mustNotContain'] as $needle) {
-        if (strpos($out, $needle) !== false) {
-            $pass = false;
+        foreach ($t['mustNotContain'] as $needle) {
+            if (strpos($out, $needle) !== false) {
+                $pass = false;
+            }
         }
+
+        echo "\n=== Test: {$t['name']} ===\n";
+        echo ($pass ? "PASS" : "FAIL") . "\n";
+        if (!$pass) {
+            echo "Output:\n$out\n";
+        }
+        $allPassed = $allPassed && $pass;
     }
 
-    echo "\n=== Test: {$t['name']} ===\n";
-    echo ($pass ? "PASS" : "FAIL") . "\n";
-    if (!$pass) {
-        echo "Output:\n$out\n";
-    }
-    $allPassed = $allPassed && $pass;
+    echo "\nSummary: " . ($allPassed ? "ALL PASSED" : "SOME FAILED") . "\n";
+    return $allPassed;
 }
 
-echo "\nSummary: " . ($allPassed ? "ALL PASSED" : "SOME FAILED") . "\n";
+$test2_successful = run_semicolon_tests();
+
+echo "\n================ JS COMPRESSION TESTS COMPLETED ==================\n";

@@ -36,5 +36,8 @@
 		"php": "^8.2"
 	},
 	"prefer-stable": true,
-	"minimum-stability": "stable"
+	"minimum-stability": "stable",
+	"scripts": {
+		"test": "php tests/Test.php"
+	}
 }

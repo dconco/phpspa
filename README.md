@@ -14,6 +14,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/dconco/phpspa?style=for-the-badge&color=yellow)](https://github.com/dconco/phpspa)
 [![PHP Version](https://img.shields.io/packagist/v/dconco/phpspa?style=for-the-badge&color=purple)](https://packagist.org/packages/dconco/phpspa)
 [![Downloads](https://img.shields.io/packagist/dt/dconco/phpspa?style=for-the-badge&color=orange)](https://packagist.org/packages/dconco/phpspa)
+[![PHP Tests](https://github.com/dconco/phpspa/actions/workflows/php-tests.yml/badge.svg?branch=main)](https://github.com/dconco/phpspa/actions/workflows/php-tests.yml)
 
 <br>
 
@@ -72,17 +73,20 @@ Works out of the box
 </table>
 
 ### **Step 1: Clone the Template**
+
 ```bash
 git clone https://github.com/mrepol742/phpspa-example my-phpspa-app
 cd my-phpspa-app
 ```
 
 ### **Step 2: Install Dependencies**
+
 ```bash
 composer install
 ```
 
 ### **Step 3: Start Development Server**
+
 ```bash
 composer start
 ```
@@ -98,7 +102,6 @@ composer start
 ---
 
 ## 🚀 **Quick Start**
-
 
 ### Install
 
@@ -127,6 +130,19 @@ $app->targetId('app');
 $app->attach((new Component('HomePage'))->route('/'));
 $app->run();
 ```
+
+---
+
+## 🧪 **Testing**
+
+- Run locally:
+
+```bash
+composer install
+composer test
+```
+
+- CI: Tests run on push/PR to `main` and `dev` via GitHub Actions (see badge above). The entrypoint is `tests/Test.php` which runs the semicolon/ASI suite and a simple compression check.
 
 ---
 
