@@ -1,16 +1,16 @@
-# 🛡️ Security - Production-Ready Protection
+# 🛡️ Security - CSRF Protection
 
-Security is **built into phpSPA by design**. From CSRF protection to input validation, phpSPA provides enterprise-grade security features that work out of the box, keeping your applications safe without compromising developer experience.
+Security is **built into phpSPA** with CSRF protection. phpSPA provides the `<Component.Csrf />` component for form security and basic validation through the Request class.
 
-!!! success "Security-First Philosophy"
+!!! success "Security Features"
     
-    **"Secure by default, flexible by choice"** — phpSPA implements security best practices automatically, while giving you the tools to customize protection for your specific needs.
+    **phpSPA includes:** CSRF protection, input validation via Request class, and basic security practices for component development.
 
 ---
 
 ## 🎯 Security Overview
 
-phpSPA addresses the most common web application vulnerabilities:
+phpSPA provides:
 
 <div class="grid cards" markdown>
 
@@ -24,19 +24,19 @@ phpSPA addresses the most common web application vulnerabilities:
     
     ---
     
-    Comprehensive request handling with automatic sanitization and type validation.
+    Request class with automatic validation and sanitization for all input data.
 
--   **⚡ XSS Prevention**
+-   **⚡ Component Security**
     
     ---
     
-    Automatic output escaping and Content Security Policy headers for XSS mitigation.
+    Secure component patterns and best practices for building safe applications.
 
--   **🔐 Secure Headers**
+-   **🔐 Request Handling**
     
     ---
     
-    Automatic security headers including HSTS, X-Frame-Options, and Content-Type protection.
+    Unified, secure access to form data, query parameters, files, and headers.
 
 </div>
 
@@ -44,7 +44,370 @@ phpSPA addresses the most common web application vulnerabilities:
 
 ## 🛡️ CSRF Protection
 
-Cross-Site Request Forgery (CSRF) protection is **automatically enabled** in phpSPA with the `<Component.Csrf />` component.
+Cross-Site Request Forgery (CSRF) protection is available in phpSPA with the `<Component.Csrf />` component.
+
+### Basic CSRF Usage
+
+```php
+function ContactForm() {
+    return <<<HTML
+        <form method="POST" action="/contact">
+            <Component.Csrf name="contact-form" />
+            
+            <input type="text" name="name" placeholder="Your Name" required>
+            <input type="email" name="email" placeholder="Your Email" required>
+            <textarea name="message" placeholder="Your Message" required></textarea>
+            
+            <button type="submit">Send Message</button>
+        </form>
+    HTML;
+}
+```
+
+### CSRF Validation
+
+```php
+use Component\Csrf;
+
+function ContactFormHandler($path = [], $request = new \phpSPA\Http\Request()) {
+    if ($request->isMethod('POST')) {
+        // Initialize CSRF validator with form name
+        $csrf = new Csrf("contact-form");
+        
+        // Validate CSRF token
+        if (!$csrf->verify()) {
+            http_response_code(403);
+            return <<<HTML
+                <div class="error">
+                    <h2>⚠️ Security Error</h2>
+                    <p>Invalid CSRF token. Please refresh and try again.</p>
+                </div>
+            HTML;
+        }
+        
+        // Process form safely using Request class
+        $name = htmlspecialchars($request->post('name'));
+        $email = filter_var($request->post('email'), FILTER_VALIDATE_EMAIL);
+        $message = htmlspecialchars($request->post('message'));
+        
+        if (!$email) {
+            return "<div class='error'>Invalid email address</div>";
+        }
+        
+        // Safe to process the form
+        return <<<HTML
+            <div class="success">
+                <h2>✅ Message Sent</h2>
+                <p>Thank you, {$name}! We'll get back to you soon.</p>
+            </div>
+        HTML;
+    }
+}
+```
+
+### CSRF Features (from CHANGELOG)
+
+| Feature | Description | Benefit |
+|---------|-------------|---------|
+| **Automatic Tokens** | Cryptographically secure token generation | Prevents CSRF attacks |
+| **Token Rotation** | Automatic token renewal after use | Enhanced security |
+| **Timing-Safe Validation** | Uses `hash_equals()` for comparison | Prevents timing attacks |
+| **Token Expiration** | 1 hour default expiration | Balance security vs UX |
+| **Multiple Named Tokens** | Support for multiple forms per page | Flexible implementation |
+
+---
+
+## 🔒 Input Validation & Request Handling
+
+phpSPA provides the `Request` class for secure input handling with automatic validation.
+
+### Request Class Usage
+
+```php
+use phpSPA\Http\Request;
+
+function UserRegistration($path = [], $request = new Request()) {
+    if ($request->isMethod('POST')) {
+        // Get and validate inputs using Request class methods
+        $username = $request->post('username');
+        $email = $request->post('email');
+        $password = $request->post('password');
+        
+        // Manual validation (phpSPA Request class auto-validates input)
+        $errors = [];
+        
+        if (empty($username) || strlen($username) < 3) {
+            $errors[] = "Username must be at least 3 characters";
+        }
+        
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errors[] = "Invalid email address";
+        }
+        
+        if (strlen($password) < 8) {
+            $errors[] = "Password must be at least 8 characters";
+        }
+        
+        if (!empty($errors)) {
+            $errorListHtml = implode('<br>', $errors);
+            return <<<HTML
+                <div class="error-messages">
+                    <h3>⚠️ Validation Errors</h3>
+                    {$errorListHtml}
+                </div>
+            HTML;
+        }
+        
+        // Safe to process registration
+        return processRegistration($username, $email, $password);
+    }
+    
+    return RegistrationForm();
+}
+
+function RegistrationForm() {
+    return <<<HTML
+        <form method="POST">
+            <Component.Csrf name="registration" />
+            
+            <div class="form-group">
+                <label>Username:</label>
+                <input type="text" name="username" required minlength="3">
+            </div>
+            
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" name="password" required minlength="8">
+            </div>
+            
+            <button type="submit">Register</button>
+        </form>
+    HTML;
+}
+```
+
+### Request Class Methods (Available in phpSPA)
+
+Based on the actual Request class:
+
+```php
+function SecureComponent($path = [], $request = new Request()) {
+    // Access different input sources
+    $generalInput = $request('key', 'default'); // From $_REQUEST
+    $getParam = $request->get('key');           // From $_GET
+    $postParam = $request->post('key');         // From $_POST
+    $cookieValue = $request->cookie('key');     // From $_COOKIE
+    $sessionValue = $request->session('key');   // From $_SESSION
+    
+    // File uploads
+    $file = $request->files('upload');
+    
+    // Request information
+    $method = $request->method();               // HTTP method
+    $isPost = $request->isMethod('POST');      // Check specific method
+    $clientIp = $request->ip();                // Client IP
+    $isAjax = $request->isAjax();             // AJAX check
+    $userAgent = $request->userAgent();        // User agent
+    
+    // Headers
+    $authHeader = $request->header('Authorization');
+    
+    // JSON payload
+    $jsonData = $request->json();
+    
+    // Authentication helpers
+    $auth = $request->auth();
+    $basicAuth = $auth->basic;  // Basic auth credentials
+    $bearerToken = $auth->bearer; // Bearer token
+    
+    return <<<HTML
+        <div class="secure-component">
+            <p>Method: {$method}</p>
+            <p>IP: {$clientIp}</p>
+            <p>Is AJAX: {$isAjax ? 'Yes' : 'No'}</p>
+        </div>
+    HTML;
+}
+```
+
+---
+
+## 🔐 Session Management
+
+phpSPA provides a `Session` utility class for secure session handling:
+
+```php
+use phpSPA\Http\Session;
+
+function LoginComponent($path = [], $request = new Request()) {
+    if ($request->isMethod('POST')) {
+        $username = $request->post('username');
+        $password = $request->post('password');
+        
+        // Validate credentials (implement your logic)
+        if (validateCredentials($username, $password)) {
+            // Start secure session
+            Session::start();
+            Session::regenerateId(); // Prevent session fixation
+            
+            // Store user data
+            Session::set('user_id', getUserId($username));
+            Session::set('username', $username);
+            
+            return "<div class='success'>Login successful!</div>";
+        } else {
+            return "<div class='error'>Invalid credentials</div>";
+        }
+    }
+    
+    return <<<HTML
+        <form method="POST">
+            <Component.Csrf name="login" />
+            
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            
+            <button type="submit">Login</button>
+        </form>
+    HTML;
+}
+
+function LogoutComponent() {
+    Session::destroy(); // Complete session cleanup
+    return "<div class='success'>Logged out successfully</div>";
+}
+
+function ProtectedComponent() {
+    if (!Session::isActive() || !Session::has('user_id')) {
+        return <<<HTML
+            <div class="login-required">
+                <h2>🔐 Login Required</h2>
+                <Component.Link to="/login" label="Please log in to continue" />
+            </div>
+        HTML;
+    }
+    
+    $username = Session::get('username');
+    
+    return <<<HTML
+        <div class="user-profile">
+            <h1>👤 Welcome, {$username}!</h1>
+            <Component.Link to="/logout" label="Logout" />
+        </div>
+    HTML;
+}
+```
+
+---
+
+## 🔒 File Upload Security
+
+Handle file uploads securely using the Request class:
+
+```php
+function FileUploadComponent($path = [], $request = new Request()) {
+    if ($request->isMethod('POST')) {
+        $file = $request->files('document');
+        
+        if ($file && $file['error'] === UPLOAD_ERR_OK) {
+            // Validate file type
+            $allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+            
+            if (!in_array($mimeType, $allowedTypes)) {
+                return "<div class='error'>Invalid file type</div>";
+            }
+            
+            // Validate file size (5MB max)
+            if ($file['size'] > 5 * 1024 * 1024) {
+                return "<div class='error'>File too large</div>";
+            }
+            
+            // Generate safe filename
+            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $safeFilename = uniqid() . '.' . $extension;
+            $uploadPath = 'uploads/' . $safeFilename;
+            
+            if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+                return "<div class='success'>File uploaded successfully</div>";
+            } else {
+                return "<div class='error'>Upload failed</div>";
+            }
+        }
+    }
+    
+    return <<<HTML
+        <form method="POST" enctype="multipart/form-data">
+            <Component.Csrf name="upload" />
+            
+            <input type="file" name="document" accept=".jpg,.png,.pdf" required>
+            <button type="submit">Upload</button>
+        </form>
+    HTML;
+}
+```
+
+---
+
+## 📚 Security Best Practices
+
+!!! tip "Development Practices"
+    
+    1. **Always use CSRF protection**: Include `<Component.Csrf />` in all forms
+    2. **Use Request class**: Access all input through phpSPA's Request class for automatic validation
+    3. **Validate file uploads**: Check file types, sizes, and use safe filenames
+    4. **Sanitize output**: Use `htmlspecialchars()` for user-generated content
+    5. **Use sessions properly**: Leverage phpSPA's Session class for secure session management
+
+!!! info "Component Security"
+    
+    1. **Validate all input**: Never trust user input, always validate in your components
+    2. **Use prepared statements**: For database operations, always use parameterized queries
+    3. **Escape output**: Use proper escaping for HTML content
+    4. **Check permissions**: Implement proper access controls in your components
+    5. **Handle errors gracefully**: Don't expose sensitive information in error messages
+
+!!! success "Production Security"
+    
+    1. **Use HTTPS**: Always encrypt data in transit
+    2. **Keep PHP updated**: Use the latest stable PHP version (8.2+)
+    3. **Configure server properly**: Set appropriate security headers in your web server
+    4. **Monitor logs**: Keep track of application errors and security events
+    5. **Regular updates**: Keep phpSPA and dependencies updated
+
+---
+
+## 🚀 Next Steps
+
+Learn more about phpSPA security:
+
+<div class="buttons" markdown>
+[Request Handling](../request-handling.md){ .md-button .md-button--primary }
+[Component Guide](../components/index.md){ .md-button }
+[Session Management](../session-management.md){ .md-button }
+[Best Practices](../best-practices.md){ .md-button }
+</div>
+
+---
+
+## 💡 Security Principles
+
+**Security in phpSPA is about using the right tools correctly:**
+
+- **🛡️ CSRF Protection**: Use `<Component.Csrf />` for form security
+- **🔒 Request Validation**: Leverage the Request class for safe input handling
+- **⚡ Session Security**: Use the Session class for proper session management
+- **🧩 Component Design**: Build components with security in mind from the start
+- **📊 Best Practices**: Follow established security patterns and validation techniques
+
+Remember: **Security is about consistent application of good practices, not complex frameworks!**
 
 ### Basic CSRF Usage
 
