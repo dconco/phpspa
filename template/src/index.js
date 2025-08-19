@@ -176,7 +176,7 @@ class phpspa {
          headers: {
             "X-Requested-With": "PHPSPA_REQUEST",
          },
-         mode: "cors",
+         mode: "same-origin",
          redirect: "follow",
          keepalive: true,
       })
@@ -251,7 +251,7 @@ class phpspa {
                   processResponse("");
                });
          } else {
-            // Network error, CORS issue, or other connection problems
+            // Network error, same-origin issue, or other connection problems
             RuntimeManager.emit("load", {
                route: url,
                success: false,
@@ -392,7 +392,7 @@ class phpspa {
                "X-Requested-With": "PHPSPA_REQUEST",
                Authorization: `Bearer ${btoa(statePayload)}`,
             },
-            mode: "cors",
+            mode: "same-origin",
             redirect: "follow",
             keepalive: true,
          })
@@ -501,7 +501,7 @@ class phpspa {
          headers: {
             "X-Requested-With": "PHPSPA_REQUEST",
          },
-         mode: "cors",
+         mode: "same-origin",
          redirect: "follow",
          keepalive: true,
       })
@@ -613,7 +613,7 @@ class phpspa {
                "X-Requested-With": "PHPSPA_REQUEST",
                Authorization: `Bearer ${btoa(callPayload)}`,
             },
-            mode: "cors",
+            mode: "same-origin",
             redirect: "follow",
             keepalive: true,
          });

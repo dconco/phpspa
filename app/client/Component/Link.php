@@ -15,11 +15,11 @@ namespace Component;
  * @package phpSPA\Component
  * @return string The rendered HTML anchor element as a string.
  */
-function Link(string $to, string $children, string ...$HtmlAttr): string
+function Link(string $children, string $to = '#', string ...$HtmlAttr): string
 {
 	$attr = HTMLAttrInArrayToString($HtmlAttr);
 
 	return <<<HTML
-	   <a href="{$to}" data-type="phpspa-link-tag" $attr>{$children}</a>
+	   <a href="{$to}" data-type="phpspa-link-tag"$attr>{$children}</a>
 	HTML;
 }

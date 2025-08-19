@@ -35,7 +35,7 @@ function Login(): string
 	}
 
 	return <<<HTML
-	   <style data-type="phpspa/css">
+	   <style>
 	      #hashID {
 	         padding-top: 100vh;
 	         padding-bottom: 100vh;
@@ -56,12 +56,11 @@ function Login(): string
 	         <br />
 	         {$buttonHtml}
 	      </form>
-	      <HashComp id="hashID" class="hash">
-	         This is an Hashed element
-	      </HashComp>
+	      
+	      <HashComp id="hashID" class="hash" children="This is an Hashed element" />
 	   </div>
 
-	   <script data-type="phpspa/script">
+	   <script>
 	      const submitBtn = document.getElementById('btn');
 
 

@@ -1,0 +1,29 @@
+name: PHP Tests
+
+on:
+   push:
+      branches: [main, dev]
+   pull_request:
+      branches: [main, dev]
+
+jobs:
+   test:
+      runs-on: ubuntu-latest
+      steps:
+         - name: Checkout repository
+           uses: actions/checkout@v4
+
+         - name: Setup PHP
+           uses: shivammathur/setup-php@v2
+           with:
+              php-version: "8.2"
+              coverage: none
+
+         - name: Validate composer.json and composer.lock
+           run: composer validate --no-check-all --strict
+
+         - name: Autoload all classes with Composer
+           run: composer dump-autoload
+
+         - name: Run tests
+           run: composer test
