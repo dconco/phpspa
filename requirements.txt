@@ -18,4 +18,3 @@ cairosvg>=2.7.0
 mkdocs-mermaid2-plugin>=1.2.1
 
 mkdocs-git-revision-date-localized-plugin
-mkdocs-tags-plugin
