@@ -225,11 +225,11 @@ return str_replace('__CONTENT__', $content, $layout);
 
 ### Compression Benefits
 
-| Content Type | Before | After | Reduction |
-|--------------|--------|-------|-----------|
-| HTML + CSS   | 150KB  | 89KB  | 41%       |
-| JavaScript   | 75KB   | 45KB  | 40%       |
-| Mixed Content| 200KB  | 32KB  | 84%       |
+| Content Type  | Before | After | Reduction |
+| ------------- | ------ | ----- | --------- |
+| HTML + CSS    | 150KB  | 89KB  | 41%       |
+| JavaScript    | 75KB   | 45KB  | 40%       |
+| Mixed Content | 200KB  | 32KB  | 84%       |
 
 ### JavaScript Engine Updates
 

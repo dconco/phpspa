@@ -166,11 +166,11 @@ function myFunction(){var a=1;var b=2;return a+b}
 
 ## Performance Metrics
 
-| Content Type | Original | Compressed | Reduction |
-|--------------|----------|------------|-----------|
-| HTML + CSS   | 150KB    | 89KB       | 41%       |
-| JavaScript   | 75KB     | 45KB       | 40%       |
-| Mixed Content| 200KB    | 32KB       | 84%       |
+| Content Type  | Original | Compressed | Reduction |
+| ------------- | -------- | ---------- | --------- |
+| HTML + CSS    | 150KB    | 89KB       | 41%       |
+| JavaScript    | 75KB     | 45KB       | 40%       |
+| Mixed Content | 200KB    | 32KB       | 84%       |
 
 ## Advanced Configuration
 
