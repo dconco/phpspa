@@ -132,11 +132,11 @@ my-phpspa-app/
 
 phpSPA automatically detects your environment for optimal configuration:
 
-| Environment | Auto-Detected When | Compression | Debug Mode |
-|-------------|-------------------|-------------|------------|
-| **Development** | `localhost`, `127.0.0.1`, `*.local`, `*.dev` | None | Enabled |
-| **Staging** | `staging.*`, `test.*` subdomains | Basic | Partial |
-| **Production** | All other domains | Aggressive | Disabled |
+| Environment     | Auto-Detected When                           | Compression | Debug Mode |
+| --------------- | -------------------------------------------- | ----------- | ---------- |
+| **Development** | `localhost`, `127.0.0.1`, `*.local`, `*.dev` | None        | Enabled    |
+| **Staging**     | `staging.*`, `test.*` subdomains             | Basic       | Partial    |
+| **Production**  | All other domains                            | Aggressive  | Disabled   |
 
 Override environment detection:
 

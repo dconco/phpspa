@@ -58,12 +58,12 @@ function WelcomeMessage() {
 
 ### Component Features
 
-| Feature | Description | Example |
-|---------|-------------|---------|
-| **Pure Functions** | Components are just PHP functions | `function MyComponent() { ... }` |
-| **HTML Templates** | Return HTML using heredoc syntax | `return <<<HTML ... HTML;` |
+| Feature               | Description                           | Example                             |
+| --------------------- | ------------------------------------- | ----------------------------------- |
+| **Pure Functions**    | Components are just PHP functions     | `function MyComponent() { ... }`    |
+| **HTML Templates**    | Return HTML using heredoc syntax      | `return <<<HTML ... HTML;`          |
 | **State Integration** | Use `createState()` for reactive data | `$count = createState('count', 0);` |
-| **Props Support** | Accept parameters like any function | `function User($name) { ... }` |
+| **Props Support**     | Accept parameters like any function   | `function User($name) { ... }`      |
 
 ---
 
@@ -268,12 +268,12 @@ phpSPA includes powerful performance optimizations out of the box:
 
 Security is a top priority in phpSPA:
 
-| Security Feature | Implementation | Benefit |
-|------------------|----------------|---------|
-| **CSRF Protection** | `<Component.Csrf />` | Prevents cross-site attacks |
-| **Input Validation** | Built-in sanitization | Safe user input handling |
-| **Type Safety** | Parameter validation | Prevents type confusion |
-| **Secure Headers** | Automatic headers | XSS and injection protection |
+| Security Feature     | Implementation        | Benefit                      |
+| -------------------- | --------------------- | ---------------------------- |
+| **CSRF Protection**  | `<Component.Csrf />`  | Prevents cross-site attacks  |
+| **Input Validation** | Built-in sanitization | Safe user input handling     |
+| **Type Safety**      | Parameter validation  | Prevents type confusion      |
+| **Secure Headers**   | Automatic headers     | XSS and injection protection |
 
 ---
 
