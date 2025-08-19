@@ -17,6 +17,7 @@ use phpSPA\Core\Helper\FunctionCaller;
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0
+ * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/2-php-js-integration/ PHP-JS Integration Documentation
  * @return FunctionCaller Handler object for secure function invocation
  */
 function useFunction(callable $function): FunctionCaller

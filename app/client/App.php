@@ -11,12 +11,19 @@ use phpSPA\Core\Config\CompressionConfig;
  *
  * The main application class for phpSPA.
  * Handles layout composition, component mounting, and rendering flow.
+ * 
+ * Features in v1.1.5:
+ * - Method chaining for fluent configuration
+ * - HTML compression and minification
+ * - Environment-based compression settings
  *
  * @package phpSPA
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
  * @see https://phpspa.readthedocs.io/en/latest/1-introduction
+ * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/4-method-chaining/ Method Chaining Documentation
+ * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/1-compression-system/ Compression System Documentation
  * @link https://phpspa.readthedocs.io/en/latest/1-introduction
  * @extends \phpSPA\Core\Impl\RealImpl\AppImpl
  * @implements \phpSPA\Interfaces\phpSpaInterface

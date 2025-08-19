@@ -1,5 +1,16 @@
 <?php
 
+/**
+ * Unified Test Runner for phpSPA v1.1.5
+ * 
+ * Runs all compression and JavaScript ASI tests for the new compression system.
+ * This test runner is CLI-only for security and is used in CI/CD workflows.
+ * 
+ * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/1-compression-system/ Compression System Documentation
+ * @since v1.1.5
+ * @author dconco <concodave@gmail.com>
+ */
+
 // Ensure this test runner only executes from the command line (for CI/workflows)
 if (php_sapi_name() !== 'cli') {
     // Avoid executing in web contexts
