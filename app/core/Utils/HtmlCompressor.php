@@ -209,7 +209,7 @@ trait HtmlCompressor
     {
         $html = self::aggressiveMinify($html);
 
-        // Enhanced JavaScript minification for extreme level
+        // Advanced JavaScript minification for extreme level
         $html = preg_replace_callback(
             '/<script[^>]*>(.*?)<\/script>/si',
             function ($matches) {
@@ -227,7 +227,7 @@ trait HtmlCompressor
             $html
         );
 
-        // Enhanced CSS minification for extreme level
+        // Advanced CSS minification for extreme level
         $html = preg_replace_callback(
             '/<style[^>]*>(.*?)<\/style>/si',
             function ($matches) {

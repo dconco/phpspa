@@ -2,7 +2,7 @@
 
 # 🧩 **phpSPA**
 
-### *Component-Based PHP Library for Modern Web Applications*
+### _Component-Based PHP Library for Modern Web Applications_
 
 **Build dynamic, interactive web applications using reusable PHP components with state management and SPA-like behavior — no JavaScript frameworks required.**
 
@@ -55,7 +55,7 @@ Works out of the box
 
 ### 🎯 **Ready to Jump In? Start with our Template!**
 
-*Get up and running in 30 seconds with a complete phpSPA example*
+_Get up and running in 30 seconds with a complete phpSPA example_
 
 </div>
 
@@ -135,14 +135,14 @@ $app->run();
 
 ## 🧪 **Testing**
 
-- Run locally:
+-  Run locally:
 
 ```bash
 composer install
 composer test
 ```
 
-- CI: Tests run on push/PR to `main` and `dev` via GitHub Actions (see badge above). The entrypoint is `tests/Test.php` which runs the semicolon/ASI suite and a simple compression check.
+-  CI: Tests run on push/PR to `main` and `dev` via GitHub Actions (see badge above). The entrypoint is `tests/Test.php` which runs the semicolon/ASI suite and a simple compression check.
 
 ---
 
@@ -191,28 +191,41 @@ Works with any PHP setup
 
 📦 **[Packagist](https://packagist.org/packages/dconco/phpspa)** — Installation and versions
 
----
+--
+
+<br>
+<br>
 
 <div align="center">
 
-## 👨‍💻 **Created by [Dave Conco](https://github.com/dconco)**
+## ✨ Crafted with Precision By
 
-*Building modern web applications with the simplicity of PHP*
-
-<table>
-<tr>
-<td align="center">
 <a href="https://github.com/dconco">
-<img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
+   <img src="https://raw.githubusercontent.com/dconco/dconco/refs/heads/main/profile3.png" width="150">
 </a>
-</td>
-<td align="center">
-<a href="https://twitter.com/dave_conco">
-<img src="https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" alt="Twitter"/>
-</a>
-</td>
-</tr>
-</table>
+
+### Dave Conco
+
+_Building modern web applications with the simplicity of PHP_
+
+<!-- This is the interactive badge bar -->
+<p align="center">
+  <a href="https://github.com/dconco">
+    <img src="https://img.shields.io/badge/GitHub-@dconco-181717?style=flat&logo=github&logoColor=white" alt="GitHub">
+  </a>
+  <a href="https://twitter.com/dave_conco">
+    <img src="https://img.shields.io/badge/Twitter-@dave_conco-1DA1F2?style=flat&logo=twitter&logoColor=white" alt="Twitter">
+  </a>
+  <a href="mailto:concodave@gmail.com">
+    <img src="https://img.shields.io/badge/Email-Me%21-D14836?style=flat&logo=gmail&logoColor=white" alt="Email">
+  </a>
+  <a href="https://dconco.github.io">
+    <img src="https://img.shields.io/badge/Website-Portfolio-FF7139?style=flat&logo=Firefox-Browser&logoColor=white" alt="Website">
+  </a>
+</p>
+
+<!-- This HR is styled with a gradient to match the picture border -->
+<hr style="height: 2px; border: none; background: linear-gradient(90deg, transparent, #667eea, #764ba2, transparent); margin: 2rem 0;">
 
 **⭐ If you find phpSPA useful, please give it a star!**
 
