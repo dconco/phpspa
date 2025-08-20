@@ -1,5 +1,16 @@
 <?php
 
+/**
+ * HTML Compression Test Suite
+ * 
+ * Tests the HTML compression functionality including multi-level compression,
+ * size reduction verification, and compression level effectiveness.
+ * 
+ * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/1-compression-system/ Compression System Documentation
+ * @since v1.1.5
+ * @author dconco <concodave@gmail.com>
+ */
+
 use phpSPA\Compression\Compressor;
 
 echo "\n================ HTML COMPRESSION TEST STARTED ==================\n\n";

@@ -19,6 +19,7 @@ use const phpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0
+ * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/2-php-js-integration/ PHP-JS Integration Documentation
  * @var callable $function
  */
 class FunctionCaller

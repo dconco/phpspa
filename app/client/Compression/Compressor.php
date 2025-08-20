@@ -14,6 +14,7 @@ namespace phpSPA\Compression;
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0
+ * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/1-compression-system/ Compression System Documentation
  */
 class Compressor
 {

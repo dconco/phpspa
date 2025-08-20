@@ -16,6 +16,7 @@ use phpSPA\Core\Helper\SessionHandler;
  * @copyright 2025 Dave Conco
  * @author dconco <concodave@gmail.com>
  * @category phpSPA\Core\Helper
+ * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/5-csrf-protection/ CSRF Protection Documentation
  * use \phpSPA\Core\Utils\Validate
  */
 class CsrfManager
