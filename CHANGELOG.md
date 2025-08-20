@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## v1.1.5 [Unreleased]
+## v1.1.5
 
 > [!IMPORTANT]
 > This PHPSPA version requires the [`dconco/phpspa-js`](https://github.com/dconco/phpspa-js) version above `v1.1.7` to be able to work
