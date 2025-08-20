@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace phpSPA\Http;
 
@@ -6,161 +8,168 @@ namespace phpSPA\Http;
  * Session utility class for managing PHP sessions
  *
  * Provides static methods for common session operations with proper
- * error handling and validation.
+ * error handling and validation. This class ensures secure and consistent
+ * session management throughout the phpSPA framework.
+ *
+ * @package phpSPA\Http
+ * @author dconco <concodave@gmail.com>
+ * @copyright 2025 Dave Conco
+ * @license MIT
+ * @since v1.0.0
  */
 class Session
 {
-	use \phpSPA\Core\Utils\Validate;
+    use \phpSPA\Core\Utils\Validate;
 
-	/**
-	 * Check if a session is currently active
-	 *
-	 * @return bool True if session is active, false otherwise
-	 */
-	public static function isActive(): bool
-	{
-		return session_status() === PHP_SESSION_ACTIVE;
-	}
+    /**
+     * Check if a session is currently active
+     *
+     * @return bool True if session is active, false otherwise
+     */
+    public static function isActive(): bool
+    {
+        return session_status() === PHP_SESSION_ACTIVE;
+    }
 
-	/**
-	 * Start a new session if one is not already active
-	 *
-	 * @return bool True if session was started or already active, false on failure
-	 */
-	public static function start(): bool
-	{
-		if (self::isActive()) {
-			return true;
-		}
+    /**
+     * Start a new session if one is not already active
+     *
+     * @return bool True if session was started or already active, false on failure
+     */
+    public static function start(): bool
+    {
+        if (self::isActive()) {
+            return true;
+        }
 
-		if (headers_sent()) {
-			return false;
-		}
+        if (headers_sent()) {
+            return false;
+        }
 
-		return session_start();
-	}
+        return session_start();
+    }
 
-	/**
-	 * Destroy the current session
-	 *
-	 * This method will unset all session variables, destroy the session,
-	 * and remove the session cookie if it exists.
-	 *
-	 * @return bool True if session was destroyed successfully, false otherwise
-	 */
-	public static function destroy(): bool
-	{
-		if (!self::isActive()) {
-			return true; // No session to destroy
-		}
+    /**
+     * Destroy the current session
+     *
+     * This method will unset all session variables, destroy the session,
+     * and remove the session cookie if it exists.
+     *
+     * @return bool True if session was destroyed successfully, false otherwise
+     */
+    public static function destroy(): bool
+    {
+        if (!self::isActive()) {
+            return true; // No session to destroy
+        }
 
-		// Unset all session variables
-		$_SESSION = [];
+        // Unset all session variables
+        $_SESSION = [];
 
-		// Delete the session cookie if it exists
-		if (ini_get('session.use_cookies')) {
-			$params = session_get_cookie_params();
-			setcookie(
-				session_name(),
-				'',
-				time() - 42000,
-				$params['path'],
-				$params['domain'],
-				$params['secure'],
-				$params['httponly'],
-			);
-		}
+        // Delete the session cookie if it exists
+        if (ini_get('session.use_cookies')) {
+            $params = session_get_cookie_params();
+            setcookie(
+                session_name(),
+                '',
+                time() - 42000,
+                $params['path'],
+                $params['domain'],
+                $params['secure'],
+                $params['httponly'],
+            );
+        }
 
-		// Destroy the session
-		return session_destroy();
-	}
+        // Destroy the session
+        return session_destroy();
+    }
 
-	/**
-	 * Get a session variable value
-	 *
-	 * @param string $key The session variable key
-	 * @param mixed $default Default value if key doesn't exist
-	 * @return mixed The session variable value or default
-	 */
-	public static function get(string $key, $default = null)
-	{
-		if (!self::isActive()) {
-			return $default;
-		}
+    /**
+     * Get a session variable value
+     *
+     * @param string $key The session variable key
+     * @param mixed $default Default value if key doesn't exist
+     * @return mixed The session variable value or default
+     */
+    public static function get(string $key, $default = null)
+    {
+        if (!self::isActive()) {
+            return $default;
+        }
 
-		return $_SESSION[$key] ?? $default;
-	}
+        return $_SESSION[$key] ?? $default;
+    }
 
-	/**
-	 * Set a session variable
-	 *
-	 * @param string $key The session variable key
-	 * @param mixed $value The value to store
-	 * @param bool $raw If to store raw value
-	 * @return bool True if value was set, false if session not active
-	 */
-	public static function set(string $key, $value, bool $raw = false): bool
-	{
-		if (!self::isActive()) {
-			return false;
-		}
+    /**
+     * Set a session variable
+     *
+     * @param string $key The session variable key
+     * @param mixed $value The value to store
+     * @param bool $raw If to store raw value
+     * @return bool True if value was set, false if session not active
+     */
+    public static function set(string $key, $value, bool $raw = false): bool
+    {
+        if (!self::isActive()) {
+            return false;
+        }
 
-		$_SESSION[$key] = $raw ? $value : (new static())->validate($value);
-		return true;
-	}
+        $_SESSION[$key] = $raw ? $value : (new static())->validate($value);
+        return true;
+    }
 
-	/**
-	 * Remove one or more session variables
-	 *
-	 * @param string|array $key The session variable key(s) to remove
-	 * @return bool True if all variables were removed or didn't exist, false if session not active
-	 */
-	public static function remove(string|array $key): bool
-	{
-		if (!self::isActive()) {
-			return false;
-		}
+    /**
+     * Remove one or more session variables
+     *
+     * @param string|array $key The session variable key(s) to remove
+     * @return bool True if all variables were removed or didn't exist, false if session not active
+     */
+    public static function remove(string|array $key): bool
+    {
+        if (!self::isActive()) {
+            return false;
+        }
 
-		if (is_array($key)) {
-			foreach ($key as $k) {
-				if (is_string($k)) {
-					unset($_SESSION[$k]);
-				}
-			}
-		} else {
-			unset($_SESSION[$key]);
-		}
+        if (is_array($key)) {
+            foreach ($key as $k) {
+                if (is_string($k)) {
+                    unset($_SESSION[$k]);
+                }
+            }
+        } else {
+            unset($_SESSION[$key]);
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	/**
-	 * Check if a session variable exists
-	 *
-	 * @param string $key The session variable key
-	 * @return bool True if the key exists in the session, false otherwise
-	 */
-	public static function has(string $key): bool
-	{
-		if (!self::isActive()) {
-			return false;
-		}
+    /**
+     * Check if a session variable exists
+     *
+     * @param string $key The session variable key
+     * @return bool True if the key exists in the session, false otherwise
+     */
+    public static function has(string $key): bool
+    {
+        if (!self::isActive()) {
+            return false;
+        }
 
-		return isset($_SESSION[$key]);
-	}
+        return isset($_SESSION[$key]);
+    }
 
-	/**
-	 * Regenerate session ID to prevent session fixation attacks
-	 *
-	 * @param bool $deleteOldSession Whether to delete the old session file
-	 * @return bool True if ID was regenerated successfully, false otherwise
-	 */
-	public static function regenerateId(bool $deleteOldSession = true): bool
-	{
-		if (!self::isActive()) {
-			return false;
-		}
+    /**
+     * Regenerate session ID to prevent session fixation attacks
+     *
+     * @param bool $deleteOldSession Whether to delete the old session file
+     * @return bool True if ID was regenerated successfully, false otherwise
+     */
+    public static function regenerateId(bool $deleteOldSession = true): bool
+    {
+        if (!self::isActive()) {
+            return false;
+        }
 
-		return session_regenerate_id($deleteOldSession);
-	}
+        return session_regenerate_id($deleteOldSession);
+    }
 }

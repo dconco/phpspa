@@ -107,6 +107,9 @@
          // Decode and restore HTML content
          targetContainer.innerHTML = atob(navigationState.content);
 
+         // Clear old executed scripts cache
+         RuntimeManager.clearExecutedScripts();
+
          // Execute any inline scripts and styles in the restored content
          RuntimeManager.runAll(targetContainer);
 
@@ -314,6 +317,9 @@ class phpspa {
                left: hashElement.offsetLeft,
             });
          }
+
+         // Clear old executed scripts cache
+         RuntimeManager.clearExecutedScripts();
 
          // Execute any inline scripts and styles in the new content
          RuntimeManager.runAll(targetElement);
@@ -584,6 +590,9 @@ class phpspa {
             ? atob(responseData.content)
             : responseData;
 
+         // Clear old executed scripts cache
+         RuntimeManager.clearExecutedScripts();
+
          // Execute scripts and restore scroll
          RuntimeManager.runAll(targetElement);
          scroll(currentScroll);
@@ -751,6 +760,19 @@ class RuntimeManager {
             document.head.appendChild(newScript).remove();
          }
       });
+   }
+
+   /**
+    * Clears all executed scripts from the runtime manager.
+    * This method removes all entries from the executedScripts collection,
+    * effectively resetting the tracking of previously executed scripts.
+    *
+    * @static
+    * @memberof RuntimeManager
+    * @since 1.0.0
+    */
+   static clearExecutedScripts() {
+      RuntimeManager.executedScripts.clear();
    }
 
    /**

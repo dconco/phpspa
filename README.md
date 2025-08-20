@@ -114,6 +114,7 @@ composer require dconco/phpspa
 ```php
 function HomePage() {
     $counter = createState("count", 0);
+
     return <<<HTML
         <h1>Counter: {$counter}</h1>
         <button onclick="phpspa.setState('count', {$counter} + 1)">+</button>
@@ -135,14 +136,14 @@ $app->run();
 
 ## 🧪 **Testing**
 
--  Run locally:
+- Run locally:
 
 ```bash
 composer install
 composer test
 ```
 
--  CI: Tests run on push/PR to `main` and `dev` via GitHub Actions (see badge above). The entrypoint is `tests/Test.php` which runs the semicolon/ASI suite and a simple compression check.
+- CI: Tests run on push/PR to `main` and `dev` via GitHub Actions (see badge above). The entrypoint is `tests/Test.php` which runs the semicolon/ASI suite and a simple compression check.
 
 ---
 

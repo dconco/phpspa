@@ -10,13 +10,14 @@ if (php_sapi_name() !== 'cli') {
     exit(0);
 }
 
+// define the variables
+$test1_successful;
+$test2_successful;
+
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/HtmlCompressionTest.php';
 require_once __DIR__ . '/JsCompressionTest.php';
 
-// Ensure test result variables are defined
-if (!isset($test1_successful)) $test1_successful = false;
-if (!isset($test2_successful)) $test2_successful = false;
 $testSuccessful = $test1_successful && $test2_successful;
 
 echo "\n================= COMBINED TESTS RESULT: " . ($testSuccessful ? 'ALL PASSED' : 'SOME FAILED') . " =================\n";
