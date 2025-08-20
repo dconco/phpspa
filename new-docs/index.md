@@ -64,13 +64,13 @@
 
 <div class="feature-comparison" markdown>
 
-| **You Need** | **Traditional Approach** | **phpSPA Solution** |
-|--------------|-------------------------|---------------------|
-| **Interactive UI** | Complex JavaScript + AJAX | :material-check: Simple PHP components |
-| **Fast Navigation** | Full page reloads | :material-check: Instant SPA transitions |
-| **State Management** | Sessions + complex logic | :material-check: Built-in reactive state |
-| **SEO & Performance** | Server-side only | :material-check: SSR + SPA benefits |
-| **Maintainable Code** | Mixed PHP/JS codebases | :material-check: Pure PHP architecture |
+| **You Need**          | **Traditional Approach**     | **phpSPA Solution**                        |
+| --------------------- | ---------------------------- | ------------------------------------------ |
+| **Interactive UI**    | Complex JavaScript + AJAX    | :material-check: Simple PHP components     |
+| **Fast Navigation**   | Full page reloads            | :material-check: Instant SPA transitions   |
+| **State Management**  | Sessions + complex logic     | :material-check: Built-in reactive state   |
+| **SEO & Performance** | Server-side only             | :material-check: SSR + SPA benefits        |
+| **Maintainable Code** | Mixed PHP/JS codebases       | :material-check: Pure PHP architecture     |
 | **Team Productivity** | Split frontend/backend teams | :material-check: Full-stack PHP developers |
 
 </div>
