@@ -11,7 +11,7 @@ edit_uri: edit/main/docs/
 # Theme configuration with enhanced design
 theme:
    name: material
-   custom_dir: overrides/
+   custom_dir: docs/overrides/
    palette:
       # Light mode
       - scheme: default
