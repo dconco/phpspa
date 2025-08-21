@@ -245,7 +245,7 @@ function handleApiRequest() {
         return json_encode(['error' => 'Method not allowed']);
     }
 
-    $csrf = new Csrf('ajax-form);
+    $csrf = new Csrf('ajax-form');
     $token = $request->post('ajax-form') ?? '';
 
     if (!$csrf->verifyToken($token)) {
