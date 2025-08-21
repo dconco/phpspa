@@ -7,25 +7,25 @@ A high-performance PHP Single Page Application framework with advanced compressi
 ## What's New in v1.1.5
 
 !!! important "JavaScript Engine Requirement"
-    This phpSPA version requires [`dconco/phpspa-js`](https://github.com/dconco/phpspa-js) version above `v1.1.7` to work properly.
+This phpSPA version requires [`dconco/phpspa-js`](https://github.com/dconco/phpspa-js) version above `v1.1.7` to work properly.
 
 ### 🚀 Major Features Added
 
-- **🗜️ HTML Compression & Minification System**: Multi-level compression with up to 84% size reduction
-- **⚡ Enhanced PHP-JS Integration**: Direct function calls with `useFunction()` and improved `__call()` alias
-- **🏗️ Class Component Support**: Use PHP classes as components with namespace support
-- **🔗 Method Chaining**: Fluent API for App class configuration
-- **🛡️ CSRF Protection Component**: Built-in security with automatic token management
+-  **🗜️ HTML Compression & Minification System**: Multi-level compression with up to 84% size reduction
+-  **⚡ Enhanced PHP-JS Integration**: Direct function calls with `useFunction()` and improved `__call()` alias
+-  **🏗️ Class Component Support**: Use PHP classes as components with namespace support
+-  **🔗 Method Chaining**: Fluent API for App class configuration
+-  **🛡️ CSRF Protection Component**: Built-in security with automatic token management
 
 ### 🐛 Bug Fixes
 
-- **Component Nesting**: Fixed nested component rendering and children processing
+-  **Component Nesting**: Fixed nested component rendering and children processing
 
 ### 🔄 Breaking Changes
 
-- `\phpSPA\Component` namespace changed to `\Component`
-- JavaScript execution logic updated (no more `data-type` attributes required)
-- `__CONTENT__` placeholder removed in favor of direct target ID rendering
+-  `\phpSPA\Component` namespace changed to `\Component`
+-  JavaScript execution logic updated (no more `data-type` attributes required)
+-  `__CONTENT__` placeholder removed in favor of direct target ID rendering
 
 ---
 
@@ -48,7 +48,7 @@ Update your JavaScript engine:
 ### 1. HTML Compression & Minification
 
 !!! success "Performance Boost"
-    Achieve 15-84% size reduction with intelligent compression levels and automatic environment detection.
+Achieve 15-84% size reduction with intelligent compression levels and automatic environment detection.
 
 ```php
 <?php
@@ -67,11 +67,11 @@ $app = new App('layout')->compressionEnvironment(Compressor::ENV_PRODUCTION);
 
 **Compression Levels:**
 
-- `LEVEL_NONE` - No compression
-- `LEVEL_BASIC` - Basic HTML minification
-- `LEVEL_AGGRESSIVE` - Advanced minification + CSS optimization
-- `LEVEL_EXTREME` - Maximum compression + JavaScript minification
-- `LEVEL_AUTO` - Intelligent selection based on content size
+-  `LEVEL_NONE` - No compression
+-  `LEVEL_BASIC` - Basic HTML minification
+-  `LEVEL_AGGRESSIVE` - Advanced minification + CSS optimization
+-  `LEVEL_EXTREME` - Maximum compression + JavaScript minification
+-  `LEVEL_AUTO` - Intelligent selection based on content size
 
 → [Detailed Compression Guide](./1-compression-system.md)
 
@@ -84,8 +84,8 @@ Direct function calls between PHP and JavaScript with improved security.
 use function Component\useFunction;
 
 // Define your function
-function Login($args) { 
-    return "<h2>Login Component</h2>"; 
+function Login($args) {
+    return "<h2>Login Component</h2>";
 }
 
 // In your component
@@ -112,8 +112,8 @@ Use PHP classes as components with namespace support.
 namespace MyApp\Components;
 
 class UserCard {
-    public function __render($props) {
-        return "<div class='card'>{$props['name']}</div>";
+    public function __render($name) {
+        return "<div class='card'>{$name}</div>";
     }
 }
 
@@ -159,10 +159,10 @@ if (!$csrf->verify()) {
 
 **Security Features:**
 
-- Cryptographically secure token generation
-- Automatic expiration (1 hour default)
-- Timing-safe validation
-- Token rotation and cleanup
+-  Cryptographically secure token generation
+-  Automatic expiration (1 hour default)
+-  Timing-safe validation
+-  Token rotation and cleanup
 
 → [CSRF Protection Guide](./5-csrf-protection.md)
 
@@ -192,7 +192,7 @@ use Component\Link;
 
 ```html
 <script data-type="phpspa/script">
-    // Your code
+	// Your code
 </script>
 ```
 
@@ -200,7 +200,7 @@ use Component\Link;
 
 ```html
 <script>
-    // Your code - data-type no longer required
+	// Your code - data-type no longer required
 </script>
 ```
 
@@ -233,9 +233,9 @@ return str_replace('__CONTENT__', $content, $layout);
 
 ### JavaScript Engine Updates
 
-- Faster component rendering
-- Improved memory management
-- Enhanced script execution flow
+-  Faster component rendering
+-  Improved memory management
+-  Enhanced script execution flow
 
 ---
 
@@ -243,16 +243,16 @@ return str_replace('__CONTENT__', $content, $layout);
 
 ### CSRF Protection
 
-- **Multiple named tokens** with automatic cleanup
-- **Built-in expiration** prevents token reuse attacks
-- **Timing-safe validation** prevents timing attacks
-- **Automatic rotation** enhances security
+-  **Multiple named tokens** with automatic cleanup
+-  **Built-in expiration** prevents token reuse attacks
+-  **Timing-safe validation** prevents timing attacks
+-  **Automatic rotation** enhances security
 
 ### Function Call Security
 
-- Enhanced `__call()` security with 10x improvement
-- Secure token-based function authentication
-- Protected namespace access
+-  Enhanced `__call()` security with 10x improvement
+-  Secure token-based function authentication
+-  Protected namespace access
 
 ---
 
@@ -260,10 +260,10 @@ return str_replace('__CONTENT__', $content, $layout);
 
 New testing utilities included:
 
-- `tests/Test.php` - Unified test runner (CLI-only)
-- `tests/HtmlCompressionTest.php` - Compression testing
-- `tests/JsCompressionTest.php` - JavaScript ASI testing
-- CI/CD workflow with GitHub Actions
+-  `tests/Test.php` - Unified test runner (CLI-only)
+-  `tests/HtmlCompressionTest.php` - Compression testing
+-  `tests/JsCompressionTest.php` - JavaScript ASI testing
+-  CI/CD workflow with GitHub Actions
 
 ---
 
@@ -310,20 +310,20 @@ function ContactForm() {
 
 Stay tuned for upcoming features:
 
-- 🧪 Enhanced testing utilities
-- 🌐 Built-in i18n tools
-- 📊 Performance monitoring
-- 🔌 Plugin system
+-  🧪 Enhanced testing utilities
+-  🌐 Built-in i18n tools
+-  📊 Performance monitoring
+-  🔌 Plugin system
 
 ---
 
 ## Documentation Links
 
-- [Compression System](./1-compression-system.md)
-- [PHP-JS Integration](./2-php-js-integration.md)
-- [Class Components](./3-class-components.md)
-- [Method Chaining](./4-method-chaining.md)
-- [CSRF Protection](./5-csrf-protection.md)
+-  [Compression System](./1-compression-system.md)
+-  [PHP-JS Integration](./2-php-js-integration.md)
+-  [Class Components](./3-class-components.md)
+-  [Method Chaining](./4-method-chaining.md)
+-  [CSRF Protection](./5-csrf-protection.md)
 
 ---
 
@@ -331,10 +331,10 @@ Stay tuned for upcoming features:
 
 Need help migrating? Check our [Migration Guide](./6-migration-guide.md) or reach out:
 
-- 📚 [Full Documentation](https://phpspa.readthedocs.io)
-- 🐛 [GitHub Issues](https://github.com/dconco/phpspa/issues)
-- 💬 [Discord Community](https://discord.gg/FeVQs73C)
+-  📚 [Full Documentation](https://phpspa.readthedocs.io)
+-  🐛 [GitHub Issues](https://github.com/dconco/phpspa/issues)
+-  💬 [Discord Community](https://discord.gg/FeVQs73C)
 
 ---
 
-*Built with ❤️ by [Dave Conco](https://github.com/dconco)*
+_Built with ❤️ by [Dave Conco](https://github.com/dconco)_

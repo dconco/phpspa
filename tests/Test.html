@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Page for Compression</title>
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #f8f9fa;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+        }
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Welcome to Our Test Page</h1>
+            <p>This is a sample page with enough content to test HTML compression effectively.</p>
+        </header>
+        <main class="content">
+            <div class="card">
+                <h2>First Section</h2>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+            </div>
+            <div class="card">
+                <h2>Second Section</h2>
+                <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+                <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+            </div>
+        </main>
+    </div>
+    <script>
+        console.log("Before Load: " + route);
+        if (route && route.length > 0) {
+            document.getElementById("content").innerHTML = "Loading...";
+        }
+        
+        function initializeApp() {
+            const elements = document.querySelectorAll(".card");
+            elements.forEach(function(element, index) {
+                element.addEventListener("click", function() {
+                    console.log("Card " + index + " clicked");
+                });
+            });
+        }
+        
+        document.addEventListener("DOMContentLoaded", initializeApp);
+    </script>
+</body>
+</html>

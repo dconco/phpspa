@@ -21,218 +21,225 @@ use phpSPA\Core\Helper\SessionHandler;
  */
 class CsrfManager
 {
-    use \phpSPA\Core\Utils\Validate;
+	use \phpSPA\Core\Utils\Validate;
 
-    /** @var string Unique identifier for the form/action */
-    protected string $name;
+	/** @var string Unique identifier for the form/action */
+	protected string $name;
 
-    /** @var string Session storage key for CSRF tokens */
-    private string $sessionKey;
+	/** @var string Session storage key for CSRF tokens */
+	private string $sessionKey;
 
-    /** @var int Length of generated tokens in bytes (converted to hex) */
-    private int $tokenLength = 32;
+	/** @var int Length of generated tokens in bytes (converted to hex) */
+	private int $tokenLength = 32;
 
-    /** @var int Maximum number of tokens to store simultaneously */
-    private int $maxTokens = 10; // Limit stored tokens
+	/** @var int Maximum number of tokens to store simultaneously */
+	protected int $maxTokens = 10; // Limit stored tokens
 
-    public function __construct(string $name, string $sessionKey = '_csrf_tokens')
-    {
-        $this->name = $name;
-        $this->sessionKey = $sessionKey;
-    }
+	/** @var int Maximum age of tokens to last */
+	protected int $tokenLifetime = 3600; // Token last for 1 hour
 
-    /**
-     * Generates a new CSRF token for a specific form/action
-     *
-     * @return string Generated token (hex encoded)
-     * @throws \RuntimeException If cryptographically secure random generation fails
-     */
-    public function generate(): string
-    {
-        $token = bin2hex(random_bytes($this->tokenLength));
-        $tokenData = [
-            'token' => $token,
-            'created' => time(),
-            'form' => $this->name,
-        ];
+	public function __construct(
+		string $name,
+		string $sessionKey = '_csrf_tokens',
+	) {
+		$this->name = $name;
+		$this->sessionKey = $sessionKey;
+	}
 
-        // Add new token
-        $this->registerForm($tokenData);
+	/**
+	 * Generates a new CSRF token for a specific form/action
+	 *
+	 * @return string Generated token (hex encoded)
+	 * @throws \RuntimeException If cryptographically secure random generation fails
+	 */
+	public function generate(): string
+	{
+		$token = bin2hex(random_bytes($this->tokenLength));
+		$tokenData = [
+			'token' => $token,
+			'created' => time(),
+			'form' => $this->name,
+		];
 
-        // Clean up old tokens if too many
-        $this->cleanupTokens();
+		// Add new token
+		$this->registerForm($tokenData);
 
-        return $token;
-    }
+		// Clean up old tokens if too many
+		$this->cleanupTokens();
 
-    /**
-     * Verifies a submitted CSRF token against the stored token
-     *
-     * @param bool $expireAfterUse Whether to remove token after successful verification
-     * @return bool True if token is valid and not expired, false otherwise
-     */
-    public function verify(bool $expireAfterUse = true): bool
-    {
-        if (empty($this->getSessionData()[$this->name])) {
-            return false;
-        }
+		return $token;
+	}
 
-        $storedTokenData = $this->getSessionData()[$this->name];
+	/**
+	 * Verifies a submitted CSRF token against the stored token
+	 *
+	 * @param bool $expireAfterUse Whether to remove token after successful verification
+	 * @return bool True if token is valid and not expired, false otherwise
+	 */
+	public function verify(bool $expireAfterUse = true): bool
+	{
+		if (empty($this->getSessionData()[$this->name])) {
+			return false;
+		}
 
-        $request = new Request();
-        $token = $request($this->name, $request->csrf());
+		$storedTokenData = $this->getSessionData()[$this->name];
 
-        $isValid = hash_equals($storedTokenData['token'], $token);
+		$request = new Request();
+		$token = $request($this->name, $request->csrf());
 
-        // Check token age (expire after 1 hour)
-        $maxAge = 3600; // 1 hour
-        if ($isValid && time() - $storedTokenData['created'] > $maxAge) {
-            $isValid = false;
-        }
+		$isValid = hash_equals($storedTokenData['token'], $token);
 
-        // Remove token after successful use
-        if ($isValid && $expireAfterUse) {
-            $this->removeForm();
-        }
+		// Check token age (expire after 1 hour)
+		$maxAge = $this->tokenLifetime; // 1 hour
 
-        return $isValid;
-    }
+		if ($isValid && time() - $storedTokenData['created'] > $maxAge) {
+			$isValid = false;
+		}
 
-    /**
-     * Verifies a given CSRF token against the stored token
-     *
-     * @param string $token Token to verify
-     * @param bool $expireAfterUse Whether to remove token after successful verification
-     * @return bool True if token is valid and not expired, false otherwise
-     */
-    public function verifyToken(string $token, bool $expireAfterUse = true): bool
-    {
-        if (empty($this->getSessionData()[$this->name])) {
-            return false;
-        }
+		// Remove token after successful use
+		if ($isValid && $expireAfterUse) {
+			$this->removeForm();
+		}
 
-        $storedTokenData = $this->getSessionData()[$this->name];
-        $isValid = hash_equals($storedTokenData['token'], $token);
+		return $isValid;
+	}
 
-        // Check token age (expire after 1 hour)
-        $maxAge = 3600; // 1 hour
-        if ($isValid && time() - $storedTokenData['created'] > $maxAge) {
-            $isValid = false;
-        }
+	/**
+	 * Verifies a given CSRF token against the stored token
+	 *
+	 * @param string $token Token to verify
+	 * @param bool $expireAfterUse Whether to remove token after successful verification
+	 * @return bool True if token is valid and not expired, false otherwise
+	 */
+	public function verifyToken(string $token, bool $expireAfterUse = true): bool
+	{
+		if (empty($this->getSessionData()[$this->name])) {
+			return false;
+		}
 
-        // Remove token after successful use
-        if ($isValid && $expireAfterUse) {
-            $this->removeForm();
-        }
+		$storedTokenData = $this->getSessionData()[$this->name];
+		$isValid = hash_equals($storedTokenData['token'], $token);
 
-        return $isValid;
-    }
+		// Check token age (expire after 1 hour)
+		$maxAge = $this->tokenLifetime; // 1 hour
 
-    /**
-     * Retrieves the current CSRF token for a form, generating if needed
-     *
-     * @return string Existing or newly generated token
-     */
-    public function getToken(): string
-    {
-        if (empty($this->getSessionData()[$this->name])) {
-            return $this->generate();
-        }
-        return $this->getSessionData()[$this->name]['token'];
-    }
+		if ($isValid && time() - $storedTokenData['created'] > $maxAge) {
+			$isValid = false;
+		}
 
-    /**
-     * Generate hidden CSRF token fields for HTML forms
-     *
-     * @return string HTML containing two hidden inputs:
-     *               - csrf_token: The generated token
-     *               - csrf_form: The form identifier
-     */
-    public function getInput(): string
-    {
-        $token = $this->getToken();
+		// Remove token after successful use
+		if ($isValid && $expireAfterUse) {
+			$this->removeForm();
+		}
 
-        return sprintf(
-            '<input type="hidden" name="%s" value="%s">',
-            $this->validate($this->name),
-            $this->validate($token),
-        );
-    }
+		return $isValid;
+	}
 
-    /**
-     * Registers a new form token in the session storage
-     *
-     * @param array $tokenData Token data including token string and timestamp
-     * @return void
-     */
-    private function registerForm(array $tokenData): void
-    {
-        $sessionData = $this->getSessionData();
-        $sessionData[$this->name] = $tokenData;
-        $this->setSessionData($sessionData);
-    }
+	/**
+	 * Retrieves the current CSRF token for a form, generating if needed
+	 *
+	 * @return string Existing or newly generated token
+	 */
+	public function getToken(): string
+	{
+		if (empty($this->getSessionData()[$this->name])) {
+			return $this->generate();
+		}
+		return $this->getSessionData()[$this->name]['token'];
+	}
 
-    /**
-     * Removes a form token from session storage
-     *
-     * @return void
-     */
-    private function removeForm(): void
-    {
-        $sessionData = $this->getSessionData();
-        unset($sessionData[$this->name]);
+	/**
+	 * Generate hidden CSRF token fields for HTML forms
+	 *
+	 * @return string HTML containing two hidden inputs:
+	 *               - csrf_token: The generated token
+	 *               - csrf_form: The form identifier
+	 */
+	public function getInput(): string
+	{
+		$token = $this->getToken();
 
-        $this->setSessionData($sessionData);
-    }
+		return sprintf(
+			'<input type="hidden" name="%s" value="%s">',
+			$this->validate($this->name),
+			$this->validate($token),
+		);
+	}
 
-    /**
-     * Cleans up expired tokens and enforces maximum token limit
-     *
-     * Removes:
-     * - Tokens older than 1 hour (3600 seconds)
-     * - Oldest tokens when total exceeds maxTokens limit
-     */
-    private function cleanupTokens(): void
-    {
-        if (!Session::has($this->sessionKey)) {
-            return;
-        }
+	/**
+	 * Registers a new form token in the session storage
+	 *
+	 * @param array $tokenData Token data including token string and timestamp
+	 * @return void
+	 */
+	private function registerForm(array $tokenData): void
+	{
+		$sessionData = $this->getSessionData();
+		$sessionData[$this->name] = $tokenData;
+		$this->setSessionData($sessionData);
+	}
 
-        $tokens = $this->getSessionData();
+	/**
+	 * Removes a form token from session storage
+	 *
+	 * @return void
+	 */
+	private function removeForm(): void
+	{
+		$sessionData = $this->getSessionData();
+		unset($sessionData[$this->name]);
 
-        // Remove expired tokens (older than 1 hour)
-        $maxAge = 3600;
-        $currentTime = time();
+		$this->setSessionData($sessionData);
+	}
 
-        foreach ($tokens as $tokenData) {
-            if ($currentTime - $tokenData['created'] > $maxAge) {
-                $this->removeForm();
-            }
-        }
+	/**
+	 * Cleans up expired tokens and enforces maximum token limit
+	 *
+	 * Removes:
+	 * - Tokens older than 1 hour (3600 seconds)
+	 * - Oldest tokens when total exceeds maxTokens limit
+	 */
+	private function cleanupTokens(): void
+	{
+		if (!Session::has($this->sessionKey)) {
+			return;
+		}
 
-        // Limit total number of tokens
-        if (count($this->getSessionData()) > $this->maxTokens) {
-            $sessionData = $this->getSessionData();
+		$tokens = $this->getSessionData();
 
-            // Sort by creation time and remove oldest
-            uasort($sessionData, function ($a, $b) {
-                return $a['created'] - $b['created'];
-            });
+		// Remove expired tokens (older than 1 hour)
+		$maxAge = $this->tokenLifetime;
+		$currentTime = time();
 
-            $this->setSessionData(
-                array_slice($sessionData, $this->maxTokens, null, true),
-            );
-        }
-    }
+		foreach ($tokens as $tokenData) {
+			if ($currentTime - $tokenData['created'] > $maxAge) {
+				$this->removeForm();
+			}
+		}
 
-    private function getSessionData(): array
-    {
-        $s = SessionHandler::get($this->sessionKey);
-        return $s;
-    }
+		// Limit total number of tokens
+		if (count($this->getSessionData()) > $this->maxTokens) {
+			$sessionData = $this->getSessionData();
 
-    private function setSessionData(array $vv): void
-    {
-        SessionHandler::set($this->sessionKey, $vv);
-    }
+			// Sort by creation time and remove oldest
+			uasort($sessionData, function ($a, $b) {
+				return $a['created'] - $b['created'];
+			});
+
+			$this->setSessionData(
+				array_slice($sessionData, $this->maxTokens, null, true),
+			);
+		}
+	}
+
+	private function getSessionData(): array
+	{
+		$s = SessionHandler::get($this->sessionKey);
+		return $s;
+	}
+
+	private function setSessionData(array $vv): void
+	{
+		SessionHandler::set($this->sessionKey, $vv);
+	}
 }

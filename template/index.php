@@ -5,19 +5,20 @@ require_once '../vendor/autoload.php';
 use phpSPA\App;
 use phpSPA\Compression\Compressor;
 
-/* Initialize a new Application */
+/* Initialize a new Application  */
 $app = (new App(require 'Layout.php'))
-/* Attach and Run Application */
-->attach(require 'components/Login.php')
-->attach(require 'components/Timer.php')
-->attach(require 'components/Counter.php')
-->attach(require 'components/HomePage.php')
+	/* Attach and Run Application */
 
-->defaultTargetID('app')
-->defaultToCaseSensitive()
+	->attach(require 'components/Login.php')
+	->attach(require 'components/Timer.php')
+	->attach(require 'components/Counter.php')
+	->attach(require 'components/HomePage.php')
 
-->compression(Compressor::LEVEL_EXTREME, false)
+	->defaultTargetID('app')
+	->defaultToCaseSensitive()
 
-->cors();
+	->compression(Compressor::LEVEL_EXTREME, true)
+
+	->cors();
 
 $app->run();

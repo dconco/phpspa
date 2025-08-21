@@ -1,6 +1,6 @@
 # 🚀 phpSPA v1.1.5: Performance & Security Powerhouse
 
-*Released: August 20, 2025*
+_Released: August 20, 2025_
 
 ## 📋 Release Overview
 
@@ -33,11 +33,11 @@ Revolutionary compression system that delivers **15-84% size reduction** with in
 
 **Key Features:**
 
-- **Multi-level compression**: None, Basic, Aggressive, Extreme, Auto
-- **Automatic Gzip compression** when client supports it
-- **Smart JavaScript minification** with ASI (Automatic Semicolon Insertion)
-- **CSS optimization** with comment removal and whitespace reduction
-- **Environment auto-detection** for Development, Staging, Production
+-  **Multi-level compression**: None, Basic, Aggressive, Extreme, Auto
+-  **Automatic Gzip compression** when client supports it
+-  **Smart JavaScript minification** with ASI (Automatic Semicolon Insertion)
+-  **CSS optimization** with comment removal and whitespace reduction
+-  **Environment auto-detection** for Development, Staging, Production
 
 **Quick Start:**
 
@@ -73,25 +73,25 @@ Direct, secure function calls between PHP and JavaScript with 10x improved secur
 use function Component\useFunction;
 
 function Dashboard() {
-    $userApi = useFunction('getUserData');
-    
-    return <<<HTML
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const userData = await {$userApi(123)};
-            console.log('User:', userData);
-        });
-    </script>
-    HTML;
+   $userApi = useFunction('getUserData');
+
+   return <<<HTML
+   <script>
+      document.addEventListener('DOMContentLoaded', async () => {
+         const userData = await {$userApi(123)};
+         console.log('User:', userData);
+      });
+   </script>
+   HTML;
 }
 ```
 
 **Enhanced Features:**
 
-- **Token-based security** with automatic validation
-- **Namespace support** for organized function calls
-- **Async/await compatibility** for modern JavaScript
-- **Error handling** with try/catch support
+-  **Token-based security** with automatic validation
+-  **Namespace support** for organized function calls
+-  **Async/await compatibility** for modern JavaScript
+-  **Error handling** with try/catch support
 
 📚 [**Integration Guide**](https://phpspa.readthedocs.io/en/latest/v1.1.5/2-php-js-integration/)
 
@@ -106,10 +106,11 @@ Object-oriented component development with namespace support.
 namespace Components\UI;
 
 class UserCard {
-    public function __render($props) {
-        $name = $props['name'] ?? 'Unknown';
-        return "<div class='user-card'><h3>{$name}</h3></div>";
-    }
+   public function __render($name = "Unknown") {
+      return "<div class='user-card'>
+         <h3>{$name}</h3>
+      </div>";
+   }
 }
 
 // Use with namespace syntax
@@ -118,10 +119,10 @@ echo '<Components.UI.UserCard name="John Doe" />';
 
 **Features:**
 
-- **`__render` method** requirement for standardized interface
-- **Full namespace support** (`<Namespace.Class />`)
-- **Props handling** with validation capabilities
-- **Backward compatibility** with function components
+-  **`__render` method** requirement for standardized interface
+-  **Full namespace support** (`<Namespace.Class />`)
+-  **Props handling** with validation capabilities
+-  **Backward compatibility** with function components
 
 📚 [**Class Components Guide**](https://phpspa.readthedocs.io/en/latest/v1.1.5/3-class-components/)
 
@@ -146,11 +147,11 @@ $app->run();
 
 ```php
 $app = (new App(require 'Layout.php'))
-    ->attach(require 'components/Login.php')
-    ->defaultTargetID('app')
-    ->compression(Compressor::LEVEL_AUTO, true)
-    ->cors()
-    ->run();
+   ->attach(require 'components/Login.php')
+   ->defaultTargetID('app')
+   ->compression(Compressor::LEVEL_AUTO, true)
+   ->cors()
+   ->run();
 ```
 
 📚 [**Method Chaining Guide**](https://phpspa.readthedocs.io/en/latest/v1.1.5/4-method-chaining/)
@@ -164,26 +165,26 @@ Built-in security with automatic token management and timing-safe validation.
 ```php
 // In your form
 <form method="POST" action="/contact">
-    <Component.Csrf name="contact-form" />
-    <input type="text" name="name" required>
-    <button type="submit">Submit</button>
+   <Component.Csrf name="contact-form" />
+   <input type="text" name="name" required>
+   <button type="submit">Submit</button>
 </form>
 
 // Verify submission
 use Component\Csrf;
 $csrf = new Csrf("contact-form");
 if (!$csrf->verify()) {
-    die('Invalid CSRF token!');
+   die('Invalid CSRF token!');
 }
 ```
 
 **Security Features:**
 
-- **Cryptographically secure** token generation
-- **Automatic expiration** (1 hour default)
-- **Timing-safe validation** prevents timing attacks
-- **Multiple named tokens** with automatic cleanup
-- **Token rotation** for enhanced security
+-  **Cryptographically secure** token generation
+-  **Automatic expiration** (1 hour default)
+-  **Timing-safe validation** prevents timing attacks
+-  **Multiple named tokens** with automatic cleanup
+-  **Token rotation** for enhanced security
 
 📚 [**CSRF Protection Guide**](https://phpspa.readthedocs.io/en/latest/v1.1.5/5-csrf-protection/)
 
@@ -193,8 +194,8 @@ if (!$csrf->verify()) {
 
 ### Component Rendering
 
-- **Fixed nested component rendering** - Components now properly process their children before being passed to parent components
-- **Improved data flow** - Changed from reference-based to return-value based processing for more reliable component resolution
+-  **Fixed nested component rendering** - Components now properly process their children before being passed to parent components
+-  **Improved data flow** - Changed from reference-based to return-value based processing for more reliable component resolution
 
 ---
 
@@ -217,12 +218,12 @@ use function Component\useFunction;
 ```html
 <!-- OLD: data-type attributes required -->
 <script data-type="phpspa/script">
-    // Your code
+	// Your code
 </script>
 
 <!-- NEW: data-type no longer needed -->
 <script>
-    // Your code
+	// Your code
 </script>
 ```
 
@@ -242,16 +243,16 @@ return str_replace('__CONTENT__', $content, $layout);
 
 ### Compression Benefits
 
-- **Up to 84% size reduction** with intelligent compression
-- **Automatic environment detection** for optimal settings
-- **Gzip compression** when supported by client
-- **Smart JavaScript minification** preserves functionality
+-  **Up to 84% size reduction** with intelligent compression
+-  **Automatic environment detection** for optimal settings
+-  **Gzip compression** when supported by client
+-  **Smart JavaScript minification** preserves functionality
 
 ### JavaScript Engine Updates
 
-- **Faster component rendering** with optimized execution flow
-- **Improved memory management** for better performance
-- **Enhanced script execution** without data-type requirements
+-  **Faster component rendering** with optimized execution flow
+-  **Improved memory management** for better performance
+-  **Enhanced script execution** without data-type requirements
 
 ---
 
@@ -259,16 +260,16 @@ return str_replace('__CONTENT__', $content, $layout);
 
 ### CSRF Protection
 
-- **Multiple named tokens** with automatic cleanup
-- **Built-in expiration** prevents token reuse attacks
-- **Timing-safe validation** prevents timing attacks
-- **Automatic rotation** enhances security
+-  **Multiple named tokens** with automatic cleanup
+-  **Built-in expiration** prevents token reuse attacks
+-  **Timing-safe validation** prevents timing attacks
+-  **Automatic rotation** enhances security
 
 ### Function Call Security
 
-- **10x more secure** `__call()` implementation
-- **Token-based authentication** for function access
-- **Protected namespace access** prevents unauthorized calls
+-  **10x more secure** `__call()` implementation
+-  **Token-based authentication** for function access
+-  **Protected namespace access** prevents unauthorized calls
 
 ---
 
@@ -276,16 +277,16 @@ return str_replace('__CONTENT__', $content, $layout);
 
 ### New Test Suite
 
-- **`tests/Test.php`** - Unified CLI-only test runner
-- **`tests/HtmlCompressionTest.php`** - Compression effectiveness tests
-- **`tests/JsCompressionTest.php`** - JavaScript ASI safety tests
-- **CI/CD integration** with GitHub Actions workflow
+-  **`tests/Test.php`** - Unified CLI-only test runner
+-  **`tests/HtmlCompressionTest.php`** - Compression effectiveness tests
+-  **`tests/JsCompressionTest.php`** - JavaScript ASI safety tests
+-  **CI/CD integration** with GitHub Actions workflow
 
 ### Quality Assurance
 
-- **Comprehensive documentation** with `@see` annotations
-- **Code examples** for all new features
-- **Migration guides** for smooth upgrades
+-  **Comprehensive documentation** with `@see` annotations
+-  **Code examples** for all new features
+-  **Migration guides** for smooth upgrades
 
 ---
 
@@ -301,23 +302,23 @@ use phpSPA\App;
 use phpSPA\Compression\Compressor;
 
 $app = (new App(require 'Layout.php'))
-    ->compression(Compressor::LEVEL_AUTO, true)
-    ->attach(require 'components/Dashboard.php')
-    ->defaultTargetID('app')
-    ->run();
+   ->compression(Compressor::LEVEL_AUTO, true)
+   ->attach(require 'components/Dashboard.php')
+   ->defaultTargetID('app')
+   ->run();
 ```
 
 ### With CSRF Protection
 
 ```php
 function ContactForm() {
-    return <<<HTML
-    <form method="POST" action="/contact">
-        <Component.Csrf name="contact-form" />
-        <input type="text" name="name" required>
-        <button type="submit">Send</button>
-    </form>
-    HTML;
+   return <<<HTML
+   <form method="POST" action="/contact">
+      <Component.Csrf name="contact-form" />
+      <input type="text" name="name" required>
+      <button type="submit">Send</button>
+   </form>
+   HTML;
 }
 ```
 
@@ -327,13 +328,13 @@ function ContactForm() {
 
 ### Complete v1.1.5 Guides
 
-- 🎉 [**Overview & Getting Started**](https://phpspa.readthedocs.io/en/latest/v1.1.5/)
-- 🗜️ [**Compression System**](https://phpspa.readthedocs.io/en/latest/v1.1.5/1-compression-system/)
-- ⚡ [**PHP-JS Integration**](https://phpspa.readthedocs.io/en/latest/v1.1.5/2-php-js-integration/)
-- 🏗️ [**Class Components**](https://phpspa.readthedocs.io/en/latest/v1.1.5/3-class-components/)
-- 🔗 [**Method Chaining**](https://phpspa.readthedocs.io/en/latest/v1.1.5/4-method-chaining/)
-- 🛡️ [**CSRF Protection**](https://phpspa.readthedocs.io/en/latest/v1.1.5/5-csrf-protection/)
-- 📋 [**Migration Guide**](https://phpspa.readthedocs.io/en/latest/v1.1.5/6-migration-guide/)
+-  🎉 [**Overview & Getting Started**](https://phpspa.readthedocs.io/en/latest/v1.1.5/)
+-  🗜️ [**Compression System**](https://phpspa.readthedocs.io/en/latest/v1.1.5/1-compression-system/)
+-  ⚡ [**PHP-JS Integration**](https://phpspa.readthedocs.io/en/latest/v1.1.5/2-php-js-integration/)
+-  🏗️ [**Class Components**](https://phpspa.readthedocs.io/en/latest/v1.1.5/3-class-components/)
+-  🔗 [**Method Chaining**](https://phpspa.readthedocs.io/en/latest/v1.1.5/4-method-chaining/)
+-  🛡️ [**CSRF Protection**](https://phpspa.readthedocs.io/en/latest/v1.1.5/5-csrf-protection/)
+-  📋 [**Migration Guide**](https://phpspa.readthedocs.io/en/latest/v1.1.5/6-migration-guide/)
 
 ---
 
@@ -366,10 +367,10 @@ find . -name "*.php" -exec sed -i 's/<script data-type="phpspa\/script">/<script
 
 ### Upcoming Features
 
-- 🧪 **Enhanced testing utilities** for component testing
-- 🌐 **Built-in i18n tools** for internationalization
-- 📊 **Performance monitoring** dashboard
-- 🔌 **Plugin system** for extensibility
+-  🧪 **Enhanced testing utilities** for component testing
+-  🌐 **Built-in i18n tools** for internationalization
+-  📊 **Performance monitoring** dashboard
+-  🔌 **Plugin system** for extensibility
 
 ---
 
@@ -377,11 +378,11 @@ find . -name "*.php" -exec sed -i 's/<script data-type="phpspa\/script">/<script
 
 ### Get Help
 
-- 📚 [**Documentation**](https://phpspa.readthedocs.io)
-- 🐛 [**GitHub Issues**](https://github.com/dconco/phpspa/issues)
-- 💬 [**Discord Community**](https://discord.gg/FeVQs73C)
-- 🎬 [**YouTube Tutorials**](https://youtube.com/@daveconco)
-- 🐦 [**Twitter Updates**](https://x.com/dave_conco)
+-  📚 [**Documentation**](https://phpspa.readthedocs.io)
+-  🐛 [**GitHub Issues**](https://github.com/dconco/phpspa/issues)
+-  💬 [**Discord Community**](https://discord.gg/FeVQs73C)
+-  🎬 [**YouTube Tutorials**](https://youtube.com/@daveconco)
+-  🐦 [**Twitter Updates**](https://x.com/dave_conco)
 
 ### Contributing
 
@@ -401,8 +402,8 @@ composer update dconco/phpspa
 
 **Requirements:**
 
-- PHP 8.2+
-- [`dconco/phpspa-js`](https://github.com/dconco/phpspa-js) v1.1.7+
+-  PHP 8.2+
+-  [`dconco/phpspa-js`](https://github.com/dconco/phpspa-js) v1.1.7+
 
 ---
 
@@ -412,6 +413,6 @@ Special thanks to the phpSPA community for feedback, testing, and contributions 
 
 ---
 
-*Built with ❤️ by [Dave Conco](https://github.com/dconco)*
+_Built with ❤️ by [Dave Conco](https://github.com/dconco)_
 
 **Full Changelog**: [`v1.1.4...v1.1.5`](https://github.com/dconco/phpspa/compare/v1.1.4...v1.1.5)

@@ -61,10 +61,10 @@ Scripts no longer require `data-type="phpspa/script"` attributes.
 
 ```html
 <script data-type="phpspa/script">
-    // Your component script
-    htmlElement.onclick = () => {
-        console.log('Clicked');
-    };
+	// Your component script
+	htmlElement.onclick = () => {
+		console.log('Clicked')
+	}
 </script>
 ```
 
@@ -72,10 +72,10 @@ Scripts no longer require `data-type="phpspa/script"` attributes.
 
 ```html
 <script>
-    // Your component script - data-type no longer needed
-    htmlElement.onclick = () => {
-        console.log('Clicked');
-    };
+	// Your component script - data-type no longer needed
+	htmlElement.onclick = () => {
+		console.log('Clicked')
+	}
 </script>
 ```
 
@@ -230,7 +230,7 @@ use function Component\useFunction;
 
 function MyComponent() {
     $api = useFunction('myFunction');
-    
+
     return <<<HTML
     <button onclick="callPhpFunction()">Click me</button>
     <script>
@@ -251,8 +251,7 @@ Convert function components to classes for better organization:
 
 ```php
 <?php
-function UserCard($props) {
-    $name = $props['name'] ?? 'Unknown';
+function UserCard($name = 'Unknown') {
     return "<div class='user-card'><h3>{$name}</h3></div>";
 }
 ```
@@ -262,8 +261,7 @@ function UserCard($props) {
 ```php
 <?php
 class UserCard {
-    public function __render($props) {
-        $name = $props['name'] ?? 'Unknown';
+    public function __render($name = 'Unknown') {
         return "<div class='user-card'><h3>{$name}</h3></div>";
     }
 }
@@ -299,6 +297,7 @@ function ContactForm() {
     return <<<HTML
     <form method="POST" action="/contact">
         <Component.Csrf name="contact-form" />
+
         <input type="text" name="name" required>
         <input type="email" name="email" required>
         <button type="submit">Submit</button>
@@ -309,7 +308,7 @@ function ContactForm() {
 // Handle submission
 use Component\Csrf;
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($request->method() === 'POST') {
     $csrf = new Csrf("contact-form");
     if (!$csrf->verify()) {
         die('Invalid CSRF token!');
@@ -371,7 +370,7 @@ function Layout($content) {
     </body>
     </html>
     HTML;
-    
+
     return str_replace('__CONTENT__', $content, $html);
 }
 
@@ -440,13 +439,13 @@ $app->defaultTargetID('app'); // or whatever your container ID is
 // Make sure your scripts are valid JavaScript
 // OLD (might have worked with data-type)
 htmlElement.onclick = () => {
-    someFunction()  // Missing semicolon
+	someFunction() // Missing semicolon
 }
 
 // NEW (must be valid JavaScript)
 htmlElement.onclick = () => {
-    someFunction();  // Add semicolon
-};
+	someFunction() // Add semicolon
+}
 ```
 
 ### Issue 3: Function Call Errors
@@ -557,11 +556,11 @@ php test-migration.php
 
 ## 📚 Additional Resources
 
-- [Compression System Guide](./1-compression-system.md)
-- [PHP-JS Integration Guide](./2-php-js-integration.md)
-- [Class Components Guide](./3-class-components.md)
-- [Method Chaining Guide](./4-method-chaining.md)
-- [CSRF Protection Guide](./5-csrf-protection.md)
+-  [Compression System Guide](./1-compression-system.md)
+-  [PHP-JS Integration Guide](./2-php-js-integration.md)
+-  [Class Components Guide](./3-class-components.md)
+-  [Method Chaining Guide](./4-method-chaining.md)
+-  [CSRF Protection Guide](./5-csrf-protection.md)
 
 ## 🆘 Getting Help
 
@@ -569,9 +568,9 @@ If you encounter issues during migration:
 
 1. **Check Error Logs**: Look for specific error messages
 2. **Review Documentation**: Check the feature-specific guides
-3. **Community Support**: 
-   - [GitHub Issues](https://github.com/dconco/phpspa/issues)
-   - [Discord Community](https://discord.gg/FeVQs73C)
+3. **Community Support**:
+   -  [GitHub Issues](https://github.com/dconco/phpspa/issues)
+   -  [Discord Community](https://discord.gg/FeVQs73C)
 4. **Gradual Migration**: Migrate one component at a time to isolate issues
 
 ## 🎯 Post-Migration Optimization
@@ -593,7 +592,7 @@ For better organization and reusability:
 <?php
 // Consider converting complex function components to classes
 class ComplexComponent {
-    public function __render($props) {
+    public function __render(...$props) {
         // Better organization for complex logic
     }
 }

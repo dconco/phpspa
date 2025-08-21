@@ -6,11 +6,11 @@ phpSPA v1.1.5 introduces enhanced PHP-JavaScript integration with the new `useFu
 
 ## Key Features
 
-- **Direct Function Calls**: Call PHP functions from JavaScript seamlessly
-- **Enhanced Security**: 10x more secure `__call()` implementation
-- **Token-Based Authentication**: Secure function access control
-- **Namespace Support**: Full namespace compatibility
-- **Async Support**: Promise-based JavaScript integration
+-  **Direct Function Calls**: Call PHP functions from JavaScript seamlessly
+-  **Enhanced Security**: 10x more secure `__call()` implementation
+-  **Token-Based Authentication**: Secure function access control
+-  **Namespace Support**: Full namespace compatibility
+-  **Async Support**: Promise-based JavaScript integration
 
 ## The useFunction() Utility
 
@@ -28,7 +28,7 @@ function Login($args) {
 // In your component
 function LoginComponent() {
     $loginApi = useFunction('Login');
-    
+
     return <<<HTML
     <button id="login-btn">Login</button>
     <script>
@@ -56,7 +56,7 @@ use function Component\useFunction;
 
 function AuthComponent() {
     $authApi = useFunction('\\MyApp\\Auth\\authenticate');
-    
+
     return <<<HTML
     <form id="auth-form">
         <input type="text" name="username" />
@@ -68,7 +68,7 @@ function AuthComponent() {
             e.preventDefault();
             const formData = new FormData(e.target);
             const credentials = Object.fromEntries(formData);
-            
+
             const result = await {$authApi(credentials)};
             if (result.status === 'success') {
                 localStorage.setItem('token', result.token);
@@ -80,7 +80,7 @@ function AuthComponent() {
 }
 ```
 
-## Enhanced __call() Method
+## Enhanced \_\_call() Method
 
 ### Traditional Method
 
@@ -92,14 +92,14 @@ function fetchUserData($userId) {
 
 function UserProfile() {
     $userApi = useFunction('fetchUserData');
-    
+
     return <<<HTML
     <div id="user-profile"></div>
     <script>
         // Traditional __call method
         document.addEventListener('DOMContentLoaded', () => {
             __call("{$userApi->token}", 123).then(userData => {
-                document.getElementById('user-profile').innerHTML = 
+                document.getElementById('user-profile').innerHTML =
                     `<h3>${userData.name}</h3><p>ID: ${userData.id}</p>`;
             });
         });
@@ -114,13 +114,13 @@ function UserProfile() {
 <?php
 function UserProfile() {
     $userApi = useFunction('fetchUserData');
-    
+
     return <<<HTML
     <div id="user-profile"></div>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const userData = await {$userApi(123)};
-            document.getElementById('user-profile').innerHTML = 
+            document.getElementById('user-profile').innerHTML =
                 `<h3>${userData.name}</h3><p>ID: ${userData.id}</p>`;
         });
     </script>
@@ -146,8 +146,8 @@ The system automatically validates tokens on each call:
 
 ```javascript
 // This is handled automatically
-__call("secure-token", "arguments"); // ✅ Valid
-__call("invalid-token", "arguments"); // ❌ Rejected
+__call('secure-token', 'arguments') // ✅ Valid
+__call('invalid-token', 'arguments') // ❌ Rejected
 ```
 
 ### Namespace Protection
@@ -183,7 +183,7 @@ function riskyOperation($data) {
 
 function ErrorHandlingComponent() {
     $api = useFunction('riskyOperation');
-    
+
     return <<<HTML
     <button id="test-btn">Test Operation</button>
     <div id="result"></div>
@@ -211,7 +211,7 @@ function getOrders($userId) { return ['orders' => [1, 2, 3]]; }
 function DashboardComponent() {
     $userApi = useFunction('getUser');
     $ordersApi = useFunction('getOrders');
-    
+
     return <<<HTML
     <div id="dashboard"></div>
     <script>
@@ -221,7 +221,7 @@ function DashboardComponent() {
                     {$userApi(1)},
                     {$ordersApi(1)}
                 ]);
-                
+
                 document.getElementById('dashboard').innerHTML = `
                     <h2>Welcome ${user.name}</h2>
                     <p>You have ${orders.orders.length} orders</p>
@@ -243,7 +243,7 @@ class UserService {
     public function getProfile($userId) {
         return ['id' => $userId, 'profile' => 'data'];
     }
-    
+
     public static function getStats() {
         return ['total_users' => 1000];
     }
@@ -253,14 +253,14 @@ function UserComponent() {
     $service = new UserService();
     $profileApi = useFunction([$service, 'getProfile']);
     $statsApi = useFunction(['UserService', 'getStats']);
-    
+
     return <<<HTML
     <div id="user-section"></div>
     <script>
         (async () => {
             const profile = await {$profileApi(123)};
             const stats = await {$statsApi()};
-            
+
             document.getElementById('user-section').innerHTML = `
                 <p>User: ${profile.id}</p>
                 <p>Total Users: ${stats.total_users}</p>
@@ -282,15 +282,15 @@ $cache = [];
 function expensiveOperation($data) {
     global $cache;
     $key = md5(serialize($data));
-    
+
     if (isset($cache[$key])) {
         return $cache[$key];
     }
-    
+
     // Expensive computation
     $result = performComplexCalculation($data);
     $cache[$key] = $result;
-    
+
     return $result;
 }
 ```
@@ -309,7 +309,7 @@ function processBatch($operations) {
 
 function BatchComponent() {
     $batchApi = useFunction('processBatch');
-    
+
     return <<<HTML
     <script>
         // Instead of multiple individual calls
@@ -318,7 +318,7 @@ function BatchComponent() {
             {type: 'update', data: {...}},
             {type: 'delete', data: {...}}
         ];
-        
+
         const results = await {$batchApi($operations)};
     </script>
     HTML;
@@ -349,11 +349,11 @@ function updateProfile($userId, $data) {
     if (!is_numeric($userId) || $userId <= 0) {
         throw new InvalidArgumentException('Invalid user ID');
     }
-    
+
     if (!is_array($data) || empty($data)) {
         throw new InvalidArgumentException('Invalid profile data');
     }
-    
+
     // Process update
     return updateUserProfile($userId, $data);
 }
@@ -392,7 +392,7 @@ function safeOperation($data) {
     } catch (Exception $e) {
         // Log error
         error_log("Operation failed: " . $e->getMessage());
-        
+
         // Return user-friendly error
         return ['error' => 'Operation failed. Please try again.'];
     }
@@ -404,14 +404,16 @@ function safeOperation($data) {
 ### From v1.1.4 to v1.1.5
 
 **Old Method:**
+
 ```javascript
 // Manual __call usage
 phpspa.__call('functionName', arguments).then(result => {
-    // Handle result
-});
+	// Handle result
+})
 ```
 
 **New Method:**
+
 ```php
 <?php
 $api = useFunction('functionName');
@@ -425,35 +427,15 @@ $api = useFunction('functionName');
 ### Namespace Updates
 
 **Before:**
+
 ```php
 use phpSPA\Component\useFunction;
 ```
 
 **After:**
+
 ```php
 use function Component\useFunction;
-```
-
-## Debugging
-
-### Enable Debug Mode
-
-```php
-<?php
-// Enable function call debugging
-define('PHPSPA_DEBUG_FUNCTIONS', true);
-
-$api = useFunction('myFunction');
-// Will output debug information to browser console
-```
-
-### Token Inspection
-
-```php
-<?php
-$api = useFunction('myFunction');
-echo "Token: " . $api->token; // For debugging only
-echo "Function: " . $api->function; // Function name
 ```
 
 ## Security Considerations
@@ -483,11 +465,11 @@ function updateUser($userId, $data) {
         'name' => FILTER_SANITIZE_STRING,
         'email' => FILTER_VALIDATE_EMAIL
     ]);
-    
+
     if (!$userId || !$data) {
         throw new InvalidArgumentException('Invalid input');
     }
-    
+
     // Proceed with update
 }
 ```
@@ -500,7 +482,7 @@ function protectedFunction($data) {
     if (!isUserAuthenticated()) {
         throw new UnauthorizedException('Access denied');
     }
-    
+
     // Function logic
 }
 ```
