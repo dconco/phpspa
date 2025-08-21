@@ -6,11 +6,11 @@ phpSPA v1.1.5 introduces method chaining support for the `App` class, enabling f
 
 ## Key Features
 
-- **Fluent API**: Chain multiple configuration methods
-- **Improved Readability**: More expressive application setup
-- **Backward Compatibility**: Existing code continues to work
-- **Complete Coverage**: All major App methods support chaining
-- **Runtime Configuration**: Chain configuration with execution
+-  **Fluent API**: Chain multiple configuration methods
+-  **Improved Readability**: More expressive application setup
+-  **Backward Compatibility**: Existing code continues to work
+-  **Complete Coverage**: All major App methods support chaining
+-  **Runtime Configuration**: Chain configuration with execution
 
 ## Basic Method Chaining
 
@@ -56,6 +56,7 @@ $app = (new App(require 'Layout.php'))
 ### Core Configuration
 
 #### attach()
+
 Attach components to the application:
 
 ```php
@@ -68,6 +69,7 @@ $app = (new App('layout'))
 ```
 
 #### defaultTargetID()
+
 Set the default target ID for component rendering:
 
 ```php
@@ -79,6 +81,7 @@ $app = (new App('layout'))
 ```
 
 #### defaultToCaseSensitive()
+
 Enable case-sensitive routing:
 
 ```php
@@ -92,6 +95,7 @@ $app = (new App('layout'))
 ### Performance Methods
 
 #### compression()
+
 Configure HTML compression:
 
 ```php
@@ -105,6 +109,7 @@ $app = (new App('layout'))
 ```
 
 #### compressionEnvironment()
+
 Set compression based on environment:
 
 ```php
@@ -120,6 +125,7 @@ $app = (new App('layout'))
 ### Security Methods
 
 #### cors()
+
 Enable CORS configuration:
 
 ```php
@@ -130,19 +136,20 @@ $app = (new App('layout'))
     ->run();
 ```
 
-#### corsConfig()
+#### cors(config[])
+
 Custom CORS configuration:
 
 ```php
 <?php
 $corsConfig = [
-    'origin' => ['https://example.com'],
-    'methods' => ['GET', 'POST'],
-    'headers' => ['Content-Type', 'Authorization']
+    'allow_origin' => ['https://example.com'],
+    'allow_methods' => ['GET', 'POST'],
+    'allow_headers' => ['Content-Type', 'Authorization']
 ];
 
 $app = (new App('layout'))
-    ->corsConfig($corsConfig)
+    ->cors($corsConfig)
     ->attach(require 'components/App.php')
     ->run();
 ```
@@ -180,22 +187,22 @@ $app = $app
 <?php
 function configureApp($app, $config) {
     $app = $app->defaultTargetID($config['target_id']);
-    
+
     if ($config['compression']) {
         $app = $app->compression(
-            $config['compression_level'], 
+            $config['compression_level'],
             $config['gzip']
         );
     }
-    
+
     if ($config['cors']) {
         $app = $app->cors();
     }
-    
+
     if ($config['case_sensitive']) {
         $app = $app->defaultToCaseSensitive();
     }
-    
+
     return $app;
 }
 
@@ -249,7 +256,7 @@ $app->defaultTargetID('app')->run();
 <?php
 class AppFactory {
     private $config;
-    
+
     public function __construct($config = []) {
         $this->config = array_merge([
             'layout' => 'Layout.php',
@@ -262,33 +269,33 @@ class AppFactory {
             'components' => []
         ], $config);
     }
-    
+
     public function create() {
         $app = new App(require $this->config['layout']);
-        
+
         // Apply compression
         if ($this->config['compression']) {
             $app = $app->compression(
-                $this->config['compression_level'], 
+                $this->config['compression_level'],
                 $this->config['gzip']
             );
         }
-        
+
         // Apply CORS
         if ($this->config['cors']) {
             $app = $app->cors();
         }
-        
+
         // Apply case sensitivity
         if ($this->config['case_sensitive']) {
             $app = $app->defaultToCaseSensitive();
         }
-        
+
         // Attach components
         foreach ($this->config['components'] as $component) {
             $app = $app->attach(require $component);
         }
-        
+
         return $app->defaultTargetID($this->config['target_id']);
     }
 }
@@ -321,14 +328,14 @@ class EnvironmentAppFactory {
             ->attachMany($components)
             ->defaultTargetID('app');
     }
-    
+
     public static function development($components = []) {
         return (new App(require 'Layout.php'))
             ->compression(Compressor::LEVEL_NONE)
             ->attachMany($components)
             ->defaultTargetID('app');
     }
-    
+
     public static function staging($components = []) {
         return (new App(require 'Layout.php'))
             ->compression(Compressor::LEVEL_BASIC)
@@ -356,12 +363,15 @@ $app->run();
 ## Helper Methods for Chaining
 
 ### attachMany()
+
 Attach multiple components at once:
 
 ```php
 <?php
+use phpSPA\App;
+
 // Implementation example (if not built-in)
-class App {
+class AppComponent extends App {
     public function attachMany($components) {
         foreach ($components as $component) {
             $this->attach(require $component);
@@ -377,35 +387,38 @@ $components = [
     'components/Contact.php'
 ];
 
-$app = (new App('layout'))
+$app = (new AppComponent('layout'))
     ->attachMany($components)
     ->defaultTargetID('app')
     ->run();
 ```
 
 ### configureFromArray()
+
 Configure app from array:
 
 ```php
 <?php
-class App {
+use phpSPA\App;
+
+class AppComponent extends App {
     public function configureFromArray($config) {
         if (isset($config['target_id'])) {
             $this->defaultTargetID($config['target_id']);
         }
-        
+
         if (isset($config['compression'])) {
             $this->compression($config['compression'], $config['gzip'] ?? false);
         }
-        
+
         if (isset($config['cors']) && $config['cors']) {
             $this->cors();
         }
-        
+
         if (isset($config['case_sensitive']) && $config['case_sensitive']) {
             $this->defaultToCaseSensitive();
         }
-        
+
         return $this;
     }
 }
@@ -419,7 +432,7 @@ $config = [
     'case_sensitive' => false
 ];
 
-$app = (new App('layout'))
+$app = (new AppComponent('layout'))
     ->configureFromArray($config)
     ->attach(require 'components/App.php')
     ->run();
@@ -435,15 +448,15 @@ $app = (new App('layout'))
 $app = (new App('layout'))
     // Performance configurations
     ->compression(Compressor::LEVEL_AUTO, true)
-    
+
     // Security configurations
     ->cors()
     ->defaultToCaseSensitive()
-    
+
     // Component configurations
     ->attach(require 'components/App.php')
     ->defaultTargetID('app')
-    
+
     // Execute
     ->run();
 ```
@@ -493,11 +506,11 @@ Always ensure methods return the App instance:
 
 ```php
 <?php
-class App {
+class AppComponent extends App {
     public function customMethod($param) {
         // Do something with $param
         $this->someProperty = $param;
-        
+
         // Always return $this for chaining
         return $this;
     }
@@ -523,6 +536,7 @@ $app = (new App('layout'))
 ### From Traditional to Chaining
 
 **Before:**
+
 ```php
 <?php
 $app = new App(require 'Layout.php');
@@ -534,6 +548,7 @@ $app->run();
 ```
 
 **After:**
+
 ```php
 <?php
 $app = (new App(require 'Layout.php'))

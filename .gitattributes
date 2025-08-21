@@ -6,3 +6,5 @@ mkdocs.yml export-ignore
 requirements.txt export-ignore
 .readthedocs.yaml export-ignore
 TODO.md export-ignore
+.gitignore export-ignore
+.gitattributes export-ignore

@@ -6,12 +6,12 @@ phpSPA v1.1.5 introduces a comprehensive CSRF (Cross-Site Request Forgery) prote
 
 ## Key Features
 
-- **Multiple Named Tokens**: Support for different forms with unique tokens
-- **Automatic Cleanup**: Old tokens are automatically removed
-- **Built-in Expiration**: Tokens expire after 1 hour by default
-- **Timing-Safe Validation**: Prevents timing attacks
-- **Token Rotation**: Automatic token regeneration
-- **Reuse Prevention**: Tokens can be configured to expire after use
+-  **Multiple Named Tokens**: Support for different forms with unique tokens
+-  **Automatic Cleanup**: Old tokens are automatically removed
+-  **Built-in Expiration**: Tokens expire after 1 hour by default
+-  **Timing-Safe Validation**: Prevents timing attacks
+-  **Token Rotation**: Automatic token regeneration
+-  **Reuse Prevention**: Tokens can be configured to expire after use
 
 ## Quick Start
 
@@ -41,16 +41,16 @@ use Component\Csrf;
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $csrf = new Csrf("contact-form");
-    
+
     if (!$csrf->verify()) {
         die('Invalid CSRF token!');
     }
-    
+
     // Process form data safely
     $name = $_POST['name'];
     $email = $_POST['email'];
     $message = $_POST['message'];
-    
+
     // Handle contact form submission
     processContactForm($name, $email, $message);
 }
@@ -67,17 +67,9 @@ echo '<Component.Csrf name="user-form" />';
 ```
 
 This generates HTML like:
+
 ```html
-<input type="hidden" name="csrf_token" value="abc123def456...">
-<input type="hidden" name="csrf_name" value="user-form">
-```
-
-### With Custom Attributes
-
-```php
-<?php
-// CSRF component with custom attributes
-echo '<Component.Csrf name="login-form" class="csrf-input" data-form="login" />';
+<input type="hidden" name="user-form" value="abc123def456..." />
 ```
 
 ### Multiple Forms on Same Page
@@ -93,7 +85,7 @@ function LoginAndRegisterPage() {
             <input type="password" name="password" required>
             <button type="submit">Login</button>
         </form>
-        
+
         <form id="register-form" method="POST" action="/register">
             <Component.Csrf name="register-form" />
             <input type="text" name="username" required>
@@ -126,7 +118,7 @@ $csrf = new Csrf("form-name");
 $token = $csrf->generate();
 echo "Token: " . $token;
 
-// Token is automatically stored in session
+// Token is automatically stored in session (avoid generating multiple tokens)
 ```
 
 ### Token Verification
@@ -146,23 +138,29 @@ if ($csrf->verify(false)) {
 }
 ```
 
+### Manual Verification
+
+```php
+<?php
+// Verify token (default: expire after use)
+if ($csrf->verifyToken($savedToken)) {
+    echo "Token is valid!";
+} else {
+    echo "Invalid or expired token!";
+}
+
+// Verify token but don't expire it
+if ($csrf->verifyToken($savedToken, false)) {
+    echo "Token is valid and can be reused!";
+}
+```
+
 ### Token Management
 
 ```php
 <?php
-// Check if token exists
-if ($csrf->hasToken()) {
-    echo "Token exists for this form";
-}
-
-// Get current token without generating new one
+// Get current token without generating new one and if it doesn't exist, it generates new one
 $currentToken = $csrf->getToken();
-
-// Manually expire token
-$csrf->expireToken();
-
-// Clear all tokens for this form name
-$csrf->clearTokens();
 ```
 
 ## Advanced Usage
@@ -174,7 +172,7 @@ $csrf->clearTokens();
 class CustomCsrf extends Csrf {
     protected $tokenLifetime = 3600; // 1 hour (default)
     protected $maxTokens = 10;       // Max tokens per form name
-    
+
     // Custom expiration time (in seconds)
     public function setTokenLifetime($seconds) {
         $this->tokenLifetime = $seconds;
@@ -198,27 +196,26 @@ if (!$csrf->verify()) {
 function AjaxForm() {
     $csrf = new Csrf("ajax-form");
     $token = $csrf->generate();
-    
+
     return <<<HTML
     <form id="ajax-form">
         <input type="text" name="data" required>
         <button type="submit">Submit</button>
     </form>
-    
+
     <script>
         document.getElementById('ajax-form').onsubmit = async (e) => {
             e.preventDefault();
-            
+
             const formData = new FormData(e.target);
-            formData.append('csrf_token', '{$token}');
-            formData.append('csrf_name', 'ajax-form');
-            
+            formData.append('ajax-form', '{$token}');
+
             try {
                 const response = await fetch('/api/submit', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 if (response.ok) {
                     console.log('Form submitted successfully');
                 } else {
@@ -237,23 +234,28 @@ function AjaxForm() {
 
 ```php
 <?php
+use phpSPA\Http\Request;
+
+$request = new Request();
+
 // API endpoint with CSRF protection
 function handleApiRequest() {
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    if ($request->method() !== 'POST') {
         http_response_code(405);
         return json_encode(['error' => 'Method not allowed']);
     }
-    
-    $csrf = new Csrf($_POST['csrf_name'] ?? '');
-    
-    if (!$csrf->verify()) {
+
+    $csrf = new Csrf('ajax-form);
+    $token = $request->post('ajax-form') ?? '';
+
+    if (!$csrf->verifyToken($token)) {
         http_response_code(403);
         return json_encode(['error' => 'Invalid CSRF token']);
     }
-    
+
     // Process API request
     $data = processApiData($_POST);
-    
+
     return json_encode(['success' => true, 'data' => $data]);
 }
 ```
@@ -276,15 +278,15 @@ $token = bin2hex(random_bytes(32)); // 64-character hex string
 public function verify($expireAfterUse = true) {
     $submittedToken = $_POST['csrf_token'] ?? '';
     $storedToken = $this->getStoredToken();
-    
+
     if (!$storedToken || !hash_equals($storedToken, $submittedToken)) {
         return false;
     }
-    
+
     if ($expireAfterUse) {
         $this->expireToken();
     }
-    
+
     return true;
 }
 ```
@@ -300,7 +302,7 @@ function RotatingTokenForm() {
         <input type="text" name="data">
         <button type="submit">Submit</button>
     </form>
-    
+
     <script>
         // Auto-refresh token every 30 minutes
         setInterval(() => {
@@ -337,16 +339,16 @@ namespace Components\Forms;
 class SecureForm {
     private $formName;
     private $csrf;
-    
+
     public function __construct($formName) {
         $this->formName = $formName;
         $this->csrf = new \Component\Csrf($formName);
     }
-    
+
     public function __render($props) {
         $action = $props['action'] ?? '/submit';
         $method = $props['method'] ?? 'POST';
-        
+
         return <<<HTML
         <form action="{$action}" method="{$method}" class="secure-form">
             <Component.Csrf name="{$this->formName}" />
@@ -355,7 +357,7 @@ class SecureForm {
         </form>
         HTML;
     }
-    
+
     private function renderFields($fields) {
         $html = '';
         foreach ($fields as $field) {
@@ -363,15 +365,15 @@ class SecureForm {
         }
         return $html;
     }
-    
+
     private function renderField($field) {
         $type = $field['type'] ?? 'text';
         $name = $field['name'] ?? '';
         $label = $field['label'] ?? ucfirst($name);
         $required = $field['required'] ?? false;
-        
+
         $requiredAttr = $required ? 'required' : '';
-        
+
         return <<<HTML
         <div class="form-group">
             <label for="{$name}">{$label}</label>
@@ -379,7 +381,7 @@ class SecureForm {
         </div>
         HTML;
     }
-    
+
     public function verify() {
         return $this->csrf->verify();
     }
@@ -388,7 +390,7 @@ class SecureForm {
 // Usage
 $contactForm = new SecureForm('contact-form');
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($request->method() === 'POST') {
     if ($contactForm->verify()) {
         // Process form
     } else {
@@ -414,27 +416,27 @@ echo $contactForm->render([
 function StatefulForm() {
     $csrf = new \Component\Csrf('stateful-form');
     $formData = createState('formData', []);
-    
+
     return <<<HTML
     <form id="stateful-form">
         <Component.Csrf name="stateful-form" />
-        <input type="text" name="title" placeholder="Title" 
+        <input type="text" name="title" placeholder="Title"
                onchange="phpspa.setState('formData', {...formData, title: this.value})">
         <textarea name="content" placeholder="Content"
                   onchange="phpspa.setState('formData', {...formData, content: this.value})"></textarea>
         <button type="submit">Save</button>
     </form>
-    
+
     <script>
         document.getElementById('stateful-form').onsubmit = async (e) => {
             e.preventDefault();
-            
+
             const formData = new FormData(e.target);
             const response = await fetch('/save', {
                 method: 'POST',
                 body: formData
             });
-            
+
             if (response.ok) {
                 phpspa.setState('formData', {});
                 e.target.reset();
@@ -468,19 +470,19 @@ new Csrf('data');
 <?php
 function processForm($formName) {
     $csrf = new Csrf($formName);
-    
+
     // Always verify CSRF first
     if (!$csrf->verify()) {
         http_response_code(403);
         return ['error' => 'Security validation failed'];
     }
-    
+
     // Then validate form data
     $errors = validateFormData($_POST);
     if (!empty($errors)) {
         return ['errors' => $errors];
     }
-    
+
     // Process valid, secure form
     return processValidForm($_POST);
 }
@@ -493,19 +495,19 @@ function processForm($formName) {
 function handleFormSubmission() {
     try {
         $csrf = new Csrf($_POST['csrf_name'] ?? '');
-        
+
         if (!$csrf->verify()) {
             throw new SecurityException('CSRF validation failed');
         }
-        
+
         // Process form
         return processForm($_POST);
-        
+
     } catch (SecurityException $e) {
         error_log('Security violation: ' . $e->getMessage());
         http_response_code(403);
         return ['error' => 'Security validation failed'];
-        
+
     } catch (Exception $e) {
         error_log('Form processing error: ' . $e->getMessage());
         http_response_code(500);
@@ -522,12 +524,12 @@ function LongForm() {
     return <<<HTML
     <form id="long-form" method="POST" action="/submit">
         <Component.Csrf name="long-form" />
-        
+
         <!-- Many form fields -->
-        
+
         <button type="submit">Submit</button>
     </form>
-    
+
     <script>
         // Refresh token every 45 minutes (before 1-hour expiry)
         setInterval(async () => {
@@ -537,10 +539,10 @@ function LongForm() {
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({form_name: 'long-form'})
                 });
-                
+
                 const data = await response.json();
                 const tokenInput = document.querySelector('input[name="csrf_token"]');
-                
+
                 if (tokenInput && data.token) {
                     tokenInput.value = data.token;
                 }
@@ -579,56 +581,14 @@ class CsrfConfig {
             'max_tokens' => 10,
             'expire_after_use' => true
         ];
-        
+
         if ($_ENV['APP_ENV'] === 'development') {
             $baseConfig['token_lifetime'] = 86400; // 24 hours for development
         }
-        
+
         return $baseConfig;
     }
 }
-```
-
-## Troubleshooting
-
-### Common Issues
-
-**"Invalid CSRF token" errors:**
-```php
-<?php
-// Check if tokens are being properly submitted
-var_dump($_POST['csrf_token'], $_POST['csrf_name']);
-
-// Check session storage
-var_dump($_SESSION['_csrf_tokens'] ?? []);
-```
-
-**Tokens expiring too quickly:**
-```php
-<?php
-// Increase token lifetime
-$csrf = new Csrf('my-form');
-$csrf->setTokenLifetime(7200); // 2 hours
-```
-
-**Multiple form submissions:**
-```php
-<?php
-// Don't expire token after use
-if ($csrf->verify(false)) {
-    // Token remains valid for subsequent submissions
-}
-```
-
-### Debug Mode
-
-```php
-<?php
-// Enable CSRF debugging
-define('CSRF_DEBUG', true);
-
-$csrf = new Csrf('debug-form');
-// Will output token information to error log
 ```
 
 The CSRF protection system provides robust security against cross-site request forgery attacks while maintaining ease of use and integration with phpSPA's component system.
