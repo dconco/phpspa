@@ -1,5 +1,8 @@
 <div align="center">
 
+<!-- Hero Cover Image Section -->
+<img src="https://raw.githubusercontent.com/dconco/dconco/refs/heads/main/phpspa-icon.jpg" alt="phpSPA - Component-Based PHP Library" style="width: 100%; max-width: 1200px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+
 # 🧩 **phpSPA**
 
 ### _Component-Based PHP Library for Modern Web Applications_
@@ -186,11 +189,52 @@ Works with any PHP setup
 
 ## 📚 **Learn More**
 
-🔗 **[Complete Documentation](https://phpspa.readthedocs.io)** — Full tutorials, examples, and API reference
+<div align="center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 3rem 2rem; border-radius: 20px; margin: 2rem 0; color: white; box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);">
 
-👉 **[GitHub Repository](https://github.com/dconco/phpspa)** — Source code and issues
+### 🌟 **Dive Deeper Into phpSPA**
 
-📦 **[Packagist](https://packagist.org/packages/dconco/phpspa)** — Installation and versions
+*Everything you need to master component-based PHP development*
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-top: 2rem;">
+
+<div style="background: rgba(255,255,255,0.1); padding: 2rem; border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+<h4 style="margin: 0 0 1rem 0; font-size: 1.3em;">📖 **Complete Documentation**</h4>
+<p style="margin: 0 0 1.5rem 0; opacity: 0.9;">Comprehensive guides, tutorials, and API reference with real-world examples</p>
+<a href="https://phpspa.readthedocs.io" style="display: inline-block; background: white; color: #667eea; padding: 0.8rem 1.5rem; border-radius: 25px; text-decoration: none; font-weight: bold; transition: all 0.3s ease;">
+📚 Read the Docs
+</a>
+</div>
+
+<div style="background: rgba(255,255,255,0.1); padding: 2rem; border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+<h4 style="margin: 0 0 1rem 0; font-size: 1.3em;">💻 **GitHub Repository**</h4>
+<p style="margin: 0 0 1.5rem 0; opacity: 0.9;">Source code, issue tracking, and community contributions</p>
+<a href="https://github.com/dconco/phpspa" style="display: inline-block; background: #24292e; color: white; padding: 0.8rem 1.5rem; border-radius: 25px; text-decoration: none; font-weight: bold; transition: all 0.3s ease;">
+⭐ Star on GitHub
+</a>
+</div>
+
+<div style="background: rgba(255,255,255,0.1); padding: 2rem; border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+<h4 style="margin: 0 0 1rem 0; font-size: 1.3em;">📦 **Package Manager**</h4>
+<p style="margin: 0 0 1.5rem 0; opacity: 0.9;">Installation instructions, version history, and dependency management</p>
+<a href="https://packagist.org/packages/dconco/phpspa" style="display: inline-block; background: #f28d1a; color: white; padding: 0.8rem 1.5rem; border-radius: 25px; text-decoration: none; font-weight: bold; transition: all 0.3s ease;">
+📦 View on Packagist
+</a>
+</div>
+
+</div>
+
+<div style="margin-top: 2rem; padding: 2rem; background: rgba(255,255,255,0.05); border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);">
+<h4 style="margin: 0 0 1rem 0;">🚀 **Quick Links**</h4>
+<div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
+<a href="https://phpspa.readthedocs.io/en/latest/getting-started/" style="color: white; text-decoration: none; opacity: 0.9; padding: 0.5rem 1rem; background: rgba(255,255,255,0.1); border-radius: 20px; font-size: 0.9em;">📝 Getting Started</a>
+<a href="https://phpspa.readthedocs.io/en/latest/components/" style="color: white; text-decoration: none; opacity: 0.9; padding: 0.5rem 1rem; background: rgba(255,255,255,0.1); border-radius: 20px; font-size: 0.9em;">🧩 Component Guide</a>
+<a href="https://phpspa.readthedocs.io/en/latest/state-management/" style="color: white; text-decoration: none; opacity: 0.9; padding: 0.5rem 1rem; background: rgba(255,255,255,0.1); border-radius: 20px; font-size: 0.9em;">🧠 State Management</a>
+<a href="https://phpspa.readthedocs.io/en/latest/examples/" style="color: white; text-decoration: none; opacity: 0.9; padding: 0.5rem 1rem; background: rgba(255,255,255,0.1); border-radius: 20px; font-size: 0.9em;">💡 Examples</a>
+<a href="https://phpspa.readthedocs.io/en/latest/api/" style="color: white; text-decoration: none; opacity: 0.9; padding: 0.5rem 1rem; background: rgba(255,255,255,0.1); border-radius: 20px; font-size: 0.9em;">⚙️ API Reference</a>
+</div>
+</div>
+
+</div>
 
 --
 
