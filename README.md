@@ -192,7 +192,7 @@ Works with any PHP setup
 
 📦 **[Packagist](https://packagist.org/packages/dconco/phpspa)** — Installation and versions
 
---
+---
 
 <br>
 <br>
