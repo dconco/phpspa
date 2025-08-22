@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🧩 **phpSPA**
+<img src="https://raw.githubusercontent.com/dconco/dconco/refs/heads/main/phpspa-icon.jpg" alt="phpSPA - Component-Based PHP Library" style="width: 100%; max-width: 1200px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); margin-bottom: 1rem;">
 
 ### _Component-Based PHP Library for Modern Web Applications_
 
