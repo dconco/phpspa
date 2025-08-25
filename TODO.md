@@ -4,6 +4,11 @@
 - Edit argressive compression levels to remove javascript multilines comments also
 - ✅ Add compression to rendered html
 
+Fix this error for the btoa encoding work with latin characters
+```js
+phpspa-js@latest:31 Uncaught InvalidCharacterError: Failed to execute 'btoa' on 'Window': The string to be encoded contains characters outside of the Latin1 range.
+```
+
 - This doesn't work in argressive level:
 
 From:
