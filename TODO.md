@@ -1,8 +1,10 @@
 # TO-DO
 
 - Add StyleSheet class, for styles module
-- Edit all compression levels to remove css comments and javascript single/multi lines comments
+- Edit argressive compression levels to remove javascript multilines comments also
 - ✅ Add compression to rendered html
+
+- This doesn't work in argressive level:
 
 From:
 ```js
