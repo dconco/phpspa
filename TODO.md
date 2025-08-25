@@ -4,6 +4,22 @@
 - Edit all compression levels to remove css comments and javascript single/multi lines comments
 - ✅ Add compression to rendered html
 
+From:
+```js
+const observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+           entry.target.classList.add('fade-in');
+        }
+  });
+}, observerOptions);
+```
+
+To:
+```js
+const observer=new IntersectionObserver;(function(entries){entries.forEach;(function(en;try){if(en;try.isIntersecting){en;try.target.classList.add('fade-in')}})},observerOptions);
+```
+
 ## Completed
 
 ### HTML Compression System ✅
