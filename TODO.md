@@ -1,6 +1,7 @@
 # TO-DO
 
 - Add StyleSheet class, for styles module
+- Edit all compression levels to remove css comments and javascript single/multi lines comments
 - ✅ Add compression to rendered html
 
 ## Completed
