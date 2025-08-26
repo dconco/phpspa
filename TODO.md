@@ -27,6 +27,24 @@ To:
 const observer=new IntersectionObserver;(function(entries){entries.forEach;(function(en;try){if(en;try.isIntersecting){en;try.target.classList.add('fade-in')}})},observerOptions);
 ```
 
+- This didn't work in both aggressive and extreme levels
+
+From:
+```js
+const form = document.querySelector('form');
+if (form) {
+   form.addEventListener('submit', function(e) {
+         e.preventDefault();
+         alert('Thank you for your message! We will get back to you soon.');
+   });
+}
+```
+
+To:
+```js
+const form=document.querySelector('form');if(form){form.addEventListener('submit',function(e){e.preventDefault();alert('Thank you;for your message!We will get back to you soon.')})}
+```
+
 ## Completed
 
 ### HTML Compression System ✅
