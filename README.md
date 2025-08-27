@@ -118,7 +118,7 @@ function HomePage() {
     return <<<HTML
         <h1>Counter: {$counter}</h1>
         <button onclick="phpspa.setState('count', {$counter} + 1)">+</button>
-        <Component.Link to="/about" label="About" />
+        <Component.Link to="/about" children="About" />
     HTML;
 }
 ```
