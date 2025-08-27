@@ -2,7 +2,7 @@
 
 - Add StyleSheet class, for styles module
 - Edit argressive compression levels to remove javascript multilines comments also
-- Always decode phpspa components
+- Always compress phpspa components
 - When minifying, always remove single line comments in all compression levels
 
 Fix this error for the btoa encoding work with latin characters
