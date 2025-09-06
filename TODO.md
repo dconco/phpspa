@@ -1,8 +1,16 @@
 # TO-DO
 
 - Add StyleSheet class, for styles module
-- Edit all compression levels to remove css comments and javascript single/multi lines comments
-- ✅ Add compression to rendered html
+- Edit argressive compression levels to remove javascript multilines comments also
+- Always compress phpspa components
+- When minifying, always remove single line comments in all compression levels
+
+Fix this error for the btoa encoding work with latin characters
+```js
+phpspa-js@latest:31 Uncaught InvalidCharacterError: Failed to execute 'btoa' on 'Window': The string to be encoded contains characters outside of the Latin1 range.
+```
+
+- This doesn't work in argressive level:
 
 From:
 ```js
@@ -18,6 +26,24 @@ const observer = new IntersectionObserver(function(entries) {
 To:
 ```js
 const observer=new IntersectionObserver;(function(entries){entries.forEach;(function(en;try){if(en;try.isIntersecting){en;try.target.classList.add('fade-in')}})},observerOptions);
+```
+
+- This didn't work in both aggressive and extreme levels
+
+From:
+```js
+const form = document.querySelector('form');
+if (form) {
+   form.addEventListener('submit', function(e) {
+         e.preventDefault();
+         alert('Thank you for your message! We will get back to you soon.');
+   });
+}
+```
+
+To:
+```js
+const form=document.querySelector('form');if(form){form.addEventListener('submit',function(e){e.preventDefault();alert('Thank you;for your message!We will get back to you soon.')})}
 ```
 
 ## Completed
