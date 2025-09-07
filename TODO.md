@@ -1,6 +1,5 @@
 # TO-DO
 
-- Add StyleSheet class, for styles module
 - Edit argressive compression levels to remove javascript multilines comments also
 - Always compress phpspa components
 - When minifying, always remove single line comments in all compression levels
