@@ -28,7 +28,7 @@ $todo_tests_successful;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/HtmlCompressionTest.php';
-require_once __DIR__ . '/JsCompressionTest.php';
+require_once __DIR__ . '/EnhancedJsCompressionTest.php';  // Use enhanced tests
 require_once __DIR__ . '/TodoJsCompressionTest.php';
 
 $testSuccessful = $test1_successful && $test2_successful && $todo_tests_successful;

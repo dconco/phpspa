@@ -592,7 +592,6 @@ trait HtmlCompressor
 
 		// 1) After closing paren/brace/bracket before an identifier start
 		//    - common case: ")btn" ➜ ");btn"
-		//    But avoid breaking method calls like "forEach(function"
 		$js = preg_replace('/\)(?=[$_A-Za-z])/', ');', $js);
 		$js = preg_replace('/\](?=[$_A-Za-z])/', '];', $js);
 
