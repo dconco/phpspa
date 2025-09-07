@@ -509,30 +509,50 @@ trait HtmlCompressor
 		// Start with aggressive minification
 		$js = self::minifyJavaScript($js);
 
-		// Remove all unnecessary spaces around operators
-		$js = preg_replace('/\s*([+\-*\/=<>!&|%,;:?])\s*/', '$1', $js);
+		// Remove all unnecessary spaces around operators (but preserve string literals)
+		$js = preg_replace_callback(
+			'/(["\'])(?:(?=(\\\\?))\2.)*?\1|(\s*([+\-*\/=<>!&|%,;:?])\s*)/',
+			function ($matches) {
+				if (isset($matches[1])) {
+					// This is a string literal, don't modify
+					return $matches[0];
+				} else {
+					// This is an operator, remove surrounding spaces
+					return $matches[4];
+				}
+			},
+			$js,
+		);
 
-		// Remove spaces around parentheses
-		$js = preg_replace('/\s*\(\s*/', '(', $js);
-		$js = preg_replace('/\s*\)\s*/', ')', $js);
+		// Remove spaces around punctuation (but preserve string literals)
+		$js = preg_replace_callback(
+			'/(["\'])(?:(?=(\\\\?))\2.)*?\1|(\s*([()[\]{}.])\s*)/',
+			function ($matches) {
+				if (isset($matches[1])) {
+					// This is a string literal, don't modify
+					return $matches[0];
+				} else {
+					// Remove spaces around punctuation
+					return $matches[4];
+				}
+			},
+			$js,
+		);
 
-		// Remove spaces around brackets
-		$js = preg_replace('/\s*\[\s*/', '[', $js);
-		$js = preg_replace('/\s*\]\s*/', ']', $js);
-
-		// Remove spaces around braces
-		$js = preg_replace('/\s*\{\s*/', '{', $js);
-		$js = preg_replace('/\s*\}\s*/', '}', $js);
-
-		// Remove spaces after commas and semicolons
-		$js = preg_replace('/[,;]\s+/', ',', $js);
-		$js = str_replace(';,', ',', $js); // Fix any semicolon+comma issues
-
-		// Remove spaces around dots
-		$js = preg_replace('/\s*\.\s*/', '.', $js);
-
-		// Remove extra spaces (multiple spaces to single space)
-		$js = preg_replace('/\s+/', ' ', $js);
+		// Remove extra spaces (multiple spaces to single space) but preserve string literals
+		$js = preg_replace_callback(
+			'/(["\'])(?:(?=(\\\\?))\2.)*?\1|(\s+)/',
+			function ($matches) {
+				if (isset($matches[1])) {
+					// This is a string literal, don't modify
+					return $matches[0];
+				} else {
+					// Collapse multiple spaces to single space
+					return ' ';
+				}
+			},
+			$js,
+		);
 
 		// Ensure semicolons exist where statements abut
 		$js = self::insertSemicolonsWhereNeeded($js);
@@ -554,6 +574,22 @@ trait HtmlCompressor
 	 */
 	private static function insertSemicolonsWhereNeeded(string $js): string
 	{
+		// First, let's protect string literals by temporarily replacing them
+		$stringPlaceholders = [];
+		$stringIndex = 0;
+		
+		// Extract and protect string literals
+		$js = preg_replace_callback(
+			'/(["\'])(?:(?=(\\\\?))\2.)*?\1/',
+			function ($matches) use (&$stringPlaceholders, &$stringIndex) {
+				$placeholder = '___STRING_PLACEHOLDER_' . $stringIndex . '___';
+				$stringPlaceholders[$placeholder] = $matches[0];
+				$stringIndex++;
+				return $placeholder;
+			},
+			$js
+		);
+
 		// 1) After closing paren/brace/bracket before an identifier start
 		//    - common case: ")btn" ➜ ");btn"
 		$js = preg_replace('/\)(?=[$_A-Za-z])/', ');', $js);
@@ -589,6 +625,25 @@ trait HtmlCompressor
 		// Join back pairs we must not split
 		$js = str_replace('async;function', 'async function', $js);
 		$js = str_replace('else;if', 'else if', $js);
+
+		// Fix specific broken patterns that should not have semicolons
+		$js = str_replace('forEach;(', 'forEach(', $js);
+		$js = str_replace('map;(', 'map(', $js);
+		$js = str_replace('filter;(', 'filter(', $js);
+		$js = str_replace('reduce;(', 'reduce(', $js);
+		$js = str_replace('addEventListener;(', 'addEventListener(', $js);
+		$js = str_replace('querySelector;(', 'querySelector(', $js);
+		$js = str_replace('getElementById;(', 'getElementById(', $js);
+
+		// Fix broken variable names where keywords were detected inside identifiers
+		$js = str_replace('en;try', 'entry', $js);
+		$js = str_replace('ent;ry', 'entry', $js);  // in case the pattern is different
+		$js = str_replace('e;try', 'entry', $js);   // other variations
+
+		// Restore string literals
+		foreach ($stringPlaceholders as $placeholder => $original) {
+			$js = str_replace($placeholder, $original, $js);
+		}
 
 		return $js;
 	}

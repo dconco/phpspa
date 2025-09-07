@@ -28,6 +28,49 @@
  * @version 1.1.7
  * @license MIT
  */
+
+/**
+ * UTF-8 safe base64 encoding function
+ * Handles Unicode characters that btoa cannot process
+ * 
+ * @param {string} str - String to encode
+ * @returns {string} Base64 encoded string
+ */
+function utf8ToBase64(str) {
+   try {
+      // First try the native btoa for performance
+      return btoa(str);
+   } catch (e) {
+      // If btoa fails (due to non-Latin1 characters), use UTF-8 safe encoding
+      try {
+         return btoa(unescape(encodeURIComponent(str)));
+      } catch (fallbackError) {
+         // Final fallback: encode each character individually
+         return btoa(
+            str.split('').map(function(c) {
+               return String.fromCharCode(c.charCodeAt(0) & 0xff);
+            }).join('')
+         );
+      }
+   }
+}
+
+/**
+ * UTF-8 safe base64 decoding function
+ * Handles Unicode characters that atob cannot process
+ * 
+ * @param {string} str - Base64 encoded string to decode  
+ * @returns {string} Decoded string
+ */
+function base64ToUtf8(str) {
+   try {
+      // Try standard decoding first
+      return decodeURIComponent(escape(atob(str)));
+   } catch (e) {
+      // Fallback to regular atob
+      return atob(str);
+   }
+}
 (function () {
    /**
     * Initialize phpSPA when DOM is ready
@@ -42,7 +85,7 @@
             url: location.href,
             title: document.title,
             targetId: targetElement.parentElement.id,
-            content: btoa(targetElement.innerHTML), // Base64 encode HTML content
+            content: utf8ToBase64(targetElement.innerHTML), // UTF-8 safe Base64 encode HTML content
          };
 
          // Check if component has auto-reload functionality
@@ -105,7 +148,7 @@
             document.getElementById(navigationState.targetId) ?? document.body;
 
          // Decode and restore HTML content
-         targetContainer.innerHTML = atob(navigationState.content);
+         targetContainer.innerHTML = base64ToUtf8(navigationState.content);
 
          // Clear old executed scripts cache
          RuntimeManager.clearExecutedScripts();
@@ -285,7 +328,7 @@ class phpspa {
 
          // Update content - decode base64 if provided, otherwise use raw data
          targetElement.innerHTML = responseData?.content
-            ? atob(responseData.content)
+            ? base64ToUtf8(responseData.content)
             : responseData;
 
          // Prepare state data for browser history
@@ -293,7 +336,7 @@ class phpspa {
             url: url?.href ?? url,
             title: responseData?.title ?? document.title,
             targetID: responseData?.targetID ?? targetElement.id,
-            content: responseData?.content ?? btoa(responseData),
+            content: responseData?.content ?? utf8ToBase64(responseData),
          };
 
          // Include reload time if specified
@@ -396,7 +439,7 @@ class phpspa {
          fetch(currentUrl, {
             headers: {
                "X-Requested-With": "PHPSPA_REQUEST",
-               Authorization: `Bearer ${btoa(statePayload)}`,
+               Authorization: `Bearer ${utf8ToBase64(statePayload)}`,
             },
             mode: "same-origin",
             redirect: "follow",
@@ -481,7 +524,7 @@ class phpspa {
                document.body;
 
             targetElement.innerHTML = responseData?.content
-               ? atob(responseData.content)
+               ? base64ToUtf8(responseData.content)
                : responseData;
 
             // Execute scripts and styles, then restore scroll position
@@ -587,7 +630,7 @@ class phpspa {
             document.body;
 
          targetElement.innerHTML = responseData?.content
-            ? atob(responseData.content)
+            ? base64ToUtf8(responseData.content)
             : responseData;
 
          // Clear old executed scripts cache
@@ -620,7 +663,7 @@ class phpspa {
          const response = await fetch(currentUrl, {
             headers: {
                "X-Requested-With": "PHPSPA_REQUEST",
-               Authorization: `Bearer ${btoa(callPayload)}`,
+               Authorization: `Bearer ${utf8ToBase64(callPayload)}`,
             },
             mode: "same-origin",
             redirect: "follow",
@@ -635,7 +678,7 @@ class phpspa {
             try {
                responseData = JSON.parse(responseText);
                responseData = responseData?.response
-                  ? JSON.parse(atob(responseData.response))
+                  ? JSON.parse(base64ToUtf8(responseData.response))
                   : responseData;
             } catch (parseError) {
                responseData = responseText;
@@ -658,7 +701,7 @@ class phpspa {
                      : fallbackResponse;
 
                   errorData = errorData?.response
-                     ? JSON.parse(atob(errorData.response))
+                     ? JSON.parse(base64ToUtf8(errorData.response))
                      : errorData;
                } catch (parseError) {
                   errorData = fallbackResponse;
@@ -732,7 +775,7 @@ class RuntimeManager {
 
       scripts.forEach((script) => {
          // Use base64 encoded content as unique identifier
-         const contentHash = btoa(script.textContent.trim());
+         const contentHash = utf8ToBase64(script.textContent.trim());
 
          // Skip if this script has already been executed
          if (!this.executedScripts.has(contentHash)) {
@@ -787,7 +830,7 @@ class RuntimeManager {
 
       styles.forEach((style) => {
          // Use base64 encoded content as unique identifier
-         const contentHash = btoa(style.textContent.trim());
+         const contentHash = utf8ToBase64(style.textContent.trim());
 
          // Skip if this style has already been injected
          if (!this.executedStyles.has(contentHash)) {
