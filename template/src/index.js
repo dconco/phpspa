@@ -359,6 +359,8 @@ class phpspa {
                top: hashElement.offsetTop,
                left: hashElement.offsetLeft,
             });
+         } else {
+            scrpoll(0, 0); // Scroll to top if no hash or element not found
          }
 
          // Clear old executed scripts cache
