@@ -1,5 +1,38 @@
 # CHANGELOG
 
+## v1.1.6
+
+### [Fixed]
+
+1. **HTML Compression Bug Fixes**: Fixed critical issue where spaces between HTML element names and attributes were being incorrectly removed during compression, which could break HTML structure.
+
+2. **JavaScript Compression Improvements**: Enhanced JavaScript minification with better handling of:
+   - Method calls and constructor patterns
+   - String literals and complex JavaScript structures  
+   - IntersectionObserver and other modern JavaScript APIs in aggressive compression mode
+   - UTF-8 encoding and compression of special characters and emojis
+
+3. **Test Suite Enhancements**: Fixed function redeclare errors in test files and improved test reliability:
+   - Removed duplicate `compressJs()` function in `ComprehensiveJsCompressionTest.php`
+   - Enhanced UTF-8 integration tests for better validation
+   - Fixed callback logic in `basicMinify` for proper script/style tag detection
+
+### [Changed]
+
+1. **Script/Style Tag Detection**: Changed from `isset()` checks to `!empty()` checks for more reliable script and style tag detection in HTML compression.
+
+2. **Template Improvements**: Updated HomePage component to remove dynamic icon source and enhanced scrolling functionality to scroll to top when no hash is present or target element is not found.
+
+3. **Test Pattern Handling**: Updated JavaScript compression tests to ensure proper handling of various patterns and improved consistency across test files.
+
+### [Added]
+
+1. **Enhanced UTF-8 Support**: Improved handling and testing of UTF-8 characters, special characters, and emojis in compression routines.
+
+2. **Better Error Handling**: Added more robust error handling in compression callback logic to prevent incorrect processing of whitespace as script tags.
+
+---
+
 ## v1.1.5
 
 > [!IMPORTANT]
