@@ -19,7 +19,7 @@ echo "\n============== COMPREHENSIVE JS COMPRESSION TEST STARTED ==============\
 
 $test_successful = true;
 
-function compressJs(string $js): string
+function compressJsComprehensive(string $js): string
 {
 	Compressor::setLevel(Compressor::LEVEL_EXTREME);
 	$input = '<script>' . $js . '</script>';
@@ -133,7 +133,7 @@ function runComprehensiveTests(): bool
 
 	$allPassed = true;
 	foreach ($tests as $test) {
-		$output = compressJs($test['js']);
+		$output = compressJsComprehensive($test['js']);
 		$pass = true;
 		
 		// Check mustContain patterns

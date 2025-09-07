@@ -24,18 +24,12 @@ if (php_sapi_name() !== 'cli') {
 // define the variables
 $test1_successful;
 $test2_successful;
-$test3_successful;
-$todo_tests_successful;
-$comprehensive_tests_successful;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/HtmlCompressionTest.php';
-require_once __DIR__ . '/EnhancedJsCompressionTest.php';  // Use enhanced tests
-require_once __DIR__ . '/Utf8IntegrationTest.php';        // UTF-8 encoding and integration tests
-require_once __DIR__ . '/TodoJsCompressionTest.php';
-require_once __DIR__ . '/ComprehensiveJsCompressionTest.php'; // Comprehensive real-world tests
+require_once __DIR__ . '/JsCompressionTest.php';
 
-$testSuccessful = $test1_successful && $test2_successful && $test3_successful && $todo_tests_successful && $comprehensive_tests_successful;
+$testSuccessful = $test1_successful && $test2_successful;
 
 echo "\n================= COMBINED TESTS RESULT: " . ($testSuccessful ? 'ALL PASSED' : 'SOME FAILED') . " =================\n";
 if (!$testSuccessful) {

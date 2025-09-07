@@ -21,7 +21,7 @@ echo "\n============== ENHANCED JS COMPRESSION TEST STARTED ==============\n\n";
 
 $test2_successful = true;
 
-function compressJs(string $js): string
+function compressJsEnhanced(string $js): string
 {
 	Compressor::setLevel(Compressor::LEVEL_EXTREME);
 	$input = '<script>' . $js . '</script>';
@@ -87,7 +87,7 @@ function run_enhanced_js_tests(): bool
 
 	$allPassed = true;
 	foreach ($tests as $t) {
-		$out = compressJs($t['js']);
+		$out = compressJsEnhanced($t['js']);
 		$pass = true;
 		foreach ($t['mustContain'] as $needle) {
 			if (strpos($out, $needle) === false) {

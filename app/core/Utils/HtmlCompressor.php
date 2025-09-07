@@ -151,9 +151,9 @@ trait HtmlCompressor
 		$html = preg_replace('/^\s+|\s+$/m', '', $html);
 
 		// Collapse multiple whitespace characters into single space,
-		// but preserve newlines inside script and style tags for later processing
+		// but preserve necessary spaces in HTML structure
 		$html = preg_replace_callback(
-			'/(<script[^>]*>)(.*?)(<\/script>)|(<style[^>]*>)(.*?)(<\/style>)|(\s+)/s',
+			'/(<script[^>]*>)(.*?)(<\/script>)|(<style[^>]*>)(.*?)(<\/style>)|(\s{2,})/s',
 			function ($matches) {
 				if (isset($matches[1]) && isset($matches[2]) && isset($matches[3])) {
 					// This is a script tag - preserve newlines in the content
@@ -162,7 +162,7 @@ trait HtmlCompressor
 					// This is a style tag - preserve newlines in the content
 					return $matches[4] . $matches[5] . $matches[6];
 				} else {
-					// This is regular whitespace - collapse to single space
+					// This is multiple whitespace - collapse to single space
 					return ' ';
 				}
 			},
