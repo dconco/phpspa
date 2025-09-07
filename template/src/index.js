@@ -25,7 +25,7 @@
  * - This library assumes server-rendered HTML responses with placeholder target IDs.
  *
  * @author Dave Conco
- * @version 1.1.7
+ * @version 1.1.8
  * @license MIT
  */
 
@@ -43,7 +43,10 @@ function utf8ToBase64(str) {
    } catch (e) {
       // If btoa fails (due to non-Latin1 characters), use UTF-8 safe encoding
       try {
-         return btoa(unescape(encodeURIComponent(str)));
+         // Modern replacement for unescape(encodeURIComponent(str))
+         const utf8Bytes = new TextEncoder().encode(str);
+         const binaryString = Array.from(utf8Bytes, byte => String.fromCharCode(byte)).join('');
+         return btoa(binaryString);
       } catch (fallbackError) {
          // Final fallback: encode each character individually
          return btoa(
@@ -64,8 +67,13 @@ function utf8ToBase64(str) {
  */
 function base64ToUtf8(str) {
    try {
-      // Try standard decoding first
-      return decodeURIComponent(escape(atob(str)));
+      // Try modern UTF-8 safe decoding first
+      const binaryString = atob(str);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+         bytes[i] = binaryString.charCodeAt(i);
+      }
+      return new TextDecoder().decode(bytes);
    } catch (e) {
       // Fallback to regular atob
       return atob(str);
@@ -359,6 +367,8 @@ class phpspa {
                top: hashElement.offsetTop,
                left: hashElement.offsetLeft,
             });
+         } else {
+            scroll(0, 0); // Scroll to top if no hash or element not found
          }
 
          // Clear old executed scripts cache
