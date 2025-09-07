@@ -68,8 +68,8 @@ function run_enhanced_js_tests(): bool
 		[
 			'name' => 'Basic semicolon insertion should still work when needed',
 			'js' => "let x = 1\nconst y = 2",
-			'mustContain' => ['1;const'],
-			'mustNotContain' => ['1const'],
+			'mustContain' => ['=1; const'],
+			'mustNotContain' => ['=1const'],
 		],
 		[
 			'name' => 'Template literals should be preserved',

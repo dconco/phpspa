@@ -150,8 +150,24 @@ trait HtmlCompressor
 		// Remove leading/trailing whitespace from lines
 		$html = preg_replace('/^\s+|\s+$/m', '', $html);
 
-		// Collapse multiple whitespace characters into single space
-		$html = preg_replace('/\s+/', ' ', $html);
+		// Collapse multiple whitespace characters into single space,
+		// but preserve newlines inside script and style tags for later processing
+		$html = preg_replace_callback(
+			'/(<script[^>]*>)(.*?)(<\/script>)|(<style[^>]*>)(.*?)(<\/style>)|(\s+)/s',
+			function ($matches) {
+				if (isset($matches[1]) && isset($matches[2]) && isset($matches[3])) {
+					// This is a script tag - preserve newlines in the content
+					return $matches[1] . $matches[2] . $matches[3];
+				} elseif (isset($matches[4]) && isset($matches[5]) && isset($matches[6])) {
+					// This is a style tag - preserve newlines in the content
+					return $matches[4] . $matches[5] . $matches[6];
+				} else {
+					// This is regular whitespace - collapse to single space
+					return ' ';
+				}
+			},
+			$html
+		);
 
 		return trim($html);
 	}
@@ -302,8 +318,13 @@ trait HtmlCompressor
 		// Remove leading and trailing whitespace from lines
 		$js = preg_replace('/^\s+|\s+$/m', '', $js);
 
-		// Remove empty lines
+		// IMPORTANT: Insert semicolons BEFORE removing newlines
+		// This way we can use the newline information to determine where ASI should apply
+		$js = self::insertSemicolonsWhereNeeded($js);
+
+		// Now remove empty lines and newlines
 		$js = preg_replace('/^\s*\n/m', '', $js);
+		$js = preg_replace('/\n/', '', $js);
 
 		// Collapse multiple spaces into single space (but preserve strings)
 		$js = preg_replace_callback(
@@ -350,11 +371,11 @@ trait HtmlCompressor
 			$js,
 		);
 
+		// Ensure proper spacing after semicolons when followed by keywords/identifiers
+		$js = preg_replace('/;(?=[a-zA-Z_$])/', '; ', $js);
+
 		// Remove unnecessary semicolons before closing braces
 		$js = preg_replace('/;\s*}/', '}', $js);
-
-		// Insert semicolons where line joining could break code
-		$js = self::insertSemicolonsWhereNeeded($js);
 
 		// Trim and remove final newlines
 		return trim($js);
@@ -506,12 +527,14 @@ trait HtmlCompressor
 	 */
 	private static function extremeMinifyJavaScript(string $js): string
 	{
-		// Start with aggressive minification
-		$js = self::minifyJavaScript($js);
+		// At this point, the JS has already been minified by aggressiveMinify()
+		// which called minifyJavaScript() and inserted semicolons correctly.
+		// We just need to apply additional extreme-level optimizations without 
+		// breaking the semicolon logic.
 
-		// Remove all unnecessary spaces around operators (but preserve string literals)
+		// Remove all unnecessary spaces around operators (but preserve string literals and space after semicolons)
 		$js = preg_replace_callback(
-			'/(["\'])(?:(?=(\\\\?))\2.)*?\1|(\s*([+\-*\/=<>!&|%,;:?])\s*)/',
+			'/(["\'])(?:(?=(\\\\?))\2.)*?\1|(\s*([+\-*\/=<>!&|%,:?])\s*)/',
 			function ($matches) {
 				if (isset($matches[1])) {
 					// This is a string literal, don't modify
@@ -539,6 +562,24 @@ trait HtmlCompressor
 			$js,
 		);
 
+		// Handle semicolons separately to preserve necessary spacing
+		$js = preg_replace_callback(
+			'/(["\'])(?:(?=(\\\\?))\2.)*?\1|(\s*;\s*)/',
+			function ($matches) {
+				if (isset($matches[1])) {
+					// This is a string literal, don't modify
+					return $matches[0];
+				} else {
+					// Remove spaces around semicolon
+					return ';';
+				}
+			},
+			$js,
+		);
+
+		// Add back necessary spaces after semicolons when followed by keywords/identifiers
+		$js = preg_replace('/;(?=[a-zA-Z_$])/', '; ', $js);
+
 		// Remove extra spaces (multiple spaces to single space) but preserve string literals
 		$js = preg_replace_callback(
 			'/(["\'])(?:(?=(\\\\?))\2.)*?\1|(\s+)/',
@@ -553,9 +594,6 @@ trait HtmlCompressor
 			},
 			$js,
 		);
-
-		// Ensure semicolons exist where statements abut
-		$js = self::insertSemicolonsWhereNeeded($js);
 
 		// Remove leading/trailing whitespace
 		$js = trim($js);
@@ -574,13 +612,13 @@ trait HtmlCompressor
 	 */
 	private static function insertSemicolonsWhereNeeded(string $js): string
 	{
-		// First, let's protect string literals by temporarily replacing them
+		// First, let's protect string literals and template literals by temporarily replacing them
 		$stringPlaceholders = [];
 		$stringIndex = 0;
 		
-		// Extract and protect string literals
+		// Extract and protect string literals (including template literals)
 		$js = preg_replace_callback(
-			'/(["\'])(?:(?=(\\\\?))\2.)*?\1/',
+			'/(["\'])(?:(?=(\\\\?))\2.)*?\1|`(?:[^`\\\\]|\\\\.)*`/',
 			function ($matches) use (&$stringPlaceholders, &$stringIndex) {
 				$placeholder = '___STRING_PLACEHOLDER_' . $stringIndex . '___';
 				$stringPlaceholders[$placeholder] = $matches[0];
@@ -590,55 +628,77 @@ trait HtmlCompressor
 			$js
 		);
 
-		// 1) After closing paren/brace/bracket before an identifier start
-		//    - common case: ")btn" ➜ ");btn"
-		$js = preg_replace('/\)(?=[$_A-Za-z])/', ');', $js);
-		$js = preg_replace('/\](?=[$_A-Za-z])/', '];', $js);
-
-		// Avoid breaking "}else", "}catch", "}finally" by not inserting before those keywords
-		// Only insert when next token is an identifier that is NOT else/catch/finally/while
-		$js = preg_replace(
-			'/\}(?=\s*(?!else\b)(?!catch\b)(?!finally\b)(?!while\b)[$_A-Za-z])/',
-			'};',
-			$js,
-		);
-
-		// 2) Before statement-starting keywords when previous token ends with ident/number/]/)/}
-		//    (allow a single whitespace between previous token and keyword)
-		//    Exclude 'while' to preserve do{...}while() structure.
-		$stmtKeywords =
-			'(?:const|let|var|function|class|async|await|import|export|return|throw|switch|for|do|try|if|new|yield)';
-		$js = preg_replace(
-			'/([$_A-Za-z0-9\)\]\}`])\s*(?=' . $stmtKeywords . '\b)/',
-			'$1;',
-			$js,
-		);
-
-		// 3) Before IIFE starts: if previous token ends with ident/number/]/)/}, and next is (function|((...)) or (async
-		//    This avoids accidental calls due to line-joining: `a=1\n(function(){})()` => `a=1;(function(){})()`
-		$js = preg_replace(
-			'/([$_A-Za-z0-9\)\]\}`])\s*(?=\((?:function|async|\())/',
-			'$1;',
-			$js,
-		);
-
-		// Join back pairs we must not split
-		$js = str_replace('async;function', 'async function', $js);
-		$js = str_replace('else;if', 'else if', $js);
-
-		// Fix specific broken patterns that should not have semicolons
-		$js = str_replace('forEach;(', 'forEach(', $js);
-		$js = str_replace('map;(', 'map(', $js);
-		$js = str_replace('filter;(', 'filter(', $js);
-		$js = str_replace('reduce;(', 'reduce(', $js);
-		$js = str_replace('addEventListener;(', 'addEventListener(', $js);
-		$js = str_replace('querySelector;(', 'querySelector(', $js);
-		$js = str_replace('getElementById;(', 'getElementById(', $js);
-
-		// Fix broken variable names where keywords were detected inside identifiers
-		$js = str_replace('en;try', 'entry', $js);
-		$js = str_replace('ent;ry', 'entry', $js);  // in case the pattern is different
-		$js = str_replace('e;try', 'entry', $js);   // other variations
+		// JavaScript ASI rules: Insert semicolons where newlines would trigger ASI
+		// Split into lines and process line by line
+		$lines = explode("\n", $js);
+		$processedLines = [];
+		
+		for ($i = 0; $i < count($lines); $i++) {
+			$currentLine = trim($lines[$i]);
+			$nextLine = isset($lines[$i + 1]) ? trim($lines[$i + 1]) : '';
+			
+			// Skip empty lines
+			if (empty($currentLine)) {
+				continue;
+			}
+			
+			// Check if current line needs a semicolon based on next line
+			$needsSemicolon = false;
+			
+			if (!empty($nextLine)) {
+				// Check if current line could end a statement (after trimming)
+				// Look for: identifiers, numbers, ), ], }, `, etc.
+				$currentEndsWithStatement = preg_match('/[a-zA-Z0-9_$\)\]\}`"]\\s*$/', $currentLine);
+				
+				// Check if next line starts with something that begins a new statement
+				$nextStartsWithStatement = preg_match('/^(const|let|var|function|class|async|import|export|return|throw|if|for|while|do|try|switch|case|default|break|continue|yield|new)\b/', $nextLine);
+				
+				// Check for IIFE patterns
+				$nextStartsWithIIFE = preg_match('/^\((?:function|async\s+function|\()/', $nextLine);
+				
+				// Check if next line starts with an identifier (potential method call or variable reference)
+				$nextStartsWithIdentifier = preg_match('/^[a-zA-Z_$]/', $nextLine) && !$nextStartsWithStatement;
+				
+				// Don't insert semicolon before else, catch, finally, while (in do-while)
+				$nextIsControlContinuation = preg_match('/^(else|catch|finally)\b/', $nextLine);
+				$nextIsDoWhile = preg_match('/^while\s*\(/', $nextLine) && preg_match('/\}\s*$/', $currentLine);
+				
+				if ($currentEndsWithStatement && !$nextIsControlContinuation && !$nextIsDoWhile) {
+					if ($nextStartsWithStatement || $nextStartsWithIIFE || $nextStartsWithIdentifier) {
+						// Special case: don't insert semicolon between constructor and opening paren
+						// e.g., "new IntersectionObserver" followed by "(function..." should NOT get semicolon
+						$isConstructorCall = preg_match('/\bnew\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*$/', $currentLine) && 
+						                     preg_match('/^\(/', $nextLine);
+						
+						if (!$isConstructorCall) {
+							$needsSemicolon = true;
+						}
+					}
+				}
+			}
+			
+			// Add semicolon if needed and line doesn't already end with semicolon or brace
+			if ($needsSemicolon && !preg_match('/[;}]\s*$/', $currentLine)) {
+				$currentLine .= ';';
+			}
+			
+			$processedLines[] = $currentLine;
+		}
+		
+		// Join lines back together
+		$js = implode('', $processedLines);
+		
+		// Additional specific fixes for edge cases that might have been created
+		$js = str_replace('forEach;', 'forEach', $js);
+		$js = str_replace('map;', 'map', $js);
+		$js = str_replace('filter;', 'filter', $js);
+		$js = str_replace('reduce;', 'reduce', $js);
+		$js = str_replace('addEventListener;', 'addEventListener', $js);
+		$js = str_replace('querySelector;', 'querySelector', $js);
+		$js = str_replace('getElementById;', 'getElementById', $js);
+		
+		// Fix constructor calls that might have gotten semicolons
+		$js = preg_replace('/\bnew\s+([a-zA-Z_$][a-zA-Z0-9_$]*);(\()/', 'new $1$2', $js);
 
 		// Restore string literals
 		foreach ($stringPlaceholders as $placeholder => $original) {
