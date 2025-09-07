@@ -155,10 +155,10 @@ trait HtmlCompressor
         $html = preg_replace_callback(
             '/(<script[^>]*>)(.*?)(<\/script>)|(<style[^>]*>)(.*?)(<\/style>)|(\s+)/s',
             function ($matches) {
-                if (isset($matches[1]) && isset($matches[2]) && isset($matches[3])) {
+                if (!empty($matches[1]) && isset($matches[2]) && !empty($matches[3])) {
                     // This is a script tag - preserve newlines in the content
                     return $matches[1] . $matches[2] . $matches[3];
-                } elseif (isset($matches[4]) && isset($matches[5]) && isset($matches[6])) {
+                } elseif (!empty($matches[4]) && isset($matches[5]) && !empty($matches[6])) {
                     // This is a style tag - preserve newlines in the content
                     return $matches[4] . $matches[5] . $matches[6];
                 } else {
@@ -286,17 +286,27 @@ trait HtmlCompressor
             $html,
         );
 
-        // Remove all newlines and extra spaces
+        // Remove newlines and tabs
         $html = str_replace(["\r\n", "\r", "\n", "\t"], '', $html);
-
-        // Remove spaces around = in attributes
+        
+        // Collapse multiple consecutive spaces into single spaces
+        $html = preg_replace('/\s+/', ' ', $html);
+        
+        // Remove spaces around = in attributes, but NOT the space before attribute names
         $html = preg_replace('/\s*=\s*/', '=', $html);
 
         // Remove trailing spaces before >
         $html = preg_replace('/\s+>/', '>', $html);
 
-        // Remove spaces after <
-        $html = preg_replace('/<\s+/', '<', $html);
+        // Remove spaces after < ONLY for closing tags and self-closing tags
+        $html = preg_replace('/<\s+\//', '</', $html);  // closing tags like </ div> -> </div>
+        
+        // For opening tags, only remove space after < if there are no attributes
+        // This regex only matches tags that have NO attributes (no space followed by attribute name)
+        $html = preg_replace('/<\s+([a-zA-Z][a-zA-Z0-9-]*)\s*>/', '<$1>', $html);
+        
+        // Ensure DOCTYPE is properly formatted 
+        $html = preg_replace('/<!DOCTYPE\s+html>/', '<!DOCTYPE html>', $html);
 
         return $html;
     }

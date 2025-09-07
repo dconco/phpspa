@@ -19,17 +19,6 @@ echo "\n============== COMPREHENSIVE JS COMPRESSION TEST STARTED ==============\
 
 $test_successful = true;
 
-function compressJs(string $js): string
-{
-	Compressor::setLevel(Compressor::LEVEL_EXTREME);
-	$input = '<script>' . $js . '</script>';
-	$result = Compressor::compress($input);
-	
-	// Extract just the JS content from the script tag
-	preg_match('/<script>(.*?)<\/script>/s', $result, $matches);
-	return $matches[1] ?? $result;
-}
-
 function runComprehensiveTests(): bool
 {
 	$tests = [
