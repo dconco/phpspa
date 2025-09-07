@@ -288,10 +288,10 @@ trait HtmlCompressor
 
         // Remove newlines and tabs
         $html = str_replace(["\r\n", "\r", "\n", "\t"], '', $html);
-        
+
         // Collapse multiple consecutive spaces into single spaces
         $html = preg_replace('/\s+/', ' ', $html);
-        
+
         // Remove spaces around = in attributes, but NOT the space before attribute names
         $html = preg_replace('/\s*=\s*/', '=', $html);
 
@@ -300,12 +300,12 @@ trait HtmlCompressor
 
         // Remove spaces after < ONLY for closing tags and self-closing tags
         $html = preg_replace('/<\s+\//', '</', $html);  // closing tags like </ div> -> </div>
-        
+
         // For opening tags, only remove space after < if there are no attributes
         // This regex only matches tags that have NO attributes (no space followed by attribute name)
         $html = preg_replace('/<\s+([a-zA-Z][a-zA-Z0-9-]*)\s*>/', '<$1>', $html);
-        
-        // Ensure DOCTYPE is properly formatted 
+
+        // Ensure DOCTYPE is properly formatted
         $html = preg_replace('/<!DOCTYPE\s+html>/', '<!DOCTYPE html>', $html);
 
         return $html;
