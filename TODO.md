@@ -3,6 +3,28 @@
 - In the src/index.js don't load the page again on popstate only if it is not existing in the cache, but run all the scripts again to reinitialize the page
 - Always compress phpspa components
 - When minifying, always remove single line comments in all compression levels
+- Fix this particular JS compression issue in aggressive level:
+      ```js
+      const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                  entry.target.classList.add('fade-in');
+            }
+            });
+      }, observerOptions);
+      ```
+
+  Converting to:
+      ```js
+      const observer=new IntersectionObserver;(function(entries) { entries.forEach(function(entry)...
+      ```
+
+  Instead of:
+      ```js
+      const observer=new IntersectionObserver(function(entries) { entries.forEach(function(entry)...
+      ```
+  And same thing goes for short hand arrow functions, it'll be adding a semicolon after the function name.
+
 
 ## Completed Issues ✅
 
