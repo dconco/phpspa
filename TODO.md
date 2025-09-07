@@ -3,7 +3,7 @@
 - In the src/index.js don't load the page again on popstate only if it is not existing in the cache, but run all the scripts again to reinitialize the page
 - ✅ Always compress phpspa components
 - ✅ When minifying, always remove single line comments in all compression levels
-- Fix this particular JS compression issue in aggressive level:
+- ✅ Fix this particular JS compression issue in aggressive level:
       ```js
       const observer = new IntersectionObserver(function(entries) {
             entries.forEach(function(entry) {
@@ -14,12 +14,12 @@
       }, observerOptions);
       ```
 
-  Converting to:
+  Previously converting to:
       ```js
       const observer=new IntersectionObserver;(function(entries) { entries.forEach(function(entry)...
       ```
 
-  Instead of:
+  Now correctly produces:
       ```js
       const observer=new IntersectionObserver(function(entries) { entries.forEach(function(entry)...
       ```
