@@ -192,7 +192,7 @@ abstract class AppImpl
 
 				if (
 					!in_array(strtolower($_SERVER['REQUEST_METHOD']), $m) &&
-					!in_array('*', $method)
+					!in_array('*', $m)
 				) {
 					continue;
 				}
