@@ -4,6 +4,7 @@ namespace phpSPA;
 
 use phpSPA\Http\Session;
 use phpSPA\Core\Config\CompressionConfig;
+use phpSPA\Core\Helper\AssetLinkManager;
 
 /**
  *
@@ -75,6 +76,18 @@ class App extends \phpSPA\Core\Impl\RealImpl\AppImpl implements
     public function compressionEnvironment(string $environment): self
     {
         CompressionConfig::initialize($environment);
+        return $this;
+    }
+
+    /**
+     * Set cache duration for CSS/JS assets
+     *
+     * @param int $hours Number of hours to cache assets (0 for session-only)
+     * @return self
+     */
+    public function assetCacheHours(int $hours): self
+    {
+        AssetLinkManager::setCacheConfig($hours);
         return $this;
     }
 }

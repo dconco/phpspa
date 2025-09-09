@@ -149,7 +149,21 @@ class Request
 	 */
 	public function header(?string $name = null)
 	{
-		$headers = getallheaders() ?: apache_request_headers();
+		$headers = [];
+		
+		if (function_exists('getallheaders')) {
+			$headers = getallheaders();
+		} elseif (function_exists('apache_request_headers')) {
+			$headers = apache_request_headers();
+		} else {
+			// CLI fallback - construct headers from $_SERVER
+			foreach ($_SERVER as $key => $value) {
+				if (strpos($key, 'HTTP_') === 0) {
+					$header = str_replace('_', '-', substr($key, 5));
+					$headers[$header] = $value;
+				}
+			}
+		}
 
 		if (!$name) {
 			return $this->validate($headers);
