@@ -11,6 +11,7 @@ use phpSPA\Compression\Compressor;
 use phpSPA\Core\Helper\CsrfManager;
 use phpSPA\Core\Helper\SessionHandler;
 use phpSPA\Core\Helper\CallableInspector;
+use phpSPA\Core\Helper\AssetLinkManager;
 use phpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 
 use const phpSPA\Core\Impl\Const\STATE_HANDLE;
@@ -160,6 +161,18 @@ abstract class AppImpl
 			exit();
 		}
 
+		/**
+		 * Handle asset requests (CSS/JS files from session-based links)
+		 */
+		$assetInfo = AssetLinkManager::resolveAssetRequest(self::$request_uri);
+		if ($assetInfo !== null) {
+			$this->serveAsset($assetInfo);
+			exit();
+		}
+
+		// Clean up expired asset mappings periodically
+		AssetLinkManager::cleanupExpiredMappings();
+
 		foreach ($this->components as $component) {
 			$route = CallableInspector::getProperty($component, 'route');
 			$method = CallableInspector::getProperty($component, 'method');
@@ -292,36 +305,9 @@ abstract class AppImpl
 			}
 			$componentOutput = static::format($componentOutput);
 
-			// If the component has a script, execute it
-			if (!empty($scripts)) {
-				foreach ($scripts as $script) {
-					if (is_callable($script)) {
-						$scriptValue = call_user_func($script);
-
-						if (is_string($scriptValue) && !empty($scriptValue)) {
-							$componentOutput .=
-								"\n<script>\n" . $scriptValue . "\n</script>\n";
-						}
-					}
-				}
-			}
-
-			// If the component has a style, execute it
-			if (!empty($stylesheets)) {
-				foreach ($stylesheets as $style) {
-					if (is_callable($style)) {
-						$styleValue = call_user_func($style);
-
-						if (is_string($styleValue) && !empty($styleValue)) {
-							$componentOutput =
-								"<style>\n" .
-								$styleValue .
-								"\n</style>\n" .
-								$componentOutput;
-						}
-					}
-				}
-			}
+			// Generate session-based links for scripts and stylesheets instead of inline content
+			$assetLinks = $this->generateAssetLinks($route, $scripts, $stylesheets);
+			$componentOutput = $assetLinks['stylesheets'] . $componentOutput . $assetLinks['scripts'];
 
 			if ($request->requestedWith() === 'PHPSPA_REQUEST') {
 				$info = [
@@ -384,6 +370,189 @@ abstract class AppImpl
 				print_r($compressedOutput);
 				exit(0);
 			}
+		}
+	}
+
+	/**
+	 * Generate session-based links for component assets
+	 *
+	 * @param array|string $route Component route
+	 * @param array $scripts Array of script callables
+	 * @param array $stylesheets Array of stylesheet callables
+	 * @return array Array with 'scripts' and 'stylesheets' HTML
+	 */
+	private function generateAssetLinks($route, array $scripts, array $stylesheets): array
+	{
+		$result = ['scripts' => '', 'stylesheets' => ''];
+		
+		// Get the primary route for mapping purposes
+		$primaryRoute = is_array($route) ? $route[0] : $route;
+		
+		// Generate stylesheet links
+		if (!empty($stylesheets)) {
+			foreach ($stylesheets as $index => $stylesheet) {
+				if (is_callable($stylesheet)) {
+					$cssLink = AssetLinkManager::generateCssLink($primaryRoute, $index);
+					$result['stylesheets'] .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$cssLink\" />\n";
+				}
+			}
+		}
+		
+		// Generate script links
+		if (!empty($scripts)) {
+			foreach ($scripts as $index => $script) {
+				if (is_callable($script)) {
+					$jsLink = AssetLinkManager::generateJsLink($primaryRoute, $index);
+					$result['scripts'] .= "\n<script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
+				}
+			}
+		}
+		
+		return $result;
+	}
+
+	/**
+	 * Serve CSS/JS asset content from session-based links
+	 *
+	 * @param array $assetInfo Asset information from AssetLinkManager
+	 * @return void
+	 */
+	private function serveAsset(array $assetInfo): void
+	{
+		// Find the component that matches the asset's route
+		$component = $this->findComponentByRoute($assetInfo['componentRoute']);
+		
+		if ($component === null) {
+			http_response_code(404);
+			header('Content-Type: text/plain');
+			echo "Asset not found";
+			return;
+		}
+
+		// Get the asset content
+		$content = $this->getAssetContent($component, $assetInfo);
+		
+		if ($content === null) {
+			http_response_code(404);
+			header('Content-Type: text/plain');
+			echo "Asset content not found";
+			return;
+		}
+
+		// Determine compression level
+		$request = new Request();
+		$compressionLevel = ($request->requestedWith() === 'PHPSPA_REQUEST') 
+			? Compressor::LEVEL_EXTREME 
+			: Compressor::getLevel();
+
+		// Compress the content
+		$compressedContent = $this->compressAssetContent($content, $assetInfo['type'], $compressionLevel);
+
+		// Set appropriate headers
+		$this->setAssetHeaders($assetInfo['type'], $compressedContent);
+
+		// Output the content
+		echo $compressedContent;
+	}
+
+	/**
+	 * Find a component by its route
+	 *
+	 * @param string $targetRoute The route to search for
+	 * @return Component|null The component if found, null otherwise
+	 */
+	private function findComponentByRoute(string $targetRoute): ?Component
+	{
+		foreach ($this->components as $component) {
+			$route = CallableInspector::getProperty($component, 'route');
+			
+			if (is_array($route)) {
+				if (in_array($targetRoute, $route)) {
+					return $component;
+				}
+			} elseif ($route === $targetRoute) {
+				return $component;
+			}
+		}
+		
+		return null;
+	}
+
+	/**
+	 * Get asset content from component
+	 *
+	 * @param Component $component The component containing the asset
+	 * @param array $assetInfo Asset information
+	 * @return string|null The asset content if found, null otherwise
+	 */
+	private function getAssetContent(Component $component, array $assetInfo): ?string
+	{
+		if ($assetInfo['assetType'] === 'css') {
+			$stylesheets = CallableInspector::getProperty($component, 'stylesheets');
+			if (isset($stylesheets[$assetInfo['assetIndex']]) && is_callable($stylesheets[$assetInfo['assetIndex']])) {
+				return call_user_func($stylesheets[$assetInfo['assetIndex']]);
+			}
+		} elseif ($assetInfo['assetType'] === 'js') {
+			$scripts = CallableInspector::getProperty($component, 'scripts');
+			if (isset($scripts[$assetInfo['assetIndex']]) && is_callable($scripts[$assetInfo['assetIndex']])) {
+				return call_user_func($scripts[$assetInfo['assetIndex']]);
+			}
+		}
+		
+		return null;
+	}
+
+	/**
+	 * Compress asset content
+	 *
+	 * @param string $content The content to compress
+	 * @param string $type Asset type ('css' or 'js')
+	 * @param int $level Compression level
+	 * @return string Compressed content
+	 */
+	private function compressAssetContent(string $content, string $type, int $level): string
+	{
+		if ($type === 'css') {
+			// Wrap CSS content in style tags for compression, then extract
+			$wrappedContent = "<style>$content</style>";
+			$compressed = Compressor::compressWithLevel($wrappedContent, $level);
+			// Extract CSS content back from style tags
+			if (preg_match('/<style[^>]*>(.*?)<\/style>/s', $compressed, $matches)) {
+				return trim($matches[1]);
+			}
+			return $content;
+		} elseif ($type === 'js') {
+			// Wrap JS content in script tags for compression, then extract
+			$wrappedContent = "<script>$content</script>";
+			$compressed = Compressor::compressWithLevel($wrappedContent, $level);
+			// Extract JS content back from script tags
+			if (preg_match('/<script[^>]*>(.*?)<\/script>/s', $compressed, $matches)) {
+				return trim($matches[1]);
+			}
+			return $content;
+		}
+		
+		return $content;
+	}
+
+	/**
+	 * Set appropriate headers for asset response
+	 *
+	 * @param string $type Asset type ('css' or 'js')
+	 * @param string $content The content to send
+	 * @return void
+	 */
+	private function setAssetHeaders(string $type, string $content): void
+	{
+		if (!headers_sent()) {
+			if ($type === 'css') {
+				header('Content-Type: text/css; charset=UTF-8');
+			} elseif ($type === 'js') {
+				header('Content-Type: application/javascript; charset=UTF-8');
+			}
+			
+			header('Content-Length: ' . strlen($content));
+			header('Cache-Control: private, max-age=' . (AssetLinkManager::getCacheConfig()['hours'] * 3600));
 		}
 	}
 }
