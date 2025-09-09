@@ -10,7 +10,6 @@
  * @since v1.1.5
  * @author dconco <concodave@gmail.com>
  */
-
 // Ensure this test runner only executes from the command line (for CI/workflows)
 if (php_sapi_name() !== 'cli') {
     // Avoid executing in web contexts
@@ -21,12 +20,18 @@ if (php_sapi_name() !== 'cli') {
     exit(0);
 }
 
+// Initialize session for testing
+if (!session_id()) {
+    session_start();
+}
+
 // define the variables
 $test1_successful;
 $test2_successful;
 $test3_successful;
 $todo_tests_successful;
 $comprehensive_tests_successful;
+$assets_link_tests_successful;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/HtmlCompressionTest.php';
@@ -34,8 +39,9 @@ require_once __DIR__ . '/EnhancedJsCompressionTest.php';  // Use enhanced tests
 require_once __DIR__ . '/Utf8IntegrationTest.php';        // UTF-8 encoding and integration tests
 require_once __DIR__ . '/TodoJsCompressionTest.php';
 require_once __DIR__ . '/ComprehensiveJsCompressionTest.php'; // Comprehensive real-world tests
+require_once __DIR__ . '/AssetLinkTest.php';               // Asset link generation and serving tests
 
-$testSuccessful = $test1_successful && $test2_successful && $test3_successful && $todo_tests_successful && $comprehensive_tests_successful;
+$testSuccessful = $test1_successful && $test2_successful && $test3_successful && $todo_tests_successful && $comprehensive_tests_successful && $assets_link_tests_successful;
 
 echo "\n================= COMBINED TESTS RESULT: " . ($testSuccessful ? 'ALL PASSED' : 'SOME FAILED') . " =================\n";
 if (!$testSuccessful) {
