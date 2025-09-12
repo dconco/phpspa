@@ -14,18 +14,7 @@ return fn () => <<<HTML
          <script type="text/javascript" src="/src/index.js"></script>
 
          <script>
-            phpspa.on("beforeload", ({ route }) => {
-               document.getElementById("app").innerHTML = "<h1>Loading...</h1>";
-               console.log("Before Load: " + route);
-            });
-
-            phpspa.on("load", ({ route, success, error }) => {
-               console.log("Loaded!");
-
-               if (!success) {
-                  console.log('But an error occured: ', error);
-               }
-            });
+            
          </script>
       </body>
    </html>

@@ -90,4 +90,36 @@ class App extends \phpSPA\Core\Impl\RealImpl\AppImpl implements
         AssetLinkManager::setCacheConfig($hours);
         return $this;
     }
+
+    /**
+     * Add a global script to the application
+     *
+     * This script will be executed on every component render throughout the application.
+     * Scripts are added to the global scripts array and will be rendered alongside
+     * component-specific scripts.
+     *
+     * @param callable $script The callable that returns the JavaScript code
+     * @return self
+     */
+    public function script(callable $script): self
+    {
+        $this->scripts[] = $script;
+        return $this;
+    }
+
+    /**
+     * Add a global stylesheet to the application
+     *
+     * This stylesheet will be included on every component render throughout the application.
+     * Stylesheets are added to the global stylesheets array and will be rendered alongside
+     * component-specific styles.
+     *
+     * @param callable $style The callable that returns the CSS code
+     * @return self
+     */
+    public function styleSheet(callable $style): self
+    {
+        $this->stylesheets[] = $style;
+        return $this;
+    }
 }

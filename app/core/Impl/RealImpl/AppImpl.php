@@ -93,6 +93,22 @@ abstract class AppImpl
 
     private array $cors = [];
 
+    /**
+     * Global scripts to be executed for the application.
+     * These scripts will be included on every component render.
+     *
+     * @var callable[] $scripts
+     */
+    protected array $scripts = [];
+
+    /**
+     * Global stylesheets to be included for the application.
+     * These styles will be included on every component render.
+     *
+     * @var callable[] $stylesheets
+     */
+    protected array $stylesheets = [];
+
     public function defaultTargetID(string $targetID): App
     {
         $this->defaultTargetID = $targetID;
@@ -306,10 +322,12 @@ abstract class AppImpl
             $componentOutput = static::format($componentOutput);
 
             // Generate session-based links for scripts and stylesheets instead of inline content
-            $assetLinks = $this->generateAssetLinks($route, $scripts, $stylesheets);
-            $componentOutput = $assetLinks['stylesheets'] . $componentOutput . $assetLinks['scripts'];
+            $assetLinks = $this->generateAssetLinks($route, $scripts, $stylesheets, $this->scripts, $this->stylesheets);
 
             if ($request->requestedWith() === 'PHPSPA_REQUEST') {
+                // For PHPSPA requests (component updates), include component scripts with the component
+                $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput . $assetLinks['component']['scripts'];
+
                 $info = [
                     'content' => Compressor::compressComponent($componentOutput),
                     'title' => $title,
@@ -323,6 +341,10 @@ abstract class AppImpl
                 print_r(Compressor::compressJson($info));
                 exit(0);
             } else {
+                // For regular HTML requests, only include component stylesheets with the component content
+                // Component scripts will be injected later to ensure proper execution order
+                $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput;
+
                 if ($title) {
                     $count = 0;
                     $layoutOutput = preg_replace_callback(
@@ -374,6 +396,10 @@ abstract class AppImpl
                     $layoutOutput,
                 );
 
+                // Inject global assets at the end of body tag (or html tag if no body exists)
+                // Also inject component scripts after global scripts for proper execution order
+                $this->renderedData = $this->injectGlobalAssets($this->renderedData, $assetLinks['global'], $assetLinks['component']['scripts']);
+
                 // Compress final HTML output before sending
                 $compressedOutput = Compressor::compress(
                     $this->renderedData,
@@ -390,33 +416,58 @@ abstract class AppImpl
      * Generate session-based links for component assets
      *
      * @param array|string $route Component route
-     * @param array $scripts Array of script callables
-     * @param array $stylesheets Array of stylesheet callables
-     * @return array Array with 'scripts' and 'stylesheets' HTML
+     * @param array $scripts Array of component script callables
+     * @param array $stylesheets Array of component stylesheet callables
+     * @param array $globalScripts Array of global script callables
+     * @param array $globalStylesheets Array of global stylesheet callables
+     * @return array Array with 'component' and 'global' sections, each containing 'scripts' and 'stylesheets' HTML
      */
-    private function generateAssetLinks($route, array $scripts, array $stylesheets): array
+    private function generateAssetLinks($route, array $scripts, array $stylesheets, array $globalScripts = [], array $globalStylesheets = []): array
     {
-        $result = ['scripts' => '', 'stylesheets' => ''];
+        $result = [
+            'component' => ['scripts' => '', 'stylesheets' => ''],
+            'global' => ['scripts' => '', 'stylesheets' => '']
+        ];
 
         // Get the primary route for mapping purposes
         $primaryRoute = is_array($route) ? $route[0] : $route;
 
-        // Generate stylesheet links
-        if (!empty($stylesheets)) {
-            foreach ($stylesheets as $index => $stylesheet) {
+        // Generate global stylesheet links
+        if (!empty($globalStylesheets)) {
+            foreach ($globalStylesheets as $index => $stylesheet) {
                 if (is_callable($stylesheet)) {
-                    $cssLink = AssetLinkManager::generateCssLink($primaryRoute, $index);
-                    $result['stylesheets'] .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$cssLink\" />\n";
+                    $cssLink = AssetLinkManager::generateCssLink("__global__", $index);
+                    $result['global']['stylesheets'] .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$cssLink\" />\n";
                 }
             }
         }
 
-        // Generate script links
+        // Generate component stylesheet links
+        if (!empty($stylesheets)) {
+            foreach ($stylesheets as $index => $stylesheet) {
+                if (is_callable($stylesheet)) {
+                    $cssLink = AssetLinkManager::generateCssLink($primaryRoute, $index);
+                    $result['component']['stylesheets'] .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$cssLink\" />\n";
+                }
+            }
+        }
+
+        // Generate global script links
+        if (!empty($globalScripts)) {
+            foreach ($globalScripts as $index => $script) {
+                if (is_callable($script)) {
+                    $jsLink = AssetLinkManager::generateJsLink("__global__", $index);
+                    $result['global']['scripts'] .= "\n<script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
+                }
+            }
+        }
+
+        // Generate component script links
         if (!empty($scripts)) {
             foreach ($scripts as $index => $script) {
                 if (is_callable($script)) {
                     $jsLink = AssetLinkManager::generateJsLink($primaryRoute, $index);
-                    $result['scripts'] .= "\n<script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
+                    $result['component']['scripts'] .= "\n<script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
                 }
             }
         }
@@ -432,18 +483,23 @@ abstract class AppImpl
      */
     private function serveAsset(array $assetInfo): void
     {
-        // Find the component that matches the asset's route
-        $component = $this->findComponentByRoute($assetInfo['componentRoute']);
+        // Check if this is a global asset
+        if ($assetInfo['componentRoute'] === '__global__') {
+            $content = $this->getGlobalAssetContent($assetInfo);
+        } else {
+            // Find the component that matches the asset's route
+            $component = $this->findComponentByRoute($assetInfo['componentRoute']);
 
-        if ($component === null) {
-            http_response_code(404);
-            header('Content-Type: text/plain');
-            echo "Asset not found";
-            return;
+            if ($component === null) {
+                http_response_code(404);
+                header('Content-Type: text/plain');
+                echo "Asset not found";
+                return;
+            }
+
+            // Get the asset content
+            $content = $this->getAssetContent($component, $assetInfo);
         }
-
-        // Get the asset content
-        $content = $this->getAssetContent($component, $assetInfo);
 
         if ($content === null) {
             http_response_code(404);
@@ -516,6 +572,27 @@ abstract class AppImpl
     }
 
     /**
+     * Get global asset content from the application
+     *
+     * @param array $assetInfo Asset information
+     * @return string|null The asset content if found, null otherwise
+     */
+    private function getGlobalAssetContent(array $assetInfo): ?string
+    {
+        if ($assetInfo['assetType'] === 'css') {
+            if (isset($this->stylesheets[$assetInfo['assetIndex']]) && is_callable($this->stylesheets[$assetInfo['assetIndex']])) {
+                return call_user_func($this->stylesheets[$assetInfo['assetIndex']]);
+            }
+        } elseif ($assetInfo['assetType'] === 'js') {
+            if (isset($this->scripts[$assetInfo['assetIndex']]) && is_callable($this->scripts[$assetInfo['assetIndex']])) {
+                return call_user_func($this->scripts[$assetInfo['assetIndex']]);
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Compress asset content
      *
      * @param string $content The content to compress
@@ -567,5 +644,52 @@ abstract class AppImpl
             header('Content-Length: ' . strlen($content));
             header('Cache-Control: private, max-age=' . (AssetLinkManager::getCacheConfig()['hours'] * 3600));
         }
+    }
+
+    /**
+     * Inject global assets in optimal locations for proper loading order
+     *
+     * @param string $html The HTML content
+     * @param array $globalAssets Array containing 'scripts' and 'stylesheets' keys
+     * @param string $componentScripts Component scripts to inject after global scripts
+     * @return string Modified HTML with global assets injected
+     */
+    private function injectGlobalAssets(string $html, array $globalAssets, string $componentScripts = ''): string
+    {
+        $globalStylesheets = $globalAssets['stylesheets'];
+        $globalScripts = $globalAssets['scripts'];
+
+        // If no global assets and no component scripts, return unchanged
+        if (empty(trim($globalStylesheets)) && empty(trim($globalScripts)) && empty(trim($componentScripts))) {
+            return $html;
+        }
+
+        // Inject global stylesheets in head for proper CSS cascading
+        if (!empty(trim($globalStylesheets))) {
+            if (preg_match('/<\/head>/i', $html)) {
+                $html = preg_replace('/<\/head>/i', $globalStylesheets . '</head>', $html, 1);
+            } else {
+                // If no head tag, put stylesheets at the beginning
+                $html = $globalStylesheets . $html;
+            }
+        }
+
+        // Combine global scripts and component scripts in proper order
+        $allScripts = $globalScripts . $componentScripts;
+
+        // Inject scripts at end of body (global scripts first, then component scripts)
+        if (!empty(trim($allScripts))) {
+            if (preg_match('/<\/body>/i', $html)) {
+                $html = preg_replace('/<\/body>/i', $allScripts . '</body>', $html, 1);
+            } elseif (preg_match('/<\/html>/i', $html)) {
+                // If no body tag, try to inject before closing html tag
+                $html = preg_replace('/<\/html>/i', $allScripts . '</html>', $html, 1);
+            } else {
+                // If neither body nor html tags exist, append at the end
+                $html = $html . $allScripts;
+            }
+        }
+
+        return $html;
     }
 }
