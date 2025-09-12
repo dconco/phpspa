@@ -1,5 +1,46 @@
 # CHANGELOG
 
+## v1.1.7
+
+### [Added]
+
+1. **Global Asset Management System** ✅
+
+   Added comprehensive asset management capabilities to the App class for better control over global scripts, stylesheets, and caching:
+
+   **Features:**
+   - **Asset Cache Control**: `assetCacheHours()` method to configure asset caching duration
+   - **Global Scripts**: `script()` method to add application-wide JavaScript that executes on every component render
+   - **Global Stylesheets**: `styleSheet()` method to add application-wide CSS that applies to every component render
+   - **Session-based Asset Links**: Enhanced asset delivery system using session-based links for improved performance
+
+   **Usage:**
+
+   ```php
+   use phpSPA\App;
+
+   $app = new App('layout')
+       ->assetCacheHours(48)  // Cache assets for 48 hours
+       ->script(function() {
+           return "console.log('Global script loaded');";
+       })
+       ->styleSheet(function() {
+           return "body { font-family: 'Arial', sans-serif; }";
+       });
+   ```
+
+   **Methods Added:**
+   - `App::assetCacheHours(int $hours)` - Configure asset caching duration (0 for session-only, default is 24 hours)
+   - `App::script(callable $script)` - Add global scripts that execute on every component render
+   - `App::styleSheet(callable $style)` - Add global stylesheets that apply to every component render
+
+   **Files Modified:**
+   - `app/client/App.php` - Added the three new public methods with full documentation
+   - `app/core/Helper/AssetLinkManager.php` - Enhanced with cache configuration management
+   - `app/core/Impl/RealImpl/AppImpl.php` - Updated asset generation logic to support global assets
+
+---
+
 ## v1.1.6
 
 ### [Fixed]
