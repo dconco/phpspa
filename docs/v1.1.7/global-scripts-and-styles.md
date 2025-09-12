@@ -6,7 +6,7 @@ Inject application-wide JavaScript and CSS that applies to every component rende
 
 ## Overview
 
-phpSPA v1.1.6 introduces two powerful methods for adding global assets to your application:
+phpSPA v1.1.7 introduces two powerful methods for adding global assets to your application:
 
 - **`App::script()`**: Add JavaScript that executes on every component render
 - **`App::styleSheet()`**: Add CSS that applies to every component render
@@ -386,7 +386,7 @@ CSS);
 ```php
 <?php
 // ✅ Good: Essential global functionality only
-$app->script(fn() => 'window.APP_VERSION = "1.1.6";');
+$app->script(fn() => 'window.APP_VERSION = "1.1.7";');
 
 // ❌ Avoid: Component-specific logic in global scope
 $app->script(fn() => 'document.getElementById("login-form").addEventListener(...)');

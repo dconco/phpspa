@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Enhanced JavaScript Compression Tests for phpSPA v1.1.6
+ * Enhanced JavaScript Compression Tests for phpSPA v1.1.7
  *
  * Tests the corrected JavaScript minification functionality focusing on:
  * - String literal preservation
@@ -9,7 +9,7 @@
  * - Variable name integrity
  * - Functional JavaScript output
  *
- * @since v1.1.6
+ * @since v1.1.7
  * @author dconco <concodave@gmail.com>
  */
 

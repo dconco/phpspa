@@ -1,6 +1,6 @@
-# phpSPA v1.1.6 Documentation
+# phpSPA v1.1.7 Documentation
 
-This folder contains the complete documentation for phpSPA v1.1.6, featuring enhanced global asset management and improved script/style injection capabilities.
+This folder contains the complete documentation for phpSPA v1.1.7, featuring enhanced global asset management and improved script/style injection capabilities.
 
 ## 📁 Documentation Structure
 
@@ -35,7 +35,7 @@ This folder contains the complete documentation for phpSPA v1.1.6, featuring enh
 
 ## 📋 Upgrade Checklist
 
-- [ ] Update composer dependencies to v1.1.6
+- [ ] Update composer dependencies to v1.1.7
 - [ ] Review asset caching strategy with new `assetCacheHours()` method
 - [ ] Consider migrating repeated scripts/styles to global injection
 - [ ] Test application functionality with new features

@@ -1,10 +1,10 @@
-# phpSPA v1.1.6
+# phpSPA v1.1.7
 
 Enhanced asset management and global script/style injection for modern web applications
 
 ---
 
-## What's New in v1.1.6
+## What's New in v1.1.7
 
 ### 🔧 Asset Management Enhancements
 
@@ -21,10 +21,10 @@ Enhanced asset management and global script/style injection for modern web appli
 
 ---
 
-## Update To `v1.1.6`
+## Update To `v1.1.7`
 
 ```bash
-composer update dconco/phpspa:v1.1.6
+composer update dconco/phpspa:v1.1.7
 ```
 
 ---
@@ -120,7 +120,7 @@ $app = (new App(require 'Layout.php'))
 
 ## Migration from v1.1.5
 
-v1.1.6 is fully backward compatible with v1.1.5. The new features are additive:
+v1.1.7 is fully backward compatible with v1.1.5. The new features are additive:
 
 ```php
 <?php
@@ -129,7 +129,7 @@ $app = new App(require 'Layout.php');
 $app->attach(require 'components/App.php');
 $app->run();
 
-// Enhance with v1.1.6 features
+// Enhance with v1.1.7 features
 $app = (new App(require 'Layout.php'))
     ->assetCacheHours(12) // NEW: Configure caching
     ->script(fn() => 'console.log("Enhanced!");') // NEW: Global script

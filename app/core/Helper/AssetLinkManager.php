@@ -17,7 +17,7 @@ use phpSPA\Http\Session;
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
- * @since v1.1.6
+ * @since v1.1.7
  */
 class AssetLinkManager
 {
