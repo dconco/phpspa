@@ -20,6 +20,5 @@ $app = (new App(require 'Layout.php'))
     ->compression(Compressor::LEVEL_NONE, true)
 
     ->cors()
-    ->assetCacheHours(0.0005); // 1.8 seconds for testing purpose
 
-$app->run();
+    ->run();
