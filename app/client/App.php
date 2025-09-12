@@ -82,7 +82,7 @@ class App extends \phpSPA\Core\Impl\RealImpl\AppImpl implements
     /**
      * Set cache duration for CSS/JS assets
      *
-     * @param int $hours Number of hours to cache assets (0 for session-only)
+     * @param int $hours Number of hours to cache assets (0 for session-only) Default is 24 hours
      * @return self
      */
     public function assetCacheHours(int $hours): self
