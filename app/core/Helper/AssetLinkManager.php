@@ -161,6 +161,7 @@ class AssetLinkManager
         $sessionId = session_id();
         $timestamp = time();
         $data = $sessionId . $componentRoute . $assetType . $assetIndex . $timestamp;
+        // $data = $sessionId . $componentRoute . $assetType . $assetIndex;
 
         return md5($data);
     }
