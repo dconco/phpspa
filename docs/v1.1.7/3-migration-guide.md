@@ -37,173 +37,22 @@ phpSPA v1.1.7 introduces powerful global asset management capabilities while mai
 
 ## Migration Scenarios
 
-### Scenario 1: Basic Application
-
-**Before (v1.1.6):**
-```php
-use phpSPA\App;
-
-$app = new App('layout');
-
-$app->component('/', function() {
-    return "<h1>Welcome</h1>";
-});
-
-$app->render();
-```
-
-**After (v1.1.7) - No Changes Required:**
-```php
-use phpSPA\App;
-
-$app = new App('layout');
-
-$app->component('/', function() {
-    return "<h1>Welcome</h1>";
-});
-
-$app->render(); // Works exactly the same
-```
-
-**After (v1.1.7) - With New Features:**
-```php
-use phpSPA\App;
-
-$app = new App('layout')
-    ->assetCacheHours(48)  // NEW: Configure caching
-    ->styleSheet(function() {  // NEW: Global styles
-        return "body { font-family: Arial, sans-serif; }";
-    });
-
-$app->component('/', function() {
-    return "<h1>Welcome</h1>";
-});
-
-$app->render();
-```
-
-### Scenario 2: Applications with Common Assets
-
-**Before (v1.1.6) - Repeated Code:**
-```php
-use phpSPA\App;
-use phpSPA\Component;
-
-$app = new App('layout');
-
-// Home component with common styles
-$app->component('/', function() {
-    return new Component(function() {
-        return "<h1>Home</h1>";
-    })
-    ->styleSheet(function() {
-        return "
-            body { font-family: Arial, sans-serif; }
-            .container { max-width: 1200px; margin: 0 auto; }
-        ";
-    })
-    ->script(function() {
-        return "console.log('Page loaded');";
-    });
-});
-
-// About component with same common styles
-$app->component('/about', function() {
-    return new Component(function() {
-        return "<h1>About</h1>";
-    })
-    ->styleSheet(function() {
-        return "
-            body { font-family: Arial, sans-serif; }  // Repeated
-            .container { max-width: 1200px; margin: 0 auto; }  // Repeated
-        ";
-    })
-    ->script(function() {
-        return "console.log('Page loaded');";  // Repeated
-    });
-});
-
-$app->render();
-```
-
-**After (v1.1.7) - DRY Approach:**
-```php
-use phpSPA\App;
-use phpSPA\Component;
-
-$app = new App('layout')
-    // Global assets (defined once, used everywhere)
-    ->styleSheet(function() {
-        return "
-            body { font-family: Arial, sans-serif; }
-            .container { max-width: 1200px; margin: 0 auto; }
-        ";
-    })
-    ->script(function() {
-        return "console.log('Page loaded');";
-    });
-
-// Home component - only page-specific assets
-$app->component('/', function() {
-    return new Component(function() {
-        return "<div class='container'><h1>Home</h1></div>";
-    });
-});
-
-// About component - only page-specific assets
-$app->component('/about', function() {
-    return new Component(function() {
-        return "<div class='container'><h1>About</h1></div>";
-    });
-});
-
-$app->render();
-```
-
-### Scenario 3: Performance-Critical Applications
-
-**Before (v1.1.6) - Default Caching:**
-```php
-use phpSPA\App;
-
-$app = new App('layout');
-// Uses default 24-hour caching
-
-$app->component('/', function() {
-    return "<h1>High-Traffic Site</h1>";
-});
-
-$app->render();
-```
-
-**After (v1.1.7) - Optimized Caching:**
-```php
-use phpSPA\App;
-
-$app = new App('layout')
-    ->assetCacheHours(168); // Cache for 1 week for better performance
-
-$app->component('/', function() {
-    return "<h1>High-Traffic Site</h1>";
-});
-
-$app->render();
-```
-
-### Scenario 4: Development vs Production
+### Development vs Production
 
 **Before (v1.1.6) - Same Behavior Everywhere:**
 ```php
+<?php
 use phpSPA\App;
 
 $app = new App('layout');
 // Same 24-hour caching in dev and production
 
-$app->render();
+$app->run();
 ```
 
 **After (v1.1.7) - Environment-Aware:**
 ```php
+<?php
 use phpSPA\App;
 
 $app = new App('layout');
@@ -215,7 +64,7 @@ if (getenv('APP_ENV') === 'production') {
     $app->assetCacheHours(0);   // No caching for development
 }
 
-$app->render();
+$app->run();
 ```
 
 ---
@@ -249,6 +98,7 @@ Review your application and identify:
 
 **Move Common Styles:**
 ```php
+<?php
 // Instead of repeating in each component:
 ->styleSheet(function() {
     return "body { margin: 0; font-family: Arial; }";
@@ -262,6 +112,7 @@ $app->styleSheet(function() {
 
 **Move Common Scripts:**
 ```php
+<?php
 // Instead of repeating in each component:
 ->script(function() {
     return "window.utils = { log: console.log };";
@@ -277,6 +128,7 @@ $app->script(function() {
 Set appropriate cache duration for your environment:
 
 ```php
+<?php
 // Development
 $app->assetCacheHours(0);     // No persistent caching
 
@@ -303,6 +155,7 @@ Verify that:
 
 **Before:**
 ```php
+<?php
 // Bootstrap included in every component
 $component->styleSheet(function() {
     return file_get_contents('path/to/bootstrap.css');
@@ -311,6 +164,7 @@ $component->styleSheet(function() {
 
 **After:**
 ```php
+<?php
 // Bootstrap included globally
 $app->styleSheet(function() {
     return file_get_contents('path/to/bootstrap.css');
@@ -321,6 +175,7 @@ $app->styleSheet(function() {
 
 **Before:**
 ```php
+<?php
 // Analytics code in every component
 $component->script(function() {
     return "gtag('config', 'GA_MEASUREMENT_ID');";
@@ -329,6 +184,7 @@ $component->script(function() {
 
 **After:**
 ```php
+<?php
 // Analytics code globally
 $app->script(function() {
     return "gtag('config', 'GA_MEASUREMENT_ID');";
@@ -339,6 +195,7 @@ $app->script(function() {
 
 **Before:**
 ```php
+<?php
 // Theme styles repeated
 $component->styleSheet(function() {
     return ":root { --primary-color: #007bff; }";
@@ -347,6 +204,7 @@ $component->styleSheet(function() {
 
 **After:**
 ```php
+<?php
 // Theme defined globally
 $app->styleSheet(function() {
     return "
@@ -396,6 +254,7 @@ $app->styleSheet(function() {
 
 **Solution:**
 ```php
+<?php
 // Check that assets are properly defined
 $app->script(function() {
     return "console.log('Global script loaded');";
@@ -408,8 +267,9 @@ $app->script(function() {
 
 **Problem:** Assets not updating after changes
 
-**Solution:**
+**Solution:**g
 ```php
+<?php
 // Temporarily disable caching for debugging
 $app->assetCacheHours(0);
 
@@ -423,6 +283,7 @@ $app->assetCacheHours(1); // Very short cache
 
 **Solution:**
 ```php
+<?php
 // Use CSS specificity or CSS custom properties
 $app->styleSheet(function() {
     return "
@@ -452,6 +313,7 @@ The system automatically handles execution order:
 
 ### 🎯 Asset Organization
 ```php
+<?php
 $app
     // Base styles first
     ->styleSheet(function() {
@@ -471,6 +333,7 @@ $app
 
 ### 🔧 Environment Configuration
 ```php
+<?php
 // config/app.php
 return [
     'asset_cache_hours' => [
@@ -488,6 +351,7 @@ $app->assetCacheHours($config['asset_cache_hours'][$env]);
 
 ### 📊 Monitoring
 ```php
+<?php
 // Log cache configuration for monitoring
 $app->script(function() {
     $cacheConfig = AssetLinkManager::getCacheConfig();
