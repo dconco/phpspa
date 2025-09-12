@@ -42,6 +42,7 @@ Adds a global JavaScript function that will be executed on every component rende
 
 **Example:**
 ```php
+<?php
 $app->script(function() {
     return "
         // Global configuration
@@ -78,6 +79,7 @@ Adds a global CSS function that will be applied to every component render.
 
 **Example:**
 ```php
+<?php
 $app->styleSheet(function() {
     return "
         /* CSS Custom Properties (CSS Variables) */
@@ -151,6 +153,7 @@ $app->styleSheet(function() {
 You can add multiple global scripts and stylesheets by calling the methods multiple times:
 
 ```php
+<?php
 $app
     // First global stylesheet - CSS reset
     ->styleSheet(function() {
@@ -250,6 +253,7 @@ This ensures that:
 Global assets work seamlessly with component-specific assets:
 
 ```php
+<?php
 // Global setup
 $app
     ->styleSheet(function() {
