@@ -31,26 +31,6 @@
 
 2. **Better Error Handling**: Added more robust error handling in compression callback logic to prevent incorrect processing of whitespace as script tags.
 
-3. **Global Asset Management Methods**: Added new methods to the App class for better asset and script management:
-
-   - **`App::assetCacheHours(int $hours)`**: Configure cache duration for CSS/JS assets. Set to 0 for session-only caching, default is 24 hours. @see [v1.1.6 Asset Cache Management](https://phpspa.readthedocs.io/en/latest/v1.1.6/asset-cache-management)
-
-   - **`App::script(callable $script)`**: Add global JavaScript that executes on every component render throughout the application. Scripts are added to a global array and rendered alongside component-specific scripts. @see [v1.1.6 Global Scripts](https://phpspa.readthedocs.io/en/latest/v1.1.6/global-scripts-and-styles)
-
-   - **`App::styleSheet(callable $style)`**: Add global CSS that is included on every component render throughout the application. Stylesheets are added to a global array and rendered alongside component-specific styles. @see [v1.1.6 Global Stylesheets](https://phpspa.readthedocs.io/en/latest/v1.1.6/global-scripts-and-styles)
-
-   **Usage Example:**
-
-   ```php
-   <?php
-   $app = (new App(require 'Layout.php'))
-       ->assetCacheHours(12) // Cache assets for 12 hours
-       ->script(fn() => 'console.log("Global script loaded");')
-       ->styleSheet(fn() => 'body { font-family: Arial, sans-serif; }')
-       ->attach(require 'components/App.php')
-       ->run();
-   ```
-
 ---
 
 ## v1.1.5

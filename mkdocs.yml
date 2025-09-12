@@ -169,11 +169,6 @@ nav:
         - 🛡️ CSRF Protection: ./v1.1.5/5-csrf-protection.md
         - 📋 Migration Guide: ./v1.1.5/6-migration-guide.md
 
-   - Version (v1.1.6):
-        - 🚀 Introduction: ./v1.1.6/index.md
-        - 🕒 Asset Cache Management: ./v1.1.6/asset-cache-management.md
-        - 🌐 Global Scripts and Styles: ./v1.1.6/global-scripts-and-styles.md
-
 # Enhanced plugins
 plugins:
    - search:
