@@ -264,10 +264,10 @@ $app
     });
 
 // Component using global assets
-$app->component('/profile', function() {
-    return new Component(function() {
+$app->attach((new Component(function() {
         return "<div class='container'><h1>User Profile</h1></div>";
-    })
+    }))
+    ->route("/profile");
     ->styleSheet(function() {
         // Component-specific styles that build on global styles
         return ".profile-card { background: white; border-radius: 8px; }";
@@ -275,8 +275,7 @@ $app->component('/profile', function() {
     ->script(function() {
         // Component script using global utilities
         return "utils.log('Profile component loaded');";
-    });
-});
+    }));
 ```
 
 The resulting page will include both global and component assets in the proper order, creating a cohesive and functional user experience.
