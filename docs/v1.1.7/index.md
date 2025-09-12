@@ -28,6 +28,7 @@ Enhanced global asset management system for better performance and control
 Configure how long assets are cached by the browser and session system.
 
 ```php
+<?php
 $app->assetCacheHours(48); // Cache for 48 hours
 $app->assetCacheHours(0);  // Session-only caching
 ```
@@ -36,6 +37,7 @@ $app->assetCacheHours(0);  // Session-only caching
 Add global JavaScript that executes on every component render.
 
 ```php
+<?php
 $app->script(function() {
     return "console.log('App initialized');";
 });
@@ -45,6 +47,7 @@ $app->script(function() {
 Add global CSS that applies to every component render.
 
 ```php
+<?php
 $app->styleSheet(function() {
     return "body { margin: 0; padding: 0; }";
 });
@@ -55,7 +58,9 @@ $app->styleSheet(function() {
 ## Example Usage
 
 ```php
+<?php
 use phpSPA\App;
+use phpSPA\Component;
 
 $app = new App('layout')
     ->assetCacheHours(24)
@@ -89,11 +94,11 @@ $app = new App('layout')
         ";
     });
 
-$app->component('/', function() {
+$app->attach(new Component(function() {
     return "<h1>Welcome to phpSPA v1.1.7!</h1>";
-});
+}));
 
-$app->render();
+$app->run();
 ```
 
 ---
