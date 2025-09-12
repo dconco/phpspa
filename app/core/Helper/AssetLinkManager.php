@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace phpSPA\Core\Helper;
 
 use phpSPA\Http\Session;
-use phpSPA\Compression\Compressor;
 
 /**
  * Asset Link Manager
@@ -26,17 +25,17 @@ class AssetLinkManager
      * Session key for storing asset mappings
      */
     private const ASSET_MAPPINGS_KEY = 'phpspa_asset_mappings';
-    
+
     /**
      * Session key for storing cache configuration
      */
     private const CACHE_CONFIG_KEY = 'phpspa_cache_config';
-    
+
     /**
      * Default cache duration in hours
      */
     private const DEFAULT_CACHE_HOURS = 24;
-    
+
     /**
      * Generate a unique session-based link for a CSS asset
      *
@@ -46,12 +45,20 @@ class AssetLinkManager
      */
     public static function generateCssLink(string $componentRoute, int $stylesheetIndex): string
     {
+        $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
+
+        foreach ($mappings as $hash => $mapping) {
+            if (!self::isMappingExpired($mapping) && $mapping['componentRoute'] === $componentRoute && $mapping['assetType'] === 'css' && $mapping['assetIndex'] === $stylesheetIndex) {
+                return self::buildAssetUrl($hash, 'css');
+            }
+        }
+
         $hash = self::generateAssetHash($componentRoute, 'css', $stylesheetIndex);
         self::storeAssetMapping($hash, $componentRoute, 'css', $stylesheetIndex);
-        
+
         return self::buildAssetUrl($hash, 'css');
     }
-    
+
     /**
      * Generate a unique session-based link for a JavaScript asset
      *
@@ -61,12 +68,20 @@ class AssetLinkManager
      */
     public static function generateJsLink(string $componentRoute, int $scriptIndex): string
     {
+        $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
+
+        foreach ($mappings as $hash => $mapping) {
+            if (!self::isMappingExpired($mapping) && $mapping['componentRoute'] === $componentRoute && $mapping['assetType'] === 'js' && $mapping['assetIndex'] === $scriptIndex) {
+                return self::buildAssetUrl($hash, 'js');
+            }
+        }
+
         $hash = self::generateAssetHash($componentRoute, 'js', $scriptIndex);
         self::storeAssetMapping($hash, $componentRoute, 'js', $scriptIndex);
-        
+
         return self::buildAssetUrl($hash, 'js');
     }
-    
+
     /**
      * Check if a request is for a session-based asset
      *
@@ -75,28 +90,28 @@ class AssetLinkManager
      */
     public static function resolveAssetRequest(string $requestUri): ?array
     {
-        if (!preg_match('/\/phpspa-assets\/([a-f0-9]{32})\.(css|js)$/', $requestUri, $matches)) {
+        if (!preg_match('/\/phpspa\/assets\/([a-f0-9]{32})\.(css|js)$/', $requestUri, $matches)) {
             return null;
         }
-        
+
         $hash = $matches[1];
         $type = $matches[2];
-        
+
         $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
-        
+
         if (!isset($mappings[$hash])) {
             return null;
         }
-        
+
         $mapping = $mappings[$hash];
-        
+
         // Check if mapping has expired
         if (self::isMappingExpired($mapping)) {
             unset($mappings[$hash]);
             Session::set(self::ASSET_MAPPINGS_KEY, $mappings, true);
             return null;
         }
-        
+
         return [
             'hash' => $hash,
             'type' => $type,
@@ -105,7 +120,7 @@ class AssetLinkManager
             'assetIndex' => $mapping['assetIndex']
         ];
     }
-    
+
     /**
      * Set cache configuration for assets
      *
@@ -119,7 +134,7 @@ class AssetLinkManager
             'timestamp' => time()
         ]);
     }
-    
+
     /**
      * Get current cache configuration
      *
@@ -132,7 +147,7 @@ class AssetLinkManager
             'timestamp' => time()
         ]);
     }
-    
+
     /**
      * Generate a unique hash for an asset
      *
@@ -146,10 +161,10 @@ class AssetLinkManager
         $sessionId = session_id();
         $timestamp = time();
         $data = $sessionId . $componentRoute . $assetType . $assetIndex . $timestamp;
-        
+
         return md5($data);
     }
-    
+
     /**
      * Store asset mapping in session
      *
@@ -162,17 +177,17 @@ class AssetLinkManager
     private static function storeAssetMapping(string $hash, string $componentRoute, string $assetType, int $assetIndex): void
     {
         $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
-        
+
         $mappings[$hash] = [
             'componentRoute' => $componentRoute,
             'assetType' => $assetType,
             'assetIndex' => $assetIndex,
             'created' => time()
         ];
-        
+
         Session::set(self::ASSET_MAPPINGS_KEY, $mappings, true);
     }
-    
+
     /**
      * Build the asset URL
      *
@@ -183,9 +198,9 @@ class AssetLinkManager
     private static function buildAssetUrl(string $hash, string $type): string
     {
         $baseUrl = self::getBaseUrl();
-        return $baseUrl . "/phpspa-assets/{$hash}.{$type}";
+        return $baseUrl . "/phpspa/assets/{$hash}.{$type}";
     }
-    
+
     /**
      * Get the base URL for the application
      *
@@ -197,7 +212,7 @@ class AssetLinkManager
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         return $protocol . '://' . $host;
     }
-    
+
     /**
      * Check if an asset mapping has expired
      *
@@ -207,16 +222,16 @@ class AssetLinkManager
     private static function isMappingExpired(array $mapping): bool
     {
         $cacheConfig = self::getCacheConfig();
-        
+
         // If cache hours is 0, use session-only (never expires until session ends)
         if ($cacheConfig['hours'] === 0) {
             return false;
         }
-        
+
         $expireTime = $mapping['created'] + ($cacheConfig['hours'] * 3600);
         return time() > $expireTime;
     }
-    
+
     /**
      * Clean up expired asset mappings
      *
@@ -226,14 +241,14 @@ class AssetLinkManager
     {
         $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
         $cleaned = false;
-        
+
         foreach ($mappings as $hash => $mapping) {
             if (self::isMappingExpired($mapping)) {
                 unset($mappings[$hash]);
                 $cleaned = true;
             }
         }
-        
+
         if ($cleaned) {
             Session::set(self::ASSET_MAPPINGS_KEY, $mappings, true);
         }

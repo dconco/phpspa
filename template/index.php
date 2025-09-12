@@ -19,6 +19,6 @@ $app = (new App(require 'Layout.php'))
 
     ->compression(Compressor::LEVEL_NONE, true)
 
-    ->cors();
+    ->cors()
 
-$app->run();
+    ->run();
