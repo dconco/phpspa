@@ -46,6 +46,7 @@ Configures the cache duration for all assets (scripts and stylesheets) generated
 ### Basic Configuration
 
 ```php
+<?php
 use phpSPA\App;
 
 // Cache assets for 24 hours (default)
@@ -61,6 +62,7 @@ $app = new App('layout')->assetCacheHours(0);
 ### Environment-Based Caching
 
 ```php
+<?php
 use phpSPA\App;
 
 $app = new App('layout');
@@ -78,6 +80,7 @@ if (getenv('APP_ENV') === 'production') {
 ### Dynamic Cache Configuration
 
 ```php
+<?php
 use phpSPA\App;
 
 $app = new App('layout');
@@ -109,6 +112,7 @@ switch ($cacheStrategy) {
 ### Method Chaining
 
 ```php
+<?php
 use phpSPA\App;
 
 $app = new App('layout')
@@ -329,6 +333,7 @@ error_log('Asset cache: ' . $cacheConfig['hours'] . ' hours');
 ### With Compression System
 
 ```php
+<?php
 use phpSPA\App;
 use phpSPA\Compression\Compressor;
 
@@ -340,6 +345,7 @@ $app = new App('layout')
 ### With Environment Detection
 
 ```php
+<?php
 use phpSPA\App;
 
 $app = new App('layout');
@@ -358,6 +364,7 @@ if ($isProduction) {
 ### With Dynamic Assets
 
 ```php
+<?php
 use phpSPA\App;
 
 $app = new App('layout')
