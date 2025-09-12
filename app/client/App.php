@@ -84,7 +84,6 @@ class App extends \phpSPA\Core\Impl\RealImpl\AppImpl implements
      *
      * @param int $hours Number of hours to cache assets (0 for session-only) Default is 24 hours
      * @return self
-     * @see https://phpspa.readthedocs.io/en/latest/v1.1.6/asset-cache-management
      */
     public function assetCacheHours(int $hours): self
     {
@@ -101,7 +100,6 @@ class App extends \phpSPA\Core\Impl\RealImpl\AppImpl implements
      *
      * @param callable $script The callable that returns the JavaScript code
      * @return self
-     * @see https://phpspa.readthedocs.io/en/latest/v1.1.6/global-scripts-and-styles
      */
     public function script(callable $script): self
     {
@@ -118,7 +116,6 @@ class App extends \phpSPA\Core\Impl\RealImpl\AppImpl implements
      *
      * @param callable $style The callable that returns the CSS code
      * @return self
-     * @see https://phpspa.readthedocs.io/en/latest/v1.1.6/global-scripts-and-styles
      */
     public function styleSheet(callable $style): self
     {

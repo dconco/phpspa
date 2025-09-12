@@ -37,16 +37,7 @@ return (new Component(function (Request $request): string {
 
    ->script(
        fn () => <<<JS
-		  	// Component script - should execute AFTER global script
-		  	console.log('4. HomePage component script executing');
-		  	
-		  	// Test if global utilities are available
-		  	if (window.globalUtils) {
-		  		window.globalUtils.executionOrder.push('HomePage component script executed');
-		  		window.globalUtils.log('HomePage component can access global utilities!');
-		  	} else {
-		  		console.error('Global utilities not available - execution order problem!');
-		  	}
+		  	alert('Script Mounted')
 
 			const observer = new IntersectionObserver(function(entries) {
 			entries.forEach(function(entry) {
