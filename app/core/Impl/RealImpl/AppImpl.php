@@ -497,8 +497,13 @@ abstract class AppImpl
                 return;
             }
 
-            // Get the asset content
-            $content = $this->getAssetContent($component, $assetInfo);
+            if ($assetInfo['assetType'] === 'js') {
+                // For JS, we wrap the content in an IIFE to avoid polluting global scope
+                $content = '(() => {' . $this->getAssetContent($component, $assetInfo) . '})();';
+            } else {
+                // For CSS, we can serve the content directly
+                $content = $this->getAssetContent($component, $assetInfo);
+            }
         }
 
         if ($content === null) {

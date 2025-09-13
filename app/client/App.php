@@ -57,7 +57,7 @@ class App extends \phpSPA\Core\Impl\RealImpl\AppImpl implements
     /**
      * Configure HTML compression manually
      *
-     * @param int $level Compression level (0=none, 1=basic, 2=aggressive, 3=extreme)
+     * @param int $level Compression level (0=none, 1=auto, 2=basic, 3=aggressive, 4=extreme)
      * @param bool $gzip Enable gzip compression
      * @return self
      */
