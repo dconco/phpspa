@@ -525,8 +525,7 @@ trait HtmlCompressor
     public static function compressComponent(string $content): string
     {
         // Apply minification based on compression level
-        $minified = self::minify($content, Compressor::LEVEL_EXTREME);
-        return base64_encode($minified);
+        return self::minify($content, Compressor::LEVEL_EXTREME);
     }
 
     /**
@@ -788,9 +787,9 @@ trait HtmlCompressor
     {
         $originalLevel = self::$compressionLevel;
         self::$compressionLevel = $level;
-        
+
         $compressed = self::minify($content, $level);
-        
+
         self::$compressionLevel = $originalLevel;
         return $compressed;
     }
