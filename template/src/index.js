@@ -1,4 +1,16 @@
 /**
+ * ===========================================================
+ *          _             _____  _____
+ *         | |           / ____||  __ \  /\    
+ *   _ __  | |__   _ __ | (___  | |__) |/  \   
+ *  | '_ \ | '_ \ | '_ \ \___ \ |  ___// /\ \  
+ *  | |_) || | | || |_) |____) || |   / ____ \ 
+ *  | .__/ |_| |_|| .__/|_____/ |_|  /_/    \_\
+ *  | |           | |
+ *  |_|           |_|
+ * 
+ * ===========================================================
+ * 
  * phpSPA JavaScript Engine
  *
  * A lightweight JavaScript engine for PHP-powered single-page applications.
@@ -9,7 +21,8 @@
  * - All scripts and logic must be attached per component using `$component->script(...)`.
  * - This library assumes server-rendered HTML responses with placeholder target IDs.
  *
- * @author Dave Conco
+ * @author Dave Conco <concodave@gmail.com>
+ * @link https://github.com/dconco/phpspa-js
  * @version 1.1.9
  * @license MIT
  */

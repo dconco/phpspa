@@ -17,7 +17,7 @@ $app = (new App(require 'Layout.php'))
     ->defaultTargetID('app')
     ->defaultToCaseSensitive()
 
-    ->compression(Compressor::LEVEL_NONE, true)
+    ->compression(Compressor::LEVEL_EXTREME, true)
 
     ->cors()
 
@@ -54,6 +54,10 @@ $app = (new App(require 'Layout.php'))
                 console.log('But an error occured: ', error);
             }
         });
+
+        document.onclick = () => {
+            alert('Document clicked!');
+        }
         
         // Global utility function
         window.globalUtils = {
