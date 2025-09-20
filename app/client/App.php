@@ -39,7 +39,7 @@ class App extends \phpSPA\Core\Impl\RealImpl\AppImpl implements
      * @param callable $layout The name of the layout to be used by the application.
      * @param bool $autoInitCompression Whether to auto-initialize compression settings
      */
-    public function __construct(callable $layout, bool $autoInitCompression = true)
+    public function __construct(callable|string $layout, bool $autoInitCompression = true)
     {
         Session::start();
         $this->layout = $layout;

@@ -48,12 +48,16 @@ return (new Component(function (Request $request): string {
 		  		console.error('Global utilities not available - execution order problem!');
 		  	}
 
+			const observerOptions = {
+				threshold: 0.1
+			}
+
 			const observer = new IntersectionObserver(function(entries) {
-			entries.forEach(function(entry) {
-					if (entry.isIntersecting) {
-						entry.target.classList.add('fade-in')
-					}
-			})
+				entries.forEach(function(entry) {
+						if (entry.isIntersecting) {
+							entry.target.classList.add('fade-in')
+						}
+				})
 			}, observerOptions)
 
 			const form = document.querySelector('form')

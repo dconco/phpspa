@@ -10,7 +10,6 @@ use phpSPA\Compression\Compressor;
  * Provides HTML minification and compression capabilities for phpSPA
  * to reduce payload sizes and improve performance.
  *
- * @package phpSPA\Core\Utils
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
@@ -399,19 +398,33 @@ trait HtmlCompressor
      */
     private static function minifyCSS(string $css): string
     {
-        // Remove CSS comments
+        // Protect string literals and url(...) contents to avoid breaking
+        // data: URIs, SVG fragments, or urls that contain colons/slashes.
+        $placeholders = [];
+        $phIndex = 0;
+
+        // Protect strings (single/double) and url(...) contents
+        $css = preg_replace_callback(
+            "/(\"(?:[^\"\\\\]|\\\\.)*\"|'(?:[^'\\\\]|\\\\.)*'|url\((?:[^)\\\\]|\\\\.)*\))/s",
+            function ($m) use (&$placeholders, &$phIndex) {
+                $ph = '___CSS_PH_' . $phIndex++ . '___';
+                $placeholders[$ph] = $m[0];
+                return $ph;
+            },
+            $css
+        );
+
+        // Remove CSS comments (safe now)
         $css = preg_replace('/\/\*.*?\*\//s', '', $css);
 
-        // Remove leading and trailing whitespace from lines
+        // Remove leading/trailing whitespace on lines and empty lines
         $css = preg_replace('/^\s+|\s+$/m', '', $css);
-
-        // Remove empty lines
         $css = preg_replace('/^\s*\n/m', '', $css);
 
         // Collapse multiple whitespace into single space
         $css = preg_replace('/\s+/', ' ', $css);
 
-        // Remove spaces around selectors, braces, and declarations
+        // Tighten common separators
         $css = preg_replace('/\s*{\s*/', '{', $css);
         $css = preg_replace('/\s*}\s*/', '}', $css);
         $css = preg_replace('/\s*;\s*/', ';', $css);
@@ -421,14 +434,11 @@ trait HtmlCompressor
         // Remove last semicolon before closing brace
         $css = preg_replace('/;(?=\s*})/', '', $css);
 
-        // Remove unnecessary quotes around font names and URLs (when safe)
-        $css = preg_replace('/(["\'])([a-zA-Z0-9-_]+)\1/', '$2', $css);
-
         // Convert zero values (0px, 0em, etc.) to just 0
         $css = preg_replace(
             '/\b0+(px|em|rem|%|pt|pc|in|cm|mm|ex|ch|vw|vh|vmin|vmax)\b/',
             '0',
-            $css,
+            $css
         );
 
         // Remove leading zeros from decimal values
@@ -442,15 +452,19 @@ trait HtmlCompressor
                 $g = sprintf('%02x', $matches[2]);
                 $b = sprintf('%02x', $matches[3]);
 
-                // Convert to short hex if possible
                 if ($r[0] === $r[1] && $g[0] === $g[1] && $b[0] === $b[1]) {
                     return '#' . $r[0] . $g[0] . $b[0];
                 }
 
                 return '#' . $r . $g . $b;
             },
-            $css,
+            $css
         );
+
+        // Restore placeholders
+        foreach ($placeholders as $ph => $orig) {
+            $css = str_replace($ph, $orig, $css);
+        }
 
         return trim($css);
     }
@@ -696,6 +710,17 @@ trait HtmlCompressor
 
         // Join lines back together
         $js = implode('', $processedLines);
+
+        // Post-pass: ensure semicolons exist between a statement-ending token
+        // and a following statement-starting keyword or identifier. This
+        // covers edge cases (e.g. `}const x =` or `)const x =`) where the
+        // line-by-line logic may miss boundaries (blank lines, complex
+        // expressions, or template-driven input).
+        $js = preg_replace(
+            '/([)\]\}a-zA-Z0-9_$])(?=\s*(?:const|let|var|function|class|async|import|export)\b)/',
+            '$1;',
+            $js
+        );
 
         // Additional specific fixes for edge cases that might have been created
         $js = str_replace('forEach;', 'forEach', $js);

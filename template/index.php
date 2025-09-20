@@ -57,7 +57,7 @@ $app = (new App(require 'Layout.php'))
 
         document.onclick = () => {
             alert('Document clicked!');
-        }
+        };
         
         // Global utility function
         window.globalUtils = {

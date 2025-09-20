@@ -46,7 +46,7 @@ abstract class AppImpl
     /**
      * The layout of the application.
      *
-     * @var callable $layout
+     * @var callable|string $layout
      */
     protected $layout;
 
@@ -234,7 +234,7 @@ abstract class AppImpl
 
             $request = new Request();
 
-            $layoutOutput = (string) call_user_func($this->layout) ?? '';
+            $layoutOutput = is_callable($this->layout) ? (string) call_user_func($this->layout) : $this->layout;
             $componentOutput = '';
 
             if ($request->requestedWith() === 'PHPSPA_REQUEST') {
