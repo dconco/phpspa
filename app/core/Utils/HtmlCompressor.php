@@ -766,4 +766,32 @@ trait HtmlCompressor
             return Compressor::LEVEL_EXTREME;
         }
     }
+
+    /**
+     * Get current compression level
+     *
+     * @return int Current compression level
+     */
+    public static function getLevel(): int
+    {
+        return self::$compressionLevel;
+    }
+
+    /**
+     * Compress content with specific level
+     *
+     * @param string $content Content to compress
+     * @param int $level Compression level
+     * @return string Compressed content
+     */
+    public static function compressWithLevel(string $content, int $level): string
+    {
+        $originalLevel = self::$compressionLevel;
+        self::$compressionLevel = $level;
+        
+        $compressed = self::minify($content, $level);
+        
+        self::$compressionLevel = $originalLevel;
+        return $compressed;
+    }
 }

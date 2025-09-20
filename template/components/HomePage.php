@@ -12,13 +12,6 @@ return (new Component(function (Request $request): string {
     $icon = import(__DIR__ . '/../../docs/img/android-chrome-192x192.png');
 
     return <<<HTML
-		<style>
-			body {
-				background-color: #d9cdcd;
-				font-family: Arial, sans-serif;
-			}
-		</style>
-
 		<div>
 			<img src="" />
 			<p>Welcome to my PHP SPA project! @$name</p>
@@ -28,9 +21,32 @@ return (new Component(function (Request $request): string {
 			<br />
 			<button onclick="phpspa.navigate('/counter')">Counter</button>
 		</div>
-	   
-	   <script>
-		   alert('Script Mounted')
+	HTML;
+}))
+   ->title('Home Page')
+   ->route(['/phpspa/template', '/'])
+
+   ->styleSheet(
+       fn () => <<<CSS
+			body {
+				background-color: #d9cdcd;
+				font-family: Arial, sans-serif;
+			}
+		CSS
+   )
+
+   ->script(
+       fn () => <<<JS
+		  	// Component script - should execute AFTER global script
+		  	console.log('4. HomePage component script executing');
+		  	
+		  	// Test if global utilities are available
+		  	if (window.globalUtils) {
+		  		window.globalUtils.executionOrder.push('HomePage component script executed');
+		  		window.globalUtils.log('HomePage component can access global utilities!');
+		  	} else {
+		  		console.error('Global utilities not available - execution order problem!');
+		  	}
 
 			const observer = new IntersectionObserver(function(entries) {
 			entries.forEach(function(entry) {
@@ -47,13 +63,5 @@ return (new Component(function (Request $request): string {
 					alert('Thank you for your message! We will get back to you soon.')
 				})
 			}
-		</script>
-	HTML;
-}))
-    ->title('Home Page')
-    ->route(['/phpspa/template', '/'])
-
-    ->script(
-        fn () => <<<JS
 		JS,
-    );
+   );
