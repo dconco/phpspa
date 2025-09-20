@@ -53,7 +53,7 @@ abstract class AppImpl
     /**
      * The default target ID where the application will render its content.
      *
-     * @var string $defaultTargetID
+     * @var string
      */
     private string $defaultTargetID;
 
@@ -62,14 +62,14 @@ abstract class AppImpl
      * Each component can be accessed and managed by the application core.
      * Typically used for dependency injection or service management.
      *
-     * @var Component[] $components
+     * @var Component[]
      */
     private array $components = [];
 
     /**
      * Indicates whether the application should treat string comparisons as case sensitive.
      *
-     * @var bool $defaultCaseSensitive Defaults to false, meaning string comparisons are case insensitive by default.
+     * @var bool Defaults to false, meaning string comparisons are case insensitive by default.
      */
     private bool $defaultCaseSensitive = false;
 
@@ -97,7 +97,7 @@ abstract class AppImpl
      * Global scripts to be executed for the application.
      * These scripts will be included on every component render.
      *
-     * @var callable[] $scripts
+     * @var callable[]
      */
     protected array $scripts = [];
 
@@ -105,7 +105,7 @@ abstract class AppImpl
      * Global stylesheets to be included for the application.
      * These styles will be included on every component render.
      *
-     * @var callable[] $stylesheets
+     * @var callable[]
      */
     protected array $stylesheets = [];
 
@@ -267,7 +267,7 @@ abstract class AppImpl
                             );
                             print_r(
                                 json_encode([
-                                    'response' => base64_encode(json_encode($res)),
+                                    'response' => json_encode($res),
                                 ]),
                             );
                         } else {
@@ -326,7 +326,7 @@ abstract class AppImpl
 
             if ($request->requestedWith() === 'PHPSPA_REQUEST') {
                 // For PHPSPA requests (component updates), include component scripts with the component
-                $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput . $assetLinks['component']['scripts'];
+                $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput . $assetLinks['global']['scripts'] . $assetLinks['component']['scripts'];
 
                 $info = [
                     'content' => Compressor::compressComponent($componentOutput),
@@ -424,6 +424,9 @@ abstract class AppImpl
      */
     private function generateAssetLinks($route, array $scripts, array $stylesheets, array $globalScripts = [], array $globalStylesheets = []): array
     {
+        $request = new Request();
+        $isPhpSpaRequest = $request->requestedWith() === 'PHPSPA_REQUEST';
+
         $result = [
             'component' => ['scripts' => '', 'stylesheets' => ''],
             'global' => ['scripts' => '', 'stylesheets' => '']
@@ -457,7 +460,7 @@ abstract class AppImpl
             foreach ($globalScripts as $index => $script) {
                 if (is_callable($script)) {
                     $jsLink = AssetLinkManager::generateJsLink("__global__", $index);
-                    $result['global']['scripts'] .= "\n<script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
+                    $result['global']['scripts'] .= $isPhpSpaRequest ? "\n<phpspa-script src=\"$jsLink\"></phpspa-script>\n" : "\n<script type=\"text/javascript\" data-type=\"phpspa/script\" src=\"$jsLink\"></script>\n";
                 }
             }
         }
@@ -467,7 +470,7 @@ abstract class AppImpl
             foreach ($scripts as $index => $script) {
                 if (is_callable($script)) {
                     $jsLink = AssetLinkManager::generateJsLink($primaryRoute, $index);
-                    $result['component']['scripts'] .= "\n<script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
+                    $result['component']['scripts'] .= $isPhpSpaRequest ? "\n<phpspa-script src=\"$jsLink\"></phpspa-script>\n" : "\n<script type=\"text/javascript\" data-type=\"phpspa/script\" src=\"$jsLink\"></script>\n";
                 }
             }
         }
@@ -499,7 +502,7 @@ abstract class AppImpl
 
             if ($assetInfo['assetType'] === 'js') {
                 // For JS, we wrap the content in an IIFE to avoid polluting global scope
-                $content = '(() => {' . $this->getAssetContent($component, $assetInfo) . '})();';
+                $content = '(()=>{' . $this->getAssetContent($component, $assetInfo) . '})();';
             } else {
                 // For CSS, we can serve the content directly
                 $content = $this->getAssetContent($component, $assetInfo);
@@ -590,7 +593,16 @@ abstract class AppImpl
             }
         } elseif ($assetInfo['assetType'] === 'js') {
             if (isset($this->scripts[$assetInfo['assetIndex']]) && is_callable($this->scripts[$assetInfo['assetIndex']])) {
-                return call_user_func($this->scripts[$assetInfo['assetIndex']]);
+                $content = call_user_func($this->scripts[$assetInfo['assetIndex']]);
+                $request = new Request();
+
+                if ($request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT') {
+                    // Wrap global JS content in an IIFE to avoid polluting global scope
+                    return '(()=>{' . $content . '})();';
+                }
+
+                // For non-PHPSPA requests, return raw JS content
+                return $content;
             }
         }
 

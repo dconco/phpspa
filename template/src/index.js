@@ -1,31 +1,29 @@
 /**
+ * ===========================================================
+ *          _             _____  _____
+ *         | |           / ____||  __ \  /\    
+ *   _ __  | |__   _ __ | (___  | |__) |/  \   
+ *  | '_ \ | '_ \ | '_ \ \___ \ |  ___// /\ \  
+ *  | |_) || | | || |_) |____) || |   / ____ \ 
+ *  | .__/ |_| |_|| .__/|_____/ |_|  /_/    \_\
+ *  | |           | |
+ *  |_|           |_|
+ * 
+ * ===========================================================
+ * 
  * phpSPA JavaScript Engine
  *
  * A lightweight JavaScript engine for PHP-powered single-page applications.
  * Handles SPA-style navigation, content replacement, and lifecycle events
  * without full page reloads. Designed to pair with the `phpSPA` PHP framework.
  *
- * Features:
- * - `phpspa.navigate(url, state = "push")`: Navigate to a new route via AJAX.
- * - `phpspa.back()` / `phpspa.forward()`: Navigate browser history.
- * - `phpspa.on("beforeload" | "load", callback)`: Lifecycle event hooks.
- * - Auto-replaces DOM target with component content and updates `<title>` and `<meta>`.
- * - Executes inline component scripts marked as `<script data-type="phpspa/script">`.
- * - Built-in scroll position restoration across route changes.
- *
- * Example Usage:
- * ```js
- * phpspa.on("beforeload", ({ route }) => showSpinner());
- * phpspa.on("load", ({ success }) => hideSpinner());
- * phpspa.navigate("/profile");
- * ```
- *
  * Note:
  * - All scripts and logic must be attached per component using `$component->script(...)`.
  * - This library assumes server-rendered HTML responses with placeholder target IDs.
  *
- * @author Dave Conco
- * @version 1.1.8
+ * @author Dave Conco <concodave@gmail.com>
+ * @link https://github.com/dconco/phpspa-js
+ * @version 1.1.9
  * @license MIT
  */
 
@@ -92,8 +90,9 @@ function base64ToUtf8(str) {
          const initialState = {
             url: location.href,
             title: document.title,
-            targetId: targetElement.parentElement.id,
-            content: utf8ToBase64(targetElement.innerHTML), // UTF-8 safe Base64 encode HTML content
+            targetId: targetElement.id,
+            content: targetElement.innerHTML,
+            root: true,
          };
 
          // Check if component has auto-reload functionality
@@ -139,6 +138,7 @@ function base64ToUtf8(str) {
     * Restores page content when user navigates through browser history
     */
    window.addEventListener("popstate", (event) => {
+      event.preventDefault();
       const navigationState = event.state;
 
       // Check if we have valid phpSPA state data
@@ -156,13 +156,13 @@ function base64ToUtf8(str) {
             document.getElementById(navigationState.targetId) ?? document.body;
 
          // Decode and restore HTML content
-         targetContainer.innerHTML = base64ToUtf8(navigationState.content);
+         targetContainer.innerHTML = navigationState.content;
 
          // Clear old executed scripts cache
          RuntimeManager.clearExecutedScripts();
 
          // Execute any inline scripts and styles in the restored content
-         RuntimeManager.runAll(targetContainer);
+         RuntimeManager.runAll(navigationState.root ? document.body : targetContainer);
 
          // Restart auto-reload timer if needed
          if (typeof navigationState.reloadTime !== "undefined") {
@@ -336,7 +336,7 @@ class phpspa {
 
          // Update content - decode base64 if provided, otherwise use raw data
          targetElement.innerHTML = responseData?.content
-            ? base64ToUtf8(responseData.content)
+            ? responseData.content
             : responseData;
 
          // Prepare state data for browser history
@@ -344,7 +344,7 @@ class phpspa {
             url: url?.href ?? url,
             title: responseData?.title ?? document.title,
             targetID: responseData?.targetID ?? targetElement.id,
-            content: responseData?.content ?? utf8ToBase64(responseData),
+            content: responseData?.content ?? responseData,
          };
 
          // Include reload time if specified
@@ -534,7 +534,7 @@ class phpspa {
                document.body;
 
             targetElement.innerHTML = responseData?.content
-               ? base64ToUtf8(responseData.content)
+               ? responseData.content
                : responseData;
 
             // Execute scripts and styles, then restore scroll position
@@ -640,7 +640,7 @@ class phpspa {
             document.body;
 
          targetElement.innerHTML = responseData?.content
-            ? base64ToUtf8(responseData.content)
+            ? responseData.content
             : responseData;
 
          // Clear old executed scripts cache
@@ -688,7 +688,7 @@ class phpspa {
             try {
                responseData = JSON.parse(responseText);
                responseData = responseData?.response
-                  ? JSON.parse(base64ToUtf8(responseData.response))
+                  ? JSON.parse(responseData.response)
                   : responseData;
             } catch (parseError) {
                responseData = responseText;
@@ -711,7 +711,7 @@ class phpspa {
                      : fallbackResponse;
 
                   errorData = errorData?.response
-                     ? JSON.parse(base64ToUtf8(errorData.response))
+                     ? JSON.parse(errorData.response)
                      : errorData;
                } catch (parseError) {
                   errorData = fallbackResponse;
@@ -771,6 +771,7 @@ class RuntimeManager {
    static runAll(container) {
       this.runInlineScripts(container);
       this.runInlineStyles(container);
+      this.runPhpSpaScripts(container);
    }
 
    /**
@@ -814,6 +815,42 @@ class RuntimeManager {
          }
       });
    }
+
+
+   static runPhpSpaScripts(container) {
+      const scripts = container.querySelectorAll("phpspa-script, script[data-type=\"phpspa/script\"]");
+
+      scripts.forEach(async (script) => {
+         const scriptUrl = script.getAttribute('src');
+
+         // Skip if this script has already been executed
+         if (!this.executedScripts.has(scriptUrl)) {
+            this.executedScripts.add(scriptUrl);
+
+            const response = await fetch(scriptUrl, {
+               mode: "same-origin",
+               headers: {
+                  "X-Requested-With": "PHPSPA_REQUEST_SCRIPT",
+               },
+            });
+            
+            if (response.ok) {
+               const scriptContent = await response.text();
+
+               // Create new script element
+               const newScript = document.createElement("script");
+               newScript.textContent = scriptContent;
+               newScript.type = 'text/javascript';
+   
+               // Execute and immediately remove from DOM
+               document.head.appendChild(newScript).remove();
+            } else {
+               console.error(`Failed to load script from ${scriptUrl}: ${response.statusText}`);
+            }
+         }
+      });
+   }
+
 
    /**
     * Clears all executed scripts from the runtime manager.
