@@ -12,6 +12,9 @@ return [
     'allow_methods' => [
         'GET',
         'POST',
+        'PUT',
+        'DELETE',
+        'PATCH',
         'VIEW',
         'OPTIONS',
     ],
@@ -37,7 +40,7 @@ return [
     /*
      * The maximum time (in seconds) the results of a preflight request can be cached.
      */
-    'max_age' => 3600,
+    'max_age' => 7200,
 
     /*
      * Indicates whether the request can include user credentials.
