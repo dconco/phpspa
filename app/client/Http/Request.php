@@ -18,8 +18,7 @@ use stdClass;
  * @use \phpSPA\Core\Utils\Validate
  * @use \phpSPA\Core\Auth\Authentication
  */
-class Request
-{
+class Request {
 	use \phpSPA\Core\Utils\Validate;
 	use \phpSPA\Core\Auth\Authentication;
 
@@ -34,8 +33,7 @@ class Request
 	 * @param string|null $default The default value to return if the key does not exist. Defaults to null.
 	 * @return mixed The validated value associated with the key, or the default value if the key is not present.
 	 */
-	public function __invoke(string $key, ?string $default = null): mixed
-	{
+	public function __invoke(string $key, ?string $default = null): mixed {
 		// Check if the key exists in the request parameters
 		if (isset($_REQUEST[$key])) {
 			// Validate and return the value associated with the key
@@ -55,8 +53,7 @@ class Request
 	 * @param ?string $name The name of the file input.
 	 * @return ?array File data, or null if not set.
 	 */
-	public function files(?string $name = null): ?array
-	{
+	public function files(?string $name = null): ?array {
 		if (!$name) {
 			return $_FILES;
 		}
@@ -73,8 +70,7 @@ class Request
 	 * @param string $key The name of the header containing the API key. Default is 'Api-Key'.
 	 * @return bool Returns true if the API key is valid, false otherwise.
 	 */
-	public function apiKey(string $key = 'Api-Key')
-	{
+	public function apiKey(string $key = 'Api-Key') {
 		return $this->validate(self::RequestApiKey($key));
 	}
 
@@ -86,8 +82,7 @@ class Request
 	 *
 	 * @return stdClass The authentication credentials.
 	 */
-	public function auth(): stdClass
-	{
+	public function auth(): stdClass {
 		$cl = new stdClass();
 		$cl->basic = self::BasicAuthCredentials();
 		$cl->bearer = self::BearerToken();
@@ -104,8 +99,7 @@ class Request
 	 * @param ?string $name If specified, returns a specific query parameter by name.
 	 * @return mixed parsed query parameters or a specific parameter value.
 	 */
-	public function urlQuery(?string $name = null)
-	{
+	public function urlQuery(?string $name = null) {
 		if (php_sapi_name() == 'cli-server') {
 			$parsed = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
 		} else {
@@ -184,8 +178,7 @@ class Request
 	 * @param ?string $name The name of the body parameter to retrieve.
 	 * @return mixed The json data or null if parsing fails.
 	 */
-	public function json(?string $name = null)
-	{
+	public function json(?string $name = null) {
 		$data = json_decode(file_get_contents('php://input'), true);
 
 		if ($data === null || json_last_error() !== JSON_ERROR_NONE) {
@@ -207,8 +200,7 @@ class Request
 	 * @param ?string $key The key of the GET parameter.
 	 * @return mixed The parameter value, or null if not set.
 	 */
-	public function get(?string $key = null)
-	{
+	public function get(?string $key = null) {
 		if (!$key) {
 			return $this->validate($_GET);
 		}
@@ -227,8 +219,7 @@ class Request
 	 * @param ?string $key The key of the POST parameter.
 	 * @return mixed The parameter value, or null if not set.
 	 */
-	public function post(?string $key = null)
-	{
+	public function post(?string $key = null) {
 		if (!$key) {
 			return $this->validate($_POST);
 		}
@@ -248,8 +239,7 @@ class Request
 	 * @param ?string $key The key of the cookie.
 	 * @return mixed The cookie value, or null if not set.
 	 */
-	public function cookie(?string $key = null)
-	{
+	public function cookie(?string $key = null) {
 		if (!$key) {
 			return (object) $this->validate($_COOKIE);
 		}
@@ -265,8 +255,7 @@ class Request
 	 * @param ?string $key The key of the session value.
 	 * @return mixed The session value, or null if not set.
 	 */
-	public function session(?string $key = null)
-	{
+	public function session(?string $key = null) {
 		// Start the session if it's not already started
 		if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
 			session_start();
@@ -288,8 +277,7 @@ class Request
 	 *
 	 * @return string The HTTP method of the request.
 	 */
-	public function method(): string
-	{
+	public function method(): string {
 		return $_SERVER['REQUEST_METHOD'];
 	}
 
@@ -300,8 +288,7 @@ class Request
 	 *
 	 * @return string The client's IP address.
 	 */
-	public function ip(): string
-	{
+	public function ip(): string {
 		// Check for forwarded IP addresses from proxies or load balancers
 		if (
 			isset($_SERVER['HTTP_X_FORWARDED_FOR']) ||
@@ -320,8 +307,7 @@ class Request
 	 *
 	 * @return bool Returns true if the request is an AJAX request, otherwise false.
 	 */
-	public function isAjax(): bool
-	{
+	public function isAjax(): bool {
 		return strtolower(
 			$_SERVER['HTTP_X_REQUESTED_WITH'] ?? $this->header('X-Requested-With'),
 		) === 'xmlhttprequest';
@@ -332,8 +318,7 @@ class Request
 	 *
 	 * @return string|null The referrer URL, or null if not set.
 	 */
-	public function referrer(): ?string
-	{
+	public function referrer(): ?string {
 		return $_SERVER['HTTP_REFERER'] !== null
 			? $_SERVER['HTTP_REFERER']
 			: null;
@@ -344,8 +329,7 @@ class Request
 	 *
 	 * @return string The server protocol.
 	 */
-	public function protocol(): string
-	{
+	public function protocol(): string {
 		return $_SERVER['SERVER_PROTOCOL'];
 	}
 
@@ -355,8 +339,7 @@ class Request
 	 * @param string $method The HTTP method to check.
 	 * @return bool True if the request method matches, false otherwise.
 	 */
-	public function isMethod(string $method): bool
-	{
+	public function isMethod(string $method): bool {
 		return strtoupper($this->method()) === strtoupper($method);
 	}
 
@@ -365,8 +348,7 @@ class Request
 	 *
 	 * @return bool True if the request is HTTPS, false otherwise.
 	 */
-	public function isHttps(): bool
-	{
+	public function isHttps(): bool {
 		return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
 			$_SERVER['SERVER_PORT'] == 443;
 	}
@@ -376,8 +358,7 @@ class Request
 	 *
 	 * @return int The request time as a Unix timestamp.
 	 */
-	public function requestTime(): int
-	{
+	public function requestTime(): int {
 		return (int) $_SERVER['REQUEST_TIME'];
 	}
 
@@ -388,8 +369,7 @@ class Request
 	 *
 	 * @return string|null The content type, or null if not set.
 	 */
-	public function contentType(): ?string
-	{
+	public function contentType(): ?string {
 		return $this->header('Content-Type') ??
 			($_SERVER['CONTENT_TYPE'] ?? null);
 	}
@@ -401,22 +381,35 @@ class Request
 	 *
 	 * @return int|null The content length, or null if not set.
 	 */
-	public function contentLength(): ?int
-	{
+	public function contentLength(): ?int {
 		return isset($_SERVER['CONTENT_LENGTH'])
 			? (int) $_SERVER['CONTENT_LENGTH']
 			: null;
 	}
 
-	public function csrf()
-	{
+	public function csrf() {
 		return $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $this->header('X-CSRF-TOKEN') ?:
 			$this->header('X-Csrf-Token');
 	}
 
-	public function requestedWith()
-	{
+	public function requestedWith() {
 		return $_SERVER['HTTP_X_REQUESTED_WITH'] ??
 			$this->header('X-Requested-With');
+	}
+
+	/**
+	 * Retrieves the request URI.
+	 *
+	 * @return string The request URI.
+	 */
+	public function getUri(): string {
+		$uri = $_SERVER['REQUEST_URI'] ?? '/';
+
+		// Strip query string from URI
+		if (strpos($uri, '?') !== false) {
+			$uri = substr($uri, 0, strpos($uri, '?'));
+		}
+
+		return rawurldecode($uri);
 	}
 }
