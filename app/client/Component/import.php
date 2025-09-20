@@ -7,21 +7,13 @@ use phpSPA\Core\Utils\ImportedFile;
 use phpSPA\Exceptions\AppException;
 
 /**
- * Embeds file contents as base64 data URI
+ * Imports file as base64 data URI with MIME type detection.
  *
- * This function provides a secure way to import external files (images, fonts, etc.)
- * as embedded data URIs within the phpSPA framework. It includes file size validation
- * and MIME type detection for safe file handling.
- *
- * @param string $file Path to file to import
- * @package phpSPA\Component
  * @author dconco <concodave@gmail.com>
- * @copyright 2025 Dave Conco
- * @license MIT
- * @see https://phpspa.readthedocs.io/en/latest/v1.1/1-file-import-utility
- * @since v1.1.0
- * @return ImportedFile Data URI object containing MIME type and base64 content
- * @throws AppException If file doesn't exist or can't be read
+ * @param string $file File path to import
+ * @return ImportedFile Data URI with MIME type and base64 content
+ * @throws AppException If file is invalid or unreadable
+ * @see https://phpspa.readthedocs.io/ File Import Documentation
  */
 function import(string $file): ImportedFile
 {
