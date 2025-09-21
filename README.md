@@ -75,14 +75,8 @@ _Get up and running in 30 seconds with a complete phpSPA example_
 **Step 1: Clone the Template**
 
 ```bash
-git clone https://github.com/dconco/dconco-template my-phpspa-app
+composer create-project phpspa/phpspa my-phpspa-app
 cd my-phpspa-app
-```
-
-**Step 2: Install Dependencies**
-
-```bash
-composer install
 ```
 
 **Step 3: Start Development Server**
