@@ -175,7 +175,7 @@ nav:
         - ⏰ Asset Caching Control: ./v1.1.7/2-asset-caching-control.md
         - 📋 Migration Guide: ./v1.1.7/3-migration-guide.md
 
-   - v1.1.8 (Current): ./v1.1.8/index.md
+   - v1.1.8: ./v1.1.8/index.md
 
 # Enhanced plugins
 plugins:
