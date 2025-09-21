@@ -318,11 +318,22 @@ trait HtmlCompressor
      */
     private static function minifyJavaScript(string $js): string
     {
-        // Remove single-line comments (but preserve URLs and regex)
-        $js = preg_replace('/(?<!:)\/\/(?![^\r\n]*["\']).*$/m', '', $js);
+        // Safely remove single-line (//...) and multi-line (/*...*/)
+        // while preserving string and template literals.
+        $js = preg_replace_callback(
+            '/(["\'`])(?:(?=(\\?))\2.)*?\1|\/\/.*?$|\/\*[\s\S]*?\*\//m',
+            function ($m) {
+                $match = $m[0];
+                // If the match starts with // or /* it's a comment -> remove it
+                if (str_starts_with($match, '//') || str_starts_with($match, '/*')) {
+                    return '';
+                }
 
-        // Remove multi-line comments (but preserve license blocks and regex)
-        $js = preg_replace('/\/\*(?![*!]).*?\*\//s', '', $js);
+                // Otherwise it's a string/template literal -> keep as-is
+                return $match;
+            },
+            $js
+        );
 
         // Remove leading and trailing whitespace from lines
         $js = preg_replace('/^\s+|\s+$/m', '', $js);
@@ -691,7 +702,7 @@ trait HtmlCompressor
                         // Special case: don't insert semicolon between constructor and opening paren
                         // e.g., "new IntersectionObserver" followed by "(function..." should NOT get semicolon
                         $isConstructorCall = preg_match('/\bnew\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*$/', $currentLine) &&
-                                             preg_match('/^\(/', $nextLine);
+                            preg_match('/^\(/', $nextLine);
 
                         if (!$isConstructorCall) {
                             $needsSemicolon = true;
