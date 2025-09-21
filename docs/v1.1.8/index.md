@@ -11,6 +11,7 @@ This document describes how to use the new Router and Response APIs introduced i
 Register routes normally; the router dispatches automatically when the PHP script ends.
 
 ```php
+<?php
 use phpSPA\Http\Router;
 use phpSPA\Http\Response;
 use phpSPA\Http\Request;
@@ -36,6 +37,7 @@ Router::get('/user/{id: int}', function(Request $req, int $id) {
 ### Create responses
 
 ```php
+<?php
 use phpSPA\Http\Response;
 
 // Basic JSON response (static)
@@ -64,6 +66,7 @@ Response::sendJson(['ok' => true]); // builds and sends immediately
 The repo provides a global helper function `response()` that returns a `Response` instance. Use it for fluent convenience in route callbacks.
 
 ```php
+<?php
 // Example using response() function
 return response(['message' => 'ok'], 200)
     ->header('X-Hello', 'world')
