@@ -1,18 +1,17 @@
 <?php
+
 require_once '../../vendor/autoload.php';
 
-use phpSPA\App;
 use phpSPA\Http\Response;
 use phpSPA\Http\Request;
-use phpSPA\Http\Router;
+
 use function phpSPA\Http\response;
 
-
 $request = new Request();
-$response = Response::fromRequest($request);
+$response = Response::fromRequest($request)->caseSensitive();
 
 // Define your routes
-$response->get('/user/{id}', function ($request, $id) {
+$response->get('/user/{id: int}', function ($request, $id) {
     $user = 2; // This would be your actual user lookup
     return response(['message' => 'Hello from route with ID: ' . $id, 'data' => $user], 200)
         ->header('X-Route-Header', 'route_value');
@@ -41,8 +40,3 @@ $response->get('/success', function ($request) {
 $response->get('/error', function ($request) {
     return response()->error('Something went wrong', 500);
 });
-
-
-// Handle the request
-$response = Router::handle($request);
-// $response->send();

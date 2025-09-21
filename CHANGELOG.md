@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## v1.1.8 (Current)
+
+### [Added]
+
+1. **Router & Response overhaul** ✅
+
+   - Automatic routing dispatch via `register_shutdown_function` with `Router::handle()` available for manual dispatch.
+   - Route registration now integrates with `phpSPA\Core\Router\MapRoute` for robust pattern and typed-parameter matching.
+   - Response helpers (`Response::json`, `Response::error`, etc.) for concise route callbacks.
+
+   Docs: https://phpspa.readthedocs.io/en/latest/v1.1.8
+
 ## v1.1.7
 
 ### [Added]

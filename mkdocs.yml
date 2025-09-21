@@ -147,7 +147,7 @@ nav:
         - 🟡 CodeIgniter Integration: ./integrations/codeigniter-integration.md
         - 🟠 Pure PHP Integration: ./integrations/pure-php-integration.md
 
-   - Version (v1.1.0):
+   - v1.1.0:
         - Introduction: ./v1.1/index.md
         - File Import Utility: ./v1.1/1-file-import-utility.md
         - State Management - map(): ./v1.1/2-mapping-in-state-management.md
@@ -158,9 +158,9 @@ nav:
         - Redirect Function: ./v1.1/7-redirect-function.md
         - Navigate Component: ./v1.1/8-navigate-component.md
 
-   - Version (v1.1.2): ./v1.1.2/index.md
+   - v1.1.2: ./v1.1.2/index.md
 
-   - Version (v1.1.5):
+   - v1.1.5:
         - 🎉 Introduction: ./v1.1.5/index.md
         - 🗜️ Compression System: ./v1.1.5/1-compression-system.md
         - ⚡ PHP-JS Integration: ./v1.1.5/2-php-js-integration.md
@@ -169,11 +169,13 @@ nav:
         - 🛡️ CSRF Protection: ./v1.1.5/5-csrf-protection.md
         - 📋 Migration Guide: ./v1.1.5/6-migration-guide.md
 
-   - Version (v1.1.7):
+   - v1.1.7:
         - 🎉 Introduction: ./v1.1.7/index.md
         - 🎨 Global Asset Management: ./v1.1.7/1-global-asset-management.md
         - ⏰ Asset Caching Control: ./v1.1.7/2-asset-caching-control.md
         - 📋 Migration Guide: ./v1.1.7/3-migration-guide.md
+
+   - v1.1.8 (Current): ./v1.1.8/index.md
 
 # Enhanced plugins
 plugins:

@@ -3,24 +3,14 @@
 namespace phpSPA;
 
 /**
- * Class Component
+ * Core component class for phpSPA framework.
  *
- * This class serves as the core component within the phpSPA framework, providing
- * essential functionality and structure for all components.
+ * Provides essential functionality for component rendering, lifecycle management,
+ * and state handling. Supports class components with __render method and namespace
+ * organization.
  *
- * Features in v1.1.5:
- * - Support for class components with __render method
- * - Namespace support for component organization
- *
- * @package phpSPA
  * @author dconco <concodave@gmail.com>
- * @copyright 2025 Dave Conco
- * @license MIT
- * @see https://phpspa.readthedocs.io/en/latest/8-component-rendering-and-target-areas
- * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/3-class-components/ Class Components Documentation
- * @link https://phpspa.readthedocs.io/en/latest/8-component-rendering-and-target-areas
- * @extends \phpSPA\Core\Impl\RealImpl\ComponentImpl
- * @implements \phpSPA\Interfaces\IComponent
+ * @see https://phpspa.readthedocs.io/ Component Documentation
  */
 class Component extends \phpSPA\Core\Impl\RealImpl\ComponentImpl implements \phpSPA\Interfaces\IComponent
 {

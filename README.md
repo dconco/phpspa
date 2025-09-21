@@ -75,7 +75,7 @@ _Get up and running in 30 seconds with a complete phpSPA example_
 **Step 1: Clone the Template**
 
 ```bash
-git clone https://github.com/mrepol742/phpspa-example my-phpspa-app
+git clone https://github.com/dconco/dconco-template my-phpspa-app
 cd my-phpspa-app
 ```
 

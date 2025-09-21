@@ -33,9 +33,7 @@ use const phpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  * @var string $defaultTargetID
  * @var array $components
  * @var bool $defaultCaseSensitive
- * @staticvar string $request_uri
  * @var mixed $renderedData
- * @uses ComponentTagFormatter
  * @abstract
  */
 abstract class AppImpl
@@ -46,7 +44,7 @@ abstract class AppImpl
     /**
      * The layout of the application.
      *
-     * @var callable $layout
+     * @var callable|string $layout
      */
     protected $layout;
 
@@ -234,7 +232,7 @@ abstract class AppImpl
 
             $request = new Request();
 
-            $layoutOutput = (string) call_user_func($this->layout) ?? '';
+            $layoutOutput = is_callable($this->layout) ? (string) call_user_func($this->layout) : $this->layout;
             $componentOutput = '';
 
             if ($request->requestedWith() === 'PHPSPA_REQUEST') {

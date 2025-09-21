@@ -23,7 +23,7 @@ function testAssetLinkGeneration()
     $total++;
     echo "\n=== Test: CSS Link Generation ===\n";
     $cssLink = AssetLinkManager::generateCssLink('/test', 0);
-    if (preg_match('/\/phpspa-assets\/[a-f0-9]{32}\.css$/', parse_url($cssLink, PHP_URL_PATH))) {
+    if (preg_match('/\/phpspa\/assets\/[a-f0-9]{32}\.css$/', parse_url($cssLink, PHP_URL_PATH))) {
         echo "PASS\n";
         $passed++;
     } else {
@@ -34,7 +34,7 @@ function testAssetLinkGeneration()
     $total++;
     echo "\n=== Test: JS Link Generation ===\n";
     $jsLink = AssetLinkManager::generateJsLink('/test', 1);
-    if (preg_match('/\/phpspa-assets\/[a-f0-9]{32}\.js$/', parse_url($jsLink, PHP_URL_PATH))) {
+    if (preg_match('/\/phpspa\/assets\/[a-f0-9]{32}\.js$/', parse_url($jsLink, PHP_URL_PATH))) {
         echo "PASS\n";
         $passed++;
     } else {
@@ -261,8 +261,8 @@ function testLinkGeneration()
     $output = ob_get_clean();
 
     // Check for link and script tags with correct URLs
-    $hasLinkTag = preg_match('/<link[^>]*href="[^"]*\/phpspa-assets\/[a-f0-9]{32}\.css"[^>]*\/>/', $output);
-    $hasScriptTag = preg_match('/<script[^>]*src="[^"]*\/phpspa-assets\/[a-f0-9]{32}\.js"[^>]*><\/script>/', $output);
+    $hasLinkTag = preg_match('/<link[^>]*href="[^"]*\/phpspa\/assets\/[a-f0-9]{32}\.css"[^>]*\/>/', $output);
+    $hasScriptTag = preg_match('/<script[^>]*src="[^"]*\/phpspa\/assets\/[a-f0-9]{32}\.js"[^>]*><\/script>/', $output);
     $hasInlineStyle = strpos($output, '<style>') !== false;
     $hasInlineScript = strpos($output, 'console.log("This should be in external file");') !== false;
 

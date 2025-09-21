@@ -22,12 +22,11 @@ use phpSPA\Core\Helper\AssetLinkManager;
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
+ *
  * @see https://phpspa.readthedocs.io/en/latest/1-introduction
  * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/4-method-chaining/ Method Chaining Documentation
  * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/1-compression-system/ Compression System Documentation
- * @link https://phpspa.readthedocs.io/en/latest/1-introduction
- * @extends \phpSPA\Core\Impl\RealImpl\AppImpl
- * @implements \phpSPA\Interfaces\phpSpaInterface
+ * @link https://phpspa.readthedocs.io
  */
 class App extends \phpSPA\Core\Impl\RealImpl\AppImpl implements
     \phpSPA\Interfaces\phpSpaInterface
@@ -40,7 +39,7 @@ class App extends \phpSPA\Core\Impl\RealImpl\AppImpl implements
      * @param callable $layout The name of the layout to be used by the application.
      * @param bool $autoInitCompression Whether to auto-initialize compression settings
      */
-    public function __construct(callable $layout, bool $autoInitCompression = true)
+    public function __construct(callable|string $layout, bool $autoInitCompression = true)
     {
         Session::start();
         $this->layout = $layout;

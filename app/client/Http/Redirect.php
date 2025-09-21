@@ -8,15 +8,11 @@ namespace phpSPA\Http;
  * This function sends a redirect response to the client and terminates script execution.
  * It provides a clean way to perform HTTP redirects within the phpSPA framework.
  *
+ * @author dconco <concodave@gmail.com>
  * @param string $url The URL to redirect to.
  * @param int $code The HTTP status code for the redirect (e.g., 301, 302).
- * @package phpSPA\Http
- * @author dconco <concodave@gmail.com>
- * @copyright 2025 Dave Conco
- * @license MIT
- * @see https://phpspa.readthedocs.io/en/latest/v1.1/6-redirect-funtion.md
- * @since v1.1.0
  * @return never This function does not return; it terminates script execution.
+ * @see https://phpspa.readthedocs.io/en/latest/v1.1/6-redirect-function.md
  */
 function Redirect(string $url, int $code = 0): never
 {
