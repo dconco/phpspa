@@ -17,7 +17,7 @@ $response->get('/user/{id: int}', function ($request, $id) {
         ->header('X-Route-Header', 'route_value');
 });
 
-$response->get('/status', function () {
+$response->get('/status', function ($request) {
     return response()->json([
         'status' => 'OK',
         'message' => 'Server is running.'

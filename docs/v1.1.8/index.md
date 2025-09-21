@@ -64,10 +64,15 @@ Response::sendJson(['ok' => true]); // builds and sends immediately
 The repo provides a global helper function `response()` that returns a `Response` instance. Use it for fluent convenience in route callbacks.
 
 ```php
-// Example using helper (matches template/api/index.php)
+// Example using response() function
 return response(['message' => 'ok'], 200)
     ->header('X-Hello', 'world')
     ->contentType('application/json');
+
+// Example using response() function for registering route
+response()->get('/example', function(Request $request) {
+    return response()->json(['example' => true]);
+});
 ```
 
 ---
@@ -86,20 +91,20 @@ $request = new Request();
 $response = Response::fromRequest($request)->caseSensitive();
 
 // Define your routes
-$response->get('/user/{id: int}', function ($request, $id) {
+$response->get('/user/{id: int}', function (Request $request, int $id) {
     $user = 2; // example lookup
     return response(['message' => 'Hello from route with ID: ' . $id, 'data' => $user], 200)
         ->header('X-Route-Header', 'route_value');
 });
 
-$response->get('/status', function () {
+$response->get('/status', function (Request $request) {
     return response()->json([
         'status' => 'OK',
         'message' => 'Server is running.'
     ]);
 });
 
-$response->get('/data', function ($request) {
+$response->get('/data', function (Request $request) {
     return response()
         ->json(['data' => 'some data'])
         ->header('X-Custom-Header', 'Value')
@@ -107,11 +112,11 @@ $response->get('/data', function ($request) {
 });
 
 // Convenience methods
-$response->get('/success', function ($request) {
+$response->get('/success', function (Request $request) {
     return response()->success(['result' => 'data'], 'Operation successful');
 });
 
-$response->get('/error', function ($request) {
+$response->get('/error', function (Request $request) {
     return response()->error('Something went wrong', 500);
 });
 ```
