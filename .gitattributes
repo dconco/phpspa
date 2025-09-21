@@ -8,3 +8,4 @@ requirements.txt export-ignore
 TODO.md export-ignore
 .gitignore export-ignore
 .gitattributes export-ignore
+RELEASE_NOTES_v1.1.8.md export-ignore
