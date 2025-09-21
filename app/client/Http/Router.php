@@ -2,6 +2,9 @@
 
 namespace phpSPA\Http;
 
+use phpSPA\App;
+use phpSPA\Core\Router\MapRoute;
+
 /**
  * Handles routing for the application.
  * 
@@ -37,6 +40,11 @@ class Router
     private static $shutdownHandlerRegistered = false;
 
     /**
+     * @var bool Whether routes are case sensitive
+     */
+    private static $caseSensitive = false;
+
+    /**
      * Set the base path for the router.
      *
      * @param string $path The base path.
@@ -45,6 +53,17 @@ class Router
     public static function setBasePath(string $path): void
     {
         self::$basePath = rtrim($path, '/');
+    }
+
+    /**
+     * Set whether routes are case sensitive.
+     *
+     * @param bool $caseSensitive
+     * @return void
+     */
+    public static function setCaseSensitive(bool $caseSensitive): void
+    {
+        self::$caseSensitive = $caseSensitive;
     }
 
     /**
@@ -164,37 +183,26 @@ class Router
         $method = $request->method();
         $uri = $request->getUri();
 
-        // Remove base path from URI if set
-        if (self::$basePath && strpos($uri, self::$basePath) === 0) {
-            $uri = substr($uri, strlen(self::$basePath));
-        }
+        // Let MapRoute handle matching (supports patterns, types, and case rules)
+        // Set the application request URI so MapRoute can access it
+        App::$request_uri = $uri;
 
-        // Remove trailing slash
-        $uri = rtrim($uri, '/');
+        $mapper = new MapRoute();
 
-        // Check if the exact route exists
-        if (isset(self::$routes[$method][$uri])) {
-            $callback = self::$routes[$method][$uri];
-            $response = $callback($request);
+        foreach (self::$routes[$method] as $route => $callback) {
+            $route = rtrim(self::$basePath) . '/' . ltrim($route, '/');
+            $match = $mapper->match($method, $route, self::$caseSensitive);
+            if (!$match) continue;
+
+            // If MapRoute returned parameters, pass them to the callback
+            if (!empty($match['params']) && is_array($match['params'])) {
+                $response = $callback($request, ...array_values($match['params']));
+            } else {
+                $response = $callback($request);
+            }
+
             $response->send();
             return;
-        }
-
-        // Handle dynamic routes with parameters
-        foreach (self::$routes[$method] as $route => $callback) {
-            // Convert route pattern to regex
-            $pattern = preg_replace('/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/', '(?P<$1>[^/]+)', $route);
-            $pattern = "#^{$pattern}$#";
-
-            if (preg_match($pattern, $uri, $matches)) {
-                // Remove numeric keys (full pattern matches)
-                $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
-
-                // Pass the request and parameters to the callback
-                $response = $callback($request, ...array_values($params));
-                $response->send();
-                return;
-            }
         }
 
         // Return 404 if no route found

@@ -460,6 +460,12 @@ class Response
         return $n;
     }
 
+    public function caseSensitive(bool $caseSensitive = true): self
+    {
+        Router::setCaseSensitive($caseSensitive);
+        return $this;
+    }
+
     /**
      * Register a GET route.
      *
