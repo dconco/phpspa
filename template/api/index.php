@@ -1,12 +1,11 @@
 <?php
+
 require_once '../../vendor/autoload.php';
 
-use phpSPA\App;
 use phpSPA\Http\Response;
 use phpSPA\Http\Request;
-use phpSPA\Http\Router;
-use function phpSPA\Http\response;
 
+use function phpSPA\Http\response;
 
 $request = new Request();
 $response = Response::fromRequest($request);
@@ -18,7 +17,7 @@ $response->get('/user/{id}', function ($request, $id) {
         ->header('X-Route-Header', 'route_value');
 });
 
-$response->get('/status', function ($request) {
+$response->get('/status', function () {
     return response()->json([
         'status' => 'OK',
         'message' => 'Server is running.'
@@ -41,8 +40,3 @@ $response->get('/success', function ($request) {
 $response->get('/error', function ($request) {
     return response()->error('Something went wrong', 500);
 });
-
-
-// Handle the request
-$response = Router::handle($request);
-// $response->send();

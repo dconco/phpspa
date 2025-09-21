@@ -11,7 +11,8 @@ namespace phpSPA\Http;
  * @copyright 2025 Samuel Paschalson
  * @see https://phpspa.readthedocs.io/en/latest/response-handling
  */
-class Response {
+class Response
+{
     /**
      * @var mixed The response data to be encoded as JSON.
      */
@@ -26,6 +27,11 @@ class Response {
      * @var array HTTP headers to be sent with the response.
      */
     private $headers = [];
+
+    /**
+     * @var Request|null The request instance associated with the response.
+     */
+    private $fromRequest = null;
 
     /**
      * @var array HTTP status codes and their messages.
@@ -110,7 +116,8 @@ class Response {
      * @param int $statusCode The HTTP status code.
      * @param array $headers The response headers.
      */
-    public function __construct($data = null, int $statusCode = 200, array $headers = []) {
+    public function __construct($data = null, int $statusCode = 200, array $headers = [])
+    {
         if ($data !== null) {
             $this->data = $data;
         }
@@ -131,7 +138,8 @@ class Response {
      * @param array $headers The response headers.
      * @return static
      */
-    public static function make($data = null, int $statusCode = 200, array $headers = []): self {
+    public static function make($data = null, int $statusCode = 200, array $headers = []): self
+    {
         return new static($data, $statusCode, $headers);
     }
 
@@ -143,7 +151,8 @@ class Response {
      * @param array $headers The response headers.
      * @return static
      */
-    public static function json($data = null, int $statusCode = 200, array $headers = []): self {
+    public static function json($data = null, int $statusCode = 200, array $headers = []): self
+    {
         $headers = array_merge($headers, ['Content-Type' => 'application/json; charset=utf-8']);
         return new static($data, $statusCode, $headers);
     }
@@ -154,7 +163,8 @@ class Response {
      * @param mixed $data The response data.
      * @return self
      */
-    public function data($data): self {
+    public function data($data): self
+    {
         $this->data = $data;
         return $this;
     }
@@ -165,7 +175,8 @@ class Response {
      * @param int $code The HTTP status code.
      * @return self
      */
-    public function status(int $code): self {
+    public function status(int $code): self
+    {
         $this->statusCode = $code;
         return $this;
     }
@@ -177,7 +188,8 @@ class Response {
      * @param string $value The header value.
      * @return self
      */
-    public function header(string $name, string $value): self {
+    public function header(string $name, string $value): self
+    {
         $this->headers[$name] = $value;
         return $this;
     }
@@ -189,7 +201,8 @@ class Response {
      * @param string $charset The charset (default: utf-8).
      * @return self
      */
-    public function contentType(string $type, string $charset = 'utf-8'): self {
+    public function contentType(string $type, string $charset = 'utf-8'): self
+    {
         return $this->header('Content-Type', "{$type}; charset={$charset}");
     }
 
@@ -200,7 +213,8 @@ class Response {
      * @param string $message Optional success message.
      * @return self
      */
-    public function success($data = null, string $message = 'Success'): self {
+    public function success($data = null, string $message = 'Success'): self
+    {
         $this->statusCode = 200;
 
         if ($data !== null) {
@@ -221,7 +235,8 @@ class Response {
      * @param string $message Optional success message.
      * @return self
      */
-    public function created($data = null, string $message = 'Resource created successfully'): self {
+    public function created($data = null, string $message = 'Resource created successfully'): self
+    {
         $this->statusCode = 201;
 
         if ($data !== null) {
@@ -243,7 +258,8 @@ class Response {
      * @param mixed $details Additional error details.
      * @return self
      */
-    public function error(string $message, int $code = 500, $details = null): self {
+    public function error(string $message, int $code = 500, $details = null): self
+    {
         $this->statusCode = $code;
 
         $this->data = [
@@ -265,7 +281,8 @@ class Response {
      * @param string $message Optional error message.
      * @return self
      */
-    public function notFound(string $message = 'Resource not found'): self {
+    public function notFound(string $message = 'Resource not found'): self
+    {
         return $this->error($message, 404);
     }
 
@@ -275,7 +292,8 @@ class Response {
      * @param string $message Optional error message.
      * @return self
      */
-    public function unauthorized(string $message = 'Unauthorized'): self {
+    public function unauthorized(string $message = 'Unauthorized'): self
+    {
         return $this->error($message, 401);
     }
 
@@ -285,7 +303,8 @@ class Response {
      * @param string $message Optional error message.
      * @return self
      */
-    public function forbidden(string $message = 'Forbidden'): self {
+    public function forbidden(string $message = 'Forbidden'): self
+    {
         return $this->error($message, 403);
     }
 
@@ -296,7 +315,8 @@ class Response {
      * @param string $message Optional error message.
      * @return self
      */
-    public function validationError(array $errors, string $message = 'Validation failed'): self {
+    public function validationError(array $errors, string $message = 'Validation failed'): self
+    {
         return $this->error($message, 422, $errors);
     }
 
@@ -310,7 +330,8 @@ class Response {
      * @param int $lastPage The last page number.
      * @return self
      */
-    public function paginate($items, int $total, int $perPage, int $currentPage, int $lastPage): self {
+    public function paginate($items, int $total, int $perPage, int $currentPage, int $lastPage): self
+    {
         $this->data = [
             'success' => true,
             'data' => $items,
@@ -332,7 +353,8 @@ class Response {
      *
      * @return void
      */
-    public function send(): void {
+    public function send(): void
+    {
         // Set the HTTP response code
         http_response_code($this->statusCode);
 
@@ -368,7 +390,8 @@ class Response {
      *
      * @return string
      */
-    public function __toString(): string {
+    public function __toString(): string
+    {
         // Set headers (but we can't actually set headers in __toString)
         // This is mainly for getting the response as a string
         ob_start();
@@ -393,7 +416,8 @@ class Response {
      * @param array $headers The response headers.
      * @return void
      */
-    public static function sendJson($data, int $statusCode = 200, array $headers = []): void {
+    public static function sendJson($data, int $statusCode = 200, array $headers = []): void
+    {
         static::json($data, $statusCode, $headers)->send();
     }
 
@@ -404,7 +428,8 @@ class Response {
      * @param string $message Optional success message.
      * @return void
      */
-    public static function sendSuccess($data, string $message = 'Success'): void {
+    public static function sendSuccess($data, string $message = 'Success'): void
+    {
         (new static())->success($data, $message)->send();
     }
 
@@ -416,7 +441,8 @@ class Response {
      * @param mixed $details Additional error details.
      * @return void
      */
-    public static function sendError(string $message, int $code = 500, $details = null): void {
+    public static function sendError(string $message, int $code = 500, $details = null): void
+    {
         (new static())->error($message, $code, $details)->send();
     }
 
@@ -426,8 +452,12 @@ class Response {
      * @param Request $request The request instance.
      * @return self
      */
-    public static function fromRequest(Request $request): self {
-        return new self();
+    public static function fromRequest(Request $request): self
+    {
+        $n = (new self());
+        $n->fromRequest = $request;
+
+        return $n;
     }
 
     /**
@@ -437,8 +467,9 @@ class Response {
      * @param callable $callback The route callback.
      * @return self
      */
-    public function get(string $uri, callable $callback): self {
-        Router::get($uri, $callback);
+    public function get(string $uri, callable $callback): self
+    {
+        Router::get($uri, $callback, $this->fromRequest);
         return $this;
     }
 
@@ -449,10 +480,12 @@ class Response {
      * @param callable $callback The route callback.
      * @return self
      */
-    public function post(string $uri, callable $callback): self {
-        Router::post($uri, $callback);
+    public function post(string $uri, callable $callback): self
+    {
+        Router::post($uri, $callback, $this->fromRequest);
         return $this;
     }
+
     /**
      * Register a PUT route.
      *
@@ -460,10 +493,12 @@ class Response {
      * @param callable $callback The route callback.
      * @return self
      */
-    public function put(string $uri, callable $callback): self {
-        Router::put($uri, $callback);
+    public function put(string $uri, callable $callback): self
+    {
+        Router::put($uri, $callback, $this->fromRequest);
         return $this;
     }
+
     /**
      * Register a DELETE route.
      *
@@ -471,10 +506,12 @@ class Response {
      * @param callable $callback The route callback.
      * @return self
      */
-    public function delete(string $uri, callable $callback): self {
-        Router::delete($uri, $callback);
+    public function delete(string $uri, callable $callback): self
+    {
+        Router::delete($uri, $callback, $this->fromRequest);
         return $this;
     }
+
     /**
      * Register a PATCH route.
      *
@@ -482,10 +519,12 @@ class Response {
      * @param callable $callback The route callback.
      * @return self
      */
-    public function patch(string $uri, callable $callback): self {
-        Router::patch($uri, $callback);
+    public function patch(string $uri, callable $callback): self
+    {
+        Router::patch($uri, $callback, $this->fromRequest);
         return $this;
     }
+
     /**
      * Register an OPTIONS route.
      *
@@ -493,8 +532,9 @@ class Response {
      * @param callable $callback The route callback.
      * @return self
      */
-    public function options(string $uri, callable $callback): self {
-        Router::options($uri, $callback);
+    public function options(string $uri, callable $callback): self
+    {
+        Router::options($uri, $callback, $this->fromRequest);
         return $this;
     }
 }
@@ -507,6 +547,7 @@ class Response {
  * @param array $headers The response headers.
  * @return Response
  */
-function response($data = null, int $statusCode = 200, array $headers = []): Response {
+function response($data = null, int $statusCode = 200, array $headers = []): Response
+{
     return new Response($data, $statusCode, $headers);
 }

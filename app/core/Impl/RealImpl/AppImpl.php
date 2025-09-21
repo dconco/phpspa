@@ -33,9 +33,7 @@ use const phpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  * @var string $defaultTargetID
  * @var array $components
  * @var bool $defaultCaseSensitive
- * @staticvar string $request_uri
  * @var mixed $renderedData
- * @uses ComponentTagFormatter
  * @abstract
  */
 abstract class AppImpl

@@ -6,12 +6,13 @@ namespace phpSPA\Http;
  * Handles routing for the application.
  * 
  * @category phpSPA\Http
- * @author Samuel Paschalson <your@email.com>
+ * @author Samuel Paschalson <samuelpaschalson@gmail.com>
  * @copyright 2025 Samuel Paschalson
  * @see https://phpspa.readthedocs.io/en/latest/response-handling
  */
 
-class Router {
+class Router
+{
     /**
      * @var array Registered routes
      */
@@ -31,12 +32,18 @@ class Router {
     private static $basePath = '/api';
 
     /**
+     * @var bool Whether the shutdown handler has been registered
+     */
+    private static $shutdownHandlerRegistered = false;
+
+    /**
      * Set the base path for the router.
      *
      * @param string $path The base path.
      * @return void
      */
-    public static function setBasePath(string $path): void {
+    public static function setBasePath(string $path): void
+    {
         self::$basePath = rtrim($path, '/');
     }
 
@@ -47,7 +54,9 @@ class Router {
      * @param callable $callback
      * @return void
      */
-    public static function get(string $uri, callable $callback) {
+    public static function get(string $uri, callable $callback, ?Request $request = null)
+    {
+        self::ensureShutdownHandlerRegistered($request);
         self::$routes['GET'][$uri] = $callback;
     }
 
@@ -58,7 +67,9 @@ class Router {
      * @param callable $callback
      * @return void
      */
-    public static function post(string $uri, callable $callback) {
+    public static function post(string $uri, callable $callback, ?Request $request = null)
+    {
+        self::ensureShutdownHandlerRegistered($request);
         self::$routes['POST'][$uri] = $callback;
     }
 
@@ -69,7 +80,9 @@ class Router {
      * @param callable $callback
      * @return void
      */
-    public static function put(string $uri, callable $callback) {
+    public static function put(string $uri, callable $callback, ?Request $request = null)
+    {
+        self::ensureShutdownHandlerRegistered($request);
         self::$routes['PUT'][$uri] = $callback;
     }
 
@@ -80,7 +93,9 @@ class Router {
      * @param callable $callback
      * @return void
      */
-    public static function delete(string $uri, callable $callback) {
+    public static function delete(string $uri, callable $callback, ?Request $request = null)
+    {
+        self::ensureShutdownHandlerRegistered($request);
         self::$routes['DELETE'][$uri] = $callback;
     }
 
@@ -91,7 +106,9 @@ class Router {
      * @param callable $callback
      * @return void
      */
-    public static function patch(string $uri, callable $callback) {
+    public static function patch(string $uri, callable $callback, ?Request $request = null)
+    {
+        self::ensureShutdownHandlerRegistered($request);
         self::$routes['PATCH'][$uri] = $callback;
     }
 
@@ -102,7 +119,9 @@ class Router {
      * @param callable $callback
      * @return void
      */
-    public static function options(string $uri, callable $callback) {
+    public static function options(string $uri, callable $callback, ?Request $request = null)
+    {
+        self::ensureShutdownHandlerRegistered($request);
         self::$routes['OPTIONS'][$uri] = $callback;
     }
 
@@ -113,18 +132,35 @@ class Router {
      * @param callable $callback
      * @return void
      */
-    public static function head(string $uri, callable $callback) {
+    public static function head(string $uri, callable $callback, ?Request $request = null)
+    {
+        self::ensureShutdownHandlerRegistered($request);
         self::$routes['HEAD'][$uri] = $callback;
     }
 
     /**
+     * Ensure the shutdown handler is registered once.
+     *
+     * @return void
+     */
+    private static function ensureShutdownHandlerRegistered(?Request $request): void
+    {
+        if (self::$shutdownHandlerRegistered) return;
+        $request = $request ?? new Request();
+
+        register_shutdown_function([self::class, 'handle'], $request);
+        self::$shutdownHandlerRegistered = true;
+    }
+
+    /**
      * Handle the incoming request and dispatch to the appropriate route.
-     * This method now automatically sends the response.
+     * This method is intended to be invoked at PHP shutdown via register_shutdown_function.
      *
      * @param Request $request
      * @return void
      */
-    public static function handle(Request $request): void {
+    private static function handle(Request $request): void
+    {
         $method = $request->method();
         $uri = $request->getUri();
 
@@ -172,6 +208,7 @@ class Router {
  *
  * @return Router
  */
-function router(): Router {
+function router(): Router
+{
     return new Router();
 }
