@@ -25,3 +25,10 @@ Router::get('/user/{id: int}', function($req, int $id) {
 
 - Full developer documentation: `https://phpspa.readthedocs.io/en/latest/v1.1.8`
 - Changelog entry: `CHANGELOG.md`
+
+## Author / Credits
+
+- Feature author: [Samuel Pascal](https://github.com/SamuelPaschalson) — implemented this release feature: Router & Response
+- Maintainer: [Dave Conco](https://github.com/dconco)
+
+No other contributors are listed for this release.
