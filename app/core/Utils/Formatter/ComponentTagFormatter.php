@@ -42,7 +42,7 @@ trait ComponentTagFormatter
                     $matches[1] = str_replace('.', '\\', $matches[1]);
                 }
 
-                if (!function_exists($matches[1])) {
+                if (!function_exists($matches[1]) && !method_exists($matches[1], '__render')) {
                     throw new AppException(
                         "Component Function {$matches[1]} does not exist.",
                     );
@@ -66,7 +66,9 @@ trait ComponentTagFormatter
                     }
                 }
 
-                return call_user_func_array($matches[1], $attributes);
+                return class_exists($matches[1])
+                    ? (new $matches[1])->__render(...$attributes)
+                    : call_user_func_array($matches[1], $attributes);
             },
             $dom,
         );
