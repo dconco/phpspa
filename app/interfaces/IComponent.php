@@ -39,7 +39,7 @@ interface IComponent
     /**
      * Sets the method name for the component.
      *
-     * @param string $method The name of the method to set.
+     * @param string $method The name of the method to set, default to "GET|POST".
      * @return ComponentImpl Returns the current instance for method chaining.
      */
     public function method(string $method): ComponentImpl;
@@ -80,17 +80,19 @@ interface IComponent
      * Sets the script to be executed when the component is mounted.
      *
      * @param callable $script The script to be executed.
+     * @param string|null $name Optional name for the script asset.
      * @return ComponentImpl Returns the current instance for method chaining.
      */
-    public function script(callable $script): ComponentImpl;
+    public function script(callable $script, ?string $name = null): ComponentImpl;
 
     /**
      * Sets the stylesheet to be executed when the component is mounted.
      *
      * @param callable $style The stylesheet to be executed.
+     * @param string|null $name Optional name for the stylesheet.
      * @return ComponentImpl Returns the current instance for method chaining.
      */
-    public function styleSheet(callable $style): ComponentImpl;
+    public function styleSheet(callable $style, ?string $name = null): ComponentImpl;
 
     /**
      * This sets the component to be called every particular interval given

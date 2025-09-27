@@ -99,12 +99,13 @@ class App extends \phpSPA\Core\Impl\RealImpl\AppImpl implements
      * component-specific scripts.
      *
      * @param callable $script The callable that returns the JavaScript code
+     * @param string|null $name Optional name for the script asset
      * @return self
      * @see https://phpspa.readthedocs.io/en/latest/v1.1.7/1-global-asset-management
      */
-    public function script(callable $script): self
+    public function script(callable $script, ?string $name = null): self
     {
-        $this->scripts[] = $script;
+        $this->scripts[] = [$script, $name];
         return $this;
     }
 
@@ -116,12 +117,13 @@ class App extends \phpSPA\Core\Impl\RealImpl\AppImpl implements
      * component-specific styles.
      *
      * @param callable $style The callable that returns the CSS code
+     * @param string|null $name Optional name for the stylesheet asset
      * @return self
      * @see https://phpspa.readthedocs.io/en/latest/v1.1.7/1-global-asset-management
      */
-    public function styleSheet(callable $style): self
+    public function styleSheet(callable $style, ?string $name = null): self
     {
-        $this->stylesheets[] = $style;
+        $this->stylesheets[] = [$style, $name];
         return $this;
     }
 }

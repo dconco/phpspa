@@ -68,7 +68,8 @@ return (new Component('Login'))
                 background-color: #c0c0c0;
                 font-family: Arial, sans-serif;
             }
-        CSS
+        CSS,
+        'login-style'
     )
 
     ->script(
@@ -86,5 +87,6 @@ return (new Component('Login'))
 					.then(() => setState('loading', "false"))
 			}
 		})
-		JS
+		JS,
+        'login-default-script'
     );

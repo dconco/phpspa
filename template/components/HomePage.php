@@ -32,7 +32,8 @@ return (new Component(function (Request $request): string {
 				background-color: #d9cdcd;
 				font-family: Arial, sans-serif;
 			}
-		CSS
+		CSS,
+		'homepage-style'
    )
 
    ->script(
@@ -68,4 +69,5 @@ return (new Component(function (Request $request): string {
 				})
 			}
 		JS,
+		'homepage-script'
    );

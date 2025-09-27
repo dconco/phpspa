@@ -36,7 +36,8 @@ $app = (new App(require 'Layout.php'))
             text-align: center;
             margin-bottom: 1rem;
         }
-        CSS
+        CSS,
+        'global-css'
     )
 
     ->script(
@@ -76,6 +77,10 @@ $app = (new App(require 'Layout.php'))
             console.log('Execution order:', window.globalUtils.executionOrder);
         });
         JS,
+        'global-js'
     )
 
     ->run();
+
+// --- NOT FOUND ---
+echo "404 Not Found";
