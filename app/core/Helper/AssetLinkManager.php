@@ -41,22 +41,23 @@ class AssetLinkManager
      *
      * @param string $componentRoute The route identifier for the component
      * @param int $stylesheetIndex The index of the stylesheet in the component's stylesheets array
+     * @param string|null $name Optional name for the asset
      * @return string The generated CSS link
      */
-    public static function generateCssLink(string $componentRoute, int $stylesheetIndex): string
+    public static function generateCssLink(string $componentRoute, int $stylesheetIndex, ?string $name = null): string
     {
         $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
 
         foreach ($mappings as $hash => $mapping) {
             if (!self::isMappingExpired($mapping) && $mapping['componentRoute'] === $componentRoute && $mapping['assetType'] === 'css' && $mapping['assetIndex'] === $stylesheetIndex) {
-                return self::buildAssetUrl($hash, 'css');
+                return self::buildAssetUrl($hash, 'css', $name);
             }
         }
 
-        $hash = self::generateAssetHash($componentRoute, 'css', $stylesheetIndex);
-        self::storeAssetMapping($hash, $componentRoute, 'css', $stylesheetIndex);
+        $hash = self::generateAssetHash($componentRoute, 'css', $stylesheetIndex, $name);
+        self::storeAssetMapping($hash, $componentRoute, 'css', $stylesheetIndex, $name);
 
-        return self::buildAssetUrl($hash, 'css');
+        return self::buildAssetUrl($hash, 'css', $name);
     }
 
     /**
@@ -64,22 +65,23 @@ class AssetLinkManager
      *
      * @param string $componentRoute The route identifier for the component
      * @param int $scriptIndex The index of the script in the component's scripts array
+     * @param string|null $name Optional name for the asset
      * @return string The generated JS link
      */
-    public static function generateJsLink(string $componentRoute, int $scriptIndex): string
+    public static function generateJsLink(string $componentRoute, int $scriptIndex, ?string $name = null): string
     {
         $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
 
         foreach ($mappings as $hash => $mapping) {
             if (!self::isMappingExpired($mapping) && $mapping['componentRoute'] === $componentRoute && $mapping['assetType'] === 'js' && $mapping['assetIndex'] === $scriptIndex) {
-                return self::buildAssetUrl($hash, 'js');
+                return self::buildAssetUrl($hash, 'js', $name);
             }
         }
 
-        $hash = self::generateAssetHash($componentRoute, 'js', $scriptIndex);
-        self::storeAssetMapping($hash, $componentRoute, 'js', $scriptIndex);
+        $hash = self::generateAssetHash($componentRoute, 'js', $scriptIndex, $name);
+        self::storeAssetMapping($hash, $componentRoute, 'js', $scriptIndex, $name);
 
-        return self::buildAssetUrl($hash, 'js');
+        return self::buildAssetUrl($hash, 'js', $name);
     }
 
     /**
@@ -90,12 +92,19 @@ class AssetLinkManager
      */
     public static function resolveAssetRequest(string $requestUri): ?array
     {
-        if (!preg_match('/\/phpspa\/assets\/([a-f0-9]{32})\.(css|js)$/', $requestUri, $matches)) {
+        if (!preg_match('/\/phpspa\/assets\/(?:(.+)-([a-f0-9]{32})|([a-f0-9]{32}))\.(css|js)$/', $requestUri, $matches)) {
             return null;
         }
 
-        $hash = $matches[1];
-        $type = $matches[2];
+        if (!empty($matches[1])) {
+            $name = $matches[1];
+            $hash = $matches[2];
+            $type = $matches[4];
+        } else {
+            $name = null;
+            $hash = $matches[3];
+            $type = $matches[4];
+        }
 
         $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
 
@@ -154,14 +163,13 @@ class AssetLinkManager
      * @param string $componentRoute The component route
      * @param string $assetType Type of asset ('css' or 'js')
      * @param int $assetIndex Index of the asset
+     * @param string|null $name Optional name for the asset
      * @return string Generated hash
      */
-    private static function generateAssetHash(string $componentRoute, string $assetType, int $assetIndex): string
+    private static function generateAssetHash(string $componentRoute, string $assetType, int $assetIndex, ?string $name = null): string
     {
         $sessionId = session_id();
-        $timestamp = time();
-        $data = $sessionId . $componentRoute . $assetType . $assetIndex . $timestamp;
-        // $data = $sessionId . $componentRoute . $assetType . $assetIndex;
+        $data = $sessionId . $componentRoute . $assetType . $assetIndex;
 
         return md5($data);
     }
@@ -173,9 +181,10 @@ class AssetLinkManager
      * @param string $componentRoute The component route
      * @param string $assetType Type of asset ('css' or 'js')
      * @param int $assetIndex Index of the asset
+     * @param string|null $name Optional name for the asset
      * @return void
      */
-    private static function storeAssetMapping(string $hash, string $componentRoute, string $assetType, int $assetIndex): void
+    private static function storeAssetMapping(string $hash, string $componentRoute, string $assetType, int $assetIndex, ?string $name = null): void
     {
         $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
 
@@ -183,6 +192,7 @@ class AssetLinkManager
             'componentRoute' => $componentRoute,
             'assetType' => $assetType,
             'assetIndex' => $assetIndex,
+            'name' => $name,
             'created' => time()
         ];
 
@@ -194,12 +204,14 @@ class AssetLinkManager
      *
      * @param string $hash The asset hash
      * @param string $type Asset type ('css' or 'js')
+     * @param string|null $name Optional name for the asset
      * @return string The complete asset URL
      */
-    private static function buildAssetUrl(string $hash, string $type): string
+    private static function buildAssetUrl(string $hash, string $type, ?string $name = null): string
     {
         $baseUrl = self::getBaseUrl();
-        return $baseUrl . "/phpspa/assets/{$hash}.{$type}";
+        $filename = $name ? "{$name}-{$hash}" : $hash;
+        return $baseUrl . "/phpspa/assets/{$filename}.{$type}";
     }
 
     /**

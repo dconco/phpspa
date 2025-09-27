@@ -74,7 +74,7 @@ abstract class ComponentImpl
      * The scripts to be executed when the component is mounted.
      * This can be used to add interactivity or dynamic behavior to the component.
      *
-     * @var callable[] $scripts
+     * @var array<array{0: callable, 1: string|null}> $scripts
      */
     protected array $scripts = [];
 
@@ -82,7 +82,7 @@ abstract class ComponentImpl
      * The styles to be executed when the component is mounted.
      * This can be used to add interactivity or dynamic behavior to the component.
      *
-     * @var callable[] $stylesheets
+     * @var array<array{0: callable, 1: string|null}> $stylesheets
      */
     protected array $stylesheets = [];
 
@@ -133,15 +133,15 @@ abstract class ComponentImpl
         return $this;
     }
 
-    public function script(callable $script): self
+    public function script(callable $script, ?string $name = null): self
     {
-        $this->scripts[] = $script;
+        $this->scripts[] = [$script, $name];
         return $this;
     }
 
-    public function styleSheet(callable $style): self
+    public function styleSheet(callable $style, ?string $name = null): self
     {
-        $this->stylesheets[] = $style;
+        $this->stylesheets[] = [$style, $name];
         return $this;
     }
 
