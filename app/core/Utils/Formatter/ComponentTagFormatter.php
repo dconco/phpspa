@@ -3,7 +3,6 @@
 namespace phpSPA\Core\Utils\Formatter;
 
 use phpSPA\Exceptions\AppException;
-use phpSPA\Core\Helper\CallableInspector;
 
 /**
  * Component tag formatting utilities
@@ -16,8 +15,6 @@ use phpSPA\Core\Helper\CallableInspector;
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
- * @since v1.0.0
- * @uses \phpSPA\Core\Helper\ComponentParser
  */
 trait ComponentTagFormatter
 {
@@ -31,21 +28,30 @@ trait ComponentTagFormatter
      */
     protected static function format(string $dom): string
     {
-        $pattern = '/<([A-Z][a-zA-Z0-9.]*)([^>]*)(?:\/>|>([\s\S]*?)<\/\1>)/';
+        $pattern = '/<([A-Z][a-zA-Z0-9.:]*)([^>]*)(?:\/>|>([\s\S]*?)<\/\1>)/';
 
         $updatedDom = preg_replace_callback(
             $pattern,
             function ($matches) {
                 $matches = array_map('trim', $matches);
 
-                if (strpos($matches[1], '.')) {
-                    $matches[1] = str_replace('.', '\\', $matches[1]);
-                }
+                $component = $matches[1];
+                $className = '';
+                $methodName = '';
 
-                if (!function_exists($matches[1]) && !method_exists($matches[1], '__render')) {
-                    throw new AppException(
-                        "Component Function {$matches[1]} does not exist.",
-                    );
+                // Handle namespace.class::method syntax
+                if (strpos($component, '::') !== false) {
+                    list($className, $methodName) = explode('::', $component);
+                    if (strpos($className, '.')) {
+                        $className = str_replace('.', '\\', $className);
+                    }
+                } else {
+                    // Handle namespace.class syntax or simple class name
+                    if (strpos($component, '.')) {
+                        $className = str_replace('.', '\\', $component);
+                    } else {
+                        $className = $component;
+                    }
                 }
 
                 // Parse attributes
@@ -59,16 +65,36 @@ trait ComponentTagFormatter
                     $attributes['children'] = $processedChildren;
                 }
 
-                // Validate parameters
-                foreach (array_keys($attributes) as $attrKey) {
-                    if (!CallableInspector::hasParam($matches[1], $attrKey)) {
-                        // throw new AppException("Component Function {$matches[1]} does not accept property '{$attrKey}'.");
+                // Handle different component types
+                if ($methodName) {
+                    // Class::method syntax
+                    if (!class_exists($className)) {
+                        throw new AppException("Class {$className} does not exist.");
                     }
-                }
 
-                return class_exists($matches[1])
-                    ? (new $matches[1])->__render(...$attributes)
-                    : call_user_func_array($matches[1], $attributes);
+                    if (method_exists($className, $methodName)) {
+                        $reflection = new \ReflectionMethod($className, $methodName);
+                        if ($reflection->isStatic()) {
+                            return $className::$methodName(...$attributes);
+                        } else {
+                            return (new $className)->$methodName(...$attributes);
+                        }
+                    } else {
+                        throw new AppException("Method {$methodName} does not exist in class {$className}.");
+                    }
+                } elseif (class_exists($className)) {
+                    // Class syntax
+                    if (method_exists($className, '__render')) {
+                        return (new $className)->__render(...$attributes);
+                    } else {
+                        throw new AppException("Class {$className} does not have __render method.");
+                    }
+                } elseif (function_exists($className)) {
+                    // Function syntax
+                    return call_user_func_array($className, $attributes);
+                } else {
+                    throw new AppException("Component {$component} does not exist.");
+                }
             },
             $dom,
         );

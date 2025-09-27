@@ -10,6 +10,14 @@ use function phpSPA\Http\response;
 $request = new Request();
 $response = Response::fromRequest($request)->caseSensitive();
 
+$res = response();
+
+$res->get('/test', function ($request) {
+    return response('Hello from /test', 200)
+        ->header('X-Custom-Header', 'Value')
+        ->contentType('text/plain');
+});
+
 // Define your routes
 $response->get('/user/{id: int}', function ($request, $id) {
     $user = 2; // This would be your actual user lookup
