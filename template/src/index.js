@@ -109,6 +109,13 @@ function base64ToUtf8(str) {
             location.href
          );
 
+         // Emit initial load event
+         RuntimeManager.emit("load", {
+            route: location.href,
+            success: true,
+            error: false,
+         });
+
          // Set up auto-reload if specified
          if (targetElement.hasAttribute("phpspa-reload-time")) {
             setTimeout(phpspa.reloadComponent, initialState.reloadTime);
@@ -138,7 +145,6 @@ function base64ToUtf8(str) {
     * Restores page content when user navigates through browser history
     */
    window.addEventListener("popstate", (event) => {
-      event.preventDefault();
       const navigationState = event.state;
 
       // Check if we have valid phpSPA state data
@@ -148,6 +154,12 @@ function base64ToUtf8(str) {
          navigationState.targetId &&
          navigationState.content
       ) {
+         // Emit beforeload event for loading indicators
+         RuntimeManager.emit("beforeload", { route: navigationState.url });
+
+         // Emit unload event before content replacement
+         RuntimeManager.emit("unload", { route: location.href });
+
          // Restore page title
          document.title = navigationState.title ?? document.title;
 
@@ -158,11 +170,18 @@ function base64ToUtf8(str) {
          // Decode and restore HTML content
          targetContainer.innerHTML = navigationState.content;
 
-         // Clear old executed scripts cache
+         // Clear old executed scripts cache to ensure fresh execution
          RuntimeManager.clearExecutedScripts();
 
          // Execute any inline scripts and styles in the restored content
          RuntimeManager.runAll(navigationState.root ? document.body : targetContainer);
+
+         // Emit successful load event
+         RuntimeManager.emit("load", {
+            route: navigationState.url,
+            success: true,
+            error: false,
+         });
 
          // Restart auto-reload timer if needed
          if (typeof navigationState.reloadTime !== "undefined") {
@@ -320,6 +339,9 @@ class phpspa {
        * @param {string|Object} responseData - The processed response data
        */
       function processResponse(responseData) {
+         // Emit unload event before content replacement
+         RuntimeManager.emit("unload", { route: location.href });
+
          // Update document title if provided
          if (
             typeof responseData?.title === "string" ||
@@ -519,6 +541,9 @@ class phpspa {
           * @param {string|Object} responseData - The response data to process
           */
          function updateContent(responseData) {
+            // Emit unload event before content replacement
+            RuntimeManager.emit("unload", { route: location.href });
+
             // Update title if provided
             if (
                typeof responseData?.title === "string" ||
@@ -625,6 +650,9 @@ class phpspa {
        * @param {string|Object} responseData - The response data
        */
       function updateComponentContent(responseData) {
+         // Emit unload event before content replacement
+         RuntimeManager.emit("unload", { route: location.href });
+
          // Update title if provided
          if (
             typeof responseData?.title === "string" ||
@@ -760,6 +788,7 @@ class RuntimeManager {
    static events = {
       beforeload: [],
       load: [],
+      unload: [],
    };
 
    /**
