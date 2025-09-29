@@ -167,11 +167,11 @@ function base64ToUtf8(str) {
          const targetContainer =
             document.getElementById(navigationState.targetId) ?? document.body;
 
+         // Clear scripts from the target container before replacing content
+         RuntimeManager.clearContainerScripts(targetContainer);
+
          // Decode and restore HTML content
          targetContainer.innerHTML = navigationState.content;
-
-         // Clear old executed scripts cache to ensure fresh execution
-         RuntimeManager.clearExecutedScripts();
 
          // Execute any inline scripts and styles in the restored content
          RuntimeManager.runAll(navigationState.root ? document.body : targetContainer);
@@ -352,9 +352,12 @@ class phpspa {
 
          // Find target element for content replacement
          const targetElement =
-            document.getElementById(responseData?.targetID) ??
-            document.getElementById(history.state?.targetID) ??
+            document.getElementById(responseData?.targetId || responseData?.targetID) ??
+            document.getElementById(history.state?.targetId) ??
             document.body;
+
+         // Clear scripts from the target element before replacing content
+         RuntimeManager.clearContainerScripts(targetElement);
 
          // Update content - decode base64 if provided, otherwise use raw data
          targetElement.innerHTML = responseData?.content
@@ -365,7 +368,7 @@ class phpspa {
          const stateData = {
             url: url?.href ?? url,
             title: responseData?.title ?? document.title,
-            targetID: responseData?.targetID ?? targetElement.id,
+            targetId: (responseData?.targetId || responseData?.targetID) ?? targetElement.id,
             content: responseData?.content ?? responseData,
          };
 
@@ -392,9 +395,6 @@ class phpspa {
          } else {
             scroll(0, 0); // Scroll to top if no hash or element not found
          }
-
-         // Clear old executed scripts cache
-         RuntimeManager.clearExecutedScripts();
 
          // Execute any inline scripts and styles in the new content
          RuntimeManager.runAll(targetElement);
@@ -554,9 +554,12 @@ class phpspa {
 
             // Find target element and update content
             const targetElement =
-               document.getElementById(responseData?.targetID) ??
-               document.getElementById(history.state?.targetID) ??
+               document.getElementById(responseData?.targetId || responseData?.targetID) ??
+               document.getElementById(history.state?.targetId) ??
                document.body;
+
+            // Clear scripts from the target element before replacing content
+            RuntimeManager.clearContainerScripts(targetElement);
 
             targetElement.innerHTML = responseData?.content
                ? responseData.content
@@ -663,16 +666,16 @@ class phpspa {
 
          // Find target and update content
          const targetElement =
-            document.getElementById(responseData?.targetID) ??
-            document.getElementById(history.state?.targetID) ??
+            document.getElementById(responseData?.targetId || responseData?.targetID) ??
+            document.getElementById(history.state?.targetId) ??
             document.body;
+
+         // Clear scripts from the target element before replacing content
+         RuntimeManager.clearContainerScripts(targetElement);
 
          targetElement.innerHTML = responseData?.content
             ? responseData.content
             : responseData;
-
-         // Clear old executed scripts cache
-         RuntimeManager.clearExecutedScripts();
 
          // Execute scripts and restore scroll
          RuntimeManager.runAll(targetElement);
@@ -892,6 +895,24 @@ class RuntimeManager {
     */
    static clearExecutedScripts() {
       RuntimeManager.executedScripts.clear();
+   }
+
+   /**
+    * Clears executed scripts that originate from a specific container
+    * This is more selective than clearExecutedScripts and preserves global scripts
+    *
+    * @param {HTMLElement} container - The container whose scripts should be cleared
+    * @static
+    * @memberof RuntimeManager
+    */
+   static clearContainerScripts(container) {
+      if (!container) return;
+      
+      const scripts = container.querySelectorAll("script");
+      scripts.forEach((script) => {
+         const contentHash = utf8ToBase64(script.textContent.trim());
+         RuntimeManager.executedScripts.delete(contentHash);
+      });
    }
 
    /**
