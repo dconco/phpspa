@@ -23,7 +23,7 @@
  *
  * @author Dave Conco <concodave@gmail.com>
  * @link https://github.com/dconco/phpspa-js
- * @version 1.1.9
+ * @version 1.1.10
  * @license MIT
  */
 
@@ -85,12 +85,18 @@ function base64ToUtf8(str) {
    window.addEventListener("DOMContentLoaded", () => {
       const targetElement = document.querySelector("[data-phpspa-target]");
 
+      RuntimeManager.emit('load', {
+         route: location.href,
+         success: true,
+         error: false
+      });
+
       if (targetElement) {
          // Create initial state object with current page data
          const initialState = {
             url: location.href,
             title: document.title,
-            targetId: targetElement.id,
+            targetID: targetElement.id,
             content: targetElement.innerHTML,
             root: true,
          };
@@ -141,19 +147,19 @@ function base64ToUtf8(str) {
       event.preventDefault();
       const navigationState = event.state;
 
+      RuntimeManager.emit('beforeload', { route: location.href });
+
+      // Enable automatic scroll restoration
+      history.scrollRestoration = "auto";
+
       // Check if we have valid phpSPA state data
-      if (
-         navigationState &&
-         navigationState.url &&
-         navigationState.targetId &&
-         navigationState.content
-      ) {
+      if (navigationState && navigationState.content) {
          // Restore page title
          document.title = navigationState.title ?? document.title;
 
          // Find target container or fallback to body
          const targetContainer =
-            document.getElementById(navigationState.targetId) ?? document.body;
+            document.getElementById(navigationState.targetID) ?? document.body;
 
          // Decode and restore HTML content
          targetContainer.innerHTML = navigationState.content;
@@ -168,13 +174,16 @@ function base64ToUtf8(str) {
          if (typeof navigationState.reloadTime !== "undefined") {
             setTimeout(phpspa.reloadComponent, navigationState.reloadTime);
          }
+
+         RuntimeManager.emit('load', {
+            route: location.href,
+            success: true,
+            error: false
+         });
       } else {
          // No valid state found - navigate to current URL to refresh
          phpspa.navigate(new URL(location.href), "replace");
       }
-
-      // Enable automatic scroll restoration
-      history.scrollRestoration = "auto";
    });
 })();
 
@@ -251,14 +260,14 @@ class phpspa {
                      responseData = responseText || ""; // Handle empty responses
                   }
 
+                  processResponse(responseData);
+
                   // Emit successful load event
                   RuntimeManager.emit("load", {
                      route: url,
                      success: true,
                      error: false,
                   });
-
-                  processResponse(responseData);
                })
                .catch((error) => handleError(error));
          })
@@ -286,32 +295,34 @@ class phpspa {
                      errorData = fallbackResponse;
                   }
 
+                  processResponse(errorData || "");
+
                   RuntimeManager.emit("load", {
                      route: url,
                      success: false,
                      error: error.message || "Server returned an error",
                      data: errorData,
                   });
-
-                  processResponse(errorData || "");
                })
                .catch(() => {
+                  processResponse("");
+
                   // Failed to read error response body
                   RuntimeManager.emit("load", {
                      route: url,
                      success: false,
                      error: error.message || "Failed to read error response",
                   });
-                  processResponse("");
                });
          } else {
+            processResponse("");
+
             // Network error, same-origin issue, or other connection problems
             RuntimeManager.emit("load", {
                route: url,
                success: false,
                error: error.message || "No connection to server",
             });
-            processResponse("");
          }
       }
 
@@ -537,6 +548,9 @@ class phpspa {
                ? responseData.content
                : responseData;
 
+            // Clear old executed scripts cache
+            RuntimeManager.clearExecutedScripts();
+
             // Execute scripts and styles, then restore scroll position
             RuntimeManager.runAll(targetElement);
             scroll(currentScroll);
@@ -753,6 +767,16 @@ class RuntimeManager {
    static executedStyles = new Set();
 
    /**
+    * A static cache object that stores processed script content to avoid redundant processing.
+    * Used to improve performance by caching scripts that have already been processed or compiled.
+    *
+    * @static
+    * @type {Object<string, string>}
+    * @memberof RuntimeManager
+    */
+   static ScriptsCachedContent = {};
+
+   /**
     * Internal event registry for custom events
     * @type {Object<string, Function[]>}
     * @private
@@ -822,10 +846,24 @@ class RuntimeManager {
 
       scripts.forEach(async (script) => {
          const scriptUrl = script.getAttribute('src');
+         const nonce = document.documentElement.getAttribute('x-phpspa');
 
          // Skip if this script has already been executed
          if (!this.executedScripts.has(scriptUrl)) {
             this.executedScripts.add(scriptUrl);
+
+            // Check cache first
+            if (this.ScriptsCachedContent[scriptUrl]) {
+               const newScript = document.createElement("script");
+               newScript.textContent = this.ScriptsCachedContent[scriptUrl];
+               newScript.type = 'text/javascript';
+               newScript.nonce = nonce;
+               
+               // Execute and immediately remove from DOM
+               let scriptElement = document.head.appendChild(newScript);
+               scriptElement.remove();
+               return;
+            }
 
             const response = await fetch(scriptUrl, {
                mode: "same-origin",
@@ -836,14 +874,19 @@ class RuntimeManager {
             
             if (response.ok) {
                const scriptContent = await response.text();
-
+               
                // Create new script element
                const newScript = document.createElement("script");
                newScript.textContent = scriptContent;
                newScript.type = 'text/javascript';
-   
+               newScript.nonce = nonce;
+
                // Execute and immediately remove from DOM
-               document.head.appendChild(newScript).remove();
+               let scriptElement = document.head.appendChild(newScript);
+               scriptElement.remove();
+
+               // Cache the fetched script content
+               this.ScriptsCachedContent[scriptUrl] = scriptContent;
             } else {
                console.error(`Failed to load script from ${scriptUrl}: ${response.statusText}`);
             }

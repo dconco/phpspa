@@ -4,9 +4,14 @@ require_once '../vendor/autoload.php';
 
 use phpSPA\App;
 use phpSPA\Compression\Compressor;
+use phpSPA\Http\Security\Nonce;
+
+Nonce::enable([
+    'script-src' => ["'self'", "https://unpkg.com/phpspa-js"]
+]);
 
 /* Initialize a new Application  */
-$app = (new App(require 'Layout.php'))
+$app = (new App(require 'layout/Layout.php'))
     /* Attach and Run Application */
 
     ->attach(require 'components/Login.php')
