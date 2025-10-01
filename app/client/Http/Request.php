@@ -432,4 +432,27 @@ class Request
 
         return rawurldecode($uri);
     }
+    
+    /**
+     * Determines if the current HTTP request originates from the same origin as the server.
+     * 
+     * This method implements same-origin policy checking by comparing the request's
+     * origin with the server's host.
+     * 
+     * @see https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
+     */
+    public function isSameOrigin(): bool {
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $origin = $_SERVER['HTTP_ORIGIN'] ?? null;
+
+        // Case 1: Browser explicitly sent Origin
+        if ($origin !== null) {
+            $parsed = parse_url($origin, PHP_URL_HOST);
+            return $parsed === $host;
+        }
+
+        // Case 2: No Origin -> assume same-origin if Host matches server
+        $serverHost = $_SERVER['SERVER_NAME'] ?? '';
+        return $host === $serverHost;
+    }
 }

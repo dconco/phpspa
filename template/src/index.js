@@ -767,6 +767,16 @@ class RuntimeManager {
    static executedStyles = new Set();
 
    /**
+    * A static cache object that stores processed script content to avoid redundant processing.
+    * Used to improve performance by caching scripts that have already been processed or compiled.
+    *
+    * @static
+    * @type {Object<string, string>}
+    * @memberof RuntimeManager
+    */
+   static ScriptsCachedContent = {};
+
+   /**
     * Internal event registry for custom events
     * @type {Object<string, Function[]>}
     * @private
@@ -836,10 +846,23 @@ class RuntimeManager {
 
       scripts.forEach(async (script) => {
          const scriptUrl = script.getAttribute('src');
+         const nonce = document.documentElement.getAttribute('x-phpspa');
 
          // Skip if this script has already been executed
          if (!this.executedScripts.has(scriptUrl)) {
             this.executedScripts.add(scriptUrl);
+
+            // Check cache first
+            if (this.ScriptsCachedContent[scriptUrl]) {
+               const newScript = document.createElement("script");
+               newScript.textContent = this.ScriptsCachedContent[scriptUrl];
+               newScript.type = 'text/javascript';
+               newScript.nonce = nonce;
+               
+               // Execute and immediately remove from DOM
+               document.head.appendChild(newScript).remove();
+               return;
+            }
 
             const response = await fetch(scriptUrl, {
                mode: "same-origin",
@@ -850,14 +873,18 @@ class RuntimeManager {
             
             if (response.ok) {
                const scriptContent = await response.text();
-
+               
                // Create new script element
                const newScript = document.createElement("script");
                newScript.textContent = scriptContent;
                newScript.type = 'text/javascript';
-   
+               newScript.nonce = nonce;
+
                // Execute and immediately remove from DOM
                document.head.appendChild(newScript).remove();
+   
+               // Cache the fetched script content
+               this.ScriptsCachedContent[scriptUrl] = scriptContent;
             } else {
                console.error(`Failed to load script from ${scriptUrl}: ${response.statusText}`);
             }

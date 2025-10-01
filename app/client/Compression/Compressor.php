@@ -23,16 +23,16 @@ class Compressor
     /**
      * Compression levels
      */
-    public const LEVEL_NONE = 0;
-    public const LEVEL_AUTO = 1;
-    public const LEVEL_BASIC = 2;
-    public const LEVEL_AGGRESSIVE = 3;
-    public const LEVEL_EXTREME = 4;
+    public const int LEVEL_NONE = 0;
+    public const int LEVEL_AUTO = 1;
+    public const int LEVEL_BASIC = 2;
+    public const int LEVEL_AGGRESSIVE = 3;
+    public const int LEVEL_EXTREME = 4;
 
     /**
      * Environment presets
      */
-    public const ENV_STAGING = 'staging';
-    public const ENV_DEVELOPMENT = 'development';
-    public const ENV_PRODUCTION = 'production';
+    public const string ENV_STAGING = 'staging';
+    public const string ENV_DEVELOPMENT = 'development';
+    public const string ENV_PRODUCTION = 'production';
 }

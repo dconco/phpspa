@@ -13,28 +13,23 @@ use phpSPA\Core\Helper\SessionHandler;
 use phpSPA\Core\Helper\CallableInspector;
 use phpSPA\Core\Helper\AssetLinkManager;
 use phpSPA\Core\Utils\Formatter\ComponentTagFormatter;
+use phpSPA\Http\Security\Nonce;
 
 use const phpSPA\Core\Impl\Const\STATE_HANDLE;
 use const phpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
 
 /**
  * Core application implementation class
- *            if ($scriptCallable && is_callable($scriptCallable)) {
-                return call_user_func($scriptCallable);
-            } This abstract class provides the foundational implementation for the phpSPA
- * application framework. It handles layout management, component registration,
+ * This abstract class provides the foundational implementation for the phpSPA application framework.
+ * It handles layout management, component registration,
  * routing, and rendering logic that powers the single-page application experience.
  *
- * @package phpSPA\Core\Impl\RealImpl
+ * @category phpSPA\Core\Impl\RealImpl
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0
- * @var callable $layout
- * @var string $defaultTargetID
- * @var array $components
- * @var bool $defaultCaseSensitive
- * @var mixed $renderedData
+ * @var string $request_uri
  * @abstract
  */
 abstract class AppImpl
@@ -236,7 +231,7 @@ abstract class AppImpl
             $layoutOutput = is_callable($this->layout) ? (string) call_user_func($this->layout) : $this->layout;
             $componentOutput = '';
 
-            if ($request->requestedWith() === 'PHPSPA_REQUEST') {
+            if ($request->requestedWith() === 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
                 $data = json_decode($request->auth()->bearer ?? '', true);
                 $data = $this->validate($data);
 
@@ -343,6 +338,7 @@ abstract class AppImpl
                 // For regular HTML requests, only include component stylesheets with the component content
                 // Component scripts will be injected later to ensure proper execution order
                 $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput;
+                $nonce = Nonce::nonce();
 
                 if ($title) {
                     $count = 0;
@@ -361,12 +357,29 @@ abstract class AppImpl
                         // If no <title> tag was found, add one inside the <head> section
                         $layoutOutput = preg_replace(
                             '/<head([^>]*)>/i',
-                            '<head$1><title>' . $title . '</title>',
+                            "<head$1><title>$title</title>",
                             $layoutOutput,
                             1
                         );
                     }
+
+                    if ($nonce) {
+                        $layoutOutput = preg_replace(
+                            '/<html([^>]*)>/i',
+                            "<html$1 x-phpspa=\"$nonce\">",
+                            $layoutOutput,
+                            1
+                        );
+                    }
+                } elseif ($nonce) {
+                    $layoutOutput = preg_replace(
+                        '/<head([^>]*)>/i',
+                        "<head$1 x-phpspa=\"$nonce\">",
+                        $layoutOutput,
+                        1
+                    );
                 }
+
                 $tt = '';
                 $layoutOutput = static::format($layoutOutput) ?? '';
 

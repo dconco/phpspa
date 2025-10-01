@@ -18,7 +18,7 @@ use phpSPA\Core\Helper\AssetLinkManager;
  * - HTML compression and minification
  * - Environment-based compression settings
  *
- * @package phpSPA
+ * @category phpSPA
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
