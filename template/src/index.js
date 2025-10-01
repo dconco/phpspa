@@ -23,7 +23,7 @@
  *
  * @author Dave Conco <concodave@gmail.com>
  * @link https://github.com/dconco/phpspa-js
- * @version 1.1.9
+ * @version 1.1.10
  * @license MIT
  */
 
@@ -85,12 +85,18 @@ function base64ToUtf8(str) {
    window.addEventListener("DOMContentLoaded", () => {
       const targetElement = document.querySelector("[data-phpspa-target]");
 
+      RuntimeManager.emit('load', {
+         route: location.href,
+         success: true,
+         error: false
+      });
+
       if (targetElement) {
          // Create initial state object with current page data
          const initialState = {
             url: location.href,
             title: document.title,
-            targetId: targetElement.id,
+            targetID: targetElement.id,
             content: targetElement.innerHTML,
             root: true,
          };
@@ -108,13 +114,6 @@ function base64ToUtf8(str) {
             document.title,
             location.href
          );
-
-         // Emit initial load event
-         RuntimeManager.emit("load", {
-            route: location.href,
-            success: true,
-            error: false,
-         });
 
          // Set up auto-reload if specified
          if (targetElement.hasAttribute("phpspa-reload-time")) {
@@ -145,55 +144,46 @@ function base64ToUtf8(str) {
     * Restores page content when user navigates through browser history
     */
    window.addEventListener("popstate", (event) => {
+      event.preventDefault();
       const navigationState = event.state;
 
+      RuntimeManager.emit('beforeload', { route: location.href });
+
+      // Enable automatic scroll restoration
+      history.scrollRestoration = "auto";
+
       // Check if we have valid phpSPA state data
-      if (
-         navigationState &&
-         navigationState.url &&
-         navigationState.targetId &&
-         navigationState.content
-      ) {
-         // Emit beforeload event for loading indicators
-         RuntimeManager.emit("beforeload", { route: navigationState.url });
-
-         // Emit unload event before content replacement
-         RuntimeManager.emit("unload", { route: location.href });
-
+      if (navigationState && navigationState.content) {
          // Restore page title
          document.title = navigationState.title ?? document.title;
 
          // Find target container or fallback to body
          const targetContainer =
-            document.getElementById(navigationState.targetId) ?? document.body;
-
-         // Clear scripts from the target container before replacing content
-         RuntimeManager.clearContainerScripts(targetContainer);
+            document.getElementById(navigationState.targetID) ?? document.body;
 
          // Decode and restore HTML content
          targetContainer.innerHTML = navigationState.content;
 
+         // Clear old executed scripts cache
+         RuntimeManager.clearExecutedScripts();
+
          // Execute any inline scripts and styles in the restored content
          RuntimeManager.runAll(navigationState.root ? document.body : targetContainer);
-
-         // Emit successful load event
-         RuntimeManager.emit("load", {
-            route: navigationState.url,
-            success: true,
-            error: false,
-         });
 
          // Restart auto-reload timer if needed
          if (typeof navigationState.reloadTime !== "undefined") {
             setTimeout(phpspa.reloadComponent, navigationState.reloadTime);
          }
+
+         RuntimeManager.emit('load', {
+            route: location.href,
+            success: true,
+            error: false
+         });
       } else {
          // No valid state found - navigate to current URL to refresh
          phpspa.navigate(new URL(location.href), "replace");
       }
-
-      // Enable automatic scroll restoration
-      history.scrollRestoration = "auto";
    });
 })();
 
@@ -270,14 +260,14 @@ class phpspa {
                      responseData = responseText || ""; // Handle empty responses
                   }
 
+                  processResponse(responseData);
+
                   // Emit successful load event
                   RuntimeManager.emit("load", {
                      route: url,
                      success: true,
                      error: false,
                   });
-
-                  processResponse(responseData);
                })
                .catch((error) => handleError(error));
          })
@@ -305,32 +295,34 @@ class phpspa {
                      errorData = fallbackResponse;
                   }
 
+                  processResponse(errorData || "");
+
                   RuntimeManager.emit("load", {
                      route: url,
                      success: false,
                      error: error.message || "Server returned an error",
                      data: errorData,
                   });
-
-                  processResponse(errorData || "");
                })
                .catch(() => {
+                  processResponse("");
+
                   // Failed to read error response body
                   RuntimeManager.emit("load", {
                      route: url,
                      success: false,
                      error: error.message || "Failed to read error response",
                   });
-                  processResponse("");
                });
          } else {
+            processResponse("");
+
             // Network error, same-origin issue, or other connection problems
             RuntimeManager.emit("load", {
                route: url,
                success: false,
                error: error.message || "No connection to server",
             });
-            processResponse("");
          }
       }
 
@@ -339,9 +331,6 @@ class phpspa {
        * @param {string|Object} responseData - The processed response data
        */
       function processResponse(responseData) {
-         // Emit unload event before content replacement
-         RuntimeManager.emit("unload", { route: location.href });
-
          // Update document title if provided
          if (
             typeof responseData?.title === "string" ||
@@ -352,12 +341,9 @@ class phpspa {
 
          // Find target element for content replacement
          const targetElement =
-            document.getElementById(responseData?.targetId || responseData?.targetID) ??
-            document.getElementById(history.state?.targetId) ??
+            document.getElementById(responseData?.targetID) ??
+            document.getElementById(history.state?.targetID) ??
             document.body;
-
-         // Clear scripts from the target element before replacing content
-         RuntimeManager.clearContainerScripts(targetElement);
 
          // Update content - decode base64 if provided, otherwise use raw data
          targetElement.innerHTML = responseData?.content
@@ -368,7 +354,7 @@ class phpspa {
          const stateData = {
             url: url?.href ?? url,
             title: responseData?.title ?? document.title,
-            targetId: (responseData?.targetId || responseData?.targetID) ?? targetElement.id,
+            targetID: responseData?.targetID ?? targetElement.id,
             content: responseData?.content ?? responseData,
          };
 
@@ -395,6 +381,9 @@ class phpspa {
          } else {
             scroll(0, 0); // Scroll to top if no hash or element not found
          }
+
+         // Clear old executed scripts cache
+         RuntimeManager.clearExecutedScripts();
 
          // Execute any inline scripts and styles in the new content
          RuntimeManager.runAll(targetElement);
@@ -541,9 +530,6 @@ class phpspa {
           * @param {string|Object} responseData - The response data to process
           */
          function updateContent(responseData) {
-            // Emit unload event before content replacement
-            RuntimeManager.emit("unload", { route: location.href });
-
             // Update title if provided
             if (
                typeof responseData?.title === "string" ||
@@ -554,16 +540,16 @@ class phpspa {
 
             // Find target element and update content
             const targetElement =
-               document.getElementById(responseData?.targetId || responseData?.targetID) ??
-               document.getElementById(history.state?.targetId) ??
+               document.getElementById(responseData?.targetID) ??
+               document.getElementById(history.state?.targetID) ??
                document.body;
-
-            // Clear scripts from the target element before replacing content
-            RuntimeManager.clearContainerScripts(targetElement);
 
             targetElement.innerHTML = responseData?.content
                ? responseData.content
                : responseData;
+
+            // Clear old executed scripts cache
+            RuntimeManager.clearExecutedScripts();
 
             // Execute scripts and styles, then restore scroll position
             RuntimeManager.runAll(targetElement);
@@ -653,9 +639,6 @@ class phpspa {
        * @param {string|Object} responseData - The response data
        */
       function updateComponentContent(responseData) {
-         // Emit unload event before content replacement
-         RuntimeManager.emit("unload", { route: location.href });
-
          // Update title if provided
          if (
             typeof responseData?.title === "string" ||
@@ -666,16 +649,16 @@ class phpspa {
 
          // Find target and update content
          const targetElement =
-            document.getElementById(responseData?.targetId || responseData?.targetID) ??
-            document.getElementById(history.state?.targetId) ??
+            document.getElementById(responseData?.targetID) ??
+            document.getElementById(history.state?.targetID) ??
             document.body;
-
-         // Clear scripts from the target element before replacing content
-         RuntimeManager.clearContainerScripts(targetElement);
 
          targetElement.innerHTML = responseData?.content
             ? responseData.content
             : responseData;
+
+         // Clear old executed scripts cache
+         RuntimeManager.clearExecutedScripts();
 
          // Execute scripts and restore scroll
          RuntimeManager.runAll(targetElement);
@@ -791,7 +774,6 @@ class RuntimeManager {
    static events = {
       beforeload: [],
       load: [],
-      unload: [],
    };
 
    /**
@@ -895,24 +877,6 @@ class RuntimeManager {
     */
    static clearExecutedScripts() {
       RuntimeManager.executedScripts.clear();
-   }
-
-   /**
-    * Clears executed scripts that originate from a specific container
-    * This is more selective than clearExecutedScripts and preserves global scripts
-    *
-    * @param {HTMLElement} container - The container whose scripts should be cleared
-    * @static
-    * @memberof RuntimeManager
-    */
-   static clearContainerScripts(container) {
-      if (!container) return;
-      
-      const scripts = container.querySelectorAll("script");
-      scripts.forEach((script) => {
-         const contentHash = utf8ToBase64(script.textContent.trim());
-         RuntimeManager.executedScripts.delete(contentHash);
-      });
    }
 
    /**
