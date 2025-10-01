@@ -24,7 +24,7 @@ use const phpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  * It handles layout management, component registration,
  * routing, and rendering logic that powers the single-page application experience.
  *
- * @category phpSPA\Core\Impl\RealImpl
+ * @package phpSPA\Core\Impl\RealImpl
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

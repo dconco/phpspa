@@ -440,6 +440,7 @@ class Request
      * origin with the server's host.
      * 
      * @see https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
+     * @return bool True if the request is from the same origin, false otherwise.
      */
     public function isSameOrigin(): bool {
         $host = $_SERVER['HTTP_HOST'] ?? '';

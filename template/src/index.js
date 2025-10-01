@@ -860,7 +860,8 @@ class RuntimeManager {
                newScript.nonce = nonce;
                
                // Execute and immediately remove from DOM
-               document.head.appendChild(newScript).remove();
+               let scriptElement = document.head.appendChild(newScript);
+               scriptElement.remove();
                return;
             }
 
@@ -881,8 +882,9 @@ class RuntimeManager {
                newScript.nonce = nonce;
 
                // Execute and immediately remove from DOM
-               document.head.appendChild(newScript).remove();
-   
+               let scriptElement = document.head.appendChild(newScript);
+               scriptElement.remove();
+
                // Cache the fetched script content
                this.ScriptsCachedContent[scriptUrl] = scriptContent;
             } else {
