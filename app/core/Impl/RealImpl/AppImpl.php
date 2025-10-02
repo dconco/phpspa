@@ -231,7 +231,7 @@ abstract class AppImpl
             $layoutOutput = is_callable($this->layout) ? (string) call_user_func($this->layout) : $this->layout;
             $componentOutput = '';
 
-            if ($request->requestedWith() === 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
+            if ($request->requestedWith() === 'PHPSPA_REQUEST') {
                 $data = json_decode($request->auth()->bearer ?? '', true);
                 $data = $this->validate($data);
 
@@ -437,7 +437,7 @@ abstract class AppImpl
     private function generateAssetLinks($route, array $scripts, array $stylesheets, array $globalScripts = [], array $globalStylesheets = []): array
     {
         $request = new Request();
-        $isPhpSpaRequest = $request->requestedWith() === 'PHPSPA_REQUEST';
+        $isPhpSpaRequest = $request->requestedWith() === 'PHPSPA_REQUEST' || $request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT';
 
         $result = [
             'component' => ['scripts' => '', 'stylesheets' => ''],
