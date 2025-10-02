@@ -855,7 +855,6 @@ class RuntimeManager {
       this.runInlineScripts(container);
       this.runInlineStyles(container);
       this.runPhpSpaScripts(container);
-      this.runPhpSpaStyles(container);
    }
 
    /**
