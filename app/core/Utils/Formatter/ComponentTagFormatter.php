@@ -99,7 +99,11 @@ trait ComponentTagFormatter
                }
 
                if (method_exists($className, $methodName)) {
-                  $reflection = ReflectionMethod::createFromMethodName("$className::$methodName");
+                  if (method_exists(ReflectionMethod::class, 'createFromMethodName')) {
+                     $reflection = ReflectionMethod::createFromMethodName("$className::$methodName");
+                  } else {
+                     $reflection = new ReflectionMethod($className, $methodName);
+                  }
 
                   if ($reflection->isStatic()) {
                      return $className::$methodName(...$attributes);
