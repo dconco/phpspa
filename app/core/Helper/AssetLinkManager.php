@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace phpSPA\Core\Helper;
 
+use phpSPA\Core\Helper\PathResolver;
 use phpSPA\Http\Session;
 
 /**
@@ -200,18 +201,32 @@ class AssetLinkManager
     }
 
     /**
-     * Build the asset URL
+     * Build the asset URL using absolute or relative paths based on base path
      *
      * @param string $hash The asset hash
      * @param string $type Asset type ('css' or 'js')
      * @param string|null $name Optional name for the asset
-     * @return string The complete asset URL
+     * @return string The complete asset URL (absolute if base path exists, relative otherwise)
      */
     private static function buildAssetUrl(string $hash, string $type, ?string $name = null): string
     {
-        $baseUrl = self::getBaseUrl();
+        // Auto-detect base path if not set
+        if (empty(PathResolver::getBasePath())) {
+            PathResolver::autoDetectBasePath();
+        }
+        
+        $basePath = PathResolver::getBasePath();
         $filename = $name ? "{$name}-{$hash}" : $hash;
-        return $baseUrl . "/phpspa/assets/{$filename}.{$type}";
+        $assetPath = "phpspa/assets/{$filename}.{$type}";
+        
+        // If there's a base path (server started from nested directory), use absolute URL
+        if (!empty($basePath)) {
+            return "{$basePath}/{$assetPath}";
+        }
+        
+        // If base path is empty (server started from root), use relative path
+        $relativePath = PathResolver::getRelativePathFromUri($_SERVER['REQUEST_URI'] ?? '');
+        return "{$relativePath}{$assetPath}";
     }
 
     /**

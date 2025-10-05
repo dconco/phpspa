@@ -4,11 +4,10 @@ require_once '../vendor/autoload.php';
 
 use phpSPA\App;
 use phpSPA\Compression\Compressor;
-use phpSPA\Http\Security\Nonce;
 
-Nonce::enable([
-    'script-src' => ["'self'", "https://unpkg.com/phpspa-js"]
-]);
+// Nonce::enable([
+//     'script-src' => ["'self'", "https://unpkg.com/phpspa-js"]
+// ]);
 
 /* Initialize a new Application  */
 $app = (new App(require 'layout/Layout.php'))
@@ -22,7 +21,7 @@ $app = (new App(require 'layout/Layout.php'))
     ->defaultTargetID('app')
     ->defaultToCaseSensitive()
 
-    ->compression(Compressor::LEVEL_EXTREME, true)
+    ->compression(Compressor::LEVEL_NONE, true)
 
     ->cors()
 
@@ -62,7 +61,7 @@ $app = (new App(require 'layout/Layout.php'))
         });
 
         document.onclick = () => {
-            alert('Document clicked!');
+            console.log('Document clicked!');
         };
         
         // Global utility function

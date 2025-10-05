@@ -330,7 +330,7 @@ class Request
      */
     public function referrer(): ?string
     {
-        return $_SERVER['HTTP_REFERER'] !== null
+        return $_SERVER['HTTP_REFERER'] ?? $this->header('Referer') !== null
             ? $_SERVER['HTTP_REFERER']
             : null;
     }
@@ -338,11 +338,11 @@ class Request
     /**
      * Retrieves the server protocol used for the request.
      *
-     * @return string The server protocol.
+     * @return string|null The server protocol.
      */
-    public function protocol(): string
+    public function protocol(): ?string
     {
-        return $_SERVER['SERVER_PROTOCOL'];
+        return $_SERVER['SERVER_PROTOCOL'] ?? null;
     }
 
     /**

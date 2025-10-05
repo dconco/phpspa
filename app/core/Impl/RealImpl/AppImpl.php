@@ -11,7 +11,9 @@ use phpSPA\Compression\Compressor;
 use phpSPA\Core\Helper\CsrfManager;
 use phpSPA\Core\Helper\SessionHandler;
 use phpSPA\Core\Helper\CallableInspector;
+use phpSPA\Core\Helper\ComponentScope;
 use phpSPA\Core\Helper\AssetLinkManager;
+use phpSPA\Core\Helper\PathResolver;
 use phpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 use phpSPA\Http\Security\Nonce;
 
@@ -174,6 +176,9 @@ abstract class AppImpl
         /**
          * Handle asset requests (CSS/JS files from session-based links)
          */
+        // Auto-detect and set base path for proper asset URL resolution
+        PathResolver::autoDetectBasePath();
+
         $assetInfo = AssetLinkManager::resolveAssetRequest(self::$request_uri);
         if ($assetInfo !== null) {
             $this->serveAsset($assetInfo);
@@ -228,10 +233,14 @@ abstract class AppImpl
 
             $request = new Request();
 
+            // Clear component scope before each component execution
+            ComponentScope::clearAll();
+
             $layoutOutput = is_callable($this->layout) ? (string) call_user_func($this->layout) : $this->layout;
+            
             $componentOutput = '';
 
-            if ($request->requestedWith() === 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
+            if ($request->requestedWith() === 'PHPSPA_REQUEST') {
                 $data = json_decode($request->auth()->bearer ?? '', true);
                 $data = $this->validate($data);
 
@@ -313,7 +322,11 @@ abstract class AppImpl
             } else {
                 $componentOutput = call_user_func($componentFunction);
             }
+
+            // Create a new scope for this component and execute formatting
+            $scopeId = ComponentScope::createScope();
             $componentOutput = static::format($componentOutput);
+            ComponentScope::removeScope($scopeId);
 
             // Generate session-based links for scripts and stylesheets instead of inline content
             $assetLinks = $this->generateAssetLinks($route, $scripts, $stylesheets, $this->scripts, $this->stylesheets);
@@ -437,7 +450,7 @@ abstract class AppImpl
     private function generateAssetLinks($route, array $scripts, array $stylesheets, array $globalScripts = [], array $globalStylesheets = []): array
     {
         $request = new Request();
-        $isPhpSpaRequest = $request->requestedWith() === 'PHPSPA_REQUEST';
+        $isPhpSpaRequest = $request->requestedWith() === 'PHPSPA_REQUEST' || $request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT';
 
         $result = [
             'component' => ['scripts' => '', 'stylesheets' => ''],
@@ -712,10 +725,10 @@ abstract class AppImpl
         // Inject global stylesheets in head for proper CSS cascading
         if (!empty(trim($globalStylesheets))) {
             if (preg_match('/<\/head>/i', $html)) {
-                $html = preg_replace('/<\/head>/i', $globalStylesheets . '</head>', $html, 1);
+                $html = preg_replace('/<\/head>/i', "{$globalStylesheets}</head>", $html, 1);
             } else {
                 // If no head tag, put stylesheets at the beginning
-                $html = $globalStylesheets . $html;
+                $html = "{$globalStylesheets}{$html}";
             }
         }
 
@@ -725,13 +738,13 @@ abstract class AppImpl
         // Inject scripts at end of body (global scripts first, then component scripts)
         if (!empty(trim($allScripts))) {
             if (preg_match('/<\/body>/i', $html)) {
-                $html = preg_replace('/<\/body>/i', $allScripts . '</body>', $html, 1);
+                $html = preg_replace('/<\/body>/i', "{$allScripts}</body>", $html, 1);
             } elseif (preg_match('/<\/html>/i', $html)) {
                 // If no body tag, try to inject before closing html tag
-                $html = preg_replace('/<\/html>/i', $allScripts . '</html>', $html, 1);
+                $html = preg_replace('/<\/html>/i', "{$allScripts}</html>", $html, 1);
             } else {
                 // If neither body nor html tags exist, append at the end
-                $html = $html . $allScripts;
+                $html .= $allScripts;
             }
         }
 

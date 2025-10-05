@@ -144,7 +144,6 @@ function base64ToUtf8(str) {
     * Restores page content when user navigates through browser history
     */
    window.addEventListener("popstate", (event) => {
-      event.preventDefault();
       const navigationState = event.state;
 
       RuntimeManager.emit('beforeload', { route: location.href });
@@ -162,24 +161,43 @@ function base64ToUtf8(str) {
             document.getElementById(navigationState.targetID) ?? document.body;
 
          // Decode and restore HTML content
-         targetContainer.innerHTML = navigationState.content;
-
-         // Clear old executed scripts cache
-         RuntimeManager.clearExecutedScripts();
-
-         // Execute any inline scripts and styles in the restored content
-         RuntimeManager.runAll(navigationState.root ? document.body : targetContainer);
-
-         // Restart auto-reload timer if needed
-         if (typeof navigationState.reloadTime !== "undefined") {
-            setTimeout(phpspa.reloadComponent, navigationState.reloadTime);
+         const updateDOM = () => {
+            targetContainer.innerHTML = navigationState.content;
          }
 
-         RuntimeManager.emit('load', {
-            route: location.href,
-            success: true,
-            error: false
-         });
+         const completedDOMUpdate = () => {
+            // Clear old executed scripts cache
+            RuntimeManager.clearExecutedScripts();
+
+            // Execute any inline scripts and styles in the restored content
+            RuntimeManager.runAll(navigationState.root ? document.body : targetContainer);
+
+            // Restart auto-reload timer if needed
+            if (typeof navigationState.reloadTime !== "undefined") {
+               setTimeout(phpspa.reloadComponent, navigationState.reloadTime);
+            }
+
+            RuntimeManager.emit('load', {
+               route: location.href,
+               success: true,
+               error: false
+            });
+         }
+
+         if (document.startViewTransition) {
+            document.startViewTransition(updateDOM).finished.then(completedDOMUpdate).catch((reason) => {
+               RuntimeManager.emit('load', {
+                  route: location.href,
+                  message: reason,
+                  success: false,
+                  error: true,
+               });
+            });
+         } else {
+            updateDOM();
+            completedDOMUpdate();
+         }
+
       } else {
          // No valid state found - navigate to current URL to refresh
          phpspa.navigate(new URL(location.href), "replace");
@@ -261,13 +279,6 @@ class phpspa {
                   }
 
                   processResponse(responseData);
-
-                  // Emit successful load event
-                  RuntimeManager.emit("load", {
-                     route: url,
-                     success: true,
-                     error: false,
-                  });
                })
                .catch((error) => handleError(error));
          })
@@ -346,9 +357,11 @@ class phpspa {
             document.body;
 
          // Update content - decode base64 if provided, otherwise use raw data
-         targetElement.innerHTML = responseData?.content
-            ? responseData.content
-            : responseData;
+         const updateDOM = () => {
+            targetElement.innerHTML = responseData?.content
+               ? responseData.content
+               : responseData;
+         }
 
          // Prepare state data for browser history
          const stateData = {
@@ -363,34 +376,58 @@ class phpspa {
             stateData.reloadTime = responseData.reloadTime;
          }
 
-         // Update browser history
-         if (state === "push") {
-            RuntimeManager.pushState(stateData, stateData.title, url);
-         } else if (state === "replace") {
-            RuntimeManager.replaceState(stateData, stateData.title, url);
+         const completedDOMUpdate = () => {
+            // Update browser history
+            if (state === "push") {
+               RuntimeManager.pushState(stateData, stateData.title, url);
+            } else if (state === "replace") {
+               RuntimeManager.replaceState(stateData, stateData.title, url);
+            }
+
+            // Handle URL fragments (hash navigation)
+            const hashElement = document.getElementById(url?.hash?.substring(1));
+
+            if (hashElement) {
+               scroll({
+                  top: hashElement.offsetTop,
+                  left: hashElement.offsetLeft,
+               });
+            } else {
+               scroll(0, 0); // Scroll to top if no hash or element not found
+            }
+
+            // Clear old executed scripts cache
+            RuntimeManager.clearExecutedScripts();
+
+            // Execute any inline scripts and styles in the new content
+            RuntimeManager.runAll(targetElement);
+            
+
+            // Emit successful load event
+            RuntimeManager.emit("load", {
+               route: url,
+               success: true,
+               error: false,
+            });
+
+            // Set up auto-reload if specified
+            if (typeof responseData.reloadTime !== "undefined") {
+               setTimeout(phpspa.reloadComponent, responseData.reloadTime);
+            }
          }
 
-         // Handle URL fragments (hash navigation)
-         const hashElement = document.getElementById(url?.hash?.substring(1));
-
-         if (hashElement) {
-            scroll({
-               top: hashElement.offsetTop,
-               left: hashElement.offsetLeft,
+         if (document.startViewTransition) {
+            document.startViewTransition(updateDOM).finished.then(completedDOMUpdate).catch((reason) => {
+               RuntimeManager.emit('load', {
+                  route: location.href,
+                  message: reason,
+                  success: false,
+                  error: true,
+               });
             });
          } else {
-            scroll(0, 0); // Scroll to top if no hash or element not found
-         }
-
-         // Clear old executed scripts cache
-         RuntimeManager.clearExecutedScripts();
-
-         // Execute any inline scripts and styles in the new content
-         RuntimeManager.runAll(targetElement);
-
-         // Set up auto-reload if specified
-         if (typeof responseData.reloadTime !== "undefined") {
-            setTimeout(phpspa.reloadComponent, responseData.reloadTime);
+            updateDOM();
+            completedDOMUpdate();
          }
       }
    }
@@ -544,16 +581,27 @@ class phpspa {
                document.getElementById(history.state?.targetID) ??
                document.body;
 
-            targetElement.innerHTML = responseData?.content
-               ? responseData.content
-               : responseData;
+            const updateDOM = () => {
+               targetElement.innerHTML = responseData?.content
+                  ? responseData.content
+                  : responseData;
+            };
 
-            // Clear old executed scripts cache
-            RuntimeManager.clearExecutedScripts();
+            const completedDOMUpdate = () => {
+               // Clear old executed scripts cache
+               RuntimeManager.clearExecutedScripts();
 
-            // Execute scripts and styles, then restore scroll position
-            RuntimeManager.runAll(targetElement);
-            scroll(currentScroll);
+               // Execute scripts and styles, then restore scroll position
+               RuntimeManager.runAll(targetElement);
+               scroll(currentScroll);
+            }
+
+            if (document.startViewTransition) {
+               document.startViewTransition(updateDOM).finished.then(completedDOMUpdate);
+            } else {
+               updateDOM();
+               completedDOMUpdate();
+            }
          }
       });
    }
@@ -652,21 +700,32 @@ class phpspa {
             document.getElementById(responseData?.targetID) ??
             document.getElementById(history.state?.targetID) ??
             document.body;
+         
+         const updateDOM = () => {
+            targetElement.innerHTML = responseData?.content
+               ? responseData.content
+               : responseData;
+         }
 
-         targetElement.innerHTML = responseData?.content
-            ? responseData.content
-            : responseData;
+         const completedDOMUpdate = () => {
+            // Clear old executed scripts cache
+            RuntimeManager.clearExecutedScripts();
 
-         // Clear old executed scripts cache
-         RuntimeManager.clearExecutedScripts();
+            // Execute scripts and restore scroll
+            RuntimeManager.runAll(targetElement);
+            scroll(currentScroll);
 
-         // Execute scripts and restore scroll
-         RuntimeManager.runAll(targetElement);
-         scroll(currentScroll);
+            // Set up next auto-reload if specified
+            if (typeof responseData.reloadTime !== "undefined") {
+               setTimeout(phpspa.reloadComponent, responseData.reloadTime);
+            }
+         }
 
-         // Set up next auto-reload if specified
-         if (typeof responseData.reloadTime !== "undefined") {
-            setTimeout(phpspa.reloadComponent, responseData.reloadTime);
+         if (document.startViewTransition) {
+            document.startViewTransition(updateDOM).finished.then(completedDOMUpdate);
+         } else {
+            updateDOM();
+            completedDOMUpdate();
          }
       }
    }
@@ -807,17 +866,19 @@ class RuntimeManager {
     */
    static runInlineScripts(container) {
       const scripts = container.querySelectorAll("script");
+      const nonce = document.documentElement.getAttribute('x-phpspa');
 
       scripts.forEach((script) => {
          // Use base64 encoded content as unique identifier
          const contentHash = utf8ToBase64(script.textContent.trim());
 
          // Skip if this script has already been executed
-         if (!this.executedScripts.has(contentHash)) {
+         if (!this.executedScripts.has(contentHash) && script.textContent.trim() !== "") {
             this.executedScripts.add(contentHash);
 
             // Create new script element
             const newScript = document.createElement("script");
+            newScript.nonce = nonce;
 
             // Copy all attributes except the data-type identifier
             for (const attribute of script.attributes) {
@@ -860,13 +921,11 @@ class RuntimeManager {
                newScript.nonce = nonce;
                
                // Execute and immediately remove from DOM
-               let scriptElement = document.head.appendChild(newScript);
-               scriptElement.remove();
+               document.head.appendChild(newScript).remove();
                return;
             }
 
             const response = await fetch(scriptUrl, {
-               mode: "same-origin",
                headers: {
                   "X-Requested-With": "PHPSPA_REQUEST_SCRIPT",
                },
@@ -882,9 +941,8 @@ class RuntimeManager {
                newScript.nonce = nonce;
 
                // Execute and immediately remove from DOM
-               let scriptElement = document.head.appendChild(newScript);
-               scriptElement.remove();
-
+               document.head.appendChild(newScript).remove();
+   
                // Cache the fetched script content
                this.ScriptsCachedContent[scriptUrl] = scriptContent;
             } else {
@@ -917,17 +975,19 @@ class RuntimeManager {
     */
    static runInlineStyles(container) {
       const styles = container.querySelectorAll("style");
+      const nonce = document.documentElement.getAttribute('x-phpspa');
 
       styles.forEach((style) => {
          // Use base64 encoded content as unique identifier
          const contentHash = utf8ToBase64(style.textContent.trim());
 
          // Skip if this style has already been injected
-         if (!this.executedStyles.has(contentHash)) {
+         if (!this.executedStyles.has(contentHash) && style.textContent.trim() !== "") {
             this.executedStyles.add(contentHash);
 
             // Create new style element
             const newStyle = document.createElement("style");
+            newStyle.nonce = nonce;
 
             // Copy all attributes except the data-type identifier
             for (const attribute of style.attributes) {

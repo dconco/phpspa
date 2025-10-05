@@ -19,12 +19,12 @@ return (new Component(function (Request $request): string {
 			<button id="btn" onclick="setState('counter', $counter + 1)">Counter: $counter</button>
 			<Component.Link to="./login#hashID" id="link-elem">GO TO LOGIN</Component.Link>
 			<br />
-			<button onclick="phpspa.navigate('/counter')">Counter</button>
+			<button onclick="phpspa.navigate('./counter')">Counter</button>
 		</div>
 	HTML;
 }))
    ->title('Home Page')
-   ->route(['/phpspa/template', '/'])
+   ->route(['/', '/template'])
 
    ->styleSheet(
        fn () => <<<CSS
