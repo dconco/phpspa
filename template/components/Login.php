@@ -55,7 +55,7 @@ function Login(): string
 return (new Component('Login'))
     ->method('POST|GET')
     ->title('Login Page')
-    ->route(['/phpspa/template/login', '/login'])
+    ->route('/login')
     ->caseInsensitive()
 
     ->styleSheet(

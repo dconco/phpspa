@@ -56,5 +56,5 @@ return (new Component(function (): string {
 		</div>
 	HTML;
 }))
-    ->route(['/phpspa/template/counter', '/counter'])
+    ->route(['/counter', '/template/counter'])
     ->title('Counter Component');

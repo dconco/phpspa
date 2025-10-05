@@ -22,7 +22,8 @@
 			"app/core/Impl/Const/StateConstant.php",
 			"app/client/Component/component.php",
 			"app/client/Http/Redirect.php",
-			"src/global/autoload.php"
+			"src/global/autoload.php",
+			"src/Helper/path.php"
 		]
 	},
 	"authors": [
