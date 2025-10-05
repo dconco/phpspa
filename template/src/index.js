@@ -866,6 +866,7 @@ class RuntimeManager {
     */
    static runInlineScripts(container) {
       const scripts = container.querySelectorAll("script");
+      const nonce = document.documentElement.getAttribute('x-phpspa');
 
       scripts.forEach((script) => {
          // Use base64 encoded content as unique identifier
@@ -877,6 +878,7 @@ class RuntimeManager {
 
             // Create new script element
             const newScript = document.createElement("script");
+            newScript.nonce = nonce;
 
             // Copy all attributes except the data-type identifier
             for (const attribute of script.attributes) {
@@ -973,6 +975,7 @@ class RuntimeManager {
     */
    static runInlineStyles(container) {
       const styles = container.querySelectorAll("style");
+      const nonce = document.documentElement.getAttribute('x-phpspa');
 
       styles.forEach((style) => {
          // Use base64 encoded content as unique identifier
@@ -984,6 +987,7 @@ class RuntimeManager {
 
             // Create new style element
             const newStyle = document.createElement("style");
+            newStyle.nonce = nonce;
 
             // Copy all attributes except the data-type identifier
             for (const attribute of style.attributes) {

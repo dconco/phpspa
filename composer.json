@@ -20,8 +20,9 @@
 		},
 		"files": [
 			"app/core/Impl/Const/StateConstant.php",
-			"app/client/Component/Component.php",
-			"app/client/Http/Redirect.php"
+			"app/client/Component/component.php",
+			"app/client/Http/Redirect.php",
+			"src/global/autoload.php"
 		]
 	},
 	"authors": [

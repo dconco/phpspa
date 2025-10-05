@@ -210,13 +210,3 @@ class Router
         $response->send();
     }
 }
-
-/**
- * Global router helper function.
- *
- * @return Router
- */
-function router(): Router
-{
-    return new Router();
-}

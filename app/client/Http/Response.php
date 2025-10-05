@@ -544,16 +544,3 @@ class Response
         return $this;
     }
 }
-
-/**
- * Global response helper function.
- *
- * @param mixed $data The response data.
- * @param int $statusCode The HTTP status code.
- * @param array $headers The response headers.
- * @return Response
- */
-function response($data = null, int $statusCode = 200, array $headers = []): Response
-{
-    return new Response($data, $statusCode, $headers);
-}

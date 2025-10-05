@@ -2,10 +2,10 @@
 
 namespace Component;
 
-require_once 'createState.php';
-require_once 'HTMLAttrInArrayToString.php';
-require_once 'import.php';
-require_once 'Link.php';
-require_once 'Navigate.php';
-require_once 'useFunction.php';
-require_once 'Csrf.php';
+require_once 'import_hook.php';
+require_once 'link_component.php';
+require_once 'csrf_component.php';
+require_once 'use_function_hook.php';
+require_once 'create_state_hook.php';
+require_once 'navigate_component.php';
+require_once 'html_attr_in_array_to_str.php';

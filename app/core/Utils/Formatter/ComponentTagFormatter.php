@@ -3,6 +3,7 @@
 namespace phpSPA\Core\Utils\Formatter;
 
 use phpSPA\Exceptions\AppException;
+use phpSPA\Core\Helper\ComponentScope;
 use ReflectionMethod;
 
 /**
@@ -46,12 +47,16 @@ trait ComponentTagFormatter
                $isVariable = true;
                $variableName = substr($component, 1);
                
-               // Check if variable exists in global scope
-               if (!isset($GLOBALS[$variableName])) {
+               // Check if variable exists in component scope first
+               if (ComponentScope::has($variableName)) {
+                  $callable = ComponentScope::get($variableName);
+               } elseif (isset($GLOBALS[$variableName])) {
+                  // Fallback to global scope
+                  $callable = $GLOBALS[$variableName];
+               } else {
                   throw new AppException("Variable \${$variableName} does not exist.");
                }
                
-               $callable = $GLOBALS[$variableName];
                if (!is_callable($callable)) {
                   throw new AppException("Variable \${$variableName} is not callable.");
                }
@@ -86,7 +91,7 @@ trait ComponentTagFormatter
             // Handle different component types
             if ($isVariable) {
                // Variable component
-               return call_user_func_array($GLOBALS[$variableName], $attributes);
+               return call_user_func_array($callable, $attributes);
             } elseif ($methodName) {
                // Class::method syntax
                if (!class_exists($className)) {

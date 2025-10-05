@@ -10,23 +10,39 @@ function HelloWorld($name)
 	return ['data' => "Hello $name", 'id' => 3];
 }
 
-return (new Component(function () {
+
+function LinkComponent()
+{
+	$Link = fn () => <<<HTML
+		<Component.Link to="/counter">Click me</Component.Link>
+	HTML;
+
+	scope(compact('Link'));
+
+	return "<@Link />";
+}
+
+return (new Component(function (): string {
 	$caller = useFunction('HelloWorld');
 	$counter = createState('counter', 0);
 	
+	// 1. Define all your private components
 	$Button = fn ($counter) => <<<HTML
 		<button id="btn">
 			Clicks: {$counter}
 		</button>
 	HTML;
 
+	// 2. Register them all in one go using compact()
+	scope(compact('Button'));
 
-	$template = <<<HTML
+	return <<<HTML
 		<div style="text-align: center; margin-top: 2rem;">
 			<h2>Counter Component</h2>
 			<p>This is a simple counter component demonstrating state management.</p>
 
 			<@Button counter="{$counter}" />
+			<LinkComponent />
 
 			<script>
 				const btn = document.getElementById('btn')
@@ -39,13 +55,6 @@ return (new Component(function () {
 			</script>
 		</div>
 	HTML;
-
-	return [
-		'template' => $template,
-		'scope' => [
-			'Button' => @$Button
-		],
-	];
 }))
     ->route(['/phpspa/template/counter', '/counter'])
     ->title('Counter Component');
