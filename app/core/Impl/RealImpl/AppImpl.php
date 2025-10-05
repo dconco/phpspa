@@ -229,6 +229,33 @@ abstract class AppImpl
             $request = new Request();
 
             $layoutOutput = is_callable($this->layout) ? (string) call_user_func($this->layout) : $this->layout;
+            
+            // Handle layout scope variables if layout returns array with scope
+            $layoutScopeBackup = [];
+            if (is_array($layoutOutput) && isset($layoutOutput['scope']) && isset($layoutOutput['template'])) {
+                // Add layout scope variables to global scope temporarily
+                foreach ($layoutOutput['scope'] as $varName => $varValue) {
+                    $uniqueVarName = $varName . '_' . uniqid() . '_' . bin2hex(random_bytes(8));
+                    
+                    // Backup existing global variable if it exists
+                    if (isset($GLOBALS[$uniqueVarName])) {
+                        $layoutScopeBackup[$uniqueVarName] = $GLOBALS[$uniqueVarName];
+                    }
+                    
+                    $GLOBALS[$uniqueVarName] = $varValue;
+                    
+                    // Also map the original name for component tag formatter
+                    $GLOBALS[$varName] = $varValue;
+                    if (isset($GLOBALS[$varName]) && $varName !== $uniqueVarName) {
+                        $layoutScopeBackup[$varName] = $GLOBALS[$varName] ?? null;
+                    }
+                }
+                $layoutOutput = $layoutOutput['template'];
+            }
+
+            elseif (is_array($layoutOutput) && isset($layoutOutput['template']))
+                $layoutOutput = $layoutOutput['template'];
+            
             $componentOutput = '';
 
             if ($request->requestedWith() === 'PHPSPA_REQUEST') {
@@ -313,7 +340,45 @@ abstract class AppImpl
             } else {
                 $componentOutput = call_user_func($componentFunction);
             }
+
+            // Handle scope variables for component formatting
+            $scopeBackup = [];
+            if (is_array($componentOutput) && isset($componentOutput['scope']) && isset($componentOutput['template'])) {
+                // Add scope variables to global scope temporarily with unique names
+                foreach ($componentOutput['scope'] as $varName => $varValue) {
+                    $uniqueVarName = $varName . '_' . uniqid() . '_' . bin2hex(random_bytes(8));
+                    
+                    // Backup existing global variable if it exists
+                    if (isset($GLOBALS[$uniqueVarName])) {
+                        $scopeBackup[$uniqueVarName] = $GLOBALS[$uniqueVarName];
+                    }
+
+                    $GLOBALS[$uniqueVarName] = $varValue;
+
+                    // Also map the original name to the unique name for component tag formatter
+                    $GLOBALS[$varName] = $varValue;
+                    if (isset($GLOBALS[$varName]) && $varName !== $uniqueVarName) {
+                        $scopeBackup[$varName] = $GLOBALS[$varName] ?? null;
+                    }
+                }
+                $componentOutput = $componentOutput['template'];
+            }
+
+            elseif (is_array($componentOutput) && isset($componentOutput['template']))
+                $componentOutput = $componentOutput['template'];
+
             $componentOutput = static::format($componentOutput);
+
+            // Restore global scope variables
+            if (!empty($scopeBackup)) {
+                foreach ($scopeBackup as $varName => $originalValue) {
+                    if ($originalValue === null) {
+                        unset($GLOBALS[$varName]);
+                    } else {
+                        $GLOBALS[$varName] = $originalValue;
+                    }
+                }
+            }
 
             // Generate session-based links for scripts and stylesheets instead of inline content
             $assetLinks = $this->generateAssetLinks($route, $scripts, $stylesheets, $this->scripts, $this->stylesheets);
@@ -382,6 +447,17 @@ abstract class AppImpl
 
                 $tt = '';
                 $layoutOutput = static::format($layoutOutput) ?? '';
+                
+                // Restore layout scope variables
+                if (!empty($layoutScopeBackup)) {
+                    foreach ($layoutScopeBackup as $varName => $originalValue) {
+                        if ($originalValue === null) {
+                            unset($GLOBALS[$varName]);
+                        } else {
+                            $GLOBALS[$varName] = $originalValue;
+                        }
+                    }
+                }
 
                 if ($reloadTime > 0) {
                     $tt = " phpspa-reload-time=\"$reloadTime\"";
