@@ -1,6 +1,6 @@
 <?php
 
-namespace phpSPA\Core\Interfaces;
+namespace PhpSPA\Core\Interfaces;
 
 /**
  * Secure CSRF (Cross-Site Request Forgery) protection component
@@ -12,7 +12,7 @@ namespace phpSPA\Core\Interfaces;
  * @copyright 2025 Dave Conco
  * @author dconco <concodave@gmail.com>
 *
- * @category phpSPA\Core\Helper
+ * @category PhpSPA\Core\Helper
  * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/5-csrf-protection/ CSRF Protection Documentation
  */
 interface CsrfManagerInterface

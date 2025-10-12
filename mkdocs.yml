@@ -1,4 +1,4 @@
-site_name: phpSPA Documentation
+site_name: PhpSPA Documentation
 site_description: Component-Based PHP Library for Modern Web Applications
 site_author: Dave Conco
 site_url: https://phpspa.readthedocs.io
@@ -137,7 +137,7 @@ nav:
         - Handling Loading States: 19-handling-loading-states.md
         - Request Handling: 20-request-handling.md
 
-   - phpSPA Hooks: hooks-event.md
+   - PhpSPA Hooks: hooks-event.md
    - Final Notes: final-notes.md
 
    - Integrations:

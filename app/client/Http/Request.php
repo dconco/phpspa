@@ -1,14 +1,14 @@
 <?php
 
-namespace phpSPA\Http;
+namespace PhpSPA\Http;
 
 use stdClass;
-use phpSPA\Core\Interfaces\RequestInterface;
+use PhpSPA\Core\Interfaces\RequestInterface;
 
 class Request implements RequestInterface
 {
-    use \phpSPA\Core\Utils\Validate;
-    use \phpSPA\Core\Auth\Authentication;
+    use \PhpSPA\Core\Utils\Validate;
+    use \PhpSPA\Core\Auth\Authentication;
 
     public function __invoke(string $key, ?string $default = null): mixed
     {

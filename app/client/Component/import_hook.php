@@ -2,9 +2,9 @@
 
 namespace Component;
 
-use phpSPA\Core\Helper\FileHandler;
-use phpSPA\Core\Utils\ImportedFile;
-use phpSPA\Exceptions\AppException;
+use PhpSPA\Core\Helper\FileHandler;
+use PhpSPA\Core\Utils\ImportedFile;
+use PhpSPA\Exceptions\AppException;
 
 /**
  * Imports file as base64 data URI with MIME type detection.

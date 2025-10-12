@@ -1,15 +1,15 @@
 <?php
 
-namespace phpSPA\Compression;
+namespace PhpSPA\Compression;
 
 /**
  * HTML Compression Utility
  *
- * Provides HTML minification and compression capabilities for phpSPA
+ * Provides HTML minification and compression capabilities for PhpSPA
  * to reduce payload sizes and improve performance. This class implements
  * various compression levels and environment-specific optimizations.
  *
- * @package phpSPA\Compression
+ * @package PhpSPA\Compression
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
@@ -18,7 +18,7 @@ namespace phpSPA\Compression;
  */
 class Compressor
 {
-    use \phpSPA\Core\Utils\HtmlCompressor;
+    use \PhpSPA\Core\Utils\HtmlCompressor;
 
     /**
      * Compression levels

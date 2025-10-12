@@ -104,7 +104,7 @@ Added comprehensive HTML compression and minification system:
 **Usage:**
 
 ```php
-use phpSPA\Compression\Compressor;
+use PhpSPA\Compression\Compressor;
 
 // Auto-configuration (recommended for environment-specific)
 $app = new App('layout');

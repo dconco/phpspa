@@ -1,6 +1,6 @@
 <?php
 
-use phpSPA\Component;
+use PhpSPA\Component;
 
 return (new Component(function () {
 	$time = date('h:i:s');

@@ -1,32 +1,32 @@
 <?php
 
-namespace phpSPA\Core\Impl\RealImpl;
+namespace PhpSPA\Core\Impl\RealImpl;
 
-use phpSPA\App;
-use phpSPA\Component;
-use phpSPA\Http\Request;
-use phpSPA\Http\Session;
-use phpSPA\Core\Router\MapRoute;
-use phpSPA\Compression\Compressor;
-use phpSPA\Core\Helper\CsrfManager;
-use phpSPA\Core\Helper\SessionHandler;
-use phpSPA\Core\Helper\CallableInspector;
-use phpSPA\Core\Helper\ComponentScope;
-use phpSPA\Core\Helper\AssetLinkManager;
-use phpSPA\Core\Helper\PathResolver;
-use phpSPA\Core\Utils\Formatter\ComponentTagFormatter;
-use phpSPA\Http\Security\Nonce;
+use PhpSPA\App;
+use PhpSPA\Component;
+use PhpSPA\Http\Request;
+use PhpSPA\Http\Session;
+use PhpSPA\Core\Router\MapRoute;
+use PhpSPA\Compression\Compressor;
+use PhpSPA\Core\Helper\CsrfManager;
+use PhpSPA\Core\Helper\SessionHandler;
+use PhpSPA\Core\Helper\CallableInspector;
+use PhpSPA\Core\Helper\ComponentScope;
+use PhpSPA\Core\Helper\AssetLinkManager;
+use PhpSPA\Core\Helper\PathResolver;
+use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
+use PhpSPA\Http\Security\Nonce;
 
-use const phpSPA\Core\Impl\Const\STATE_HANDLE;
-use const phpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
+use const PhpSPA\Core\Impl\Const\STATE_HANDLE;
+use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
 
 /**
  * Core application implementation class
- * This abstract class provides the foundational implementation for the phpSPA application framework.
+ * This abstract class provides the foundational implementation for the PhpSPA application framework.
  * It handles layout management, component registration,
  * routing, and rendering logic that powers the single-page application experience.
  *
- * @package phpSPA\Core\Impl\RealImpl
+ * @package PhpSPA\Core\Impl\RealImpl
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
@@ -37,7 +37,7 @@ use const phpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
 abstract class AppImpl
 {
     use ComponentTagFormatter;
-    use \phpSPA\Core\Utils\Validate;
+    use \PhpSPA\Core\Utils\Validate;
 
     /**
      * The layout of the application.

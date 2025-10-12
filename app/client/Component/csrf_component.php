@@ -11,7 +11,7 @@ namespace Component;
  * @author dconco <concodave@gmail.com>
  * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/5-csrf-protection CSRF Protection Documentation
  */
-class Csrf extends \phpSPA\Core\Helper\CsrfManager
+class Csrf extends \PhpSPA\Core\Helper\CsrfManager
 {
     public function __render(string $name)
     {

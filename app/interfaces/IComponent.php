@@ -1,17 +1,17 @@
 <?php
 
-namespace phpSPA\Interfaces;
+namespace PhpSPA\Interfaces;
 
-use phpSPA\Core\Impl\RealImpl\ComponentImpl;
+use PhpSPA\Core\Impl\RealImpl\ComponentImpl;
 
 /**
- * Component interface for phpSPA framework
+ * Component interface for PhpSPA framework
  *
- * This interface defines the contract for all components within the phpSPA
+ * This interface defines the contract for all components within the PhpSPA
  * framework, including methods for component configuration, routing, and
  * rendering behavior. It ensures consistent component structure and behavior.
  *
- * @package phpSPA\Interfaces
+ * @package PhpSPA\Interfaces
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

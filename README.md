@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/dconco/dconco/refs/heads/main/phpspa-icon.jpg" alt="phpSPA - Component-Based PHP Library" style="width: 100%; max-width: 1200px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); margin-bottom: 1rem;">
+<img src="https://raw.githubusercontent.com/dconco/dconco/refs/heads/main/phpspa-icon.jpg" alt="PhpSPA - Component-Based PHP Library" style="width: 100%; max-width: 1200px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); margin-bottom: 1rem;">
 
 ### _Component-Based PHP Library for Modern Web Applications_
 
@@ -55,7 +55,7 @@ Works out of the box
 
 ### 🎯 **Ready to Jump In? Start with our Template!**
 
-_Get up and running in 30 seconds with a complete phpSPA example_
+_Get up and running in 30 seconds with a complete PhpSPA example_
 
 </div>
 
@@ -87,7 +87,7 @@ composer start
 
 <div align="center">
 
-🎉 **That's it!** Your phpSPA application is now running locally.
+🎉 **That's it!** Your PhpSPA application is now running locally.
 
 **Open your browser and start building amazing components!**
 
@@ -222,7 +222,7 @@ _Building modern web applications with the simplicity of PHP_
 <!-- This HR is styled with a gradient to match the picture border -->
 <hr style="height: 2px; border: none; background: linear-gradient(90deg, transparent, #667eea, #764ba2, transparent); margin: 2rem 0;">
 
-**⭐ If you find phpSPA useful, please give it a star!**
+**⭐ If you find PhpSPA useful, please give it a star!**
 
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 

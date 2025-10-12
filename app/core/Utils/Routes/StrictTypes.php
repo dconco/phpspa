@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace phpSPA\Core\Utils\Routes;
+namespace PhpSPA\Core\Utils\Routes;
 
-use phpSPA\Core\Utils\Routes\Exceptions\InvalidTypesException;
+use PhpSPA\Core\Utils\Routes\Exceptions\InvalidTypesException;
 
 /**
  * Strict type validation for route parameters
  *
  * This trait provides methods to enforce strict type checking for route parameters
- * within the phpSPA framework. It ensures that route parameters match their expected
+ * within the PhpSPA framework. It ensures that route parameters match their expected
  * data types and provides validation mechanisms for type safety.
  *
- * @package phpSPA\Core\Utils\Routes
+ * @package PhpSPA\Core\Utils\Routes
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

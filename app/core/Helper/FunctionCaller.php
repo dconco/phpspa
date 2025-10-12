@@ -1,20 +1,20 @@
 <?php
 
-namespace phpSPA\Core\Helper;
+namespace PhpSPA\Core\Helper;
 
 use Closure;
-use phpSPA\Http\Session;
+use PhpSPA\Http\Session;
 
-use const phpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
+use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
 
 /**
  * Dynamic function calling utilities
  *
  * This class provides secure mechanisms for invoking PHP functions dynamically
- * within the phpSPA framework. It includes CSRF protection and token-based
+ * within the PhpSPA framework. It includes CSRF protection and token-based
  * authentication for safe function execution in client-side contexts.
  *
- * @package phpSPA\Core\Helper
+ * @package PhpSPA\Core\Helper
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

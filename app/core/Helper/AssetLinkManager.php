@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace phpSPA\Core\Helper;
+namespace PhpSPA\Core\Helper;
 
-use phpSPA\Core\Helper\PathResolver;
-use phpSPA\Http\Session;
+use PhpSPA\Core\Helper\PathResolver;
+use PhpSPA\Http\Session;
 
 /**
  * Asset Link Manager
@@ -14,7 +14,7 @@ use phpSPA\Http\Session;
  * Provides functionality to store function references via component routes and serve
  * compressed content through dynamic links.
  *
- * @package phpSPA\Core\Helper
+ * @package PhpSPA\Core\Helper
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

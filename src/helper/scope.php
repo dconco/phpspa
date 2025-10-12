@@ -11,5 +11,5 @@
  */
 function scope(array $variables): void
 {
-    \phpSPA\Core\Helper\ComponentScope::register($variables);
+    \PhpSPA\Core\Helper\ComponentScope::register($variables);
 }

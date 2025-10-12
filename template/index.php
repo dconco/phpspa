@@ -2,8 +2,8 @@
 
 require_once '../vendor/autoload.php';
 
-use phpSPA\App;
-use phpSPA\Compression\Compressor;
+use PhpSPA\App;
+use PhpSPA\Compression\Compressor;
 
 // Nonce::enable([
 //     'script-src' => ["'self'", "https://unpkg.com/phpspa-js"]

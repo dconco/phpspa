@@ -1,16 +1,16 @@
 <?php
 
-namespace phpSPA;
+namespace PhpSPA;
 
-use phpSPA\Http\Session;
-use phpSPA\Core\Config\CompressionConfig;
-use phpSPA\Core\Helper\AssetLinkManager;
+use PhpSPA\Http\Session;
+use PhpSPA\Core\Config\CompressionConfig;
+use PhpSPA\Core\Helper\AssetLinkManager;
 
 /**
  *
  * Class App
  *
- * The main application class for phpSPA.
+ * The main application class for PhpSPA.
  * Handles layout composition, component mounting, and rendering flow.
  *
  * Features in v1.1.5:
@@ -18,7 +18,7 @@ use phpSPA\Core\Helper\AssetLinkManager;
  * - HTML compression and minification
  * - Environment-based compression settings
  *
- * @package phpSPA
+ * @package PhpSPA
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
@@ -28,8 +28,8 @@ use phpSPA\Core\Helper\AssetLinkManager;
  * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/1-compression-system/ Compression System Documentation
  * @link https://phpspa.readthedocs.io
  */
-class App extends \phpSPA\Core\Impl\RealImpl\AppImpl implements
-    \phpSPA\Interfaces\phpSpaInterface {
+class App extends \PhpSPA\Core\Impl\RealImpl\AppImpl implements
+    \PhpSPA\Interfaces\phpSpaInterface {
     /**
      * App constructor.
      *

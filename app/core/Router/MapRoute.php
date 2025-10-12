@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace phpSPA\Core\Router;
+namespace PhpSPA\Core\Router;
 
-use phpSPA\App;
-use phpSPA\Interfaces\MapInterface;
+use PhpSPA\App;
+use PhpSPA\Interfaces\MapInterface;
 
 /**
  * Class MapRoute
@@ -15,19 +15,19 @@ use phpSPA\Interfaces\MapInterface;
  *
  * @author dconco <info@dconco.dev>
  * @copyright 2025 Dave Conco
- * @package phpSPA\Core\Router
+ * @package PhpSPA\Core\Router
  * @license MIT
  * @var string|array $route
  * @var string $request_uri
  * @var array $method
  * @var bool $caseSensitive
- * @package phpSPA\Core\Router
+ * @package PhpSPA\Core\Router
  * @static
  */
 class MapRoute implements MapInterface
 {
-    use \phpSPA\Core\Utils\Validate;
-    use \phpSPA\Core\Utils\Routes\StrictTypes;
+    use \PhpSPA\Core\Utils\Validate;
+    use \PhpSPA\Core\Utils\Routes\StrictTypes;
 
     /**
      * @var string|array $route The route(s) to be mapped.

@@ -1,7 +1,7 @@
 <?php
 
-use phpSPA\Component;
-use phpSPA\Http\Request;
+use PhpSPA\Component;
+use PhpSPA\Http\Request;
 
 use function Component\import;
 use function Component\createState;

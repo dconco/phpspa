@@ -13,10 +13,10 @@
 	"license": "MIT",
 	"autoload": {
 		"psr-4": {
-			"phpSPA\\": "app/client/",
-			"phpSPA\\Core\\": "app/core/",
-			"phpSPA\\Interfaces\\": "app/interfaces/",
-			"phpSPA\\Exceptions\\": "app/exceptions/"
+			"PhpSPA\\": "app/client/",
+			"PhpSPA\\Core\\": "app/core/",
+			"PhpSPA\\Interfaces\\": "app/interfaces/",
+			"PhpSPA\\Exceptions\\": "app/exceptions/"
 		},
 		"files": [
 			"app/core/Impl/Const/StateConstant.php",

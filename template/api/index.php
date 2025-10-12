@@ -2,8 +2,8 @@
 
 require_once '../../vendor/autoload.php';
 
-use phpSPA\Http\Request;
-use phpSPA\Http\Response;
+use PhpSPA\Http\Request;
+use PhpSPA\Http\Response;
 
 response()->get('/user/{id: int}', function (Request $request, $id) {
     $user = 2;

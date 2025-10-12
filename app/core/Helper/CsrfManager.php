@@ -1,15 +1,15 @@
 <?php
 
-namespace phpSPA\Core\Helper;
+namespace PhpSPA\Core\Helper;
 
-use phpSPA\Http\Request;
-use phpSPA\Http\Session;
-use phpSPA\Core\Helper\SessionHandler;
-use phpSPA\Core\Interfaces\CsrfManagerInterface;
+use PhpSPA\Http\Request;
+use PhpSPA\Http\Session;
+use PhpSPA\Core\Helper\SessionHandler;
+use PhpSPA\Core\Interfaces\CsrfManagerInterface;
 
 class CsrfManager implements CsrfManagerInterface
 {
-    use \phpSPA\Core\Utils\Validate;
+    use \PhpSPA\Core\Utils\Validate;
 
     /** @var string Unique identifier for the form/action */
     protected string $name;

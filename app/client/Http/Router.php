@@ -1,14 +1,14 @@
 <?php
 
-namespace phpSPA\Http;
+namespace PhpSPA\Http;
 
-use phpSPA\App;
-use phpSPA\Core\Router\MapRoute;
+use PhpSPA\App;
+use PhpSPA\Core\Router\MapRoute;
 
 /**
  * Handles routing for the application.
  * 
- * @category phpSPA\Http
+ * @category PhpSPA\Http
  * @author Samuel Paschalson <samuelpaschalson@gmail.com>
  * @copyright 2025 Samuel Paschalson
  * @see https://phpspa.readthedocs.io/en/latest/v1.1.8

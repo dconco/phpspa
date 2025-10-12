@@ -1,13 +1,13 @@
 <?php
 
-namespace phpSPA\Core\Utils;
+namespace PhpSPA\Core\Utils;
 
-use phpSPA\Compression\Compressor;
+use PhpSPA\Compression\Compressor;
 
 /**
  * HTML Compression Utility
  *
- * Provides HTML minification and compression capabilities for phpSPA
+ * Provides HTML minification and compression capabilities for PhpSPA
  * to reduce payload sizes and improve performance.
  *
  * @author dconco <concodave@gmail.com>
@@ -76,9 +76,9 @@ trait HtmlCompressor
         }
 
         $comment = "<!--
-  🧩 phpSPA Engine - Minified Output
+  🧩 PhpSPA Engine - Minified Output
 
-  This HTML has been automatically minified by the phpSPA runtime engine:
+  This HTML has been automatically minified by the PhpSPA runtime engine:
   • Whitespace removed for faster loading
   • Comments stripped (except this one)
   • Attributes optimized for minimal size

@@ -2,7 +2,7 @@
 
 namespace Component;
 
-use phpSPA\Core\Helper\StateManager;
+use PhpSPA\Core\Helper\StateManager;
 
 /**
  * Creates a new StateManager instance for reactive component state.

@@ -2,7 +2,7 @@
 
 namespace Component;
 
-use phpSPA\Core\Helper\Enums\NavigateState;
+use PhpSPA\Core\Helper\Enums\NavigateState;
 
 /**
  * Generates client-side navigation script.

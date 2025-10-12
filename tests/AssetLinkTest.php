@@ -7,10 +7,10 @@
  * that replaces inline styles and scripts with external links.
  */
 
-use phpSPA\App;
-use phpSPA\Component;
-use phpSPA\Http\Request;
-use phpSPA\Core\Helper\AssetLinkManager;
+use PhpSPA\App;
+use PhpSPA\Component;
+use PhpSPA\Http\Request;
+use PhpSPA\Core\Helper\AssetLinkManager;
 
 function testAssetLinkGeneration()
 {

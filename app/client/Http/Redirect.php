@@ -1,12 +1,12 @@
 <?php
 
-namespace phpSPA\Http;
+namespace PhpSPA\Http;
 
 /**
  * Redirects the client to the specified URL with the given HTTP status code.
  *
  * This function sends a redirect response to the client and terminates script execution.
- * It provides a clean way to perform HTTP redirects within the phpSPA framework.
+ * It provides a clean way to perform HTTP redirects within the PhpSPA framework.
  *
  * @author dconco <concodave@gmail.com>
  * @param string $url The URL to redirect to.

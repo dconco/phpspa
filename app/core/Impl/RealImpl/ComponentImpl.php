@@ -1,15 +1,15 @@
 <?php
 
-namespace phpSPA\Core\Impl\RealImpl;
+namespace PhpSPA\Core\Impl\RealImpl;
 
 /**
  * Core component implementation class
  *
  * This abstract class provides the foundational implementation for components
- * within the phpSPA framework. It handles component properties such as routes,
+ * within the PhpSPA framework. It handles component properties such as routes,
  * methods, titles, target IDs, and associated scripts and stylesheets.
  *
- * @package phpSPA\Core\Impl\RealImpl
+ * @package PhpSPA\Core\Impl\RealImpl
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

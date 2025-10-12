@@ -1,6 +1,6 @@
 <?php
 
-namespace phpSPA\Core\Helper\Enums;
+namespace PhpSPA\Core\Helper\Enums;
 
 /**
  * Represents the navigation state for client-side routing.
@@ -9,7 +9,7 @@ namespace phpSPA\Core\Helper\Enums;
  * within a single-page application to control how the browser history
  * is managed during navigation operations.
  *
- * @package phpSPA\Core\Helper\Enums
+ * @package PhpSPA\Core\Helper\Enums
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

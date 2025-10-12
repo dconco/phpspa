@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Enhanced JavaScript Compression Tests for phpSPA v1.1.6
+ * Enhanced JavaScript Compression Tests for PhpSPA v1.1.6
  *
  * Tests the corrected JavaScript minification functionality focusing on:
  * - String literal preservation
@@ -13,7 +13,7 @@
  * @author dconco <concodave@gmail.com>
  */
 
-use phpSPA\Compression\Compressor;
+use PhpSPA\Compression\Compressor;
 
 echo "\n============== ENHANCED JS COMPRESSION TEST STARTED ==============\n\n";
 

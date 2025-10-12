@@ -1,6 +1,6 @@
 <?php
 
-namespace phpSPA\Http\Security;
+namespace PhpSPA\Http\Security;
 
 /**
  * Nonce class for handling cryptographic nonces and security tokens.
@@ -10,7 +10,7 @@ namespace phpSPA\Http\Security;
  * web applications. Nonces are typically used in forms, AJAX requests, and
  * other security-sensitive operations.
  *
- * @package phpSPA\Http\Security
+ * @package PhpSPA\Http\Security
  * @category Security
  * @author GitHub Copilot
  * @version 1.0.0

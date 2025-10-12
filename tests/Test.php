@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unified Test Runner for phpSPA v1.1.5
+ * Unified Test Runner for PhpSPA v1.1.5
  *
  * Runs all compression and JavaScript ASI tests for the new compression system.
  * This test runner is CLI-only for security and is used in CI/CD workflows.

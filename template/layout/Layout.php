@@ -9,7 +9,7 @@ return fn () => <<<HTML
       <body>
          <div id="app"></div>
 
-         <!-- phpSPA JS PLUGIN -->
+         <!-- PhpSPA JS PLUGIN -->
          <!-- <script type="text/javascript" src="https://unpkg.com/phpspa-js"></script> -->
          <script type="text/javascript" src="/src/index.js"></script>
       </body>

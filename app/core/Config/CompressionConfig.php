@@ -1,16 +1,16 @@
 <?php
 
-namespace phpSPA\Core\Config;
+namespace PhpSPA\Core\Config;
 
-use phpSPA\Compression\Compressor;
+use PhpSPA\Compression\Compressor;
 
 /**
  * Compression Configuration
  *
- * Manages HTML compression settings for phpSPA applications.
+ * Manages HTML compression settings for PhpSPA applications.
  * Provides easy configuration options for different environments.
  *
- * @package phpSPA\Core\Config
+ * @package PhpSPA\Core\Config
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

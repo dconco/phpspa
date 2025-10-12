@@ -4,8 +4,8 @@ namespace Component;
 
 use Closure;
 use InvalidArgumentException;
-use phpSPA\Core\Helper\CallableInspector;
-use phpSPA\Core\Helper\StateManager;
+use PhpSPA\Core\Helper\CallableInspector;
+use PhpSPA\Core\Helper\StateManager;
 
 /**
  * Executes a callback function when its dependencies change.

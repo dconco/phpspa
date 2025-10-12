@@ -1,15 +1,15 @@
 <?php
 
-namespace phpSPA\Core\Impl\Const;
+namespace PhpSPA\Core\Impl\Const;
 
 /**
  * Core framework constants
  *
- * This file defines essential constants used throughout the phpSPA framework
+ * This file defines essential constants used throughout the PhpSPA framework
  * for state management, function calling, and other internal operations.
  * These constants ensure consistent naming and behavior across the framework.
  *
- * @package phpSPA\Core\Impl\Const
+ * @package PhpSPA\Core\Impl\Const
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

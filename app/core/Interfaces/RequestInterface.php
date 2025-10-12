@@ -1,6 +1,6 @@
 <?php
 
-namespace phpSPA\Core\Interfaces;
+namespace PhpSPA\Core\Interfaces;
 
 use stdClass;
 

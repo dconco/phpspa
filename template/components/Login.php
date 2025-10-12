@@ -1,6 +1,6 @@
 <?php
 
-use phpSPA\Component;
+use PhpSPA\Component;
 
 use function Component\createState;
 

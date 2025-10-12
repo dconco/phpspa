@@ -3,9 +3,9 @@
 /**
  * Global router helper function.
  *
- * @return \phpSPA\Http\Router
+ * @return \PhpSPA\Http\Router
  */
-function router(): \phpSPA\Http\Router
+function router(): \PhpSPA\Http\Router
 {
-    return new \phpSPA\Http\Router();
+    return new \PhpSPA\Http\Router();
 }

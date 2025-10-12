@@ -1,10 +1,10 @@
 <?php
 
-namespace phpSPA\Core\Helper;
+namespace PhpSPA\Core\Helper;
 
 use Closure;
-use phpSPA\Http\Request;
-use const phpSPA\Core\Impl\Const\STATE_HANDLE;
+use PhpSPA\Http\Request;
+use const PhpSPA\Core\Impl\Const\STATE_HANDLE;
 
 /**
  * Class StateManager
@@ -13,7 +13,7 @@ use const phpSPA\Core\Impl\Const\STATE_HANDLE;
  * This class is responsible for handling state transitions, storing state data,
  * and providing access to state information throughout the application lifecycle.
  *
- * @package phpSPA\Core\Helper
+ * @package PhpSPA\Core\Helper
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @var string $stateKey

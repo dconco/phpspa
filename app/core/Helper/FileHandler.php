@@ -1,17 +1,17 @@
 <?php
 
-namespace phpSPA\Core\Helper;
+namespace PhpSPA\Core\Helper;
 
-use phpSPA\Exceptions\AppException;
+use PhpSPA\Exceptions\AppException;
 
 /**
  * File handling utilities
  *
  * This class provides methods for file operations, including MIME type detection,
- * file validation, and other file-related utilities within the phpSPA framework.
+ * file validation, and other file-related utilities within the PhpSPA framework.
  * It ensures secure and reliable file handling across the application.
  *
- * @package phpSPA\Core\Helper
+ * @package PhpSPA\Core\Helper
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

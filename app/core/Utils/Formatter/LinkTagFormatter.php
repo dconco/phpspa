@@ -1,15 +1,15 @@
 <?php
 
-namespace phpSPA\Core\Utils\Formatter;
+namespace PhpSPA\Core\Utils\Formatter;
 
 /**
  * HTML link tag formatting utilities
  *
  * This class is responsible for formatting and generating HTML link tags
- * within the phpSPA framework. It handles the creation of `<link />` elements
+ * within the PhpSPA framework. It handles the creation of `<link />` elements
  * for stylesheets, icons, and other external resources with proper formatting.
  *
- * @package phpSPA\Core\Utils\Formatter
+ * @package PhpSPA\Core\Utils\Formatter
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
