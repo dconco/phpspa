@@ -13,7 +13,7 @@ use phpSPA\Exceptions\AppException;
  * @param string $file File path to import
  * @return ImportedFile Data URI with MIME type and base64 content
  * @throws AppException If file is invalid or unreadable
- * @see https://phpspa.readthedocs.io/ File Import Documentation
+ * @see https://phpspa.readthedocs.io/en/latest/v1.1/1-file-import-utility File Import Documentation
  */
 function import(string $file): ImportedFile
 {

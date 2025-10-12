@@ -9,7 +9,7 @@ namespace Component;
  * to prevent cross-site request forgery attacks.
  *
  * @author dconco <concodave@gmail.com>
- * @see https://phpspa.readthedocs.io/ CSRF Protection Documentation
+ * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/5-csrf-protection CSRF Protection Documentation
  */
 class Csrf extends \phpSPA\Core\Helper\CsrfManager
 {

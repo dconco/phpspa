@@ -10,7 +10,7 @@ use phpSPA\Core\Helper\Enums\NavigateState;
  * @param string $path Target path
  * @param string|NavigateState $state Navigation state (push/replace)
  * @return string Navigation script tag
- * @see https://phpspa.readthedocs.io/ Navigation Documentation
+ * @see https://phpspa.readthedocs.io/en/latest/v1.1/8-navigate-component Navigation Documentation
  * @author dconco <concodave@gmail.com>
  */
 function Navigate(

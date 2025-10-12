@@ -3,7 +3,6 @@
 namespace phpSPA\Core\Helper;
 
 use Closure;
-use phpSPA\Http\Session;
 use const phpSPA\Core\Impl\Const\STATE_HANDLE;
 
 /**
@@ -25,6 +24,8 @@ class StateManager
 
 	private mixed $value;
 
+	protected mixed $lastState;
+
 	/**
 	 * Initializes the state with a given key and a default value.
 	 *
@@ -35,7 +36,9 @@ class StateManager
 	{
 		$sessionData = SessionHandler::get(STATE_HANDLE);
 
-		$sessionData[$stateKey] = $sessionData[$stateKey] ?? $default;
+		if (!isset($sessionData[$stateKey]))
+			$sessionData[$stateKey] = $this->lastState = $default;
+
 		$this->value = $sessionData[$stateKey];
 		$this->stateKey = $stateKey;
 
@@ -58,6 +61,7 @@ class StateManager
 			return $sessionData[$this->stateKey] ?? $this->value;
 		}
 
+		$this->lastState = $this->value;
 		$this->value = $value;
 		$sessionData[$this->stateKey] = $value;
 		SessionHandler::set(STATE_HANDLE, $sessionData);
