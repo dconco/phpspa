@@ -17,6 +17,7 @@ $app = (new App(require 'layout/Layout.php'))
     ->attach(require 'components/Timer.php')
     ->attach(require 'components/Counter.php')
     ->attach(require 'components/HomePage.php')
+    ->attach(require 'components/Todo.php')
 
     ->defaultTargetID('app')
     ->defaultToCaseSensitive()
@@ -41,7 +42,7 @@ $app = (new App(require 'layout/Layout.php'))
             margin-bottom: 1rem;
         }
         CSS,
-        'global-css'
+        'global-css',
     )
 
     ->script(
@@ -81,7 +82,7 @@ $app = (new App(require 'layout/Layout.php'))
             console.log('Execution order:', window.globalUtils.executionOrder);
         });
         JS,
-        'global-js'
+        'global-js',
     )
 
     ->run();

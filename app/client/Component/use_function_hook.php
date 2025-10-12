@@ -16,7 +16,7 @@ use PhpSPA\Core\Helper\FunctionCaller;
  * @return FunctionCaller Handler object for secure function invocation.
  * @author dconco <concodave@gmail.com>
  */
-function useFunction(callable $function): FunctionCaller
+function useFunction (callable $function): FunctionCaller
 {
     return new FunctionCaller($function);
 }

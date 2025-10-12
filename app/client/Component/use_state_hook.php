@@ -13,7 +13,7 @@ use PhpSPA\Core\Helper\StateManager;
  * @return StateManager    The state manager instance.
  * @see https://phpspa.readthedocs.io/en/latest/17-state-management State Management Documentation
  */
-function useState(string $stateKey, $default): StateManager
+function useState (string $stateKey, $default): StateManager
 {
     return new StateManager($stateKey, $default);
 }
