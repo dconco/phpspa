@@ -6,7 +6,8 @@ namespace phpSPA\Http;
  * Handles HTTP responses for API calls in a PHP application.
  * Provides methods to set response data, status codes, headers, and output JSON.
  *
- * @category phpSPA\Http
+ * @package phpSPA\Http
+ * @category HTTP
  * @author Samuel Paschalson <samuelpaschalson@gmail.com>
  * @copyright 2025 Samuel Paschalson
  * @see https://phpspa.readthedocs.io/en/latest/v1.1.8

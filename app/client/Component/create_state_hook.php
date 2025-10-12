@@ -7,6 +7,7 @@ use phpSPA\Core\Helper\StateManager;
 /**
  * Creates a new StateManager instance for reactive component state.
  *
+ * @deprecated This function is deprecated and will be removed in future versions. Please use the useState function instead.
  * @author dconco <concodave@gmail.com>
  * @param string $stateKey The unique key identifying the state variable.
  * @param mixed  $default  The default value to initialize the state with.

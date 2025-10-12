@@ -2,6 +2,19 @@
 
 namespace phpSPA\Http\Security;
 
+/**
+ * Nonce class for handling cryptographic nonces and security tokens.
+ * 
+ * This class provides functionality for generating, validating, and managing
+ * nonces (number used once) to prevent CSRF attacks and replay attacks in
+ * web applications. Nonces are typically used in forms, AJAX requests, and
+ * other security-sensitive operations.
+ *
+ * @package phpSPA\Http\Security
+ * @category Security
+ * @author GitHub Copilot
+ * @version 1.0.0
+ */
 class Nonce {
    private static $enabled = false;   // default off
 

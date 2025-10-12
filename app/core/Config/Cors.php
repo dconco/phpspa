@@ -30,6 +30,7 @@ return [
         'X-Api-Key',
         'X-Csrf-Token',
         'X-Requested-With',
+        'X-Phpspa-Target',
     ],
 
     /*

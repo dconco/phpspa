@@ -3,6 +3,7 @@
 namespace phpSPA\Core\Helper;
 
 use Closure;
+use phpSPA\Http\Request;
 use const phpSPA\Core\Impl\Const\STATE_HANDLE;
 
 /**
@@ -26,6 +27,8 @@ class StateManager
 
 	protected mixed $lastState;
 
+	protected static bool $firstRender = false;
+
 	/**
 	 * Initializes the state with a given key and a default value.
 	 *
@@ -36,8 +39,13 @@ class StateManager
 	{
 		$sessionData = SessionHandler::get(STATE_HANDLE);
 
-		if (!isset($sessionData[$stateKey]))
+		if (!isset($sessionData[$stateKey]) && (new Request())->requestedWith() !== 'PHPSPA_REQUEST' && (new Request())->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT') {
+			self::$firstRender = true;
+		}
+
+		if (!isset($sessionData[$stateKey])) {
 			$sessionData[$stateKey] = $this->lastState = $default;
+		}
 
 		$this->value = $sessionData[$stateKey];
 		$this->stateKey = $stateKey;

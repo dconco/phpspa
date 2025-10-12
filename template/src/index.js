@@ -256,6 +256,7 @@ class phpspa {
       fetch(url, {
          headers: {
             "X-Requested-With": "PHPSPA_REQUEST",
+            "X-Phpspa-Target": "navigate",
          },
          mode: "same-origin",
          redirect: "follow",

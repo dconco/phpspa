@@ -241,6 +241,11 @@ abstract class AppImpl
             $componentOutput = '';
 
             if ($request->requestedWith() === 'PHPSPA_REQUEST') {
+                if ($request->header('X-Phpspa-Target') === 'navigate') {
+                    Session::remove(STATE_HANDLE);
+                    Session::remove(CALL_FUNC_HANDLE);
+                }
+
                 $data = json_decode($request->auth()->bearer ?? '', true);
                 $data = $this->validate($data);
 
@@ -281,7 +286,7 @@ abstract class AppImpl
                     }
                     exit();
                 }
-            } else {
+            } else if ($request->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT') {
                 Session::remove(STATE_HANDLE);
                 Session::remove(CALL_FUNC_HANDLE);
             }

@@ -18,8 +18,7 @@ use phpSPA\Component;
  * @license MIT
  * @since v1.0.0
  */
-interface phpSpaInterface
-{
+interface phpSpaInterface {
     /**
      * App constructor.
      *
@@ -27,7 +26,8 @@ interface phpSpaInterface
      *
      * @param callable $layout The name of the layout to be used by the application.
      */
-    public function __construct(callable $layout);
+    public function __construct (callable $layout);
+
 
     /**
      * Sets the target ID for the application.
@@ -36,7 +36,8 @@ interface phpSpaInterface
      *
      * @return App
      */
-    public function defaultTargetID(string $targetID): App;
+    public function defaultTargetID (string $targetID): App;
+
 
     /**
      * Sets the default behavior to case sensitive.
@@ -47,7 +48,67 @@ interface phpSpaInterface
      *
      * @return App
      */
-    public function defaultToCaseSensitive(): App;
+    public function defaultToCaseSensitive (): App;
+
+
+    /**
+     * Configure HTML compression manually
+     *
+     * @param int $level Compression level (0=none, 1=auto, 2=basic, 3=aggressive, 4=extreme)
+     * @param bool $gzip Enable gzip compression
+     * @return App
+     */
+    public function compression (int $level, bool $gzip = true): App;
+
+
+    /**
+     * Set cache duration for CSS/JS assets
+     *
+     * @param int $hours Number of hours to cache assets (0 for session-only) Default is 24 hours
+     * @return App
+     * @see https://phpspa.readthedocs.io/en/latest/v1.1.7/2-asset-caching-control
+     */
+    public function assetCacheHours (int $hours): App;
+
+
+    /**
+     * Set compression based on environment
+     *
+     * @param string $environment Environment: 'development', 'staging', 'production'
+     * @return App
+     */
+    public function compressionEnvironment (string $environment): App;
+
+
+    /**
+     * Add a global script to the application
+     *
+     * This script will be executed on every component render throughout the application.
+     * Scripts are added to the global scripts array and will be rendered alongside
+     * component-specific scripts.
+     *
+     * @param callable $script The callable that returns the JavaScript code
+     * @param string|null $name Optional name for the script asset
+     * @return App
+     * @see https://phpspa.readthedocs.io/en/latest/v1.1.7/1-global-asset-management
+     */
+    public function script (callable $script, ?string $name = null): App;
+
+
+    /**
+     * Add a global stylesheet to the application
+     *
+     * This stylesheet will be included on every component render throughout the application.
+     * Stylesheets are added to the global stylesheets array and will be rendered alongside
+     * component-specific styles.
+     *
+     * @param callable $style The callable that returns the CSS code
+     * @param string|null $name Optional name for the stylesheet asset
+     * @return App
+     * @see https://phpspa.readthedocs.io/en/latest/v1.1.7/1-global-asset-management
+     */
+    public function styleSheet (callable $style, ?string $name = null): App;
+
 
     /**
      * Configure CORS (Cross-Origin Resource Sharing) settings for the application.
@@ -63,28 +124,20 @@ interface phpSpaInterface
      *                    - 'allow_headers': array of allowed request headers
      *                    - 'allow_credentials': boolean for credential support
      *                    - 'max_age': integer for preflight cache duration
+     * 
+     * @var array{
+     *   'allow_origins': array<string>,
+     *   'allow_methods': array<string>,
+     *   'allow_headers': array<string>,
+     *   'allow_credentials': bool,
+     *   'max_age': int,
+     * } $data
      *
      * @return App Returns the current instance for method chaining
-     *
-     * @example
-     * // Use default CORS settings
-     * $instance->cors();
-     *
-     * @example
-     * // Override specific settings
-     * $instance->cors([
-     *     'allow_origins' => ['https://mydomain.com'],
-     *     'allow_headers' => ['Authorization', 'X-Custom-Header']
-     * ]);
-     *
-     * @example
-     * // Chain with other methods
-     * $instance->cors(['allow_credentials' => true])
-     *          ->someOtherMethod();
-     *
      * @see https://phpspa.readthedocs.io/en/latest/v1.1.5#cors
      */
-    public function cors(array $data = []): App;
+    public function cors (array $data = []): App;
+
 
     /**
      * Attaches a component to the current object.
@@ -92,7 +145,8 @@ interface phpSpaInterface
      * @param Component $component The component instance to attach.
      * @return App
      */
-    public function attach(Component $component): App;
+    public function attach (Component $component): App;
+
 
     /**
      * Detaches the specified component from the current context.
@@ -100,7 +154,8 @@ interface phpSpaInterface
      * @param Component $component The component instance to be detached.
      * @return App
      */
-    public function detach(Component $component): App;
+    public function detach (Component $component): App;
+
 
     /**
      * Runs the application.
@@ -110,5 +165,5 @@ interface phpSpaInterface
      *
      * @return void
      */
-    public function run(): void;
+    public function run (): void;
 }

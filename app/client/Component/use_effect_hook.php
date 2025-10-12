@@ -22,7 +22,24 @@ use phpSPA\Core\Helper\StateManager;
  */
 function useEffect(Closure $callback, array $dependencies = []): void
 {
+   $firstRender = CallableInspector::getProperty(StateManager::class, 'firstRender');
+   
+   if (empty($dependencies) && $firstRender === true) {
+      $callback();
+      return;
+   }
+
+   $stateDependencies = array_filter($dependencies, fn ($d) => $d instanceof StateManager);
+
    foreach ($dependencies as $dep) {
+      if (is_array($dep) && empty($dep)) {
+         if ($firstRender === true) {
+            $callback(...$stateDependencies);
+            return;
+         }
+         continue;
+      }
+
       if (!$dep instanceof StateManager) {
          throw new InvalidArgumentException("All dependencies must be instances of StateManager.");
       }
@@ -31,7 +48,7 @@ function useEffect(Closure $callback, array $dependencies = []): void
       $lastValue = CallableInspector::getProperty($dep, 'lastState');
 
       if ($stateValue !== $lastValue) {
-         $callback();
+         $callback(...$stateDependencies);
          return;
       }
    }
