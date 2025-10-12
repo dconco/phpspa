@@ -16,5 +16,6 @@ function HTMLAttrInArrayToString(array $HtmlAttr): string
     foreach ($HtmlAttr as $AttrName => $AttrValue) {
         $attr .= " $AttrName=\"$AttrValue\"";
     }
+    $attr = trim($attr);
     return $attr;
 }

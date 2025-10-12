@@ -17,6 +17,6 @@ function Link(string $children, string $to = '#', string ...$HtmlAttr): string
     $attr = HTMLAttrInArrayToString($HtmlAttr);
 
     return <<<HTML
-	   <a href="{$to}" data-type="phpspa-link-tag"$attr>{$children}</a>
+	   <a href="{$to}" data-type="phpspa-link-tag" $attr>{$children}</a>
 	HTML;
 }
