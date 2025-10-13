@@ -4,16 +4,6 @@ namespace PhpSPA\Core\Interfaces;
 
 use stdClass;
 
-/**
- * Handles HTTP request data and provides methods to access request parameters,
- * headers, and other relevant information.
- *
- * This class is typically used to encapsulate all information about an incoming
- * HTTP request, such as GET, POST, and server variables.
- *
- * @author dconco <concodave@gmail.com>
- * @see https://phpspa.readthedocs.io/en/latest/20-request-handling
- */
 interface RequestInterface {
     /**
      * Invokes the request object to retrieve a parameter value by key.

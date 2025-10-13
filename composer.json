@@ -1,7 +1,7 @@
 {
 	"name": "dconco/phpspa",
 	"type": "library",
-	"description": "A lightweight, component-based PHP library for building Single Page Applications (SPAs) without relying on heavy frontend frameworks.",
+	"description": "A component-based library for building modern, reactive user interfaces in pure PHP. Inspired by React. ✨",
 	"keywords": [
 		"php",
 		"spa",
@@ -31,6 +31,12 @@
 			"email": "concodave@gmail.com",
 			"role": "Author & Maintainer",
 			"homepage": "https://dconco.github.io"
+		},
+		{
+			"name": "Samuel Paschalson",
+			"email": "samuelpaschalson@gmail.com",
+			"role": "Contributor",
+			"homepage": "https://samuel-paschalson.netlify.app"
 		}
 	],
 	"require": {
@@ -39,6 +45,10 @@
 	"prefer-stable": true,
 	"minimum-stability": "stable",
 	"scripts": {
-		"test": "php tests/Test.php"
+		"test": "php tests/Test.php",
+		"serve-docs": [
+			"Composer\\Config::disableProcessTimeout",
+			"py -m mkdocs serve --dev-addr=127.0.0.1:4000 --watch docs --watch mkdocs.yml --livereload"
+		]
 	}
 }
