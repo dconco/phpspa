@@ -12,7 +12,7 @@ namespace PhpSPA\Http\Security;
  *
  * @package PhpSPA\Http\Security
  * @category Security
- * @author GitHub Copilot
+ * @author dconco <concodave@gmail.com>
  * @version 1.0.0
  */
 class Nonce {
@@ -21,30 +21,35 @@ class Nonce {
    private static $nonce = null;
 
    private static $directives = [
-      'default-src' => ["'self'"],
-      'script-src'  => ["'self'"],
-      'style-src'   => ["'self'"],
-      'object-src'  => ["'none'"],
-      'base-uri'    => ["'self'"],
-      'font-src'    => ["'self'"],
-      'img-src'     => ["'self'", "data:"],
-    ];
-   
+      'default-src' => [ "'self'" ],
+      'script-src' => [ "'self'" ],
+      'style-src' => [ "'self'" ],
+      'object-src' => [ "'self'" ],
+      'base-uri' => [ "'self'" ],
+      'font-src' => [ "'self'" ],
+      'img-src' => [ "'self'", "data:" ],
+   ];
+
    /**
     * Enable nonce-based CSP and optionally override allowed sources.
+    *
     * Example:
+    * ```
     * Nonce::enable([
-    *   'script-src' => ["'self'", "https://cdn.jsdelivr.net"],
-    *   'style-src'  => ["'self'", "https://fonts.googleapis.com"],
+    *   'script-src' => ["https://cdn.jsdelivr.net"],
+    *   'style-src'  => ["https://fonts.googleapis.com"],
     *   'font-src'   => ["https://fonts.gstatic.com"]
     * ]);
+    * ```
     */
-   public static function enable(array $sources = []): void {
+   public static function enable (array $sources = []): void
+   {
       self::$enabled = true;
 
-      // Merge custom sources with defaults
+      // Merge custom sources with defaults (prevent duplicates)
       foreach ($sources as $directive => $values) {
-         self::$directives[$directive] = $values;
+         $existing = self::$directives[$directive] ?? [];
+         self::$directives[$directive] = array_unique(array_merge($existing, $values));
       }
 
       self::sendHeader();
@@ -53,7 +58,8 @@ class Nonce {
    /**
     * Disable nonce (CSP will not inject nonces).
     */
-   public static function disable(): void {
+   public static function disable (): void
+   {
       self::$enabled = false;
       self::$nonce = null;
    }
@@ -61,14 +67,16 @@ class Nonce {
    /**
     * Get the nonce (if enabled).
     */
-   public static function nonce(): ?string {
+   public static function nonce (): ?string
+   {
       if (!self::$enabled) return null;
       if (self::$nonce === null) self::$nonce = base64_encode(random_bytes(16));
 
       return self::$nonce;
    }
 
-   private static function sendHeader(): void {
+   private static function sendHeader (): void
+   {
       if (!self::$enabled) return;
 
       $nonce = self::nonce();
@@ -91,12 +99,13 @@ class Nonce {
       if (!headers_sent()) {
          header("Content-Security-Policy: $csp");
       }
-    }
+   }
 
    /**
     * Return the HTML nonce attribute for inline <script>.
     */
-   public static function attr(): string {
+   public static function attr (): string
+   {
       return self::$enabled && self::$nonce !== null
          ? 'nonce="' . self::$nonce . '"'
          : '';

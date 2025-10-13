@@ -106,15 +106,15 @@ class AssetLinkManager
             $hash = $matches[3];
             $type = $matches[4];
         }
-
+        
         $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
-
+        
         if (!isset($mappings[$hash])) {
             return null;
         }
-
+        
         $mapping = $mappings[$hash];
-
+        
         // Check if mapping has expired
         if (self::isMappingExpired($mapping)) {
             unset($mappings[$hash]);

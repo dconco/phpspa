@@ -1,13 +1,10 @@
 <?php
 
+chdir(__DIR__);
 require_once '../vendor/autoload.php';
 
 use PhpSPA\App;
 use PhpSPA\Compression\Compressor;
-
-// Nonce::enable([
-//     'script-src' => ["'self'", "https://unpkg.com/phpspa-js"]
-// ]);
 
 /* Initialize a new Application  */
 $app = (new App(require 'layout/Layout.php'))
@@ -17,7 +14,6 @@ $app = (new App(require 'layout/Layout.php'))
     ->attach(require 'components/Timer.php')
     ->attach(require 'components/Counter.php')
     ->attach(require 'components/HomePage.php')
-    ->attach(require 'components/Todo.php')
 
     ->defaultTargetID('app')
     ->defaultToCaseSensitive()

@@ -14,8 +14,7 @@ use stdClass;
  * @author dconco <concodave@gmail.com>
  * @see https://phpspa.readthedocs.io/en/latest/20-request-handling
  */
-interface RequestInterface
-{
+interface RequestInterface {
     /**
      * Invokes the request object to retrieve a parameter value by key.
      *
@@ -27,7 +26,7 @@ interface RequestInterface
      * @param string|null $default The default value to return if the key does not exist. Defaults to null.
      * @return mixed The validated value associated with the key, or the default value if the key is not present.
      */
-    public function __invoke(string $key, ?string $default = null): mixed;
+    public function __invoke (string $key, ?string $default = null): mixed;
 
     /**
      * Retrieves file data from the request by name.
@@ -38,7 +37,7 @@ interface RequestInterface
      * @param ?string $name The name of the file input.
      * @return ?array File data, or null if not set.
      */
-    public function files(?string $name = null): ?array;
+    public function files (?string $name = null): ?array;
 
     /**
      * Validates the API key from the request headers.
@@ -46,7 +45,7 @@ interface RequestInterface
      * @param string $key The name of the header containing the API key. Default is 'Api-Key'.
      * @return bool Returns true if the API key is valid, false otherwise.
      */
-    public function apiKey(string $key = 'Api-Key');
+    public function apiKey (string $key = 'Api-Key');
 
     /**
      * Retrieves authentication credentials from the request.
@@ -56,7 +55,7 @@ interface RequestInterface
      *
      * @return stdClass The authentication credentials.
      */
-    public function auth(): stdClass;
+    public function auth (): stdClass;
 
     /**
      * Parses and returns the query string parameters from the URL.
@@ -67,7 +66,7 @@ interface RequestInterface
      * @param ?string $name If specified, returns a specific query parameter by name.
      * @return mixed parsed query parameters or a specific parameter value.
      */
-    public function urlQuery(?string $name = null);
+    public function urlQuery (?string $name = null);
 
     /**
      * Retrieves headers from the request.
@@ -78,7 +77,7 @@ interface RequestInterface
      * @param ?string $name The header name to retrieve. If omitted, returns all headers.
      * @return mixed The header, or a specific header value if `$name` is provided.
      */
-    public function header(?string $name = null);
+    public function header (?string $name = null);
 
     /**
      * Retrieves the request body as an associative array.
@@ -89,7 +88,7 @@ interface RequestInterface
      * @param ?string $name The name of the body parameter to retrieve.
      * @return mixed The json data or null if parsing fails.
      */
-    public function json(?string $name = null);
+    public function json (?string $name = null);
 
     /**
      * Retrieves a GET parameter by key.
@@ -100,7 +99,7 @@ interface RequestInterface
      * @param ?string $key The key of the GET parameter.
      * @return mixed The parameter value, or null if not set.
      */
-    public function get(?string $key = null);
+    public function get (?string $key = null);
 
     /**
      * Retrieves a POST parameter by key.
@@ -111,7 +110,7 @@ interface RequestInterface
      * @param ?string $key The key of the POST parameter.
      * @return mixed The parameter value, or null if not set.
      */
-    public function post(?string $key = null);
+    public function post (?string $key = null);
 
     /**
      * Retrieves a cookie value by key, or all cookies if no key is provided.
@@ -121,7 +120,7 @@ interface RequestInterface
      * @param ?string $key The key of the cookie.
      * @return mixed The cookie value, or null if not set.
      */
-    public function cookie(?string $key = null);
+    public function cookie (?string $key = null);
 
     /**
      * Retrieves a session value by key, or all session data if no key is provided.
@@ -132,7 +131,7 @@ interface RequestInterface
      * @param ?string $key The key of the session value.
      * @return mixed The session value, or null if not set.
      */
-    public function session(?string $key = null);
+    public function session (?string $key = null);
 
     /**
      * Retrieves the HTTP request method (GET, POST, PUT, DELETE, etc.).
@@ -141,7 +140,7 @@ interface RequestInterface
      *
      * @return string The HTTP method of the request.
      */
-    public function method(): string;
+    public function method (): string;
 
     /**
      * Retrieves the IP address of the client making the request.
@@ -150,7 +149,7 @@ interface RequestInterface
      *
      * @return string The client's IP address.
      */
-    public function ip(): string;
+    public function ip (): string;
 
     /**
      * Checks if the current request is an AJAX request.
@@ -159,21 +158,21 @@ interface RequestInterface
      *
      * @return bool Returns true if the request is an AJAX request, otherwise false.
      */
-    public function isAjax(): bool;
+    public function isAjax (): bool;
 
     /**
      * Retrieves the URL of the referring page.
      *
      * @return string|null The referrer URL, or null if not set.
      */
-    public function referrer(): ?string;
+    public function referrer (): ?string;
 
     /**
      * Retrieves the server protocol used for the request.
      *
      * @return string|null The server protocol.
      */
-    public function protocol(): ?string;
+    public function protocol (): ?string;
 
     /**
      * Checks if the request method matches a given method.
@@ -181,21 +180,21 @@ interface RequestInterface
      * @param string $method The HTTP method to check.
      * @return bool True if the request method matches, false otherwise.
      */
-    public function isMethod(string $method): bool;
+    public function isMethod (string $method): bool;
 
     /**
      * Checks if the request is made over HTTPS.
      *
      * @return bool True if the request is HTTPS, false otherwise.
      */
-    public function isHttps(): bool;
+    public function isHttps (): bool;
 
     /**
      * Retrieves the time when the request was made.
      *
      * @return int The request time as a Unix timestamp.
      */
-    public function requestTime(): int;
+    public function requestTime (): int;
 
     /**
      * Returns the content type of the request.
@@ -204,7 +203,7 @@ interface RequestInterface
      *
      * @return string|null The content type, or null if not set.
      */
-    public function contentType(): ?string;
+    public function contentType (): ?string;
 
     /**
      * Returns the length of the request's body content.
@@ -213,19 +212,36 @@ interface RequestInterface
      *
      * @return int|null The content length, or null if not set.
      */
-    public function contentLength(): ?int;
+    public function contentLength (): ?int;
 
-    public function csrf();
+    /**
+     * Retrieves the CSRF (Cross-Site Request Forgery) token for the current request.
+     *
+     * This method is used to obtain the CSRF token that can be used to validate
+     * form submissions and protect against CSRF attacks.
+     *
+     * @see https://owasp.org/www-community/attacks/csrf
+     * @return string|null The CSRF token value, or null if not available
+     */
+    public function csrf ();
 
-    public function requestedWith();
+    /**
+     * Returns the value of the X-Requested-With header.
+     *
+     * This method is typically used to determine if the request was made via AJAX.
+     * Common values include 'XMLHttpRequest' for AJAX requests.
+     *
+     * @return string|null The value of the X-Requested-With header, or null if not present
+     */
+    public function requestedWith ();
 
     /**
      * Retrieves the request URI.
      *
      * @return string The request URI.
      */
-    public function getUri(): string;
-    
+    public function getUri (): string;
+
     /**
      * Determines if the current HTTP request originates from the same origin as the server.
      * 
@@ -235,5 +251,5 @@ interface RequestInterface
      * @see https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
      * @return bool True if the request is from the same origin, false otherwise.
      */
-    public function isSameOrigin(): bool;
+    public function isSameOrigin (): bool;
 }

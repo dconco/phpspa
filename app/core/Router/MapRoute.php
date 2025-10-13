@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PhpSPA\Core\Router;
 
 use PhpSPA\App;
+use PhpSPA\Http\Request;
 use PhpSPA\Interfaces\MapInterface;
 
 /**
@@ -256,6 +257,7 @@ class MapRoute implements MapInterface
      */
     private function match_routing(): bool|array
     {
+        $request = new Request();
         $uri = [];
         $str_route = '';
 
@@ -276,7 +278,7 @@ class MapRoute implements MapInterface
             self::$request_uri === $str_route
         ) {
             if (
-                !in_array(strtoupper($_SERVER['REQUEST_METHOD']), self::$method) &&
+                !in_array(strtoupper($request->method()), self::$method) &&
                 !in_array('*', self::$method)
             ) {
                 // http_response_code(405);
@@ -285,7 +287,7 @@ class MapRoute implements MapInterface
             }
 
             return [
-             'method' => strtoupper($_SERVER['REQUEST_METHOD']),
+             'method' => strtoupper($request->method()),
              'route' => self::$route,
             ];
         } else {
@@ -329,11 +331,12 @@ class MapRoute implements MapInterface
      */
     private function validatePattern(string $pattern): array|bool
     {
+        $request = new Request();
         $pattern = preg_replace("/(^\/)|(\/$)/", '', trim(substr($pattern, 8)));
 
         if (fnmatch($pattern, self::$request_uri)) {
             if (
-                !in_array($_SERVER['REQUEST_METHOD'], self::$method) &&
+                !in_array($request->method(), self::$method) &&
                 !in_array('*', self::$method)
             ) {
                 // http_response_code(405);
@@ -342,7 +345,7 @@ class MapRoute implements MapInterface
             }
 
             return [
-             'method' => $_SERVER['REQUEST_METHOD'],
+             'method' => $request->method(),
              'route' => self::$route,
             ];
         }

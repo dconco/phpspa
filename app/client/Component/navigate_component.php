@@ -3,6 +3,7 @@
 namespace Component;
 
 use PhpSPA\Core\Helper\Enums\NavigateState;
+use PhpSPA\Http\Security\Nonce;
 
 /**
  * Generates client-side navigation script.
@@ -13,7 +14,7 @@ use PhpSPA\Core\Helper\Enums\NavigateState;
  * @see https://phpspa.readthedocs.io/en/latest/v1.1/8-navigate-component Navigation Documentation
  * @author dconco <concodave@gmail.com>
  */
-function Navigate(
+function Navigate (
     string $path,
     string|NavigateState $state = NavigateState::PUSH,
 ): string {
@@ -21,9 +22,10 @@ function Navigate(
         $state = NavigateState::from($state);
     }
     $state = $state->value;
+    $nonce = Nonce::attr();
 
     return <<<HTML
-	   <script data-type="phpspa/script">
+	   <script $nonce>
 	      phpspa.navigate("$path", "$state");
 	   </script>
 	HTML;

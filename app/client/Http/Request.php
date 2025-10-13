@@ -174,7 +174,7 @@ class Request implements RequestInterface
 
     public function method(): string
     {
-        return $_SERVER['REQUEST_METHOD'];
+        return $_SERVER['REQUEST_METHOD'] ?? 'GET';
     }
 
     public function ip(): string

@@ -30,6 +30,7 @@ use PhpSPA\Core\Helper\AssetLinkManager;
  */
 class App extends \PhpSPA\Core\Impl\RealImpl\AppImpl implements
     \PhpSPA\Interfaces\phpSpaInterface {
+
     /**
      * App constructor.
      *
@@ -43,7 +44,7 @@ class App extends \PhpSPA\Core\Impl\RealImpl\AppImpl implements
         Session::start();
         $this->layout = $layout;
         self::$request_uri = urldecode(
-            parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH),
+            parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH),
         );
 
         // Initialize HTML compression based on environment

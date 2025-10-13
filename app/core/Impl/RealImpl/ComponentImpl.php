@@ -102,10 +102,6 @@ abstract class ComponentImpl
     public function method(string $method): self
     {
         $this->method = $method;
-
-        if (strtolower($_SERVER['REQUEST_METHOD']) === 'phpspa_get') {
-            $this->method = $method . '|' . strtoupper('phpspa_get');
-        }
         return $this;
     }
 

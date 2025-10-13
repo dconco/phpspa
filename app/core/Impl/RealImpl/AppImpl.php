@@ -34,8 +34,7 @@ use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  * @var string $request_uri
  * @abstract
  */
-abstract class AppImpl
-{
+abstract class AppImpl {
     use ComponentTagFormatter;
     use \PhpSPA\Core\Utils\Validate;
 
@@ -105,25 +104,25 @@ abstract class AppImpl
      */
     protected array $stylesheets = [];
 
-    public function defaultTargetID(string $targetID): App
+    public function defaultTargetID (string $targetID): App
     {
         $this->defaultTargetID = $targetID;
         return $this;
     }
 
-    public function defaultToCaseSensitive(): App
+    public function defaultToCaseSensitive (): App
     {
         $this->defaultCaseSensitive = true;
         return $this;
     }
 
-    public function attach(Component $component): App
+    public function attach (Component $component): App
     {
         $this->components[] = $component;
         return $this;
     }
 
-    public function detach(Component $component): App
+    public function detach (Component $component): App
     {
         $key = array_search($component, $this->components, true);
 
@@ -133,7 +132,7 @@ abstract class AppImpl
         return $this;
     }
 
-    public function cors(array $data = []): App
+    public function cors (array $data = []): App
     {
         $this->cors = require __DIR__ . '/../../Config/Cors.php';
 
@@ -150,8 +149,10 @@ abstract class AppImpl
         return $this;
     }
 
-    public function run(): void
+    public function run (): void
     {
+        $request = new Request();
+
         if (!headers_sent()) {
             foreach ($this->cors as $key => $value) {
                 $key =
@@ -169,7 +170,7 @@ abstract class AppImpl
         /**
          * Handle preflight requests (OPTIONS method)
          */
-        if (strtolower($_SERVER['REQUEST_METHOD']) === 'options') {
+        if ($request->isMethod('options')) {
             exit();
         }
 
@@ -219,25 +220,24 @@ abstract class AppImpl
                 $m = array_map('strtolower', $m);
 
                 if (
-                    !in_array(strtolower($_SERVER['REQUEST_METHOD']), $m) &&
-                    !in_array('*', $m)
+                !in_array(strtolower($_SERVER['REQUEST_METHOD']), $m) &&
+                !in_array('*', $m)
                 ) {
                     continue;
                 }
-            } else {
+            }
+            else {
                 $router = (new MapRoute())->match($method, $route, $caseSensitive);
                 if (!$router) {
                     continue;
                 } // Skip if no match found
             }
 
-            $request = new Request();
-
             // Clear component scope before each component execution
             ComponentScope::clearAll();
 
             $layoutOutput = is_callable($this->layout) ? (string) call_user_func($this->layout) : $this->layout;
-            
+
             $componentOutput = '';
 
             if ($request->requestedWith() === 'PHPSPA_REQUEST') {
@@ -278,15 +278,18 @@ abstract class AppImpl
                                     'response' => json_encode($res),
                                 ]),
                             );
-                        } else {
+                        }
+                        else {
                             throw new \Exception('Invalid or Expired Token');
                         }
-                    } catch (\Exception $e) {
+                    }
+                    catch ( \Exception $e ) {
                         print_r($e->getMessage());
                     }
                     exit();
                 }
-            } else if ($request->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT') {
+            }
+            else if ($request->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT') {
                 Session::remove(STATE_HANDLE);
                 Session::remove(CALL_FUNC_HANDLE);
             }
@@ -306,25 +309,28 @@ abstract class AppImpl
              */
 
             if (
-                CallableInspector::hasParam($componentFunction, 'path') &&
-                CallableInspector::hasParam($componentFunction, 'request')
+            CallableInspector::hasParam($componentFunction, 'path') &&
+            CallableInspector::hasParam($componentFunction, 'request')
             ) {
                 $componentOutput = call_user_func(
                     $componentFunction,
                     path: $router['params'],
                     request: $request,
                 );
-            } elseif (CallableInspector::hasParam($componentFunction, 'path')) {
+            }
+            elseif (CallableInspector::hasParam($componentFunction, 'path')) {
                 $componentOutput = call_user_func(
                     $componentFunction,
                     path: $router['params'],
                 );
-            } elseif (CallableInspector::hasParam($componentFunction, 'request')) {
+            }
+            elseif (CallableInspector::hasParam($componentFunction, 'request')) {
                 $componentOutput = call_user_func(
                     $componentFunction,
                     request: $request,
                 );
-            } else {
+            }
+            else {
                 $componentOutput = call_user_func($componentFunction);
             }
 
@@ -352,7 +358,8 @@ abstract class AppImpl
                 // Use compressed JSON output
                 print_r(Compressor::compressJson($info));
                 exit(0);
-            } else {
+            }
+            else {
                 // For regular HTML requests, only include component stylesheets with the component content
                 // Component scripts will be injected later to ensure proper execution order
                 $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput;
@@ -362,13 +369,14 @@ abstract class AppImpl
                     $count = 0;
                     $layoutOutput = preg_replace_callback(
                         '/<title([^>]*)>.*?<\/title>/si',
-                        function ($matches) use ($title) {
+                        function ($matches) use ($title)
+                        {
                             // $matches[1] contains any attributes inside the <title> tag
                             return '<title' . $matches[1] . '>' . $title . '</title>';
                         },
                         $layoutOutput,
                         -1,
-                        $count
+                        $count,
                     );
 
                     if ($count === 0) {
@@ -377,7 +385,7 @@ abstract class AppImpl
                             '/<head([^>]*)>/i',
                             "<head$1><title>$title</title>",
                             $layoutOutput,
-                            1
+                            1,
                         );
                     }
 
@@ -386,15 +394,16 @@ abstract class AppImpl
                             '/<html([^>]*)>/i',
                             "<html$1 x-phpspa=\"$nonce\">",
                             $layoutOutput,
-                            1
+                            1,
                         );
                     }
-                } elseif ($nonce) {
+                }
+                elseif ($nonce) {
                     $layoutOutput = preg_replace(
                         '/<head([^>]*)>/i',
                         "<head$1 x-phpspa=\"$nonce\">",
                         $layoutOutput,
-                        1
+                        1,
                     );
                 }
 
@@ -412,7 +421,8 @@ abstract class AppImpl
 
                 $this->renderedData = preg_replace_callback(
                     $tag,
-                    function ($matches) use ($componentOutput, $tt) {
+                    function ($matches) use ($componentOutput, $tt)
+                    {
                         // $matches[1] contains the tag name, $matches[2] contains attributes with the target ID
                         return '<' .
                             $matches[1] .
@@ -452,16 +462,21 @@ abstract class AppImpl
      * @param array $globalStylesheets Array of global stylesheet callables
      * @return array Array with 'component' and 'global' sections, each containing 'scripts' and 'stylesheets' HTML
      */
-    private function generateAssetLinks($route, array $scripts, array $stylesheets, array $globalScripts = [], array $globalStylesheets = []): array
+    private function generateAssetLinks ($route, array $scripts, array $stylesheets, array $globalScripts = [], array $globalStylesheets = []): array
     {
         $request = new Request();
         $isPhpSpaRequest = $request->requestedWith() === 'PHPSPA_REQUEST' || $request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT';
 
         $result = [
-            'component' => ['scripts' => '', 'stylesheets' => ''],
-            'global' => ['scripts' => '', 'stylesheets' => '']
+            'component' => [ 'scripts' => '', 'stylesheets' => '' ],
+            'global' => [ 'scripts' => '', 'stylesheets' => '' ]
         ];
 
+        // Automatically add phpspa script for SPA functionality
+        if (!$isPhpSpaRequest) {
+            $jsLink = AssetLinkManager::generateJsLink("__global__", -1, null);
+            $result['global']['scripts'] .= "\n<script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
+        }
         // Get the primary route for mapping purposes
         $primaryRoute = is_array($route) ? $route[0] : $route;
 
@@ -522,12 +537,13 @@ abstract class AppImpl
      * @param array $assetInfo Asset information from AssetLinkManager
      * @return void
      */
-    private function serveAsset(array $assetInfo): void
+    private function serveAsset (array $assetInfo): void
     {
         // Check if this is a global asset
         if ($assetInfo['componentRoute'] === '__global__') {
             $content = $this->getGlobalAssetContent($assetInfo);
-        } else {
+        }
+        else {
             // Find the component that matches the asset's route
             $component = $this->findComponentByRoute($assetInfo['componentRoute']);
 
@@ -541,7 +557,8 @@ abstract class AppImpl
             if ($assetInfo['assetType'] === 'js') {
                 // For JS, we wrap the content in an IIFE to avoid polluting global scope
                 $content = '(()=>{' . $this->getAssetContent($component, $assetInfo) . '})();';
-            } else {
+            }
+            else {
                 // For CSS, we can serve the content directly
                 $content = $this->getAssetContent($component, $assetInfo);
             }
@@ -576,7 +593,7 @@ abstract class AppImpl
      * @param string $targetRoute The route to search for
      * @return Component|null The component if found, null otherwise
      */
-    private function findComponentByRoute(string $targetRoute): ?Component
+    private function findComponentByRoute (string $targetRoute): ?Component
     {
         foreach ($this->components as $component) {
             $route = CallableInspector::getProperty($component, 'route');
@@ -585,7 +602,8 @@ abstract class AppImpl
                 if (in_array($targetRoute, $route)) {
                     return $component;
                 }
-            } elseif ($route === $targetRoute) {
+            }
+            elseif ($route === $targetRoute) {
                 return $component;
             }
         }
@@ -600,7 +618,7 @@ abstract class AppImpl
      * @param array $assetInfo Asset information
      * @return string|null The asset content if found, null otherwise
      */
-    private function getAssetContent(Component $component, array $assetInfo): ?string
+    private function getAssetContent (Component $component, array $assetInfo): ?string
     {
         if ($assetInfo['assetType'] === 'css') {
             $stylesheets = CallableInspector::getProperty($component, 'stylesheets');
@@ -609,7 +627,8 @@ abstract class AppImpl
             if ($stylesheetCallable && is_callable($stylesheetCallable)) {
                 return call_user_func($stylesheetCallable);
             }
-        } elseif ($assetInfo['assetType'] === 'js') {
+        }
+        elseif ($assetInfo['assetType'] === 'js') {
             $scripts = CallableInspector::getProperty($component, 'scripts');
             $script = $scripts[$assetInfo['assetIndex']] ?? null;
             $scriptCallable = is_array($script) ? $script[0] : $script;
@@ -627,7 +646,7 @@ abstract class AppImpl
      * @param array $assetInfo Asset information
      * @return string|null The asset content if found, null otherwise
      */
-    private function getGlobalAssetContent(array $assetInfo): ?string
+    private function getGlobalAssetContent (array $assetInfo): ?string
     {
         if ($assetInfo['assetType'] === 'css') {
             $stylesheet = $this->stylesheets[$assetInfo['assetIndex']] ?? null;
@@ -635,12 +654,14 @@ abstract class AppImpl
             if ($stylesheetCallable && is_callable($stylesheetCallable)) {
                 return call_user_func($stylesheetCallable);
             }
-        } elseif ($assetInfo['assetType'] === 'js') {
+        }
+        elseif ($assetInfo['assetType'] === 'js') {
             $script = $this->scripts[$assetInfo['assetIndex']] ?? null;
             $scriptCallable = is_array($script) ? $script[0] : $script;
+            $request = new Request();
+
             if ($scriptCallable && is_callable($scriptCallable)) {
                 $content = call_user_func($scriptCallable);
-                $request = new Request();
 
                 if ($request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT') {
                     // Wrap global JS content in an IIFE to avoid polluting global scope
@@ -649,6 +670,10 @@ abstract class AppImpl
 
                 // For non-PHPSPA requests, return raw JS content
                 return $content;
+            }
+
+            if ($assetInfo['assetIndex'] === -1 && $request->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT' && $request->requestedWith() !== 'PHPSPA_REQUEST') {
+                return file_get_contents(__DIR__ . '/../../../../src/script/phpspa.js');
             }
         }
 
@@ -663,7 +688,7 @@ abstract class AppImpl
      * @param int $level Compression level
      * @return string Compressed content
      */
-    private function compressAssetContent(string $content, string $type, int $level): string
+    private function compressAssetContent (string $content, string $type, int $level): string
     {
         if ($type === 'css') {
             // Wrap CSS content in style tags for compression, then extract
@@ -674,7 +699,8 @@ abstract class AppImpl
                 return trim($matches[1]);
             }
             return $content;
-        } elseif ($type === 'js') {
+        }
+        elseif ($type === 'js') {
             // Wrap JS content in script tags for compression, then extract
             $wrappedContent = "<script>$content</script>";
             $compressed = Compressor::compressWithLevel($wrappedContent, $level);
@@ -695,12 +721,13 @@ abstract class AppImpl
      * @param string $content The content to send
      * @return void
      */
-    private function setAssetHeaders(string $type, string $content): void
+    private function setAssetHeaders (string $type, string $content): void
     {
         if (!headers_sent()) {
             if ($type === 'css') {
                 header('Content-Type: text/css; charset=UTF-8');
-            } elseif ($type === 'js') {
+            }
+            elseif ($type === 'js') {
                 header('Content-Type: application/javascript; charset=UTF-8');
             }
 
@@ -717,7 +744,7 @@ abstract class AppImpl
      * @param string $componentScripts Component scripts to inject after global scripts
      * @return string Modified HTML with global assets injected
      */
-    private function injectGlobalAssets(string $html, array $globalAssets, string $componentScripts = ''): string
+    private function injectGlobalAssets (string $html, array $globalAssets, string $componentScripts = ''): string
     {
         $globalStylesheets = $globalAssets['stylesheets'];
         $globalScripts = $globalAssets['scripts'];
@@ -731,7 +758,8 @@ abstract class AppImpl
         if (!empty(trim($globalStylesheets))) {
             if (preg_match('/<\/head>/i', $html)) {
                 $html = preg_replace('/<\/head>/i', "{$globalStylesheets}</head>", $html, 1);
-            } else {
+            }
+            else {
                 // If no head tag, put stylesheets at the beginning
                 $html = "{$globalStylesheets}{$html}";
             }
@@ -744,10 +772,12 @@ abstract class AppImpl
         if (!empty(trim($allScripts))) {
             if (preg_match('/<\/body>/i', $html)) {
                 $html = preg_replace('/<\/body>/i', "{$allScripts}</body>", $html, 1);
-            } elseif (preg_match('/<\/html>/i', $html)) {
+            }
+            elseif (preg_match('/<\/html>/i', $html)) {
                 // If no body tag, try to inject before closing html tag
                 $html = preg_replace('/<\/html>/i', "{$allScripts}</html>", $html, 1);
-            } else {
+            }
+            else {
                 // If neither body nor html tags exist, append at the end
                 $html .= $allScripts;
             }

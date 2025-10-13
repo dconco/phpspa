@@ -2,32 +2,43 @@
 
 use PhpSPA\Component;
 use PhpSPA\Http\Request;
+use PhpSPA\Http\Security\Nonce;
 
 use function Component\import;
 use function Component\createState;
 
 return (new Component(function (Request $request): string {
-    $name = $request('name', 'dconco');
-    $counter = createState('counter', 0);
-    $icon = import(__DIR__ . '/../../docs/img/android-chrome-192x192.png');
+   $name = $request('name', 'dconco');
+	$nonce = Nonce::attr();
+   $counter = createState('counter', 0);
+   $icon = import(__DIR__ . '/../../docs/img/android-chrome-192x192.png');
 
-    return <<<HTML
+   return <<<HTML
 		<div>
 			<img src="" />
 			<p>Welcome to my PHP SPA project! @$name</p>
 			<br />
-			<button id="btn" onclick="setState('counter', $counter + 1)">Counter: $counter</button>
+			<button id="btn">Counter: $counter</button>
 			<Component.Link to="./login#hashID" id="link-elem">GO TO LOGIN</Component.Link>
 			<br />
-			<button onclick="phpspa.navigate('./counter')">Counter</button>
+			<button id="navigate-btn">Counter</button>
 		</div>
+
+		<script $nonce>
+			document.getElementById('btn').onclick = function() {
+				setState('counter', $counter + 1);
+			};
+			document.getElementById('navigate-btn').onclick = function() {
+				phpspa.navigate('./counter');
+			};
+		</script>
 	HTML;
 }))
    ->title('Home Page')
    ->route(['/', '/template'])
 
    ->styleSheet(
-       fn () => <<<CSS
+      fn () => <<<CSS
 			body {
 				background-color: #d9cdcd;
 				font-family: Arial, sans-serif;
@@ -37,7 +48,7 @@ return (new Component(function (Request $request): string {
    )
 
    ->script(
-       fn () => <<<JS
+      fn () => <<<JS
 		  	// Component script - should execute AFTER global script
 		  	console.log('4. HomePage component script executing');
 		  	
