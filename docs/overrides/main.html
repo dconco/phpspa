@@ -1,10 +1,116 @@
 {% extends "base.html" %}
 
 {% block extrahead %}
-  <link rel="icon" href="{{ base_url }}/img/favicon.ico">
-  <link rel="icon" type="image/png" sizes="32x32" href="{{ base_url }}/img/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="{{ base_url }}/img/favicon-16x16.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="{{ base_url }}/img/favicon-16x16.png">
-  <link rel="apple-touch-icon" sizes="192x192" href="{{ base_url }}/img/android-chrome-192x192.png">
-  <meta name="theme-color" content="#2196f3">
+   <link rel="icon" href="{{ base_url }}/img/favicon.ico">
+   <link rel="icon" type="image/png" sizes="32x32" href="{{ base_url }}/img/favicon-32x32.png">
+   <link rel="icon" type="image/png" sizes="16x16" href="{{ base_url }}/img/favicon-16x16.png">
+   <link rel="icon" type="image/png" sizes="16x16" href="{{ base_url }}/img/favicon-16x16.png">
+   <link rel="apple-touch-icon" sizes="192x192" href="{{ base_url }}/img/android-chrome-192x192.png">
+   <meta name="theme-color" content="#764ba2">
+   
+   <style>
+      body {
+         background: linear-gradient(135deg, 
+            rgba(102, 126, 234, 0.15) 0%,
+            rgba(118, 75, 162, 0.05) 25%,
+            rgba(240, 147, 251, 0.03) 50%,
+            rgba(102, 126, 234, 0.05) 75%,
+            rgba(118, 75, 162, 0.03) 100%
+         );
+         background-attachment: fixed;
+         background-size: 400% 400%;
+         animation: gradientShift 15s ease infinite;
+      }
+
+      @keyframes gradientShift {
+         0%, 100% { background-position: 0% 50%; }
+         50% { background-position: 100% 50%; }
+      }
+
+      [data-md-color-scheme="slate"] body {
+         background: linear-gradient(135deg, 
+            rgba(102, 126, 234, 0.08) 0%, 
+            rgba(118, 75, 162, 0.12) 25%,
+            rgba(240, 147, 251, 0.08) 50%,
+            rgba(102, 126, 234, 0.12) 75%,
+            rgba(118, 75, 162, 0.08) 100%
+         );
+      }
+
+      /* Custom Header Styles */
+      .md-header {
+         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+         padding-top: 10px;
+         width: 100%;
+      }
+      
+      .md-header__title {
+         font-weight: 800;
+         font-size: 1.3rem;
+         letter-spacing: -0.02em;
+      }
+      
+      .md-header__button {
+         color: rgba(255, 255, 255, 0.9);
+      }
+      
+      .md-header__button:hover {
+         color: white;
+      }
+      
+      .md-search__input {
+         background-color: rgba(255, 255, 255, 0.15);
+         border: 1px solid rgba(255, 255, 255, 0.2);
+         color: white;
+      }
+      
+      .md-search__input::placeholder {
+         color: rgba(255, 255, 255, 0.7);
+      }
+      
+      .md-search__input:hover {
+         background-color: rgba(255, 255, 255, 0.2);
+      }
+      
+      .md-tabs {
+         width: 100%;
+         padding-bottom: 10px;
+         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .md-tabs__link {
+         font-weight: 500;
+         padding: 5px 10px;
+         opacity: 0.8;
+      }
+      
+      .md-tabs__link:hover {
+         opacity: 1;
+         background: #ffffff16;
+         border-radius: 8px;
+      }
+      
+      .md-tabs__link--active {
+         opacity: 1;
+         font-weight: 600;
+         border-bottom: 2px solid white;
+      }
+      
+      /* Logo/Brand area */
+      .md-header__title .md-header__ellipsis {
+         font-size: 18px;
+         color: f0f0f0;
+      }
+   </style>
+{% endblock %}
+
+{% block announce %}
+   <div style="background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%); padding: 0.6rem 0; text-align: center;">
+      <span style="color: white; font-weight: 500; font-size: 0.9rem;">
+         🎉 PhpSPA - Build React-like UIs in Pure PHP
+         <a href="{{ config.repo_url }}" style="color: white; text-decoration: underline; margin-left: 1rem;">Star on GitHub</a>
+      </span>
+   </div>
 {% endblock %}

@@ -1,59 +1,119 @@
-# Welcome to phpspa! 👋
+---
+hide:
+  - navigation
+  - toc
+---
 
-Ready to build modern, reactive web UIs without leaving the comfort of PHP? You're in the right place.
+<div style="text-align: center; padding: 4rem 2rem 3rem;">
+  <div style="display: inline-block; position: relative;">
+    <h1 style="font-size: 4rem; font-weight: 900; margin: 0; line-height: 1.2;">
+      <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: inline-block;">
+        PhpSPA
+      </span>
+      <span style="font-size: 3rem; display: inline-block; animation: wave 2s ease-in-out infinite;">👋</span>
+    </h1>
+  </div>
+  <p style="font-size: 1.75rem; color: var(--md-default-fg-color--light); max-width: 700px; margin: 1.5rem auto 0; font-weight: 500; line-height: 1.6;">
+    Ready to build modern, reactive web UIs without leaving the comfort of PHP? <span style="color: var(--md-primary-fg-color); font-weight: 600;">You're in the right place.</span>
+  </p>
+</div>
 
-`phpspa` is a **component-based library** that brings the power and syntax of React to your PHP workflow. You build small, reusable components, and the library handles the magic of rendering them and updating the UI when their state changes.
+<style>
+@keyframes wave {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(20deg); }
+  75% { transform: rotate(-20deg); }
+}
+</style>
 
-This documentation is designed to be fast and straight to the point. No long stories, just code. Let's dive in and start building something awesome. 🚀
-
-Got it. An installation guide is the perfect next step.
-
-Here is the documentation page for **Installation**.
-
------
-
-## 🚀 Installation
-
-Getting `phpspa` up and running is simple. You have two options: use our pre-configured template for a new project, or install the library into an existing one.
+!!! tip "What is PhpSPA?"
+    PhpSPA is a **component-based library** that brings the power and syntax of React to your PHP workflow. You build small, reusable components, and the library handles the magic of rendering them and updating the UI when their state changes.
 
 ---
 
-### Using the Template (Recommended)
+## :rocket: Quick Start
 
-This is the quickest way to start a new project. It sets up the entire project structure for you.
+<div class="grid cards" markdown>
 
-**Step 1: Create the Project**
+-   :material-download: **Installation**
 
-Run the following command to clone the template into a new directory.
+    ---
 
-```bash
-composer create-project phpspa/phpspa my-app
-```
+    Get started with PhpSPA in seconds using Composer
 
-**Step 2: Navigate to Your Project**
+    [:octicons-arrow-right-24: Install Now](installation.md)
 
-```bash
-cd my-app
-```
+-   :material-code-braces: **Core Concepts**
 
-**Step 3: Start the Development Server**
+    ---
 
-The template comes with a built-in PHP development server.
+    Learn the fundamentals of App and Component
 
-```bash
-composer start
-```
+    [:octicons-arrow-right-24: Learn Basics](core-concepts-app-and-component.md)
 
-That's it\! Your `phpspa` application is now running and ready for you to start building. ✨
+-   :material-routes: **Routing**
 
------
+    ---
 
-### Starting From Scratch
+    Master dynamic routing and navigation
 
-If you want to integrate `phpspa` into an existing project, you can install it directly with Composer.
+    [:octicons-arrow-right-24: Explore Routing](defining-routes.md)
 
-```bash
-composer require dconco/phpspa
-```
+-   :material-state-machine: **State Management**
 
-You will then need to set up your own layout and `index.php` file to initialize the `App` class.
+    ---
+
+    Build reactive UIs with useState and useEffect
+
+    [:octicons-arrow-right-24: Manage State](managing-state-with-usestate.md)
+
+</div>
+
+---
+
+## :sparkles: Key Features
+
+=== "Component-Based"
+
+    Build your UI with small, reusable components just like React
+    
+    ```php
+    function Button() {
+       return <<<HTML
+         <button>Click Me</button>
+       HTML;
+    }
+    ```
+
+=== "Reactive State"
+
+    Components automatically re-render when state changes
+    
+    ```php
+    $count = useState('count', 0);
+    return "<button onclick='setState(\"count\", {$count} + 1)'>
+       Count: {$count}
+    </button>";
+    ```
+
+=== "Client-Side Routing"
+
+    Navigate between pages without full page reloads
+    
+    ```php
+    <Component.Link to="/about">About</Component.Link>
+    ```
+
+=== "PHP Functions from JS"
+
+    Call PHP functions directly from JavaScript without APIs
+    
+    ```php
+    $greeter = useFunction(fn($name) => "Hello, $name!");
+    const greeting = await {$greeter('name')};
+    ```
+
+---
+
+!!! info "Documentation Overview"
+    This documentation is designed to be **fast and straight to the point**. No long stories, just code. Let's dive in and start building something awesome. 🚀

@@ -1,9 +1,9 @@
-site_name: PhpSPA Documentation
+site_name: PhpSPA
 site_description: A component-based library for building modern, reactive user interfaces in pure PHP. Inspired by React. ✨
 site_author: Dave Conco
 site_url: https://phpspa.readthedocs.io
 
-# Repository (replace with your repo)
+# Repository
 repo_name: dconco/phpspa
 repo_url: https://github.com/dconco/phpspa
 edit_uri: edit/dev/docs/
@@ -12,22 +12,29 @@ edit_uri: edit/dev/docs/
 theme:
    name: material
    custom_dir: docs/overrides/
+   logo: img/phpspa-logo.png
+   favicon: img/favicon.ico
    palette:
       # Light mode
       - scheme: default
-        primary: blue
-        accent: indigo
+        primary: deep purple
+        accent: purple
         toggle:
            icon: material/brightness-7
            name: Switch to dark mode
       # Dark mode
       - scheme: slate
-        primary: blue
-        accent: indigo
+        primary: deep purple
+        accent: purple
         toggle:
-           icon: material/brightness-5
+           icon: material/brightness-4
            name: Switch to light mode
    features:
+      - announce.dismiss
+      - navigation.instant
+      - navigation.instant.prefetch
+      - navigation.instant.progress
+      - navigation.tracking
       - navigation.tabs
       - navigation.tabs.sticky
       - navigation.sections
@@ -48,6 +55,7 @@ theme:
       - content.tabs.link
       - toc.follow
       - toc.integrate
+      - header.autohide
    font:
       text: Inter
       code: JetBrains Mono
@@ -56,6 +64,8 @@ theme:
       repo: fontawesome/brands/github
       edit: material/pencil
       view: material/eye
+      tag:
+         default: octicons/tag-24
 
 # Enhanced Markdown extensions
 markdown_extensions:
@@ -111,6 +121,37 @@ markdown_extensions:
 # Navigation structure
 nav:
    - Home: index.md
+   - Getting Started:
+      - Installation: installation.md
+      - Core Concepts: core-concepts-app-and-component.md
+      - The Layout: layout.md
+   - Routing:
+      - Defining Routes: defining-routes.md
+      - Advanced Routing: advanced-routing.md
+      - Setting Page Title: setting-the-page-title.md
+   - Components:
+      - The Power of Components: the-power-of-components.md
+      - Advanced Component Patterns: advanced-component-patterns.md
+   - Navigation:
+      - Link Component: client-side-navigation-the-link-component.md
+      - Programmatic Navigation: programmatic-navigation-with-navigate.md
+   - State Management:
+      - Managing State with useState: managing-state-with-usestate.md
+      - Updating State Arrays: updating-state-of-mapped-arrays.md
+      - Side Effects with useEffect: handling-side-effects-with-useeffect.md
+   - Request Handling:
+      - Handling Requests & Sessions: handling-requests-and-sessions.md
+      - Calling PHP from JavaScript: calling-php-from-javascript-usefunction.md
+      - Client-Side Events & API: client-side-events-and-api.md
+      - Auto-Reloading Components: auto-reloading-components.md
+      - API Authentication: api-authentication.md
+      - The Request Object: request-object-in-depth.md
+   - Security:
+      - CSRF Protection: csrf-protection.md
+      - Content Security Policy: security-content-security-policy.md
+   - Performance & Assets:
+      - HTML Compression: performance-html-compression.md
+      - Managing Styles & Scripts: managing-styles-and-scripts.md
 
 # Enhanced plugins
 plugins:
@@ -122,9 +163,9 @@ plugins:
         minify_css: true
         htmlmin_opts:
            remove_comments: true
-   - git-revision-date-localized:
-        enable_creation_date: true
-        type: timeago
+   # - git-revision-date-localized:
+   #      enable_creation_date: true
+   #      type: timeago
 
 # Extra configuration
 extra:

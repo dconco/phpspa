@@ -1,6 +1,6 @@
 ## Defining Routes
 
-Routing is how you tell `phpspa` which component to show for a specific URL. This is done with the `->route()` method.
+Routing is how you tell PhpSPA which component to show for a specific URL. This is done with the `->route()` method.
 
 You create a component for each page of your site and assign it a unique URL path.
 
@@ -38,4 +38,4 @@ $app->attach($aboutPage);
 $app->run();
 ```
 
-That's it. When a user visits your site at `/about`, `phpspa` will automatically render the `$aboutPage` component.
+That's it. When a user visits your site at `/about`, PhpSPA will automatically render the `$aboutPage` component.

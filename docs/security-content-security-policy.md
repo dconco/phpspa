@@ -1,6 +1,6 @@
 ## Security: Content Security Policy (CSP)
 
-To protect your application from Cross-Site Scripting (XSS) attacks, `phpspa` includes a simple helper for implementing a **nonce-based Content Security Policy**. This ensures that only the inline scripts and styles you've authorized can be executed by the browser.
+To protect your application from Cross-Site Scripting (XSS) attacks, PhpSPA includes a simple helper for implementing a **nonce-based Content Security Policy**. This ensures that only the inline scripts and styles you've authorized can be executed by the browser.
 
 -----
 
@@ -40,30 +40,30 @@ This is typically done in your main Layout file.
 use phpSPA\Http\Security\Nonce;
 
 function Layout() {
-    // Get the nonce attribute string
-    $nonce = Nonce::attr();
+   // Get the nonce attribute string
+   $nonce = Nonce::attr();
 
-    return <<<HTML
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>My Secure App</title>
+   return <<<HTML
+      <!DOCTYPE html>
+      <html>
+      <head>
+         <title>My Secure App</title>
 
-            <!-- Apply the nonce to the style tag -->
-            <style {$nonce}>
-                body { font-family: sans-serif; }
-            </style>
-        </head>
-        <body>
-            <div id="app"></div>
+         <!-- Apply the nonce to the style tag -->
+         <style {$nonce}>
+            body { font-family: sans-serif; }
+         </style>
+      </head>
+      <body>
+         <div id="app"></div>
 
-            <!-- Apply the nonce to the script tag -->
-            <script {$nonce}>
-                console.log('This script is allowed to run!');
-            </script>
-        </body>
-        </html>
-    HTML;
+         <!-- Apply the nonce to the script tag -->
+         <script {$nonce}>
+            console.log('This script is allowed to run!');
+         </script>
+      </body>
+      </html>
+   HTML;
 }
 ```
 

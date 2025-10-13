@@ -13,12 +13,12 @@ Instead of checking `post()`, `get()`, and `json()` separately, you can use the 
 use phpSPA\Http\Request;
 
 function SearchHandler(Request $request) {
-    // This will get the 'term' value whether it comes from
-    // a GET query string (?term=...) or a POST form field.
-    $searchTerm = $request('term');
+   // This will get the 'term' value whether it comes from
+   // a GET query string (?term=...) or a POST form field.
+   $searchTerm = $request('term');
 
-    // ... perform search logic ...
-    return "<p>Showing results for: <strong>{$searchTerm}</strong></p>";
+   // ... perform search logic ...
+   return "<p>Showing results for: <strong>{$searchTerm}</strong></p>";
 }
 ```
 
@@ -38,24 +38,24 @@ Accessing uploaded files is simple with the `->files()` method.
 use phpSPA\Http\Request;
 
 function ProfileUpload(Request $request) {
-    if ($request->isMethod('POST')) {
-        $avatarFile = $request->files('avatar');
+   if ($request->isMethod('POST')) {
+      $avatarFile = $request->files('avatar');
 
-        if ($avatarFile && $avatarFile['error'] === UPLOAD_ERR_OK) {
-            // A file was successfully uploaded
-            $tmpName = $avatarFile['tmp_name'];
-            $fileName = basename($avatarFile['name']);
-            move_uploaded_file($tmpName, "uploads/{$fileName}");
+      if ($avatarFile && $avatarFile['error'] === UPLOAD_ERR_OK) {
+         // A file was successfully uploaded
+         $tmpName = $avatarFile['tmp_name'];
+         $fileName = basename($avatarFile['name']);
+         move_uploaded_file($tmpName, "uploads/{$fileName}");
 
-            return "<p>File uploaded successfully!</p>";
-        }
-    }
+         return "<p>File uploaded successfully!</p>";
+      }
+   }
 
-    return <<<HTML
-        <form method="POST" enctype="multipart/form-data">
-            <input type="file" name="avatar">
-            <button type="submit">Upload</button>
-        </form>
-    HTML;
+   return <<<HTML
+      <form method="POST" enctype="multipart/form-data">
+         <input type="file" name="avatar">
+         <button type="submit">Upload</button>
+      </form>
+   HTML;
 }
 ```

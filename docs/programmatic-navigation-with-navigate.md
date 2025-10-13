@@ -2,7 +2,7 @@
 
 While `<Component.Link />` is perfect for user-driven navigation, you'll sometimes need to redirect a user automatically based on some logic (e.g., after a form submission).
 
-For this, use the `<Component.Navigate />` component. When `phpspa` renders this component, it triggers an immediate, client-side redirect without a full page reload.
+For this, use the `<Component.Navigate />` component. When PhpSPA renders this component, it triggers an immediate, client-side redirect without a full page reload.
 
 -----
 
@@ -15,24 +15,24 @@ Simply render the component with a `path` prop. The redirect will happen as soon
 use phpSPA\Http\Request;
 
 function LoginPage(Request $request) {
-    $isLoggedIn = false;
-    if ($request->isMethod('POST')) {
-        // ... validate user credentials ...
-        if ($credentialsAreValid) {
-            $isLoggedIn = true;
-        }
-    }
+   $isLoggedIn = false;
+   if ($request->isMethod('POST')) {
+      // ... validate user credentials ...
+      if ($credentialsAreValid) {
+         $isLoggedIn = true;
+      }
+   }
 
-    // Conditionally render the Navigate component or the login form
-    if ($isLoggedIn) {
-        return '<Component.Navigate path="/dashboard" />';
-    }
+   // Conditionally render the Navigate component or the login form
+   if ($isLoggedIn) {
+      return '<Component.Navigate path="/dashboard" />';
+   }
 
-    return <<<HTML
-        <form method="POST">
-            ...
-        </form>
-    HTML;
+   return <<<HTML
+      <form method="POST">
+         ...
+      </form>
+   HTML;
 }
 ```
 
@@ -52,7 +52,7 @@ The `Maps` component takes a `state` prop to control how it interacts with the b
 // Inside your component logic...
 
 if ($isLoggedIn) {
-    // Replace the login page in history so the user can't go back.
-    return '<Component.Navigate path="/dashboard" state="replace" />';
+   // Replace the login page in history so the user can't go back.
+   return '<Component.Navigate path="/dashboard" state="replace" />';
 }
 ```

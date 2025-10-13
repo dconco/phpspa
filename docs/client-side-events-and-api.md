@@ -1,0 +1,66 @@
+## Client-Side Events & API
+
+PhpSPA provides a powerful client-side API to hook into the navigation lifecycle and control the application's behavior directly from your JavaScript. This is essential for creating features like loading indicators, animations, and handling navigation errors.
+
+-----
+
+### Listening to Navigation Events
+
+You can listen to navigation events using `phpspa.on()`. This is perfect for showing or hiding a loading spinner.
+
+**1. `beforeload`**
+
+This event fires **before** a new page request is made. It receives the destination `route` as an argument.
+
+```javascript
+phpspa.on('beforeload', ({ route }) => {
+   console.log(`Navigating to: ${route}`);
+   // Show your loading spinner here
+   document.getElementById('loader').style.display = 'block';
+});
+```
+
+**2. `load`**
+
+This event fires **after** a page request completes, whether it was successful or not. It receives an object with the status.
+
+  * **On Success:** `{ route, success: true, error: false }`
+  * **On Failure:** `{ route, success: false, error: 'Error message', data?: ... }`
+
+<!-- end list -->
+
+```javascript
+phpspa.on('load', ({ route, success, error, data }) => {
+   // Hide your loading spinner here
+   document.getElementById('loader').style.display = 'none';
+
+   if (!success) {
+      console.error(`Failed to load route: ${route}`, error);
+      // You could show an error message to the user here
+   }
+});
+```
+
+-----
+
+### Client-Side API Functions
+
+The PhpSPA object also provides several utility functions to control your application.
+
+  * **`phpspa.back()` & `phpspa.forward()`** ⬅️➡️
+   Navigate backward or forward in the browser's session history.
+
+  * **`phpspa.reload()`** 🔄
+   Performs a "soft" reload of the current page by re-fetching the component's content without a full browser refresh.
+
+  * **`phpspa.reloadComponent()`**
+   A more granular reload that only refreshes the content of the currently active component. This is useful for live data updates.
+
+  * **`phpspa.setState(key, value)`**
+   The same as the global `setState()` function. It updates a state variable and returns a **promise** that resolves when the re-render is complete.
+
+   ```javascript
+   setState('counter', 5).then(() => {
+      console.log('Counter has been updated and the component has re-rendered!');
+   });
+   ```
