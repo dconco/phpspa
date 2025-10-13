@@ -188,9 +188,8 @@ function base64ToUtf8(str) {
             document.startViewTransition(updateDOM).finished.then(completedDOMUpdate).catch((reason) => {
                RuntimeManager.emit('load', {
                   route: location.href,
-                  message: reason,
                   success: false,
-                  error: true,
+                  error: reason || 'Unknown error during view transition',
                });
             });
          } else {
@@ -420,10 +419,9 @@ class phpspa {
          if (document.startViewTransition) {
             document.startViewTransition(updateDOM).finished.then(completedDOMUpdate).catch((reason) => {
                RuntimeManager.emit('load', {
-                  route: location.href,
-                  message: reason,
+                  route: url,
                   success: false,
-                  error: true,
+                  error: reason || 'Unknown error during view transition',
                });
             });
          } else {

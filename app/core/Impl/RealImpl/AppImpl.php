@@ -50,7 +50,7 @@ abstract class AppImpl {
      *
      * @var string
      */
-    private string $defaultTargetID;
+    private string $defaultTargetID = 'app';
 
     /**
      * Stores the list of application components.

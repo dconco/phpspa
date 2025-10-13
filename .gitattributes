@@ -1,10 +1,20 @@
+# Ignore build directories and documentation
+build/ export-ignore
 dist/ export-ignore
+
+# Ignore template and documentation directories
 template/ export-ignore
 docs/ export-ignore
+
+# Ignore configuration and documentation files
 mkdocs.yml export-ignore
 requirements.txt export-ignore
 .readthedocs.yaml export-ignore
+
+# Ignore development and environment files
 TODO.md export-ignore
 .gitignore export-ignore
 .gitattributes export-ignore
-RELEASE_NOTES_v1.1.8.md export-ignore
+
+# Ignore test directories
+tests/ export-ignore

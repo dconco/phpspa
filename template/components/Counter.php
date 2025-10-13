@@ -27,16 +27,17 @@ return (new Component(function (): string
 {
    $caller = useFunction('HelloWorld');
    $counter = useState('counter', 0);
-   $newMsg = '';
+   $message = useState('message', 'Waiting for an update...');
 
-   useEffect(function () use ($counter, &$newMsg)
+   useEffect(function () use ($counter, &$message)
    {
       $newCounter = $counter() + 1;
       $name = [ 'Dave', 'John', 'Jane' ][array_rand([ 'Dave', 'John', 'Jane' ])];
-      $newMsg = "Counter updated to: $counter but changed to $newCounter by $name";
-
+      $newMsg = "Counter updated to: $counter but the effect changed it to $newCounter by $name";
+      
+      $message($newMsg);
       $counter($newCounter);
-   }, [ [], $counter ]);
+   }, [ $counter ]);
 
    // 1. Define all your private components
    $Button = fn ($counter) => <<<HTML
@@ -44,7 +45,7 @@ return (new Component(function (): string
          Clicks: {$counter}
       </button>
       <br />
-      <span style="color: green;">{$newMsg}</span>
+      <span style="color: green;">{$message}</span>
       HTML;
 
    // 2. Register them all in one go using compact()
