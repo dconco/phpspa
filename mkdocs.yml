@@ -135,13 +135,13 @@ nav:
    - Navigation:
       - Link Component: client-side-navigation-the-link-component.md
       - Programmatic Navigation: programmatic-navigation-with-navigate.md
-   - State Management:
-      - Managing State with useState: managing-state-with-usestate.md
+   - PhpSPA Hooks:
+      - useState Hook: managing-state-with-usestate.md
       - Updating State Arrays: updating-state-of-mapped-arrays.md
-      - Side Effects with useEffect: handling-side-effects-with-useeffect.md
+      - useEffect Hook: handling-side-effects-with-useeffect.md
+      - useFunction Hook: calling-php-from-javascript-usefunction.md
    - Request Handling:
       - Handling Requests & Sessions: handling-requests-and-sessions.md
-      - Calling PHP from JavaScript: calling-php-from-javascript-usefunction.md
       - Client-Side Events & API: client-side-events-and-api.md
       - Auto-Reloading Components: auto-reloading-components.md
       - API Authentication: api-authentication.md

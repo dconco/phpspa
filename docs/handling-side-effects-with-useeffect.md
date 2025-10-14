@@ -15,6 +15,7 @@ The most common use case is to run code whenever a specific piece of state chang
 
 ```php
 <?php
+
 use function Component\useState;
 use function Component\useEffect;
 
@@ -50,6 +51,8 @@ The second argument to `useEffect` is the dependency array. It tells PhpSPA **wh
     Provide an array of state variables. The effect will run on the initial render and then again anytime one of those variables changes.
 
     ```php
+    <?php
+
     useEffect($myCallback, [$stateA, $stateB]);
     ```
 
@@ -58,6 +61,8 @@ The second argument to `useEffect` is the dependency array. It tells PhpSPA **wh
     Provide an **empty array `[]`**. The effect will only run once when the component is first loaded. This is perfect for initial setup tasks, like fetching data from an API.
 
     ```php
+    <?php
+
     useEffect(function () use (&$script) {
        // This runs only once.
        $script = "<script>console.log('Component has loaded!')</script>";
@@ -75,6 +80,7 @@ In this example, when the counter changes, the effect calculates a new value and
 
 ```php
 <?php
+
 function EffectExample() {
    $counter = useState('counter', 0);
    $message = useState('message', 'Waiting for an update...');
