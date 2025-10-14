@@ -16,8 +16,8 @@ Each page in your application should have a unique and descriptive title. PhpSPA
 
 ```php
 <?php
-use phpSPA\App;
-use phpSPA\Component;
+use PhpSPA\App;
+use PhpSPA\Component;
 
 // Assume our app and layout are set up
 $app = new App($layout);

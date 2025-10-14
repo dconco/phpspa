@@ -1,12 +1,15 @@
-## Updating State of Mapped Arrays
+# Updating State of Mapped Arrays
+
+<style>
+code { background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); padding: 2px 6px; border-radius: 3px; }
+</style>
 
 State becomes truly useful when you modify it based on user actions, like clicking a button. This is done using the client-side `setState()` function.
 
-You can update state in two primary ways: a quick inline method for simple changes, and a more robust script-based method for complex logic.
+!!! info "Two Approaches"
+    You can update state in two primary ways: a quick inline method for simple changes, and a more robust script-based method for complex logic.
 
------
-
-### The Direct Way: Inline Updates
+## The Direct Way: Inline Updates
 
 For simple actions like adding a new item to a list, you can call `setState()` directly within an HTML attribute like `onclick`.
 
@@ -38,9 +41,10 @@ function TodoList() {
 }
 ```
 
------
+!!! tip "Spread Syntax"
+    This approach uses the **JavaScript spread syntax (`...`)** to create a new array that includes all the old items plus the new one.
 
-### The Customizable Way: Using a Script
+## The Customizable Way: Using a Script
 
 When your update logic is more complex (e.g., reading from input fields), it's cleaner to use a dedicated JavaScript function.
 
@@ -81,3 +85,6 @@ function TodoList() {
    HTML;
 }
 ```
+
+!!! success "Complex Logic"
+    First, pass your initial state to a JavaScript variable. Then, you can manipulate this variable with standard JavaScript before calling `setState()` with the final data.

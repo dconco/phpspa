@@ -1,43 +1,45 @@
-## Performance: HTML Compression
+# Performance: HTML Compression
+
+<style>
+code { background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); padding: 2px 6px; border-radius: 3px; }
+</style>
 
 To ensure your application is as fast as possible, PhpSPA includes a powerful, built-in HTML compressor. It automatically minifies your final HTML output by removing whitespace, comments, and other unnecessary characters, which reduces the page size and leads to faster load times. ⚡
 
-By default, PhpSPA tries to auto-detect the best settings. However, you can take full control for fine-tuned performance.
+!!! info "Auto-Detection"
+    By default, PhpSPA tries to auto-detect the best settings. However, you can take full control for fine-tuned performance.
 
------
-
-### Environment-Based Configuration (Recommended)
+## Environment-Based Configuration (Recommended)
 
 The easiest way to manage compression is to set the application's environment. PhpSPA will then apply a sensible preset for you.
 
-  * `development`: Compression is disabled to make debugging easier.
-  * `production`: A high level of compression is enabled for maximum performance.
+=== "development"
 
-<!-- end list -->
+    Compression is disabled to make debugging easier.
 
-```php
-<?php
-use phpSPA\App;
-use phpSPA\Compression\Compressor;
+    ```php
+    $app->compressionEnvironment(Compressor::ENV_DEVELOPMENT);
+    ```
 
-$app = new App($layout);
+=== "production"
 
-// Set the environment to automatically configure compression
-$app->compressionEnvironment(Compressor::ENV_PRODUCTION);
-```
+    A high level of compression is enabled for maximum performance.
 
------
+    ```php
+    $app->compressionEnvironment(Compressor::ENV_PRODUCTION);
+    ```
 
-### Manual Compression Control
+!!! tip "Environment Presets"
+    Set the environment to automatically configure compression with sensible defaults.
+
+## Manual Compression Control
 
 For more granular control, you can manually set the compression level and enable or disable Gzip.
 
-There are several levels available, from basic to extreme.
-
 ```php
 <?php
-use phpSPA\App;
-use phpSPA\Compression\Compressor;
+use PhpSPA\App;
+use PhpSPA\Compression\Compressor;
 
 $app = new App($layout);
 
@@ -45,9 +47,10 @@ $app = new App($layout);
 $app->compression(Compressor::LEVEL_EXTREME, true);
 ```
 
-#### Available Levels:
-
-  * **`Compressor::LEVEL_NONE`**: No compression is applied.
-  * **`Compressor::LEVEL_BASIC`**: Removes comments and basic whitespace.
-  * **`Compressor::LEVEL_AGGRESSIVE`**: Performs more intense whitespace removal.
-  * **`Compressor::LEVEL_EXTREME`**: Applies the most aggressive minification for the smallest possible file size.
+!!! success "Compression Levels"
+    There are several levels available, from basic to extreme:
+    
+    - **`Compressor::LEVEL_NONE`**: No compression is applied
+    - **`Compressor::LEVEL_BASIC`**: Removes comments and basic whitespace
+    - **`Compressor::LEVEL_AGGRESSIVE`**: Performs more intense whitespace removal
+    - **`Compressor::LEVEL_EXTREME`**: Applies the most aggressive minification for the smallest possible file size

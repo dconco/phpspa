@@ -1,12 +1,15 @@
-## API Authentication
+# API Authentication
+
+<style>
+code { background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); padding: 2px 6px; border-radius: 3px; }
+</style>
 
 PhpSPA isn't just for rendering HTML. You can easily create secure API endpoints by creating components that return JSON. The `Request` object has built-in helpers to make checking for authentication credentials simple and clean.
 
-This is perfect for when your frontend needs to fetch data from a secure source.
+!!! info "Secure APIs"
+    This is perfect for when your frontend needs to fetch data from a secure source.
 
------
-
-### API Key Authentication
+## API Key Authentication
 
 A common method for securing an API is to require an API key in the request headers. The `$request->apiKey()` method makes this easy to check.
 
@@ -14,8 +17,8 @@ By default, it looks for the key in the `Api-Key` header.
 
 ```php
 <?php
-use phpSPA\Component;
-use phpSPA\Http\Request;
+use PhpSPA\Component;
+use PhpSPA\Http\Request;
 
 $userDataApi = new Component(function (Request $request) {
    // 1. Validate the API key.
@@ -36,16 +39,17 @@ $userDataApi = new Component(function (Request $request) {
 $userDataApi->route('/api/user');
 ```
 
------
+!!! tip "Default Header"
+    By default, it looks for the key in the `Api-Key` header.
 
-### HTTP Basic & Bearer Token Authentication
+## HTTP Basic & Bearer Token Authentication
 
 For more standard authentication methods, the `$request->auth()` method is your go-to tool. It automatically parses the `Authorization` header and gives you access to both **Basic** and **Bearer** token credentials.
 
 ```php
 <?php
-use phpSPA\Component;
-use phpSPA\Http\Request;
+use PhpSPA\Component;
+use PhpSPA\Http\Request;
 
 $secureDataApi = new Component(function (Request $request) {
    $auth = $request->auth();
@@ -75,3 +79,6 @@ $secureDataApi = new Component(function (Request $request) {
 
 $secureDataApi->route('/api/secure-data');
 ```
+
+!!! success "Authentication Methods"
+    Support both Bearer tokens (commonly used with JWTs) and HTTP Basic authentication with a single method.

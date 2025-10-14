@@ -13,7 +13,7 @@ PhpSPA's router is more than just static paths. It provides a powerful set of fe
 
 ```php
 <?php
-use phpSPA\Component;
+use PhpSPA\Component;
 
 $userProfile = new Component(function (array $path) {
    // The 'id' from the URL is available in the $path array

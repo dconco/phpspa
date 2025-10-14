@@ -1,10 +1,15 @@
-## Handling Requests & Sessions
+# Handling Requests & Sessions
+
+<style>
+code { background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); padding: 2px 6px; border-radius: 3px; }
+</style>
 
 Your components often need to process incoming data, like form submissions or API calls. PhpSPA provides a clean, object-oriented way to access request data.
 
-When a component is rendered, it can receive the current `Request` object as an argument.
+!!! info "Request Object"
+    When a component is rendered, it can receive the current `Request` object as an argument.
 
-### Accessing Request Data
+## Accessing Request Data
 
 The `Request` object is a powerful wrapper around PHP's superglobals (`$_POST`, `$_GET`, `$_FILES`, etc.), making your code cleaner and more secure.
 
@@ -38,25 +43,42 @@ $loginPage = new Component(function (Request $request) {
 $loginPage->route('/login')->method('GET|POST');
 ```
 
-The `Request` object has many other useful methods:
+!!! tip "Request Methods"
+    The `Request` object has many other useful methods:
+    
+    - `$request->get('key')`: Get a URL query parameter
+    - `$request->json('key')`: Get data from a JSON request body
+    - `$request->files('avatar')`: Access uploaded file data
+    - `$request->header('Authorization')`: Read a request header
+    - `$request->ip()`: Get the client's IP address
+    - `$request->isAjax()`: Check if it's an AJAX request
 
-  * `$request->get('key')`: Get a URL query parameter.
-  * `$request->json('key')`: Get data from a JSON request body.
-  * `$request->files('avatar')`: Access uploaded file data.
-  * `$request->header('Authorization')`: Read a request header.
-  * `$request->ip()`: Get the client's IP address.
-  * `$request->isAjax()`: Check if it's an AJAX request.
-
-### Redirects & Session Management
+## Redirects & Session Management
 
 `PhpSPA` also includes helpers for common actions.
 
-  * **Redirecting:** Use the global `Redirect()` function to send the user to a new page.
-  * **Sessions:** Use the static `Session` class to manage user data across requests.
+=== "Redirecting"
 
-<!-- end list -->
+    Use the global `Redirect()` function to send the user to a new page.
 
-```php
+    ```php
+    use function PhpSPA\Http\Redirect;
+    
+    Redirect('/dashboard');
+    ```
+
+=== "Sessions"
+
+    Use the static `Session` class to manage user data across requests.
+
+    ```php
+    use PhpSPA\Http\Session;
+    
+    Session::set('user_id', 123);
+    $userId = Session::get('user_id');
+    ```
+
+!!! example "Login Handler"
 <?php
 
 use PhpSPA\Http\Request;
@@ -74,7 +96,7 @@ function handleLogin(Request $request) {
 }
 ```
 
-### Content Security Policy (CSP)
+## Content Security Policy (CSP)
 
 For added security, you can easily enable a nonce-based Content Security Policy to protect against XSS attacks.
 
@@ -94,3 +116,6 @@ echo <<<HTML
    </script>
 HTML;
 ```
+
+!!! success "Security Best Practice"
+    The nonce attribute ensures only authorized inline scripts can execute, protecting against XSS attacks.

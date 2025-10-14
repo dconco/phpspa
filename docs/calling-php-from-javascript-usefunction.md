@@ -1,17 +1,22 @@
-## Calling PHP from JavaScript (`useFunction`)
+# Calling PHP from JavaScript (`useFunction`)
+
+<style>
+code { background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); padding: 2px 6px; border-radius: 3px; }
+</style>
 
 Often, you need to run PHP logic—like saving to a database—without a full page reload. The `useFunction` hook makes this simple without creating separate API routes.
 
-It securely exposes a PHP function so your client-side JavaScript can call it directly.
+!!! info "Secure Bridge"
+    It securely exposes a PHP function so your client-side JavaScript can call it directly.
 
-### Example: A Simple Greeter Form
+## Example: A Simple Greeter Form
 
 Let's build a form where a user enters their name, and the server sends back a personalized greeting.
 
 ```php
 <?php
 
-use phpSPA\Component;
+use PhpSPA\Component;
 use function Component\useFunction;
 
 $greeterPage = new Component(function () {
@@ -50,8 +55,8 @@ $greeterPage = new Component(function () {
 $greeterPage->route('/greeter');
 ```
 
-### How It Works
+!!! tip "How It Works"
+    When you echo the `$greeter('name')` object, it generates a JavaScript snippet like `phpspa.__call('some-secure-token', name)`. The arguments you pass to the caller in PHP are inserted directly as JavaScript expressions.
 
-When you echo the `$greeter('name')` object, it generates a JavaScript snippet like `phpspa.__call('some-secure-token', name)`. The arguments you pass to the caller in PHP are inserted directly as JavaScript expressions.
-
-The `phpspa.js` library handles the secure AJAX request and returns the exact data from your PHP function (string, array, object, etc.) as a JavaScript promise.
+!!! success "Return Values"
+    The `phpspa.js` library handles the secure AJAX request and returns the exact data from your PHP function (string, array, object, etc.) as a JavaScript promise.

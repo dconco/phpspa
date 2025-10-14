@@ -1,10 +1,15 @@
-## CSRF Protection
+# CSRF Protection
+
+<style>
+code { background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); padding: 2px 6px; border-radius: 3px; }
+</style>
 
 Cross-Site Request Forgery (CSRF) is a common web security vulnerability. PhpSPA provides a simple and powerful way to protect your forms from these attacks, ensuring that submitted data comes from your actual site and not a malicious one.
 
------
+!!! info "Security Layer"
+    CSRF protection validates that form submissions originate from your site, not from external malicious sources.
 
-### Protecting Forms with the `Csrf` Component
+## Protecting Forms with the `Csrf` Component
 
 The easiest way to add CSRF protection is by using the built-in `<Component.Csrf />` component inside your forms.
 
@@ -26,15 +31,16 @@ function ContactForm() {
 }
 ```
 
------
+!!! tip "Unique Names"
+    You must give it a unique `name` prop for each form to prevent token conflicts.
 
-### Verifying the Token
+## Verifying the Token
 
 On the server-side, you instantiate the `Csrf` class with the **same form name** and call the `verify()` method.
 
 ```php
 <?php
-use phpSPA\Http\Request;
+use PhpSPA\Http\Request;
 use Component\Csrf;
 
 function handleContactSubmission(Request $request) {
@@ -57,11 +63,11 @@ function handleContactSubmission(Request $request) {
 }
 ```
 
-By default, `verify()` consumes the token, so it can only be used once. To verify a token without expiring it, you can pass `false`:
-
-```php
-// Verify the token but allow it to be used again.
-if ($csrf->verify(false)) {
-   // Token is valid and reusable.
-}
-```
+!!! success "Token Reusability"
+    By default, `verify()` consumes the token, so it can only be used once. To verify a token without expiring it, pass `false`:
+    
+    ```php
+    if ($csrf->verify(false)) {
+       // Token is valid and reusable.
+    }
+    ```

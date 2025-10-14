@@ -1,10 +1,15 @@
-## Managing State with `useState`
+# Managing State with `useState`
+
+<style>
+code { background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); padding: 2px 6px; border-radius: 3px; }
+</style>
 
 State is the data in your component that can change over time. When state changes, PhpSPA automatically re-renders the component to reflect the new data. This is the key to creating dynamic and interactive UIs.
 
-The `useState` hook is how you add state to your components.
+!!! info "The useState Hook"
+    The `useState` hook is how you add state to your components.
 
-### A Simple Counter
+## A Simple Counter
 
 Here's the classic counter example. The `useState` hook creates a state variable named `count` with an initial value of `0`.
 
@@ -27,13 +32,12 @@ function Counter() {
 }
 ```
 
-  * `useState('count', 0)`: Declares a piece of state named `count` and sets its default value to `0`.
-  * `{$count}`: When used in a string, the state variable automatically outputs its current value.
-  * `setState('count', ...)`: This is a global JavaScript function provided by PhpSPA. You call it to update a state's value from the browser.
+!!! tip "Understanding State Variables"
+    - `useState('count', 0)`: Declares a piece of state named `count` and sets its default value to `0`
+    - `{$count}`: When used in a string, the state variable automatically outputs its current value
+    - `setState('count', ...)`: This is a global JavaScript function provided by PhpSPA to update state from the browser
 
------
-
-### Rendering Lists with `map()`
+## Rendering Lists with `map()`
 
 If your state holds an array, you can use the powerful `->map()` method to iterate over it and render a list of elements.
 
@@ -61,4 +65,5 @@ function TodoList() {
 }
 ```
 
-The `->map()` method loops through each item in the `$todos` array and runs your function, concatenating the resulting HTML strings into a final list.
+!!! success "Dynamic Rendering"
+    The `->map()` method loops through each item in the `$todos` array and runs your function, concatenating the resulting HTML strings into a final list.
