@@ -23,9 +23,7 @@ use PhpSPA\Core\Helper\AssetLinkManager;
  * @copyright 2025 Dave Conco
  * @license MIT
  *
- * @see https://phpspa.readthedocs.io/en/latest/1-introduction
- * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/4-method-chaining/ Method Chaining Documentation
- * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/1-compression-system/ Compression System Documentation
+ * @see https://phpspa.readthedocs.io/en/latest/core-concepts-app-and-component/
  * @link https://phpspa.readthedocs.io
  */
 class App extends \PhpSPA\Core\Impl\RealImpl\AppImpl implements

@@ -57,6 +57,7 @@ interface phpSpaInterface {
      * @param int $level Compression level (0=none, 1=auto, 2=basic, 3=aggressive, 4=extreme)
      * @param bool $gzip Enable gzip compression
      * @return App
+     * @see https://phpspa.readthedocs.io/en/latest/performance-html-compression/
      */
     public function compression (int $level, bool $gzip = true): App;
 

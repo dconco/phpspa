@@ -152,6 +152,7 @@ nav:
    - Performance & Assets:
       - HTML Compression: performance-html-compression.md
       - Managing Styles & Scripts: managing-styles-and-scripts.md
+      - Assets Caching: assets-caching.md
 
 # Enhanced plugins
 plugins:
