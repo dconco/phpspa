@@ -105,7 +105,7 @@ hide:
 
     Navigate between pages without full page reloads
     
-    ```html
+    ```php
     <Component.Link to="/about">About</Component.Link>
     ```
 

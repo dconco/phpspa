@@ -39,7 +39,7 @@ function StatusMessage() {
 !!! tip "Method Components"
     You can even call other public methods of a class directly as components using the `::` syntax.
 
-    ```php
+    ```html
     <MyComponent::Header />
     <MyComponent::Footer />
     ```

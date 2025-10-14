@@ -7,7 +7,7 @@
    <link rel="icon" type="image/png" sizes="16x16" href="{{ base_url }}/img/favicon-16x16.png">
    <link rel="apple-touch-icon" sizes="192x192" href="{{ base_url }}/img/android-chrome-192x192.png">
    <meta name="theme-color" content="#764ba2">
-   
+
    <style>
       body {
          background: linear-gradient(135deg, 
@@ -103,7 +103,168 @@
          font-size: 18px;
          color: f0f0f0;
       }
+
+      /* Custom Footer Styles */
+      .md-footer {
+         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+         box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+         color: white;
+      }
+
+      .md-footer-meta {
+         background: linear-gradient(135deg, #5a6fd8 0%, #6a4391 100%);
+      }
+
+      .md-footer__link,
+      .md-footer__title {
+         color: rgba(255, 255, 255, 0.9);
+      }
+
+      .md-footer__link:hover,
+      .md-footer__link:focus {
+         color: white;
+         opacity: 1;
+      }
+
+      .md-footer__inner {
+         padding: 0.6rem 0;
+      }
+
+      .md-footer-nav__link {
+         color: rgba(255, 255, 255, 0.9);
+         transition: all 0.3s ease;
+      }
+
+      .md-footer-nav__link:hover {
+         background: rgba(255, 255, 255, 0.15);
+         border-radius: 8px;
+         color: white;
+      }
+
+      .md-footer-meta__inner {
+         color: rgba(255, 255, 255, 0.85);
+      }
+
+      .md-footer-copyright {
+         color: rgba(255, 255, 255, 0.8);
+      }
+
+      .md-footer-copyright__highlight {
+         color: white;
+         font-weight: 600;
+      }
+
+      .md-social {
+         padding: 0.4rem 0;
+      }
+
+      .md-social__link {
+         color: rgba(255, 255, 255, 0.8);
+         transition: all 0.3s ease;
+      }
+
+      .md-social__link:hover {
+         color: white;
+         transform: translateY(-2px);
+      }
+
+      /* PHP Variables - Different color from comments */
+      .highlight .nv,  /* Name.Variable like $name */
+      .highlight .vg,  /* Name.Variable.Global */
+      .highlight .vi,  /* Name.Variable.Instance */
+      .highlight .vc { /* Name.Variable.Class */
+         color: #dc5a65 !important; /* Red/Pink for variables */
+      }
+
+      [data-md-color-scheme="slate"] .highlight .nv,
+      [data-md-color-scheme="slate"] .highlight .vg,
+      [data-md-color-scheme="slate"] .highlight .vi,
+      [data-md-color-scheme="slate"] .highlight .vc {
+         color: #ff6b9d !important; /* Brighter pink for dark mode */
+      }
+
+      /* Class names - Green color */
+      .highlight .nc,  /* Name.Class like Nonce */
+      .highlight .nn,  /* Name.Namespace */
+      .highlight .na,  /* Name.Attribute */
+      .highlight .no { /* Name.Constant */
+         color: #b58900 !important;
+      }
+
+      [data-md-color-scheme="slate"] .highlight .nc,
+      [data-md-color-scheme="slate"] .highlight .nn,
+      [data-md-color-scheme="slate"] .highlight .na,
+      [data-md-color-scheme="slate"] .highlight .no {
+         color: #f1b500 !important;
+      }
+
+      /* Method/Function names - Green color */
+      .highlight .nx { /* Name.Property */
+         color: #a626a4 !important;
+      }
+
+      [data-md-color-scheme="slate"] .highlight .nx {
+         color: #ff00fb !important;
+      }
    </style>
+   
+   <script>
+      // Highlight static method calls like Nonce::enable()
+      document.addEventListener('DOMContentLoaded', function() {
+         document.querySelectorAll('.highlight').forEach(function(block) {
+            let html = block.innerHTML;
+            // Match ::methodName( pattern and color the method name green
+            html = html.replace(/::([\w]+)(\s*\()/g, function(match, methodName, paren) {
+               return '::<span style="color: #1c7d4d; font-weight: 600;">' + methodName + '</span>' + paren;
+            });
+            block.innerHTML = html;
+         });
+      });
+   </script>
+   
+   <script>
+      // Highlight tags that start with <Component, <@, or <$ (including attributes)
+      document.addEventListener('DOMContentLoaded', function() {
+         let isProcessing = false;
+         
+         function highlightSpecialTags() {
+            if (isProcessing) return; // Prevent re-entry
+            isProcessing = true;
+            
+            document.querySelectorAll('.highlight').forEach(function(block) {
+               // Skip if already processed
+               if (block.dataset.highlighted) return;
+               
+               let html = block.innerHTML;
+               // Regex: <[\$@]?[A-Z][\w.\-]*\b([^>]*)>
+               // Matches <Component ...>, <@NavLink ...>, <$NavLink ...>, </Component ...>, </@NavLink ...>, </$NavLink ...>
+               html = html.replace(/(&lt;\/?)([@$]?[A-Z][\w.\-]*)(\b[^&<>]*?)(?=&gt;)/g,
+                  function(match, open, tag, rest) {
+                     return open + '<span style="color: #a846b9;">' + tag + '</span>' + rest;
+                  }
+               );
+               block.innerHTML = html;
+               block.dataset.highlighted = 'true'; // Mark as processed
+            });
+            
+            isProcessing = false;
+         }
+         
+         highlightSpecialTags();
+         
+         // Efficient observer with debouncing
+         let timeoutId;
+         const observer = new MutationObserver(function() {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(highlightSpecialTags, 100); // Debounce 100ms
+         });
+         
+         observer.observe(document.body, { 
+            childList: true, 
+            subtree: true 
+         });
+      });
+   </script>
 {% endblock %}
 
 {% block announce %}

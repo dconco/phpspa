@@ -62,6 +62,8 @@ $loginPage->route('/login')->method('GET|POST');
     Use the global `Redirect()` function to send the user to a new page.
 
     ```php
+    <?php
+
     use function PhpSPA\Http\Redirect;
     
     Redirect('/dashboard');
@@ -72,6 +74,8 @@ $loginPage->route('/login')->method('GET|POST');
     Use the static `Session` class to manage user data across requests.
 
     ```php
+    <?php
+
     use PhpSPA\Http\Session;
     
     Session::set('user_id', 123);
@@ -79,6 +83,8 @@ $loginPage->route('/login')->method('GET|POST');
     ```
 
 !!! example "Login Handler"
+
+```php
 <?php
 
 use PhpSPA\Http\Request;

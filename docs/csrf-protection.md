@@ -67,6 +67,8 @@ function handleContactSubmission(Request $request) {
     By default, `verify()` consumes the token, so it can only be used once. To verify a token without expiring it, pass `false`:
     
     ```php
+    <?php
+
     if ($csrf->verify(false)) {
        // Token is valid and reusable.
     }
