@@ -57,7 +57,7 @@ interface phpSpaInterface {
      * @param int $level Compression level (0=none, 1=auto, 2=basic, 3=aggressive, 4=extreme)
      * @param bool $gzip Enable gzip compression
      * @return App
-     * @see https://phpspa.readthedocs.io/en/latest/performance-html-compression/
+     * @see https://phpspa.readthedocs.io/en/latest/performance-html-compression
      */
     public function compression (int $level, bool $gzip = true): App;
 
@@ -67,7 +67,7 @@ interface phpSpaInterface {
      *
      * @param int $hours Number of hours to cache assets (0 for session-only) Default is 24 hours
      * @return App
-     * @see https://phpspa.readthedocs.io/en/latest/v1.1.7/2-asset-caching-control
+     * @see https://phpspa.readthedocs.io/en/latest/assets-caching
      */
     public function assetCacheHours (int $hours): App;
 
@@ -77,6 +77,7 @@ interface phpSpaInterface {
      *
      * @param string $environment Environment: 'development', 'staging', 'production'
      * @return App
+     * @see https://phpspa.readthedocs.io/en/latest/performance-html-compression/#environment-based-configuration-recommended
      */
     public function compressionEnvironment (string $environment): App;
 
