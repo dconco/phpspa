@@ -39,6 +39,8 @@ $userProfile->route('/user/{id}');
 === "Integer Type"
 
     ```php
+    <?php
+
     // Only match if 'id' is an integer
     $component->route('/post/{id: int}');
     ```
@@ -46,22 +48,46 @@ $userProfile->route('/user/{id}');
 === "Alphanumeric"
 
     ```php
+    <?php
+
     // Match if 'username' is alphanumeric
     $component->route('/profile/{username: alnum}');
+    ```
+
+=== "Array Type"
+
+    ```php
+    <?php
+
+    // Match if 'tags' is an array of strings
+    $component->route('/posts/{tags: array<string>}');
     ```
 
 === "Range Constraint"
 
     ```php
+    <?php
+
     // Match an integer between 2 and 5 (inclusive)
     $component->route('/rating/{value: int<2,5>}');
+    ```
+
+=== "Union Types"
+
+    ```php
+    <?php
+
+    // Match if 'username' is a string or an integer
+    $component->route('/user/{username: string|int}');
     ```
 
 === "Nested Types"
 
     ```php
+    <?php
+
     // Even complex nested types are supported
-    $component->route('/user/{username: string}/post/{id: int}');
+    $component->route('/user/{username: array<array<string>>}/post/{id: array<int<999,999>, string>}');
     ```
 
 ---
@@ -89,6 +115,7 @@ $userProfile->route('/user/{id}');
 
 ```php
 <?php
+
 $dashboard = new Component(function () {
    return '<h1>Welcome to your Dashboard!</h1>';
 });
