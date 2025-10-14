@@ -11,27 +11,27 @@ Getting PhpSPA up and running is simple. You have two options: use our pre-confi
 !!! success "Quick Setup"
     This is the quickest way to start a new project. It sets up the entire project structure for you.
 
-=== "Step 1: Create the Project"
+> Step 1: Create the Project
 
-    Run the following command to clone the template into a new directory.
+Run the following command to clone the template into a new directory.
 
-    ```bash
-    composer create-project phpspa/phpspa my-app
-    ```
+```bash
+composer create-project phpspa/phpspa my-app
+```
 
-=== "Step 2: Navigate to Your Project"
+> Step 2: Navigate to Your Project
 
-    ```bash
-    cd my-app
-    ```
+```bash
+cd my-app
+```
 
-=== "Step 3: Start the Development Server"
+> Step 3: Start the Development Server
 
-    The template comes with a built-in PHP development server.
+The template comes with a built-in PHP development server.
 
-    ```bash
-    composer start
-    ```
+```bash
+composer start
+```
 
 !!! check "That's it!"
     Your PhpSPA application is now running and ready for you to start building. ✨

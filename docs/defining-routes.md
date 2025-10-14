@@ -1,12 +1,18 @@
-## Defining Routes
+# Defining Routes
 
-Routing is how you tell PhpSPA which component to show for a specific URL. This is done with the `->route()` method.
+<p style="font-size: 1.2rem; color: var(--md-default-fg-color--light); margin-bottom: 2rem;">
+Routing is how you tell PhpSPA which component to show for a specific URL. This is done with the <code style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 600;">->route()</code> method.
+</p>
 
-You create a component for each page of your site and assign it a unique URL path.
+!!! tip "Route Assignment"
+    You create a component for each page of your site and assign it a unique URL path.
 
-### Example:
+---
 
-Let's create a simple website with a home page and an about page.
+## Example
+
+!!! example "Simple Website"
+    Let's create a simple website with a home page and an about page.
 
 ```php
 <?php
@@ -38,4 +44,5 @@ $app->attach($aboutPage);
 $app->run();
 ```
 
-That's it. When a user visits your site at `/about`, PhpSPA will automatically render the `$aboutPage` component.
+!!! success "That's it"
+    When a user visits your site at `/about`, PhpSPA will automatically render the `$aboutPage` component.

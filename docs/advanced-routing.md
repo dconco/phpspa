@@ -1,12 +1,15 @@
-## Advanced Routing
+# Advanced Routing
 
+<p style="font-size: 1.2rem; color: var(--md-default-fg-color--light); margin-bottom: 2rem;">
 PhpSPA's router is more than just static paths. It provides a powerful set of features for handling dynamic URLs, multiple routes, and specific HTTP methods, giving you full control over how your application responds to requests.
+</p>
 
------
+---
 
-### Handling URL Parameters
+## Handling URL Parameters
 
-To capture dynamic segments from a URL, like a user's ID, you can define parameters in your route using curly braces `{}`. These parameters are then passed to your component in a special `$path` array.
+!!! info "Dynamic Segments"
+    To capture dynamic segments from a URL, like a user's ID, you can define parameters in your route using curly braces `{}`. These parameters are then passed to your component in a special `$path` array.
 
 ```php
 <?php
@@ -26,38 +29,63 @@ $userProfile = new Component(function (array $path) {
 $userProfile->route('/user/{id}');
 ```
 
------
+---
 
-### Typed Parameters and Constraints
+## Typed Parameters and Constraints
 
-You can enforce specific data types and constraints directly in your route definition. This is great for validation and ensuring your component receives the correct type of data.
+!!! tip "Type Validation"
+    You can enforce specific data types and constraints directly in your route definition. This is great for validation and ensuring your component receives the correct type of data.
 
-```php
-<?php
+=== "Integer Type"
 
-// Only match if 'id' is an integer
-$component->route('/post/{id: int}');
+    ```php
+    // Only match if 'id' is an integer
+    $component->route('/post/{id: int}');
+    ```
 
-// Match if 'username' is alphanumeric
-$component->route('/profile/{username: alnum}');
+=== "Alphanumeric"
 
-// Match an integer between 2 and 5 (inclusive)
-$component->route('/rating/{value: int<2,5>}');
+    ```php
+    // Match if 'username' is alphanumeric
+    $component->route('/profile/{username: alnum}');
+    ```
 
-// Even complex nested types are supported
-$component->route('/user/{username: string}/post/{id: int}');
-```
+=== "Range Constraint"
 
------
+    ```php
+    // Match an integer between 2 and 5 (inclusive)
+    $component->route('/rating/{value: int<2,5>}');
+    ```
 
-### Multiple Routes and HTTP Methods
+=== "Nested Types"
 
-You can assign multiple routes or HTTP methods to a single component.
+    ```php
+    // Even complex nested types are supported
+    $component->route('/user/{username: string}/post/{id: int}');
+    ```
 
-  * **Multiple Routes:** Pass an array of paths to the `->route()` method.
-  * **HTTP Methods:** Pass a pipe-separated string to the `->method()` method.
+---
 
-<!-- end list -->
+## Multiple Routes and HTTP Methods
+
+!!! example "Flexible Routing"
+    You can assign multiple routes or HTTP methods to a single component.
+
+<div class="grid cards" markdown>
+
+-   :material-routes: **Multiple Routes**
+    
+    ---
+    
+    Pass an array of paths to the `->route()` method.
+
+-   :material-web: **HTTP Methods**
+    
+    ---
+    
+    Pass a pipe-separated string to the `->method()` method.
+
+</div>
 
 ```php
 <?php

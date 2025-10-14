@@ -78,6 +78,8 @@ hide:
     Build your UI with small, reusable components just like React
     
     ```php
+    <?php
+
     function Button() {
        return <<<HTML
          <button>Click Me</button>
@@ -90,7 +92,10 @@ hide:
     Components automatically re-render when state changes
     
     ```php
+    <?php
+
     $count = useState('count', 0);
+
     return "<button onclick='setState(\"count\", {$count} + 1)'>
        Count: {$count}
     </button>";
@@ -100,7 +105,7 @@ hide:
 
     Navigate between pages without full page reloads
     
-    ```php
+    ```html
     <Component.Link to="/about">About</Component.Link>
     ```
 
@@ -109,7 +114,10 @@ hide:
     Call PHP functions directly from JavaScript without APIs
     
     ```php
+    <?php
+
     $greeter = useFunction(fn($name) => "Hello, $name!");
+
     const greeting = await {$greeter('name')};
     ```
 

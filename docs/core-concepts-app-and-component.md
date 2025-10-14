@@ -1,13 +1,31 @@
-## Core Concepts: App & Component
+# Core Concepts: App & Component
 
-Everything in PhpSPA revolves around two main classes: `App` and `Component`.
+<p style="font-size: 1.2rem; color: var(--md-default-fg-color--light); margin-bottom: 2rem;">
+Everything in PhpSPA revolves around two main classes: <code style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 600;">App</code> and <code style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 600;">Component</code>.
+</p>
 
-* `App`: This is the main container for your entire application. It holds your layout and manages all your components.
-* `Component`: This is a reusable piece of your UI. Think of it as a simple PHP function that outputs HTML.
+<div class="grid cards" markdown>
 
-You create one `App` instance, create your `Component`s, and then attach them to the app.
+-   :material-application: **App**
+    
+    ---
+    
+    This is the main container for your entire application. It holds your layout and manages all your components.
 
-### Here's how they work together:
+-   :material-cube: **Component**
+    
+    ---
+    
+    This is a reusable piece of your UI. Think of it as a simple PHP function that outputs HTML.
+
+</div>
+
+!!! tip "Simple Workflow"
+    You create one `App` instance, create your `Component`s, and then attach them to the app.
+
+---
+
+## Here's how they work together:
 
 ```php
 <?php

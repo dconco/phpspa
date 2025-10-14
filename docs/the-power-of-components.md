@@ -1,12 +1,18 @@
-## The Power of Components
+# The Power of Components
 
+<p style="font-size: 1.2rem; color: var(--md-default-fg-color--light); margin-bottom: 2rem;">
 The core of PhpSPA is its component-based architecture. A component is a reusable piece of your UI, defined as a simple PHP function that returns an HTML string.
+</p>
 
-The magic happens when you use these components like HTML tags **inside the `heredoc` string** of another component. This allows you to build complex pages by nesting smaller, reusable parts.
+!!! magic "The Magic"
+    The magic happens when you use these components like HTML tags **inside the `heredoc` string** of another component. This allows you to build complex pages by nesting smaller, reusable parts.
 
-### Functional Components
+---
 
-First, define a simple component.
+## Functional Components
+
+!!! example "Simple Component"
+    First, define a simple component.
 
 ```php
 <?php
@@ -34,60 +40,64 @@ function HomePage() {
 }
 ```
 
-### Handling Children and Props
+---
 
-Components become truly powerful when you pass data to them as props (attributes) and children (content inside the tags).
+## Handling Children and Props
 
-**1. Example Components with Props:**
+!!! tip "True Power"
+    Components become truly powerful when you pass data to them as props (attributes) and children (content inside the tags).
 
-```php
-<?php
-use function Component\HTMLAttrInArrayToString;
+=== "Example Components with Props"
 
-// Accepts children
-function Card($children) {
-   return <<<HTML
-      <div class="card">
-         {$children}
-      </div>
-   HTML;
-}
+    ```php
+    <?php
+    use function Component\HTMLAttrInArrayToString;
 
-// Accepts props and children
-function LinkButton($to, $children, ...$attributes) {
-   // Convert any extra HTML attributes into a string
-   $attrString = HTMLAttrInArrayToString($attributes);
+    // Accepts children
+    function Card($children) {
+       return <<<HTML
+          <div class="card">
+             {$children}
+          </div>
+       HTML;
+    }
 
-   return <<<HTML
-     <a href="{$to}" {$attrString}>
-       {$children}
-     </a>
-   HTML;
-}
-```
+    // Accepts props and children
+    function LinkButton($to, $children, ...$attributes) {
+       // Convert any extra HTML attributes into a string
+       $attrString = HTMLAttrInArrayToString($attributes);
 
-**2. Composing Them in a Page:**
+       return <<<HTML
+         <a href="{$to}" {$attrString}>
+           {$children}
+         </a>
+       HTML;
+    }
+    ```
 
-Now, let's use these components inside a `UserProfile` component. This shows how everything nests together.
+=== "Composing Them in a Page"
 
-```php
-<?php
-function UserProfile() {
-   return <<<HTML
-      <Card>
-         <h2>User Dashboard</h2>
-         <p>Welcome back! Here are your options:</p>
+    Now, let's use these components inside a `UserProfile` component. This shows how everything nests together.
 
-         <LinkButton to="/settings" class="btn btn-primary">
-            Edit Settings
-         </LinkButton>
+    ```php
+    <?php
+    function UserProfile() {
+       return <<<HTML
+          <Card>
+             <h2>User Dashboard</h2>
+             <p>Welcome back! Here are your options:</p>
 
-         <LinkButton to="/logout" class="btn btn-secondary">
-            Log Out
-         </LinkButton>
-      </Card>
-   HTML;
-}
-```
+             <LinkButton to="/settings" class="btn btn-primary">
+                Edit Settings
+             </LinkButton>
 
-The key takeaway is that you build your entire UI by composing these components. As long as the final output is one component attached to the `App` class, `PhpSPA` will handle rendering the entire nested tree.
+             <LinkButton to="/logout" class="btn btn-secondary">
+                Log Out
+             </LinkButton>
+          </Card>
+       HTML;
+    }
+    ```
+
+!!! success "Key Takeaway"
+    You build your entire UI by composing these components. As long as the final output is one component attached to the `App` class, `PhpSPA` will handle rendering the entire nested tree.

@@ -1,14 +1,20 @@
-## The Layout
+# The Layout
 
-Your Layout is the main HTML shell that wraps your entire application. It's where you define your `<html>` document, the `<head>` section, and any global scripts or styles.
+<p style="font-size: 1.2rem; color: var(--md-default-fg-color--light); margin-bottom: 2rem;">
+Your Layout is the main HTML shell that wraps your entire application. It's where you define your <code>&lt;html&gt;</code> document, the <code>&lt;head&gt;</code> section, and any global scripts or styles.
+</p>
 
-A layout has a simple rule:
+!!! info "Simple Rule"
+    A layout has a simple rule:
+    
+    **Provide a target element.** This is where your components will be rendered. A common & default choice is `<div id="app"></div>`.
 
-1.  **Provide a target element.** This is where your components will be rendered. A common & default choice is `<div id="app"></div>`.
+---
 
-### Example Layout (`/layout.php`):
+## Example Layout (`/layout.php`)
 
-This file simply returns a function that outputs your HTML structure.
+!!! example "Layout Structure"
+    This file simply returns a function that outputs your HTML structure.
 
 ```php
 <?php
@@ -26,6 +32,10 @@ return fn () => <<<HTML
 HTML;
 ```
 
+---
+
+## Using the Layout
+
 You then pass this layout directly to your `App` when you create it.
 
 ```php
@@ -40,4 +50,5 @@ $layout = require __DIR__ . '/layout.php';
 $app = new App($layout);
 ```
 
-Now, all components attached to your app will be rendered inside that `<div id="app"></div>`.
+!!! success "Result"
+    Now, all components attached to your app will be rendered inside that `<div id="app"></div>`.
