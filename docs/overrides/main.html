@@ -37,6 +37,10 @@
          );
       }
 
+      .md-search__input {
+         color: #575757 !important;
+      }
+
       /* Custom Header Styles */
       .md-header {
          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -63,6 +67,9 @@
          background-color: rgba(255, 255, 255, 0.15);
          border: 1px solid rgba(255, 255, 255, 0.2);
          color: white;
+         border-radius: 20px;
+         padding: 0.5rem 1rem;
+         transition: all 0.3s ease;
       }
       
       .md-search__input::placeholder {
@@ -71,6 +78,18 @@
       
       .md-search__input:hover {
          background-color: rgba(255, 255, 255, 0.2);
+         border-color: rgba(255, 255, 255, 0.4);
+      }
+
+      .md-search__input:focus {
+         background-color: rgba(255, 255, 255, 0.25);
+         border-color: rgba(255, 255, 255, 0.5);
+         outline: none;
+         box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+      }
+
+      .md-search__form {
+         border-radius: 20px;
       }
       
       .md-tabs {
@@ -183,12 +202,12 @@
          color: #ff6b9d !important; /* Brighter pink for dark mode */
       }
 
-      /* Class names - Green color */
+      /* Class names */
       .highlight .nc,  /* Name.Class like Nonce */
       .highlight .nn,  /* Name.Namespace */
       .highlight .na,  /* Name.Attribute */
       .highlight .no { /* Name.Constant */
-         color: #b58900 !important;
+         color: #b1890f !important;
       }
 
       [data-md-color-scheme="slate"] .highlight .nc,
@@ -198,7 +217,7 @@
          color: #f1b500 !important;
       }
 
-      /* Method/Function names - Green color */
+      /* Method/Function names */
       .highlight .nx { /* Name.Property */
          color: #a626a4 !important;
       }

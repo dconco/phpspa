@@ -7,7 +7,8 @@ To improve performance and reduce server load, you can instruct the user's brows
 
 ```php
 <?php
-use phpSPA\App;
+
+use PhpSPA\App;
 
 $app = new App($layout);
 

@@ -20,16 +20,6 @@ use PhpSPA\Component;
  */
 interface phpSpaInterface {
     /**
-     * App constructor.
-     *
-     * Initializes the App instance with the specified layout.
-     *
-     * @param callable $layout The name of the layout to be used by the application.
-     */
-    public function __construct (callable $layout);
-
-
-    /**
      * Sets the target ID for the application.
      *
      * @param string $targetID The target ID to be set.
@@ -57,7 +47,7 @@ interface phpSpaInterface {
      * @param int $level Compression level (0=none, 1=auto, 2=basic, 3=aggressive, 4=extreme)
      * @param bool $gzip Enable gzip compression
      * @return App
-     * @see https://phpspa.readthedocs.io/en/latest/performance-html-compression
+     * @see https://phpspa.readthedocs.io/en/stable/performance/html-compression
      */
     public function compression (int $level, bool $gzip = true): App;
 
@@ -67,7 +57,7 @@ interface phpSpaInterface {
      *
      * @param int $hours Number of hours to cache assets (0 for session-only) Default is 24 hours
      * @return App
-     * @see https://phpspa.readthedocs.io/en/latest/assets-caching
+     * @see https://phpspa.readthedocs.io/en/stable/performance/assets-caching
      */
     public function assetCacheHours (int $hours): App;
 
@@ -77,7 +67,7 @@ interface phpSpaInterface {
      *
      * @param string $environment Environment: 'development', 'staging', 'production'
      * @return App
-     * @see https://phpspa.readthedocs.io/en/latest/performance-html-compression/#environment-based-configuration-recommended
+     * @see https://phpspa.readthedocs.io/en/stable/performance/html-compression/#environment-based-configuration-recommended
      */
     public function compressionEnvironment (string $environment): App;
 
@@ -92,7 +82,7 @@ interface phpSpaInterface {
      * @param callable $script The callable that returns the JavaScript code
      * @param string|null $name Optional name for the script asset
      * @return App
-     * @see https://phpspa.readthedocs.io/en/latest/v1.1.7/1-global-asset-management
+     * @see https://phpspa.readthedocs.io/en/stable/performance/managing-styles-and-scripts
      */
     public function script (callable $script, ?string $name = null): App;
 
@@ -107,7 +97,7 @@ interface phpSpaInterface {
      * @param callable $style The callable that returns the CSS code
      * @param string|null $name Optional name for the stylesheet asset
      * @return App
-     * @see https://phpspa.readthedocs.io/en/latest/v1.1.7/1-global-asset-management
+     * @see https://phpspa.readthedocs.io/en/stable/performance/managing-styles-and-scripts
      */
     public function styleSheet (callable $style, ?string $name = null): App;
 
@@ -136,7 +126,7 @@ interface phpSpaInterface {
      * } $data
      *
      * @return App Returns the current instance for method chaining
-     * @see https://phpspa.readthedocs.io/en/latest/v1.1.5#cors
+     * @see https://phpspa.readthedocs.io/en/stable/security/cors
      */
     public function cors (array $data = []): App;
 

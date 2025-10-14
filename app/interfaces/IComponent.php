@@ -25,6 +25,7 @@ interface IComponent
      * Initializes the component with a callable that defines the component function.
      *
      * @param callable $component The callable representing the component logic.
+     * @see https://phpspa.readthedocs.io/en/stable/core-concepts
      */
     public function __construct(callable $component);
 
@@ -33,6 +34,7 @@ interface IComponent
      *
      * @param string $title The title to set.
      * @return ComponentImpl Returns the current instance for method chaining.
+     * @see https://phpspa.readthedocs.io/en/stable/routing/setting-the-page-title
      */
     public function title(string $title): ComponentImpl;
 
@@ -41,6 +43,7 @@ interface IComponent
      *
      * @param string $method The name of the method to set, default to "GET|POST".
      * @return ComponentImpl Returns the current instance for method chaining.
+     * @see https://phpspa.readthedocs.io/en/stable/routing/advanced-routing/#multiple-routes-and-http-methods
      */
     public function method(string $method): ComponentImpl;
 
@@ -49,6 +52,7 @@ interface IComponent
      *
      * @param array|string $route The route to be set.
      * @return ComponentImpl Returns the current instance for method chaining.
+     * @see https://phpspa.readthedocs.io/en/stable/routing/advanced-routing
      */
     public function route(array|string $route): ComponentImpl;
 

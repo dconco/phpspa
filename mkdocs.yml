@@ -1,4 +1,4 @@
-site_name: PhpSPA
+site_name: PhpSPA @V2
 site_description: A component-based library for building modern, reactive user interfaces in pure PHP. Inspired by React. ✨
 site_author: Dave Conco
 site_url: https://phpspa.readthedocs.io
@@ -123,36 +123,37 @@ nav:
    - Home: index.md
    - Getting Started:
       - Installation: installation.md
-      - Core Concepts: core-concepts-app-and-component.md
+      - Core Concepts: core-concepts.md
       - The Layout: layout.md
    - Routing:
-      - Defining Routes: defining-routes.md
-      - Advanced Routing: advanced-routing.md
-      - Setting Page Title: setting-the-page-title.md
+      - Defining Routes: routing/index.md
+      - Advanced Routing: routing/advanced-routing.md
+      - Setting Page Title: routing/setting-the-page-title.md
    - Components:
-      - The Power of Components: the-power-of-components.md
-      - Advanced Component Patterns: advanced-component-patterns.md
+      - The Power of Components: components/index.md
+      - Advanced Component Patterns: components/advanced-component.md
    - Navigation:
-      - Link Component: client-side-navigation-the-link-component.md
-      - Programmatic Navigation: programmatic-navigation-with-navigate.md
+      - Link Component: navigations/link-component.md
+      - Programmatic Navigation: navigations/navigate-component.md
    - PhpSPA Hooks:
-      - useState Hook: managing-state-with-usestate.md
-      - Updating State Arrays: updating-state-of-mapped-arrays.md
-      - useEffect Hook: handling-side-effects-with-useeffect.md
-      - useFunction Hook: calling-php-from-javascript-usefunction.md
+      - useState Hook: hooks/use-state.md
+      - Updating State Arrays: hooks/updating-state-of-mapped-arrays.md
+      - useEffect Hook: hooks/use-effect.md
+      - useFunction Hook: hooks/use-function.md
    - Request Handling:
-      - Handling Requests & Sessions: handling-requests-and-sessions.md
-      - Client-Side Events & API: client-side-events-and-api.md
-      - Auto-Reloading Components: auto-reloading-components.md
-      - API Authentication: api-authentication.md
-      - The Request Object: request-object-in-depth.md
+      - Handling Requests & Sessions: requests/index.md
+      - The Request Object: requests/request-object.md
+      - Client-Side Events & API: requests/client-side-events-and-api.md
+      - Auto-Reloading Components: requests/auto-reloading-components.md
+      - API Authentication: requests/api-authentication.md
    - Security:
-      - CSRF Protection: csrf-protection.md
-      - Content Security Policy: security-content-security-policy.md
+      - CSRF Protection: security/csrf-protection.md
+      - Content Security Policy: security/content-security-policy.md
+      - Handling CORS: security/cors.md
    - Performance & Assets:
-      - HTML Compression: performance-html-compression.md
-      - Managing Styles & Scripts: managing-styles-and-scripts.md
-      - Assets Caching: assets-caching.md
+      - HTML Compression: performance/html-compression.md
+      - Managing Styles & Scripts: performance/managing-styles-and-scripts.md
+      - Assets Caching: performance/assets-caching.md
 
 # Enhanced plugins
 plugins:
@@ -164,9 +165,6 @@ plugins:
         minify_css: true
         htmlmin_opts:
            remove_comments: true
-   # - git-revision-date-localized:
-   #      enable_creation_date: true
-   #      type: timeago
 
 # Extra configuration
 extra:

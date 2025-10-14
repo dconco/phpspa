@@ -52,3 +52,63 @@ $app = new App($layout);
 
 !!! success "Result"
     Now, all components attached to your app will be rendered inside that `<div id="app"></div>`.
+
+## Setting the Default Target ID
+
+By default, PhpSPA looks for an element with the ID `app` to render components. However, you can change this to any ID you prefer using the `defaultTargetID()` method.
+
+```php
+<?php
+
+use PhpSPA\App;
+
+$layout = require __DIR__ . '/layout.php';
+$app = new App($layout);
+
+// Set the default target ID for all components
+$app->defaultTargetID('app'); // This is the default
+
+// Or use a custom ID
+$app->defaultTargetID('main-content');
+```
+
+!!! tip "Custom Target Element"
+    If your layout uses a different ID like `<div id="main-content"></div>`, make sure to set it with `defaultTargetID()`.
+
+### Example with Custom Target
+
+```php
+<?php
+// Layout file with custom ID
+return fn () => <<<HTML
+   <!DOCTYPE html>
+   <html>
+      <head>
+         <title>My App</title>
+      </head>
+      <body>
+         <header>Site Header</header>
+         <div id="main-content"></div>
+         <footer>Site Footer</footer>
+      </body>
+   </html>
+HTML;
+```
+
+```php
+<?php
+// index.php
+use PhpSPA\App;
+
+$layout = require __DIR__ . '/layout.php';
+$app = new App($layout);
+
+// Tell PhpSPA to render components inside #main-content
+$app->defaultTargetID('main-content');
+
+// ... attach components and run
+$app->run();
+```
+
+!!! success "Flexible Layouts"
+    This allows you to create complex layouts with headers, sidebars, and footers, while controlling exactly where your dynamic content renders.
