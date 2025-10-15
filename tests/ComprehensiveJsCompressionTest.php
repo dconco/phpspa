@@ -6,7 +6,6 @@
  * Tests real-world JavaScript minification scenarios including the specific
  * issues mentioned in TODO item 6 and ensures proper ASI (Automatic Semicolon Insertion).
  *
- * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/1-compression-system/ Compression System Documentation
  * @since v1.1.6
  * @author dconco <concodave@gmail.com>
  */

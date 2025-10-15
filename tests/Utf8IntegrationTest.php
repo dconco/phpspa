@@ -13,7 +13,6 @@
  * 2. Integration of JavaScript compression fixes
  * 3. Combined functionality of all new features
  *
- * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/1-compression-system/ Compression System Documentation
  * @since v1.1.6
  * @author dconco <concodave@gmail.com>
  */

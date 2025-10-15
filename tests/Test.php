@@ -6,7 +6,6 @@
  * Runs all compression and JavaScript ASI tests for the new compression system.
  * This test runner is CLI-only for security and is used in CI/CD workflows.
  *
- * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/1-compression-system/ Compression System Documentation
  * @since v1.1.5
  * @author dconco <concodave@gmail.com>
  */

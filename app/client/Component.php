@@ -10,7 +10,6 @@ namespace PhpSPA;
  * organization.
  *
  * @author dconco <concodave@gmail.com>
- * @see https://phpspa.readthedocs.io/ Component Documentation
  */
 class Component extends \PhpSPA\Core\Impl\RealImpl\ComponentImpl implements \PhpSPA\Interfaces\IComponent
 {
