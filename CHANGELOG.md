@@ -1,6 +1,524 @@
 # CHANGELOG
 
-## v1.1.8 (Current)
+## v2.0.0 (Current)
+
+> [!IMPORTANT]
+> This is a **MAJOR VERSION RELEASE** with significant breaking changes. Please read the migration guide carefully before upgrading.
+
+### 🚨 Breaking Changes
+
+#### 1. **Namespace Restructuring** 🔄
+
+All namespaces have been changed from `phpSPA\` to `PhpSPA\` (capital P and capital S) for PSR-4 compliance and better naming conventions.
+
+**Migration Required:**
+
+```php
+// Before (v1.1.9 and earlier)
+use phpSPA\App;
+use phpSPA\Component;
+use phpSPA\Http\Request;
+use phpSPA\Http\Response;
+
+// After (v2.0.0)
+use PhpSPA\App;
+use PhpSPA\Component;
+use PhpSPA\Http\Request;
+use PhpSPA\Http\Response;
+```
+
+**Files Affected:**
+- All autoloaded namespaces in `composer.json`
+- All class imports throughout your application
+- Interface name changed: `phpSpaInterface.php` → `PhpSPAInterface.php`
+
+#### 2. **Hook API Changes** ⚛️
+
+State management function has been renamed for better clarity and consistency with modern frameworks:
+
+**Migration Required:**
+
+```php
+// Before (v1.1.9 and earlier)
+$counter = createState("count", 0);
+
+// After (v2.0.0)
+use function Component\useState;
+
+$counter = useState("count", 0);
+```
+
+#### 3. **Component File Reorganization** 📁
+
+All component helper files have been renamed with descriptive suffixes for better organization:
+
+**Renamed Files:**
+- `Component.php` → `component.php` (lowercase, autoloaded)
+- `createState.php` → `create_state_hook.php`
+- `Csrf.php` → `csrf_component.php`
+- `HTMLAttrInArrayToString.php` → `html_attr_in_array_to_str.php`
+- `import.php` → `import_hook.php`
+- `Link.php` → `link_component.php`
+- `Navigate.php` → `navigate_component.php`
+- `useFunction.php` → `use_function_hook.php`
+
+**Note:** These are internal files - if you're using the public API (functions/components), no changes are needed in your code.
+
+#### 4. **Global Script and Stylesheet API Enhancement**
+
+Added optional naming parameter for better asset management:
+
+```php
+// Before (v1.1.9 and earlier)
+$app->script(function() {
+    return "console.log('app loaded');";
+});
+
+// After (v2.0.0) - with optional name parameter
+$app->script(function() {
+    return "console.log('app loaded');";
+}, 'app-init');
+```
+
+---
+
+### ✨ New Features
+
+#### 1. **New React-like Hooks System** ⚛️
+
+Added modern React-inspired hooks for better component development:
+
+##### `useState()` Hook
+Renamed from `createState()` for better consistency:
+
+```php
+use function Component\useState;
+
+function Counter() {
+    $count = useState("counter", 0);
+    return <<<HTML
+        <h1>Count: {$count}</h1>
+        <button onclick="setState('counter', {$count} + 1)">Increment</button>
+    HTML;
+}
+```
+
+**Documentation:** [hooks/use-state](https://phpspa.readthedocs.io/en/stable/hooks/use-state)
+
+##### `useEffect()` Hook - NEW! 🎉
+Execute side effects when dependencies change:
+
+```php
+use function Component\{useState, useEffect};
+
+function UserProfile() {
+    $userId = useState("userId", 1);
+    $userData = useState("userData", null);
+    
+    useEffect(function() use ($userId, $userData) {
+        // Fetch user data when userId changes
+        $data = fetchUserFromAPI($userId());
+        $userData->set($data);
+    }, [$userId]);
+    
+    return <<<HTML
+        <div>User: {$userData()->name}</div>
+    HTML;
+}
+```
+
+**Documentation:** [hooks/use-effect](https://phpspa.readthedocs.io/en/stable/hooks/use-effect)
+
+#### 2. **Enhanced Security Features** 🔒
+
+##### Content Security Policy (CSP) with Nonce Support - NEW!
+
+Added comprehensive CSP support with automatic nonce generation:
+
+```php
+use PhpSPA\Http\Security\Nonce;
+
+// Enable CSP with nonce
+Nonce::enable([
+    'script-src' => ["https://cdn.jsdelivr.net"],
+    'style-src'  => ["https://fonts.googleapis.com"],
+    'font-src'   => ["https://fonts.gstatic.com"]
+]);
+
+// Use nonce in templates
+$nonce = Nonce::get();
+echo "<script nonce='{$nonce}'>console.log('secure');</script>";
+```
+
+**Features:**
+- Automatic nonce generation per request
+- Configurable CSP directives
+- Integration with inline scripts and styles
+- Protection against XSS attacks
+
+**Files Added:**
+- `app/client/Http/Security/Nonce.php` - Complete CSP/Nonce implementation
+
+**Documentation:** [security/content-security-policy](https://phpspa.readthedocs.io/en/stable/security/content-security-policy)
+
+#### 3. **Global Helper Functions** 🛠️
+
+Added convenient global helper functions for common operations:
+
+##### `response()` Helper
+```php
+// Quick response helper
+return response(['message' => 'Success'], 200);
+return response()->json(['data' => $data]);
+return response()->error('Not found', 404);
+```
+
+##### `router()` Helper
+```php
+// Quick router access
+router()->get('/api/users', function() {
+    return response()->json(['users' => getUsers()]);
+});
+```
+
+##### `scope()` Helper
+```php
+// Register component scope variables
+scope([
+    'user' => fn() => getCurrentUser(),
+    'config' => fn() => getAppConfig()
+]);
+
+// Use in components with @ or $ syntax
+echo "@user.name";
+```
+
+##### `autoDetectBasePath()` Helper
+```php
+// Automatically detect application base path
+$basePath = autoDetectBasePath();
+```
+
+##### `relativePath()` Helper
+```php
+// Get relative path from current URI
+$path = relativePath(); // e.g., '../../'
+```
+
+**Files Added:**
+- `src/helper/response.php` - Response helper
+- `src/helper/router.php` - Router helper
+- `src/helper/scope.php` - Scope helper
+- `src/helper/path.php` - Path helpers
+- `src/global/autoload.php` - Global autoloader
+
+#### 4. **Component Scope System** 🎯
+
+New component variable registration system for shared data:
+
+```php
+use PhpSPA\Core\Helper\ComponentScope;
+
+// Register global component variables
+ComponentScope::register([
+    'currentUser' => function() {
+        return $_SESSION['user'] ?? null;
+    },
+    'appName' => function() {
+        return 'My App';
+    }
+]);
+
+// Use in any component
+function Header() {
+    return <<<HTML
+        <h1>@appName</h1>
+        <span>Welcome, @currentUser.name</span>
+    HTML;
+}
+```
+
+**Files Added:**
+- `app/core/Helper/ComponentScope.php` - Scope management
+
+#### 5. **Path Resolution System** 🗺️
+
+Enhanced path handling with automatic base path detection:
+
+```php
+use PhpSPA\Core\Helper\PathResolver;
+
+// Auto-detect base path
+$base = PathResolver::autoDetectBasePath();
+
+// Get relative path
+$relative = PathResolver::relativePath();
+
+// Resolve asset paths
+$assetPath = PathResolver::resolve('/assets/style.css');
+```
+
+**Files Added:**
+- `app/core/Helper/PathResolver.php` - Complete path resolution system
+
+#### 6. **Enhanced Interfaces** 📋
+
+New comprehensive interfaces for better type safety:
+
+**Files Added:**
+- `app/core/Interfaces/CsrfManagerInterface.php` - CSRF management contract
+- `app/core/Interfaces/RequestInterface.php` - Request handling contract
+- `app/interfaces/PhpSPAInterface.php` - Main PhpSPA interface
+
+#### 7. **Improved Template System** 📦
+
+Added dedicated layout file in template for better project structure:
+
+**Files Added:**
+- `template/layout/Layout.php` - Dedicated layout component
+- `template/components/Todo.php` - Example Todo component
+
+**Files Removed:**
+- `template/Layout.php` - Moved to `template/layout/Layout.php`
+
+---
+
+### 📚 Documentation Overhaul
+
+Completely restructured and expanded documentation with new organized structure:
+
+#### New Documentation Sections:
+
+**Core Concepts:**
+- `docs/core-concepts.md` - Fundamental concepts
+- `docs/installation.md` - Installation guide
+- `docs/layout.md` - Layout system guide
+
+**Hooks Documentation:**
+- `docs/hooks/use-state.md` - useState hook guide
+- `docs/hooks/use-effect.md` - useEffect hook guide (NEW!)
+- `docs/hooks/use-function.md` - useFunction hook guide
+- `docs/hooks/updating-state-of-mapped-arrays.md` - Array state management
+
+**Components:**
+- `docs/components/index.md` - Component overview
+- `docs/components/advanced-component.md` - Advanced patterns
+
+**Routing:**
+- `docs/routing/index.md` - Routing basics
+- `docs/routing/component-configuration.md` - Component config
+- `docs/routing/advanced-routing.md` - Advanced routing patterns
+
+**Performance:**
+- `docs/performance/html-compression.md` - Compression guide
+- `docs/performance/assets-caching.md` - Asset caching
+- `docs/performance/managing-styles-and-scripts.md` - Asset management
+
+**Security:**
+- `docs/security/content-security-policy.md` - CSP guide (NEW!)
+- `docs/security/cors.md` - CORS configuration
+- `docs/security/csrf-protection.md` - CSRF protection
+
+**Navigation:**
+- `docs/navigations/link-component.md` - Link component guide
+- `docs/navigations/navigate-component.md` - Navigate component guide
+
+**Requests:**
+- `docs/requests/index.md` - Request handling
+- `docs/requests/request-object.md` - Request object API
+- `docs/requests/api-authentication.md` - API authentication
+- `docs/requests/auto-reloading-components.md` - Auto-reload feature
+- `docs/requests/client-side-events-and-api.md` - Client-side API
+
+**References:**
+- `docs/references/index.md` - API reference index
+- `docs/references/response.md` - Response API reference
+- `docs/references/file-import-utility.md` - File import utility
+
+**Removed Old Documentation:**
+- Removed `docs/v1.1.5/` - Version-specific docs (consolidated)
+- Removed `docs/v1.1.7/` - Version-specific docs (consolidated)
+- Removed `docs/v1.1/` - Version-specific docs (consolidated)
+- Removed `docs/v1.1.2/` - Version-specific docs (consolidated)
+- Removed `docs/new/` - Draft documentation folder
+- Removed `docs/v1.1.8/` - Moved to references
+- Removed 20+ old documentation files for cleaner structure
+
+---
+
+### 🔧 Code Quality Improvements
+
+#### 1. **Consistent Code Formatting**
+
+Applied consistent spacing in function declarations across all files:
+
+```php
+// Consistent spacing added
+public function method (string $param): void { }
+```
+
+#### 2. **Enhanced Asset Management**
+
+Global scripts and stylesheets now support optional naming:
+
+```php
+$app->script(function() {
+    return "console.log('init');";
+}, 'app-init'); // Optional name for better management
+```
+
+#### 3. **Improved File Organization**
+
+- Standardized component file naming with descriptive suffixes
+- Better separation of hooks (`_hook.php`) and components (`_component.php`)
+- Lowercase filenames for autoloaded files
+
+---
+
+### 🧪 Testing Enhancements
+
+All existing test files updated to work with new namespace structure:
+
+**Files Modified:**
+- `tests/AssetLinkTest.php`
+- `tests/ComprehensiveJsCompressionTest.php`
+- `tests/EnhancedJsCompressionTest.php`
+- `tests/HtmlCompressionTest.php`
+- `tests/JsCompressionTest.php`
+- `tests/Test.php`
+- `tests/TodoJsCompressionTest.php`
+- `tests/Utf8IntegrationTest.php`
+
+---
+
+### 🛠️ Developer Experience
+
+#### 1. **New Composer Scripts**
+
+Added helpful Composer commands for documentation:
+
+```bash
+# Serve documentation locally
+composer docs:serve
+
+# Build documentation
+composer docs:build
+```
+
+#### 2. **Better Template System**
+
+Improved starter template with proper structure:
+
+```bash
+# Quick start with template
+composer create-project phpspa/phpspa my-app
+cd my-app
+composer start
+```
+
+#### 3. **Enhanced Autoloading**
+
+Added global autoloader for helper functions:
+- All helper functions automatically available
+- No manual require statements needed
+
+---
+
+### 📦 Project Metadata Updates
+
+#### composer.json Updates:
+
+**Description Updated:**
+- **Old:** "A lightweight, component-based PHP library for building Single Page Applications (SPAs) without relying on heavy frontend frameworks."
+- **New:** "A component-based library for building modern, reactive user interfaces in pure PHP. Inspired by React. ✨"
+
+**New Contributor Added:**
+- Samuel Paschalson (@SamuelPaschalson) - Contributor for Router & Response features
+
+**Namespace Changes:**
+- `phpSPA\` → `PhpSPA\` (all namespaces)
+
+**Autoload Updates:**
+- Added `src/global/autoload.php` for global helpers
+- Updated component file references
+
+---
+
+### 📊 Statistics
+
+**Overall Changes:**
+- **188 files changed**
+- **4,955 insertions**
+- **20,611 deletions**
+- **Net reduction:** ~15,656 lines (code cleanup and consolidation)
+
+**File Changes Breakdown:**
+- **44 files added** (new features and utilities)
+- **58 files modified** (updates and improvements)
+- **77 files deleted** (cleanup and consolidation)
+- **9 files renamed** (better organization)
+
+**Category Breakdown:**
+- **Core files:** 28 changes
+- **Client files:** 20 changes
+- **Documentation:** 103 changes (complete restructure)
+- **Template files:** 11 changes
+- **Test files:** 8 changes
+
+---
+
+### 🚀 Migration Guide (v1.1.9 → v2.0.0)
+
+#### Step 1: Update Dependencies
+```bash
+composer update dconco/phpspa
+```
+
+#### Step 2: Update Namespaces
+Find and replace all occurrences:
+- `phpSPA\` → `PhpSPA\`
+- `use phpSPA\` → `use PhpSPA\`
+
+#### Step 3: Update State Hooks
+```php
+// Replace all occurrences
+createState("key", value) → useState("key", value)
+
+// Add use statement
+use function Component\useState;
+```
+
+#### Step 4: Test Your Application
+```bash
+composer test
+```
+
+#### Step 5: Update Documentation References
+- Update any internal documentation
+- Check custom components for namespace usage
+- Verify all imports are correct
+
+---
+
+### 📖 Resources
+
+- **Documentation:** https://phpspa.readthedocs.io
+- **Repository:** https://github.com/dconco/phpspa
+- **JS Engine:** https://github.com/dconco/phpspa-js
+- **Discord Community:** https://discord.gg/FeVQs73C
+- **YouTube Channel:** https://youtube.com/@daveconco
+
+---
+
+### 🙏 Credits
+
+- **Maintainer:** [Dave Conco](https://github.com/dconco)
+- **Contributor:** [Samuel Paschalson](https://github.com/SamuelPaschalson) - Router & Response overhaul
+- **Community:** All contributors and testers who helped make v2.0.0 possible
+
+---
+
+## v1.1.8
 
 ### [Added]
 
