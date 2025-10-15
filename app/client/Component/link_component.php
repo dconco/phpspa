@@ -10,13 +10,13 @@ namespace Component;
  * @param string $to Target URL/route
  * @param string ...$HtmlAttr Additional HTML attributes
  * @return string HTML anchor element
- * @see https://phpspa.readthedocs.io/ Link Component Documentation
+ * @see https://phpspa.readthedocs.io/en/stable/navigations/link-component
  */
 function Link(string $children, string $to = '#', string ...$HtmlAttr): string
 {
     $attr = HTMLAttrInArrayToString($HtmlAttr);
 
     return <<<HTML
-	   <a href="{$to}" data-type="phpspa-link-tag"$attr>{$children}</a>
+	   <a href="{$to}" data-type="phpspa-link-tag" $attr>{$children}</a>
 	HTML;
 }

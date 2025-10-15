@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace phpSPA\Interfaces;
+namespace PhpSPA\Interfaces;
 
 /**
  * Route mapping interface for handling HTTP request matching
@@ -12,7 +12,7 @@ namespace phpSPA\Interfaces;
  * This interface ensures consistent route matching behavior across
  * different routing strategies.
  *
- * @package phpSPA\Interfaces
+ * @package PhpSPA\Interfaces
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

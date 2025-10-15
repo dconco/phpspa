@@ -1,19 +1,37 @@
+# Ignore dependencies
 /node_modules
+/vendor
+
+# Ignore build artifacts
 /public/build
 /public/storage
+
+# Ignore sensitive files
 /storage/*.key
-/vendor
+
+# Ignore IDE/editor folders
 /.idea
 /.vscode
+
+# Ignore system files
+.DS_Store
 /venv
+
+# Ignore build outputs
+/dist
+/build
 /site
-.log
+
+# Ignore environment files
 .env
 .env.dev
 .env.development
+
+# Ignore log files and access logs
 log
+*.log
 access_log
-requests.log
+
+# Ignore Composer's lock file and binary
 composer.lock
 composer.phar
-error.log

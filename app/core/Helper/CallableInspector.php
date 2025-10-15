@@ -1,6 +1,6 @@
 <?php
 
-namespace phpSPA\Core\Helper;
+namespace PhpSPA\Core\Helper;
 use ReflectionFunction;
 
 /**
@@ -11,7 +11,7 @@ use ReflectionFunction;
  * and facilitating dynamic invocation or introspection of functions, methods, or closures.
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
- * @package phpSPA\Core\Helper
+ * @package PhpSPA\Core\Helper
  * @static
  */
 class CallableInspector

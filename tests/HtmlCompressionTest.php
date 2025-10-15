@@ -11,7 +11,7 @@
  * @author dconco <concodave@gmail.com>
  */
 
-use phpSPA\Compression\Compressor;
+use PhpSPA\Compression\Compressor;
 
 echo "\n============== HTML COMPRESSION TEST STARTED ==============\n";
 

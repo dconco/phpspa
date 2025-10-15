@@ -1,17 +1,17 @@
 <?php
 
-namespace phpSPA\Core\Helper;
+namespace PhpSPA\Core\Helper;
 
-use phpSPA\Http\Session;
+use PhpSPA\Http\Session;
 
 /**
  * Advanced session data handling utilities
  *
  * This class provides enhanced session management capabilities with serialization
  * and base64 encoding for secure and efficient storage of complex data structures
- * within PHP sessions in the phpSPA framework.
+ * within PHP sessions in the PhpSPA framework.
  *
- * @package phpSPA\Core\Helper
+ * @package PhpSPA\Core\Helper
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

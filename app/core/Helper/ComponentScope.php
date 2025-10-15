@@ -1,6 +1,6 @@
 <?php
 
-namespace phpSPA\Core\Helper;
+namespace PhpSPA\Core\Helper;
 
 /**
  * Component scope management utility
@@ -10,7 +10,7 @@ namespace phpSPA\Core\Helper;
  * during component rendering. Each component gets its own scope to avoid
  * variable name collisions between different components.
  *
- * @package phpSPA\Core\Helper
+ * @package PhpSPA\Core\Helper
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

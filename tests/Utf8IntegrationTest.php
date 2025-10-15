@@ -1,7 +1,7 @@
 <?php
 
 /**
- * UTF-8 Encoding and Integration Test Suite for phpSPA v1.1.6
+ * UTF-8 Encoding and Integration Test Suite for PhpSPA v1.1.6
  *
  * Tests the newly fixed errors including:
  * - UTF-8 safe base64 encoding functions
@@ -13,12 +13,11 @@
  * 2. Integration of JavaScript compression fixes
  * 3. Combined functionality of all new features
  *
- * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/1-compression-system/ Compression System Documentation
  * @since v1.1.6
  * @author dconco <concodave@gmail.com>
  */
 
-use phpSPA\Compression\Compressor;
+use PhpSPA\Compression\Compressor;
 
 echo "\n============== UTF-8 ENCODING & INTEGRATION TESTS STARTED ==============\n\n";
 

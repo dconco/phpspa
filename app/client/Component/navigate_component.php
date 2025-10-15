@@ -2,7 +2,8 @@
 
 namespace Component;
 
-use phpSPA\Core\Helper\Enums\NavigateState;
+use PhpSPA\Core\Helper\Enums\NavigateState;
+use PhpSPA\Http\Security\Nonce;
 
 /**
  * Generates client-side navigation script.
@@ -10,10 +11,10 @@ use phpSPA\Core\Helper\Enums\NavigateState;
  * @param string $path Target path
  * @param string|NavigateState $state Navigation state (push/replace)
  * @return string Navigation script tag
- * @see https://phpspa.readthedocs.io/ Navigation Documentation
  * @author dconco <concodave@gmail.com>
+ * @see https://phpspa.readthedocs.io/en/stable/navigations/navigate-component
  */
-function Navigate(
+function Navigate (
     string $path,
     string|NavigateState $state = NavigateState::PUSH,
 ): string {
@@ -21,10 +22,11 @@ function Navigate(
         $state = NavigateState::from($state);
     }
     $state = $state->value;
+    $nonce = Nonce::attr();
 
     return <<<HTML
-	   <script data-type="phpspa/script">
-	      phpspa.navigate("$path", "$state");
+	   <script $nonce>
+	      phpspa.navigate("{$path}", "{$state}");
 	   </script>
 	HTML;
 }

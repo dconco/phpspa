@@ -1,10 +1,10 @@
 <?php
 
-namespace phpSPA\Core\Helper;
+namespace PhpSPA\Core\Helper;
 
 use Closure;
-use phpSPA\Http\Session;
-use const phpSPA\Core\Impl\Const\STATE_HANDLE;
+use PhpSPA\Http\Request;
+use const PhpSPA\Core\Impl\Const\STATE_HANDLE;
 
 /**
  * Class StateManager
@@ -13,7 +13,7 @@ use const phpSPA\Core\Impl\Const\STATE_HANDLE;
  * This class is responsible for handling state transitions, storing state data,
  * and providing access to state information throughout the application lifecycle.
  *
- * @package phpSPA\Core\Helper
+ * @package PhpSPA\Core\Helper
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @var string $stateKey
@@ -25,6 +25,10 @@ class StateManager
 
 	private mixed $value;
 
+	protected mixed $lastState;
+
+	protected static bool $firstRender = false;
+
 	/**
 	 * Initializes the state with a given key and a default value.
 	 *
@@ -35,7 +39,14 @@ class StateManager
 	{
 		$sessionData = SessionHandler::get(STATE_HANDLE);
 
-		$sessionData[$stateKey] = $sessionData[$stateKey] ?? $default;
+		if (!isset($sessionData[$stateKey]) && (new Request())->requestedWith() !== 'PHPSPA_REQUEST' && (new Request())->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT') {
+			self::$firstRender = true;
+		}
+
+		if (!isset($sessionData[$stateKey])) {
+			$sessionData[$stateKey] = $this->lastState = $default;
+		}
+
 		$this->value = $sessionData[$stateKey];
 		$this->stateKey = $stateKey;
 
@@ -58,6 +69,7 @@ class StateManager
 			return $sessionData[$this->stateKey] ?? $this->value;
 		}
 
+		$this->lastState = $this->value;
 		$this->value = $value;
 		$sessionData[$this->stateKey] = $value;
 		SessionHandler::set(STATE_HANDLE, $sessionData);

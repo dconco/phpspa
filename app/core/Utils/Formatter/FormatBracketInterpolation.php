@@ -1,6 +1,6 @@
 <?php
 
-namespace phpSPA\Core\Utils\Formatter;
+namespace PhpSPA\Core\Utils\Formatter;
 
 /**
  * Bracket interpolation formatting utilities
@@ -9,7 +9,7 @@ namespace phpSPA\Core\Utils\Formatter;
  * interpolation syntax ({{ ... }}) within template content. It handles the
  * transformation of template expressions into executable PHP code.
  *
- * @package phpSPA\Core\Utils\Formatter
+ * @package PhpSPA\Core\Utils\Formatter
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

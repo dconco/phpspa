@@ -1,15 +1,15 @@
 <?php
 
-namespace phpSPA\Core\Helper;
+namespace PhpSPA\Core\Helper;
 
 /**
  * Component attribute parsing utilities
  *
  * This trait provides methods for parsing HTML attributes from string format
  * into array format, facilitating component attribute handling and manipulation
- * within the phpSPA framework.
+ * within the PhpSPA framework.
  *
- * @package phpSPA\Core\Helper
+ * @package PhpSPA\Core\Helper
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

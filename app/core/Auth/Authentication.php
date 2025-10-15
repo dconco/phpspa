@@ -9,9 +9,9 @@ namespace phpspa\Core\Auth;
  *
  * This trait provides methods for extracting and processing various types of
  * authentication credentials from HTTP requests, including Basic Auth, Bearer tokens,
- * and other authentication schemes within the phpSPA framework.
+ * and other authentication schemes within the PhpSPA framework.
  *
- * @package phpSPA\Core\Auth
+ * @package PhpSPA\Core\Auth
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

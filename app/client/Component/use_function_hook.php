@@ -2,21 +2,21 @@
 
 namespace Component;
 
-use phpSPA\Core\Helper\FunctionCaller;
+use PhpSPA\Core\Helper\FunctionCaller;
 
 /**
  * Creates a callable function handler for client-side execution.
  *
  * This function provides a bridge between server-side PHP functions and
- * client-side JavaScript execution within the phpSPA framework, enabling
+ * client-side JavaScript execution within the PhpSPA framework, enabling
  * secure invocation of PHP functions from the frontend with CSRF protection.
  *
- * @param callable $function The PHP function to make available for client-side calling.
- * @see https://phpspa.readthedocs.io/ PHP-JS Integration Documentation
- * @return FunctionCaller Handler object for secure function invocation.
  * @author dconco <concodave@gmail.com>
+ * @param callable $function The PHP function to make available for client-side calling.
+ * @return FunctionCaller Handler object for secure function invocation.
+ * @see https://phpspa.readthedocs.io/en/stable/hooks/use-function
  */
-function useFunction(callable $function): FunctionCaller
+function useFunction (callable $function): FunctionCaller
 {
     return new FunctionCaller($function);
 }

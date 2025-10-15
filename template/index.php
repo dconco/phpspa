@@ -1,13 +1,10 @@
 <?php
 
+chdir(__DIR__);
 require_once '../vendor/autoload.php';
 
-use phpSPA\App;
-use phpSPA\Compression\Compressor;
-
-// Nonce::enable([
-//     'script-src' => ["'self'", "https://unpkg.com/phpspa-js"]
-// ]);
+use PhpSPA\App;
+use PhpSPA\Compression\Compressor;
 
 /* Initialize a new Application  */
 $app = (new App(require 'layout/Layout.php'))
@@ -41,7 +38,7 @@ $app = (new App(require 'layout/Layout.php'))
             margin-bottom: 1rem;
         }
         CSS,
-        'global-css'
+        'global-css',
     )
 
     ->script(
@@ -81,7 +78,7 @@ $app = (new App(require 'layout/Layout.php'))
             console.log('Execution order:', window.globalUtils.executionOrder);
         });
         JS,
-        'global-js'
+        'global-js',
     )
 
     ->run();

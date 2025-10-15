@@ -7,7 +7,7 @@
  */
 function autoDetectBasePath(): string
 {
-    return \phpSPA\Core\Helper\PathResolver::autoDetectBasePath();
+    return \PhpSPA\Core\Helper\PathResolver::autoDetectBasePath();
 }
 
 /**
@@ -22,7 +22,7 @@ function relativePath(?string $requestUri = null): string
         $requestUri = $_SERVER['REQUEST_URI'] ?? '';
     }
     
-    return \phpSPA\Core\Helper\PathResolver::getRelativePathFromUri($requestUri);
+    return \PhpSPA\Core\Helper\PathResolver::getRelativePathFromUri($requestUri);
 }
 
 /**
@@ -34,7 +34,7 @@ function relativePath(?string $requestUri = null): string
  */
 function resolvePath(string $path, bool $includeBasePath = true): string
 {
-    return \phpSPA\Core\Helper\PathResolver::resolve($path, $includeBasePath);
+    return \PhpSPA\Core\Helper\PathResolver::resolve($path, $includeBasePath);
 }
 
 /**
@@ -44,5 +44,5 @@ function resolvePath(string $path, bool $includeBasePath = true): string
  */
 function basePath(): string
 {
-    return \phpSPA\Core\Helper\PathResolver::getBasePath();
+    return \PhpSPA\Core\Helper\PathResolver::getBasePath();
 }

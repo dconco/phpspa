@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace phpSPA\Core\Utils;
+namespace PhpSPA\Core\Utils;
 
 /**
  * Data validation and sanitization utilities
  *
  * This trait provides methods for validating and sanitizing various types of data
- * within the phpSPA framework. It ensures data integrity and security by applying
+ * within the PhpSPA framework. It ensures data integrity and security by applying
  * appropriate validation rules and sanitization techniques.
  *
- * @package phpSPA\Core\Utils
+ * @package PhpSPA\Core\Utils
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

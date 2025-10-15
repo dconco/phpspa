@@ -14,7 +14,7 @@ function HashComp($children, ...$attr)
 	$attr = HTMLAttrInArrayToString($attr);
 
 	return <<<HTML
-	   <div$attr>
+	   <div $attr>
 	      <Component.Link>
 	         <Paragraph>{$children}</Paragraph>
 	      </Component.Link>

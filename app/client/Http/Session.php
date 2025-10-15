@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace phpSPA\Http;
+namespace PhpSPA\Http;
 
 /**
  * Session utility class for managing PHP sessions
  *
  * Provides static methods for common session operations with proper
  * error handling and validation. This class ensures secure and consistent
- * session management throughout the phpSPA framework.
+ * session management throughout the PhpSPA framework.
  *
  * @author dconco <concodave@gmail.com>
  */
 class Session
 {
-    use \phpSPA\Core\Utils\Validate;
+    use \PhpSPA\Core\Utils\Validate;
 
     /**
      * Check if a session is currently active

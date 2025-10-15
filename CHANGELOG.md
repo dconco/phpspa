@@ -1,6 +1,257 @@
 # CHANGELOG
 
-## v1.1.8 (Current)
+## v2.0.0 (Current)
+
+> [!IMPORTANT]
+> This is a **MAJOR VERSION RELEASE** with significant breaking changes. Please read the migration guide carefully before upgrading.
+
+### 🚨 Breaking Changes
+
+#### 1. **Namespace Restructuring** 🔄
+
+All namespaces have been changed from `phpSPA\` to `PhpSPA\` (capital P and capital S) for PSR-4 compliance and better naming conventions.
+
+**Migration Required:**
+
+```php
+// Before (v1.1.9 and earlier)
+use phpSPA\App;
+use phpSPA\Component;
+use phpSPA\Http\Request;
+use phpSPA\Http\Response;
+
+// After (v2.0.0)
+use PhpSPA\App;
+use PhpSPA\Component;
+use PhpSPA\Http\Request;
+use PhpSPA\Http\Response;
+```
+
+**Files Affected:**
+- All autoloaded namespaces in `composer.json`
+- All class imports throughout your application
+- Interface name changed: `phpSpaInterface.php` → `PhpSPAInterface.php`
+
+#### 2. **Hook API Changes** ⚛️
+
+State management function has been renamed for better clarity and consistency with modern frameworks:
+
+**Migration Required:**
+
+```php
+// Before (v1.1.9 and earlier)
+$counter = createState("count", 0);
+
+// After (v2.0.0)
+use function Component\useState;
+
+$counter = useState("count", 0);
+```
+
+#### 3. **Global Script and Stylesheet API Enhancement**
+
+Added optional naming parameter for better asset management:
+
+```php
+// Before (v1.1.9 and earlier)
+$app->script(function() {
+    return "console.log('app loaded');";
+});
+
+// After (v2.0.0) - with optional name parameter
+$app->script(function() {
+    return "console.log('app loaded');";
+}, 'app-init');
+```
+
+---
+
+### ✨ New Features
+
+#### 1. **New React-like Hooks System** ⚛️
+
+Added modern React-inspired hooks for better component development:
+
+##### `useState()` Hook
+Renamed from `createState()` for better consistency:
+
+```php
+use function Component\useState;
+
+function Counter() {
+    $count = useState("counter", 0);
+    return <<<HTML
+        <h1>Count: {$count}</h1>
+        <button onclick="setState('counter', {$count} + 1)">Increment</button>
+    HTML;
+}
+```
+
+**Documentation:** [hooks/use-state](https://phpspa.readthedocs.io/en/stable/hooks/use-state)
+
+##### `useEffect()` Hook - NEW! 🎉
+Execute side effects when dependencies change:
+
+```php
+use function Component\{useState, useEffect};
+
+function UserProfile() {
+    $userId = useState("userId", 1);
+    $userData = useState("userData", null);
+    
+    useEffect(function() use ($userId, $userData) {
+        // Fetch user data when userId changes
+        $data = fetchUserFromAPI($userId());
+        $userData->set($data);
+    }, [$userId]);
+    
+    return <<<HTML
+        <div>User: {$userData()->name}</div>
+    HTML;
+}
+```
+
+**Documentation:** [hooks/use-effect](https://phpspa.readthedocs.io/en/stable/hooks/use-effect)
+
+#### 2. **Enhanced Security Features** 🔒
+
+##### Content Security Policy (CSP) with Nonce Support - NEW!
+
+Added comprehensive CSP support with automatic nonce generation:
+
+```php
+use PhpSPA\Http\Security\Nonce;
+
+// Enable CSP with nonce
+Nonce::enable([
+    'script-src' => ["https://cdn.jsdelivr.net"],
+    'style-src'  => ["https://fonts.googleapis.com"],
+    'font-src'   => ["https://fonts.gstatic.com"]
+]);
+
+// Use nonce in templates
+$nonce = Nonce::nonce();
+echo "<script nonce='{$nonce}'>console.log('secure');</script>";
+```
+
+**Features:**
+- Automatic nonce generation per request
+- Configurable CSP directives
+- Integration with inline scripts and styles
+- Protection against XSS attacks
+
+**Documentation:** [security/content-security-policy](https://phpspa.readthedocs.io/en/stable/security/content-security-policy)
+
+#### 3. **Global Helper Functions** 🛠️
+
+Added convenient global helper functions for common operations:
+
+##### `response()` Helper
+```php
+// Quick response helper
+return response(['message' => 'Success'], 200);
+return response()->json(['data' => $data]);
+return response()->error('Not found', 404);
+```
+
+##### `router()` Helper
+```php
+// Quick router access
+router()->get('/api/users', function() {
+    return response()->json(['users' => getUsers()]);
+});
+```
+
+##### `scope()` Helper
+```php
+// Register component scope variables
+scope([
+    'User' => fn() => getCurrentUser(),
+    'Config' => fn() => getAppConfig()
+]);
+
+// Use in components with @ or $ syntax
+return "<@User />";
+```
+
+##### `autoDetectBasePath()` Helper
+```php
+// Automatically detect application base path
+$basePath = autoDetectBasePath();
+```
+
+##### `relativePath()` Helper
+```php
+// Get relative path from current URI
+$path = relativePath(); // e.g., '../../'
+```
+
+#### 4. **Component Scope System** 🎯
+
+New component variable registration system for shared data:
+
+```php
+
+function Header() {
+   $CurrentUser = function() {
+     return $_SESSION['user'] ?? null;
+   };
+   
+   $AppName = fn() => 'My App';
+
+   // Export component variables
+   scope(compact('CurrentUser', 'AppName'));
+
+   // Then you can use it inside your template
+   return <<<HTML
+      <h1><@AppName /></h1>
+      <span>Welcome, <@CurrentUser /></span>
+   HTML;
+}
+```
+
+#### 5. **Path Resolution System** 🗺️
+
+Enhanced path handling with automatic base path detection:
+
+```php
+use PhpSPA\Core\Helper\PathResolver;
+
+// Auto-detect base path
+$base = PathResolver::autoDetectBasePath();
+
+// Get relative path
+$relative = PathResolver::relativePath();
+
+// Resolve asset paths
+$assetPath = PathResolver::resolve('/assets/style.css');
+```
+
+### 📦 Project Metadata Updates
+
+#### composer.json Updates:
+
+**New Contributor Added:**
+- Samuel Paschalson (@SamuelPaschalson) - Contributor for Router & Response features
+
+**Namespace Changes:**
+- `phpSPA\` → `PhpSPA\` (all namespaces)
+
+**Autoload Updates:**
+- Added `src/global/autoload.php` for global helpers
+- Updated component file references
+
+---
+
+### 🙏 Credits
+
+- **Maintainer:** [Dave Conco](https://github.com/dconco)
+- **Contributor:** [Samuel Paschalson](https://github.com/SamuelPaschalson) - Router & Response overhaul
+- **Community:** All contributors and testers who helped make v2.0.0 possible
+
+---
+
+## v1.1.8
 
 ### [Added]
 

@@ -1,7 +1,7 @@
 {
 	"name": "dconco/phpspa",
 	"type": "library",
-	"description": "A lightweight, component-based PHP library for building Single Page Applications (SPAs) without relying on heavy frontend frameworks.",
+	"description": "A component-based library for building modern, reactive user interfaces in pure PHP. Inspired by React. ✨",
 	"keywords": [
 		"php",
 		"spa",
@@ -13,10 +13,10 @@
 	"license": "MIT",
 	"autoload": {
 		"psr-4": {
-			"phpSPA\\": "app/client/",
-			"phpSPA\\Core\\": "app/core/",
-			"phpSPA\\Interfaces\\": "app/interfaces/",
-			"phpSPA\\Exceptions\\": "app/exceptions/"
+			"PhpSPA\\": "app/client/",
+			"PhpSPA\\Core\\": "app/core/",
+			"PhpSPA\\Interfaces\\": "app/interfaces/",
+			"PhpSPA\\Exceptions\\": "app/exceptions/"
 		},
 		"files": [
 			"app/core/Impl/Const/StateConstant.php",
@@ -31,6 +31,12 @@
 			"email": "concodave@gmail.com",
 			"role": "Author & Maintainer",
 			"homepage": "https://dconco.github.io"
+		},
+		{
+			"name": "Samuel Paschalson",
+			"email": "samuelpaschalson@gmail.com",
+			"role": "Contributor",
+			"homepage": "https://samuel-paschalson.netlify.app"
 		}
 	],
 	"require": {
@@ -39,6 +45,11 @@
 	"prefer-stable": true,
 	"minimum-stability": "stable",
 	"scripts": {
-		"test": "php tests/Test.php"
+		"test": "php tests/Test.php",
+		"docs:serve": [
+			"Composer\\Config::disableProcessTimeout",
+			"py -m mkdocs serve --dev-addr=127.0.0.1:4000 --watch docs --watch mkdocs.yml --livereload"
+		],
+		"docs:build": "py -m mkdocs build --clean --site-dir build"
 	}
 }

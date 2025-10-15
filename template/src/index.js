@@ -11,11 +11,11 @@
  * 
  * ===========================================================
  * 
- * phpSPA JavaScript Engine
+ * PhpSPA JavaScript Engine
  *
  * A lightweight JavaScript engine for PHP-powered single-page applications.
  * Handles SPA-style navigation, content replacement, and lifecycle events
- * without full page reloads. Designed to pair with the `phpSPA` PHP framework.
+ * without full page reloads. Designed to pair with the `PhpSPA` PHP framework.
  *
  * Note:
  * - All scripts and logic must be attached per component using `$component->script(...)`.
@@ -79,7 +79,7 @@ function base64ToUtf8(str) {
 }
 (function () {
    /**
-    * Initialize phpSPA when DOM is ready
+    * Initialize PhpSPA when DOM is ready
     * Sets up the initial browser history state with the current page content
     */
    window.addEventListener("DOMContentLoaded", () => {
@@ -108,7 +108,7 @@ function base64ToUtf8(str) {
             );
          }
 
-         // Replace current history state with phpSPA data
+         // Replace current history state with PhpSPA data
          RuntimeManager.replaceState(
             initialState,
             document.title,
@@ -123,7 +123,7 @@ function base64ToUtf8(str) {
    });
 
    /**
-    * Handle clicks on phpSPA navigation links
+    * Handle clicks on PhpSPA navigation links
     * Intercepts clicks on elements with data-type="phpspa-link-tag"
     * and routes them through the SPA navigation system
     */
@@ -134,7 +134,7 @@ function base64ToUtf8(str) {
          // Prevent default browser navigation
          event.preventDefault();
 
-         // Navigate using phpSPA system
+         // Navigate using PhpSPA system
          phpspa.navigate(new URL(spaLink.href, location.href), "push");
       }
    });
@@ -151,7 +151,7 @@ function base64ToUtf8(str) {
       // Enable automatic scroll restoration
       history.scrollRestoration = "auto";
 
-      // Check if we have valid phpSPA state data
+      // Check if we have valid PhpSPA state data
       if (navigationState && navigationState.content) {
          // Restore page title
          document.title = navigationState.title ?? document.title;
@@ -188,9 +188,8 @@ function base64ToUtf8(str) {
             document.startViewTransition(updateDOM).finished.then(completedDOMUpdate).catch((reason) => {
                RuntimeManager.emit('load', {
                   route: location.href,
-                  message: reason,
                   success: false,
-                  error: true,
+                  error: reason || 'Unknown error during view transition',
                });
             });
          } else {
@@ -252,10 +251,11 @@ class phpspa {
       // Emit beforeload event for loading indicators
       RuntimeManager.emit("beforeload", { route: url });
 
-      // Fetch content from the server with phpSPA headers
+      // Fetch content from the server with PhpSPA headers
       fetch(url, {
          headers: {
             "X-Requested-With": "PHPSPA_REQUEST",
+            "X-Phpspa-Target": "navigate",
          },
          mode: "same-origin",
          redirect: "follow",
@@ -419,10 +419,9 @@ class phpspa {
          if (document.startViewTransition) {
             document.startViewTransition(updateDOM).finished.then(completedDOMUpdate).catch((reason) => {
                RuntimeManager.emit('load', {
-                  route: location.href,
-                  message: reason,
+                  route: url,
                   success: false,
-                  error: true,
+                  error: reason || 'Unknown error during view transition',
                });
             });
          } else {
@@ -803,10 +802,10 @@ class phpspa {
 }
 
 /**
- * Runtime Manager for phpSPA
+ * Runtime Manager for PhpSPA
  *
  * Handles script execution, style injection, event management, and browser history
- * for the phpSPA framework. Uses an obscure class name to avoid conflicts.
+ * for the PhpSPA framework. Uses an obscure class name to avoid conflicts.
  *
  * @class RuntimeManager
  */
@@ -1084,7 +1083,7 @@ if (typeof __call !== "function") {
 }
 
 /**
- * Initialize phpSPA global object
+ * Initialize PhpSPA global object
  * Makes the phpspa class available globally for easy access
  */
 (function () {

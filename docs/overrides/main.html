@@ -1,10 +1,322 @@
 {% extends "base.html" %}
 
 {% block extrahead %}
-  <link rel="icon" href="{{ base_url }}/img/favicon.ico">
-  <link rel="icon" type="image/png" sizes="32x32" href="{{ base_url }}/img/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="{{ base_url }}/img/favicon-16x16.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="{{ base_url }}/img/favicon-16x16.png">
-  <link rel="apple-touch-icon" sizes="192x192" href="{{ base_url }}/img/android-chrome-192x192.png">
-  <meta name="theme-color" content="#2196f3">
+   <!-- Favicon -->
+   <link rel="icon" href="{{ base_url }}/img/favicon.ico">
+   <link rel="icon" type="image/png" sizes="32x32" href="{{ base_url }}/img/favicon-32x32.png">
+   <link rel="icon" type="image/png" sizes="16x16" href="{{ base_url }}/img/favicon-16x16.png">
+   <link rel="apple-touch-icon" sizes="192x192" href="{{ base_url }}/img/android-chrome-192x192.png">
+   
+   <!-- Meta Tags -->
+   <meta name="theme-color" content="#764ba2">
+   <meta name="description" content="PhpSPA Documentation - A component-based library for building modern, reactive user interfaces in pure PHP. Inspired by React. ✨">
+   <meta name="keywords" content="PhpSPA, PHP, SPA, MPA, Multi-Page Application, Single Page Application, PHP Framework, Component-based, Routing, State Management, CSRF Protection">
+   <meta name="author" content="Dave Conco">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   
+   <!-- Open Graph / Facebook -->
+   <meta property="og:type" content="website">
+   <meta property="og:url" content="https://phpspa.readthedocs.io/">
+   <meta property="og:title" content="PhpSPA Documentation - Modern PHP Component Based Library">
+   <meta property="og:description" content="A component-based library for building modern, reactive user interfaces in pure PHP. Inspired by React. ✨">
+   <meta property="og:image" content="{{ base_url }}/img/android-chrome-192x192.png">
+   
+   <!-- Twitter -->
+   <meta property="twitter:card" content="summary_large_image">
+   <meta property="twitter:url" content="https://phpspa.readthedocs.io/">
+   <meta property="twitter:title" content="PhpSPA Documentation - Modern PHP Component Based Library">
+   <meta property="twitter:description" content="A component-based library for building modern, reactive user interfaces in pure PHP. Inspired by React. ✨">
+   <meta property="twitter:image" content="{{ base_url }}/img/android-chrome-192x192.png">
+   
+   <!-- Additional SEO -->
+   <meta name="robots" content="index, follow">
+   <meta name="language" content="English">
+   <meta name="revisit-after" content="7 days">
+   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+   <style>
+      body {
+         background: linear-gradient(135deg, 
+            rgba(102, 126, 234, 0.15) 0%,
+            rgba(118, 75, 162, 0.05) 25%,
+            rgba(240, 147, 251, 0.03) 50%,
+            rgba(102, 126, 234, 0.05) 75%,
+            rgba(118, 75, 162, 0.03) 100%
+         );
+         background-attachment: fixed;
+         background-size: 400% 400%;
+         animation: gradientShift 15s ease infinite;
+      }
+
+      @keyframes gradientShift {
+         0%, 100% { background-position: 0% 50%; }
+         50% { background-position: 100% 50%; }
+      }
+
+      [data-md-color-scheme="slate"] body {
+         background: linear-gradient(135deg, 
+            rgba(102, 126, 234, 0.08) 0%, 
+            rgba(118, 75, 162, 0.12) 25%,
+            rgba(240, 147, 251, 0.08) 50%,
+            rgba(102, 126, 234, 0.12) 75%,
+            rgba(118, 75, 162, 0.08) 100%
+         );
+      }
+
+      .md-search__input {
+         color: #575757 !important;
+      }
+
+      /* Custom Header Styles */
+      .md-header {
+         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+         padding-top: 10px;
+         width: 100%;
+      }
+      
+      .md-header__title {
+         font-weight: 800;
+         font-size: 1.3rem;
+         letter-spacing: -0.02em;
+      }
+      
+      .md-header__button {
+         color: rgba(255, 255, 255, 0.9);
+      }
+      
+      .md-header__button:hover {
+         color: white;
+      }
+      
+      .md-search__input {
+         background-color: rgba(255, 255, 255, 0.15);
+         border: 1px solid rgba(255, 255, 255, 0.2);
+         color: white;
+         border-radius: 20px;
+         padding: 0.5rem 1rem;
+         transition: all 0.3s ease;
+      }
+      
+      .md-search__input::placeholder {
+         color: rgba(255, 255, 255, 0.7);
+      }
+      
+      .md-search__input:hover {
+         background-color: rgba(255, 255, 255, 0.2);
+         border-color: rgba(255, 255, 255, 0.4);
+      }
+
+      .md-search__input:focus {
+         background-color: rgba(255, 255, 255, 0.25);
+         border-color: rgba(255, 255, 255, 0.5);
+         outline: none;
+         box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+      }
+
+      .md-search__form {
+         border-radius: 20px;
+      }
+      
+      .md-tabs {
+         width: 100%;
+         padding-bottom: 10px;
+         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .md-tabs__link {
+         font-weight: 500;
+         padding: 5px 10px;
+         opacity: 0.8;
+      }
+      
+      .md-tabs__link:hover {
+         opacity: 1;
+         background: #ffffff16;
+         border-radius: 8px;
+      }
+      
+      .md-tabs__link--active {
+         opacity: 1;
+         font-weight: 600;
+         border-bottom: 2px solid white;
+      }
+      
+      /* Logo/Brand area */
+      .md-header__title .md-header__ellipsis {
+         font-size: 18px;
+         color: f0f0f0;
+      }
+
+      /* Custom Footer Styles */
+      .md-footer {
+         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+         box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+         color: white;
+      }
+
+      .md-footer-meta {
+         background: linear-gradient(135deg, #5a6fd8 0%, #6a4391 100%);
+      }
+
+      .md-footer__link,
+      .md-footer__title {
+         color: rgba(255, 255, 255, 0.9);
+      }
+
+      .md-footer__link:hover,
+      .md-footer__link:focus {
+         color: white;
+         opacity: 1;
+      }
+
+      .md-footer__inner {
+         padding: 0.6rem 0;
+      }
+
+      .md-footer-nav__link {
+         color: rgba(255, 255, 255, 0.9);
+         transition: all 0.3s ease;
+      }
+
+      .md-footer-nav__link:hover {
+         background: rgba(255, 255, 255, 0.15);
+         border-radius: 8px;
+         color: white;
+      }
+
+      .md-footer-meta__inner {
+         color: rgba(255, 255, 255, 0.85);
+      }
+
+      .md-footer-copyright {
+         color: rgba(255, 255, 255, 0.8);
+      }
+
+      .md-footer-copyright__highlight {
+         color: white;
+         font-weight: 600;
+      }
+
+      .md-social {
+         padding: 0.4rem 0;
+      }
+
+      .md-social__link {
+         color: rgba(255, 255, 255, 0.8);
+         transition: all 0.3s ease;
+      }
+
+      .md-social__link:hover {
+         color: white;
+         transform: translateY(-2px);
+      }
+
+      /* PHP Variables - Different color from comments */
+      .highlight .nv,  /* Name.Variable like $name */
+      .highlight .vg,  /* Name.Variable.Global */
+      .highlight .vi,  /* Name.Variable.Instance */
+      .highlight .vc { /* Name.Variable.Class */
+         color: #dc5a65 !important; /* Red/Pink for variables */
+      }
+
+      [data-md-color-scheme="slate"] .highlight .nv,
+      [data-md-color-scheme="slate"] .highlight .vg,
+      [data-md-color-scheme="slate"] .highlight .vi,
+      [data-md-color-scheme="slate"] .highlight .vc {
+         color: #ff6b9d !important; /* Brighter pink for dark mode */
+      }
+
+      /* Class names */
+      .highlight .nc,  /* Name.Class like Nonce */
+      .highlight .nn,  /* Name.Namespace */
+      .highlight .na,  /* Name.Attribute */
+      .highlight .no { /* Name.Constant */
+         color: #b1890f !important;
+      }
+
+      [data-md-color-scheme="slate"] .highlight .nc,
+      [data-md-color-scheme="slate"] .highlight .nn,
+      [data-md-color-scheme="slate"] .highlight .na,
+      [data-md-color-scheme="slate"] .highlight .no {
+         color: #f1b500 !important;
+      }
+
+      /* Method/Function names */
+      .highlight .nx { /* Name.Property */
+         color: #a626a4 !important;
+      }
+
+      [data-md-color-scheme="slate"] .highlight .nx {
+         color: #ff00fb !important;
+      }
+   </style>
+   
+   <script>
+      // Highlight static method calls like Nonce::enable()
+      document.addEventListener('DOMContentLoaded', function() {
+         document.querySelectorAll('.highlight').forEach(function(block) {
+            let html = block.innerHTML;
+            // Match ::methodName( pattern and color the method name green
+            html = html.replace(/::([\w]+)(\s*\()/g, function(match, methodName, paren) {
+               return '::<span style="color: #1c7d4d; font-weight: 600;">' + methodName + '</span>' + paren;
+            });
+            block.innerHTML = html;
+         });
+      });
+   </script>
+   
+   <script>
+      // Highlight tags that start with <Component, <@, or <$ (including attributes)
+      document.addEventListener('DOMContentLoaded', function() {
+         let isProcessing = false;
+         
+         function highlightSpecialTags() {
+            if (isProcessing) return; // Prevent re-entry
+            isProcessing = true;
+            
+            document.querySelectorAll('.highlight').forEach(function(block) {
+               // Skip if already processed
+               if (block.dataset.highlighted) return;
+               
+               let html = block.innerHTML;
+               // Regex: <[\$@]?[A-Z][\w.\-]*\b([^>]*)>
+               // Matches <Component ...>, <@NavLink ...>, <$NavLink ...>, </Component ...>, </@NavLink ...>, </$NavLink ...>
+               html = html.replace(/(&lt;\/?)([@$]?[A-Z][\w.\-]*)(\b[^&<>]*?)(?=&gt;)/g,
+                  function(match, open, tag, rest) {
+                     return open + '<span style="color: #a846b9;">' + tag + '</span>' + rest;
+                  }
+               );
+               block.innerHTML = html;
+               block.dataset.highlighted = 'true'; // Mark as processed
+            });
+            
+            isProcessing = false;
+         }
+         
+         highlightSpecialTags();
+         
+         // Efficient observer with debouncing
+         let timeoutId;
+         const observer = new MutationObserver(function() {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(highlightSpecialTags, 100); // Debounce 100ms
+         });
+         
+         observer.observe(document.body, { 
+            childList: true, 
+            subtree: true 
+         });
+      });
+   </script>
+{% endblock %}
+
+{% block announce %}
+   <div style="background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%); padding: 0.6rem 0; text-align: center;">
+      <span style="color: white; font-weight: 500; font-size: 0.9rem;">
+         🎉 PhpSPA - Build React-like UIs in Pure PHP
+         <a href="{{ config.repo_url }}" style="color: white; text-decoration: underline; margin-left: 1rem;">Star on GitHub</a>
+      </span>
+   </div>
 {% endblock %}

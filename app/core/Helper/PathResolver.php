@@ -1,6 +1,6 @@
 <?php
 
-namespace phpSPA\Core\Helper;
+namespace PhpSPA\Core\Helper;
 
 /**
  * Path resolver utility for calculating relative paths
@@ -8,7 +8,7 @@ namespace phpSPA\Core\Helper;
  * This class helps resolve relative paths between a base path and current path,
  * useful for generating correct URLs in nested routes.
  *
- * @package phpSPA\Core\Helper
+ * @package PhpSPA\Core\Helper
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

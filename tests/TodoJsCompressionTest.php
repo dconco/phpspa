@@ -4,7 +4,7 @@
  * Test specific JavaScript compression issues mentioned in TODO.md
  */
 
-use phpSPA\Compression\Compressor;
+use PhpSPA\Compression\Compressor;
 
 echo "\n============== TODO SPECIFIC JS COMPRESSION TESTS ==============\n\n";
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace phpSPA\Core\Utils;
+namespace PhpSPA\Core\Utils;
 
 /**
  * Class ImportedFile
@@ -9,7 +9,7 @@ namespace phpSPA\Core\Utils;
  * Provides methods and properties to handle file metadata, validation,
  * and processing within the application's workflow.
  *
- * @package phpSPA\Core\Utils
+ * @package PhpSPA\Core\Utils
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @var string $dataUri
@@ -17,9 +17,7 @@ namespace phpSPA\Core\Utils;
  * @var string $base64Content
  * @var string $filePath
  * @var int $contentLength
- * @see https://phpspa.readthedocs.io/en/latest/v1.1/1-file-import-utility/#Class-Reference
- * @link https://phpspa.readthedocs.io/en/latest/v1.1/1-file-import-utility
- * @static
+ * @see https://phpspa.readthedocs.io/en/stable/references/file-import-utility
  */
 class ImportedFile
 {

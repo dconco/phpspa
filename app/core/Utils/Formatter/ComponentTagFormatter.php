@@ -1,9 +1,9 @@
 <?php
 
-namespace phpSPA\Core\Utils\Formatter;
+namespace PhpSPA\Core\Utils\Formatter;
 
-use phpSPA\Exceptions\AppException;
-use phpSPA\Core\Helper\ComponentScope;
+use PhpSPA\Exceptions\AppException;
+use PhpSPA\Core\Helper\ComponentScope;
 use ReflectionMethod;
 
 /**
@@ -11,16 +11,16 @@ use ReflectionMethod;
  *
  * This trait provides methods for parsing and formatting custom component tags
  * within HTML markup. It handles the transformation of custom component syntax
- * into executable PHP components within the phpSPA framework.
+ * into executable PHP components within the PhpSPA framework.
  *
- * @package phpSPA\Core\Utils\Formatter
+ * @package PhpSPA\Core\Utils\Formatter
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
  */
 trait ComponentTagFormatter
 {
-   use \phpSPA\Core\Helper\ComponentParser;
+   use \PhpSPA\Core\Helper\ComponentParser;
 
    /**
     * Formats the given DOM structure.

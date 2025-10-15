@@ -6,12 +6,11 @@
  * Tests the JavaScript minification functionality with automatic semicolon insertion
  * to ensure safe compression without breaking JavaScript syntax.
  *
- * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/1-compression-system/ Compression System Documentation
  * @since v1.1.5
  * @author dconco <concodave@gmail.com>
  */
 
-use phpSPA\Compression\Compressor;
+use PhpSPA\Compression\Compressor;
 
 echo "\n============== JS COMPRESSION TEST STARTED ==============\n\n";
 

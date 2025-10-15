@@ -1,15 +1,15 @@
 <?php
 
-namespace phpSPA\Exceptions;
+namespace PhpSPA\Exceptions;
 
 /**
- * Base exception class for phpSPA framework
+ * Base exception class for PhpSPA framework
  *
  * This class serves as the foundation for all custom exceptions within
- * the phpSPA framework. It extends PHP's built-in Exception class to
+ * the PhpSPA framework. It extends PHP's built-in Exception class to
  * provide framework-specific error handling and messaging capabilities.
  *
- * @package phpSPA\Exceptions
+ * @package PhpSPA\Exceptions
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT

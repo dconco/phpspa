@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace phpSPA\Core\Utils\Routes\Exceptions;
+namespace PhpSPA\Core\Utils\Routes\Exceptions;
 
 use Closure;
-use phpSPA\Exceptions\AppException;
+use PhpSPA\Exceptions\AppException;
 
 /**
  * Exception for invalid route parameter types
@@ -14,7 +14,7 @@ use phpSPA\Exceptions\AppException;
  * data types during route validation and type checking. It provides detailed
  * information about supported types and validation errors.
  *
- * @package phpSPA\Core\Utils\Routes\Exceptions
+ * @package PhpSPA\Core\Utils\Routes\Exceptions
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
