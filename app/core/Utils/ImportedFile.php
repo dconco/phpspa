@@ -17,7 +17,7 @@ namespace PhpSPA\Core\Utils;
  * @var string $base64Content
  * @var string $filePath
  * @var int $contentLength
- * @see https://phpspa.readthedocs.io/en/stable/references/file-import-utility
+ * @see https://phpspa.vercel.app/references/file-import-utility
  */
 class ImportedFile
 {

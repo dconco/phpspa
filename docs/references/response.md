@@ -135,4 +135,4 @@ MapRoute supports parameter patterns and strict types in route declarations. Exa
 - `/user/{id: int}` — typed parameter (int)
 - `/search/{q: string}` — string param
 
-For full details see https://phpspa.readthedocs.io/en/stable/routing/advanced-routing.
+For full details see https://phpspa.vercel.app/routing/advanced-routing.

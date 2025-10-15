@@ -1,7 +1,7 @@
 site_name: PhpSPA @V2
 site_description: A component-based library for building modern, reactive user interfaces in pure PHP. Inspired by React. ✨
 site_author: Dave Conco
-site_url: https://phpspa.readthedocs.io
+site_url: https://phpspa.vercel.app
 
 # Repository
 repo_name: dconco/phpspa

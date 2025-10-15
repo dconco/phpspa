@@ -16,7 +16,7 @@ use PhpSPA\Component;
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0
- * @see https://phpspa.readthedocs.io/en/stable/core-concepts
+ * @see https://phpspa.vercel.app/core-concepts
  */
 interface PhpSPAInterface {
     /**
@@ -24,7 +24,7 @@ interface PhpSPAInterface {
      *
      * @param string $targetID The target ID to be set.
      * @return App
-     * @see https://phpspa.readthedocs.io/en/stable/layout/#setting-the-default-target-id
+     * @see https://phpspa.vercel.app/layout/#setting-the-default-target-id
      */
     public function defaultTargetID (string $targetID): App;
 
@@ -37,7 +37,7 @@ interface PhpSPAInterface {
      * as case sensitive by default.
      *
      * @return App
-     * @see https://phpspa.readthedocs.io/en/stable/routing/component-configuration/#global-case-sensitivity
+     * @see https://phpspa.vercel.app/routing/component-configuration/#global-case-sensitivity
      */
     public function defaultToCaseSensitive (): App;
 
@@ -48,7 +48,7 @@ interface PhpSPAInterface {
      * @param int $level Compression level (0=none, 1=auto, 2=basic, 3=aggressive, 4=extreme)
      * @param bool $gzip Enable gzip compression
      * @return App
-     * @see https://phpspa.readthedocs.io/en/stable/performance/html-compression
+     * @see https://phpspa.vercel.app/performance/html-compression
      */
     public function compression (int $level, bool $gzip = true): App;
 
@@ -58,7 +58,7 @@ interface PhpSPAInterface {
      *
      * @param int $hours Number of hours to cache assets (0 for session-only) Default is 24 hours
      * @return App
-     * @see https://phpspa.readthedocs.io/en/stable/performance/assets-caching
+     * @see https://phpspa.vercel.app/performance/assets-caching
      */
     public function assetCacheHours (int $hours): App;
 
@@ -68,7 +68,7 @@ interface PhpSPAInterface {
      *
      * @param string $environment Environment: 'development', 'staging', 'production'
      * @return App
-     * @see https://phpspa.readthedocs.io/en/stable/performance/html-compression/#environment-based-configuration-recommended
+     * @see https://phpspa.vercel.app/performance/html-compression/#environment-based-configuration-recommended
      */
     public function compressionEnvironment (string $environment): App;
 
@@ -83,7 +83,7 @@ interface PhpSPAInterface {
      * @param callable $script The callable that returns the JavaScript code
      * @param string|null $name Optional name for the script asset
      * @return App
-     * @see https://phpspa.readthedocs.io/en/stable/performance/managing-styles-and-scripts
+     * @see https://phpspa.vercel.app/performance/managing-styles-and-scripts
      */
     public function script (callable $script, ?string $name = null): App;
 
@@ -98,7 +98,7 @@ interface PhpSPAInterface {
      * @param callable $style The callable that returns the CSS code
      * @param string|null $name Optional name for the stylesheet asset
      * @return App
-     * @see https://phpspa.readthedocs.io/en/stable/performance/managing-styles-and-scripts
+     * @see https://phpspa.vercel.app/performance/managing-styles-and-scripts
      */
     public function styleSheet (callable $style, ?string $name = null): App;
 
@@ -127,7 +127,7 @@ interface PhpSPAInterface {
      * } $data
      *
      * @return App Returns the current instance for method chaining
-     * @see https://phpspa.readthedocs.io/en/stable/security/cors
+     * @see https://phpspa.vercel.app/security/cors
      */
     public function cors (array $data = []): App;
 

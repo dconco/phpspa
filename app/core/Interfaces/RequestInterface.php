@@ -15,7 +15,7 @@ interface RequestInterface {
      * @param string $key The key to look for in the request parameters.
      * @param string|null $default The default value to return if the key does not exist. Defaults to null.
      * @return mixed The validated value associated with the key, or the default value if the key is not present.
-     * @see https://phpspa.readthedocs.io/en/stable/requests/request-object
+     * @see https://phpspa.vercel.app/requests/request-object
      */
     public function __invoke (string $key, ?string $default = null): mixed;
 

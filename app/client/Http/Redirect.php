@@ -12,7 +12,7 @@ namespace PhpSPA\Http;
  * @param string $url The URL to redirect to.
  * @param int $code The HTTP status code for the redirect (e.g., 301, 302).
  * @return never This function does not return; it terminates script execution.
- * @see https://phpspa.readthedocs.io/en/stable/requests/#redirects-session-management
+ * @see https://phpspa.vercel.app/requests/#redirects-session-management
  */
 function Redirect(string $url, int $code = 0): never
 {

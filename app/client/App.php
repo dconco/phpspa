@@ -23,8 +23,8 @@ use PhpSPA\Core\Helper\AssetLinkManager;
  * @copyright 2025 Dave Conco
  * @license MIT
  *
- * @see https://phpspa.readthedocs.io/en/stable/core-concepts
- * @link https://phpspa.readthedocs.io
+ * @see https://phpspa.vercel.app/core-concepts
+ * @link https://phpspa.vercel.app
  */
 class App extends \PhpSPA\Core\Impl\RealImpl\AppImpl implements
     \PhpSPA\Interfaces\PhpSPAInterface {
@@ -36,8 +36,8 @@ class App extends \PhpSPA\Core\Impl\RealImpl\AppImpl implements
      *
      * @param callable $layout The name of the layout to be used by the application.
      * @param bool $autoInitCompression Whether to auto-initialize compression settings
-     * @see https://phpspa.readthedocs.io/en/stable/layout
-     * @see https://phpspa.readthedocs.io/en/stable/performance/html-compression
+     * @see https://phpspa.vercel.app/layout
+     * @see https://phpspa.vercel.app/performance/html-compression
      */
     public function __construct (callable|string $layout, bool $autoInitCompression = true)
     {
