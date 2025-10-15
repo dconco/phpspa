@@ -146,31 +146,31 @@ composer test
 <table>
 <tr>
 <td width="50%">
-<strong>🧱 Component Architecture</strong><br>
+<strong>🧱 Component Architecture</strong><br><br>
 Clean, reusable PHP components
 </td>
 <td width="50%">
-<strong>🔄 Reactive State</strong><br>
+<strong>🔄 Reactive State</strong><br><br>
 Auto-updating UI with simple state management
 </td>
 </tr>
 <tr>
 <td>
-<strong>🌍 SPA Navigation</strong><br>
+<strong>🌍 SPA Navigation</strong><br><br>
 Smooth page transitions without reloads
 </td>
 <td>
-<strong>🪶 Lightweight</strong><br>
+<strong>🪶 Lightweight</strong><br><br>
 PhpSPA is dependency-free, which makes it extra fast
 </td>
 </tr>
 <tr>
 <td>
-<strong>🛡️ SEO Ready</strong><br>
+<strong>🛡️ SEO Ready</strong><br><br>
 Server-rendered for search engines
 </td>
 <td>
-<strong>⚙️ Framework Agnostic</strong><br>
+<strong>⚙️ Framework Agnostic</strong><br><br>
 Works with any PHP setup
 </td>
 </tr>
