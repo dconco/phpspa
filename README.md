@@ -9,7 +9,7 @@
 <br>
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.1.9-green.svg?style=for-the-badge)](https://github.com/dconco/phpspa-js)
+[![Version](https://img.shields.io/badge/version-2.0.0-green.svg?style=for-the-badge)](https://github.com/dconco/phpspa-js)
 [![Documentation](https://img.shields.io/badge/docs-read%20the%20docs-blue.svg?style=for-the-badge)](https://phpspa.readthedocs.io)
 [![GitHub stars](https://img.shields.io/github/stars/dconco/phpspa?style=for-the-badge&color=yellow)](https://github.com/dconco/phpspa)
 [![PHP Version](https://img.shields.io/packagist/v/dconco/phpspa?style=for-the-badge&color=purple)](https://packagist.org/packages/dconco/phpspa)
@@ -107,11 +107,11 @@ composer require dconco/phpspa
 
 ```php
 function HomePage() {
-    $counter = createState("count", 0);
+    $counter = useState("count", 0);
 
     return <<<HTML
         <h1>Counter: {$counter}</h1>
-        <button onclick="phpspa.setState('count', {$counter} + 1)">+</button>
+        <button onclick="setState('count', {$counter} + 1)">+</button>
         <Component.Link to="/about" children="About" />
     HTML;
 }
@@ -121,7 +121,7 @@ function HomePage() {
 
 ```php
 $app = new App('layout');
-$app->targetId('app');
+$app->defaultTargetID('app');
 $app->attach((new Component('HomePage'))->route('/'));
 $app->run();
 ```
@@ -161,7 +161,7 @@ Smooth page transitions without reloads
 </td>
 <td>
 <strong>🪶 Lightweight</strong><br>
-Just one small JavaScript file
+PhpSPA is dependency-free, which makes it extra fast
 </td>
 </tr>
 <tr>
