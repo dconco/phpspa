@@ -49,7 +49,7 @@ hide:
 
     Learn the fundamentals of App and Component
 
-    [:octicons-arrow-right-24: Learn Basics](core-concepts-app-and-component.md)
+    [:octicons-arrow-right-24: Learn Basics](core-concepts.md)
 
 -   :material-routes: **Routing**
 
@@ -57,7 +57,7 @@ hide:
 
     Master dynamic routing and navigation
 
-    [:octicons-arrow-right-24: Explore Routing](defining-routes.md)
+    [:octicons-arrow-right-24: Explore Routing](routing/index.md)
 
 -   :material-state-machine: **State Management**
 
@@ -65,7 +65,7 @@ hide:
 
     Build reactive UIs with useState and useEffect
 
-    [:octicons-arrow-right-24: Manage State](managing-state-with-usestate.md)
+    [:octicons-arrow-right-24: Manage State](hooks/use-state.md)
 
 </div>
 

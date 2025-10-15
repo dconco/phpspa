@@ -46,9 +46,10 @@
 	"minimum-stability": "stable",
 	"scripts": {
 		"test": "php tests/Test.php",
-		"serve-docs": [
+		"docs:serve": [
 			"Composer\\Config::disableProcessTimeout",
 			"py -m mkdocs serve --dev-addr=127.0.0.1:4000 --watch docs --watch mkdocs.yml --livereload"
-		]
+		],
+		"docs:build": "py -m mkdocs build --clean --site-dir build"
 	}
 }

@@ -1,12 +1,38 @@
 {% extends "base.html" %}
 
 {% block extrahead %}
+   <!-- Favicon -->
    <link rel="icon" href="{{ base_url }}/img/favicon.ico">
    <link rel="icon" type="image/png" sizes="32x32" href="{{ base_url }}/img/favicon-32x32.png">
    <link rel="icon" type="image/png" sizes="16x16" href="{{ base_url }}/img/favicon-16x16.png">
-   <link rel="icon" type="image/png" sizes="16x16" href="{{ base_url }}/img/favicon-16x16.png">
    <link rel="apple-touch-icon" sizes="192x192" href="{{ base_url }}/img/android-chrome-192x192.png">
+   
+   <!-- Meta Tags -->
    <meta name="theme-color" content="#764ba2">
+   <meta name="description" content="PhpSPA Documentation - A component-based library for building modern, reactive user interfaces in pure PHP. Inspired by React. ✨">
+   <meta name="keywords" content="PhpSPA, PHP, SPA, MPA, Multi-Page Application, Single Page Application, PHP Framework, Component-based, Routing, State Management, CSRF Protection">
+   <meta name="author" content="Dave Conco">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   
+   <!-- Open Graph / Facebook -->
+   <meta property="og:type" content="website">
+   <meta property="og:url" content="https://phpspa.readthedocs.io/">
+   <meta property="og:title" content="PhpSPA Documentation - Modern PHP Component Based Library">
+   <meta property="og:description" content="A component-based library for building modern, reactive user interfaces in pure PHP. Inspired by React. ✨">
+   <meta property="og:image" content="{{ base_url }}/img/android-chrome-192x192.png">
+   
+   <!-- Twitter -->
+   <meta property="twitter:card" content="summary_large_image">
+   <meta property="twitter:url" content="https://phpspa.readthedocs.io/">
+   <meta property="twitter:title" content="PhpSPA Documentation - Modern PHP Component Based Library">
+   <meta property="twitter:description" content="A component-based library for building modern, reactive user interfaces in pure PHP. Inspired by React. ✨">
+   <meta property="twitter:image" content="{{ base_url }}/img/android-chrome-192x192.png">
+   
+   <!-- Additional SEO -->
+   <meta name="robots" content="index, follow">
+   <meta name="language" content="English">
+   <meta name="revisit-after" content="7 days">
+   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
    <style>
       body {
