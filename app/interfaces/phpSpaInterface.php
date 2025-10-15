@@ -12,19 +12,19 @@ use PhpSPA\Component;
  * including methods for initialization, configuration, and core functionality
  * such as routing, CORS handling, and component management.
  *
- * @package PhpSPA\Interfaces
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0
+ * @see https://phpspa.readthedocs.io/en/stable/core-concepts
  */
-interface phpSpaInterface {
+interface PhpSPAInterface {
     /**
      * Sets the target ID for the application.
      *
      * @param string $targetID The target ID to be set.
-     *
      * @return App
+     * @see https://phpspa.readthedocs.io/en/stable/layout/#setting-the-default-target-id
      */
     public function defaultTargetID (string $targetID): App;
 
@@ -37,6 +37,7 @@ interface phpSpaInterface {
      * as case sensitive by default.
      *
      * @return App
+     * @see https://phpspa.readthedocs.io/en/stable/routing/component-configuration/#global-case-sensitivity
      */
     public function defaultToCaseSensitive (): App;
 

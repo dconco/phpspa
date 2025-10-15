@@ -14,7 +14,7 @@ use PhpSPA\Core\Interfaces\RequestInterface;
  * HTTP request, such as GET, POST, and server variables.
  *
  * @author dconco <concodave@gmail.com>
- * @see https://phpspa.readthedocs.io/en/latest/20-request-handling
+ * @see https://phpspa.readthedocs.io/en/stable/requests/request-object
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods
  */
 class Request implements RequestInterface

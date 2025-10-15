@@ -34,7 +34,7 @@ interface IComponent
      *
      * @param string $title The title to set.
      * @return ComponentImpl Returns the current instance for method chaining.
-     * @see https://phpspa.readthedocs.io/en/stable/routing/setting-the-page-title
+     * @see https://phpspa.readthedocs.io/en/stable/routing/component-configuration
      */
     public function title(string $title): ComponentImpl;
 
@@ -43,7 +43,7 @@ interface IComponent
      *
      * @param string $method The name of the method to set, default to "GET|POST".
      * @return ComponentImpl Returns the current instance for method chaining.
-     * @see https://phpspa.readthedocs.io/en/stable/routing/advanced-routing/#multiple-routes-and-http-methods
+     * @see https://phpspa.readthedocs.io/en/stable/routing/component-configuration/#specifying-http-methods
      */
     public function method(string $method): ComponentImpl;
 
@@ -61,6 +61,7 @@ interface IComponent
      *
      * @param string $targetID The identifier of the target element.
      * @return ComponentImpl Returns the current instance for method chaining.
+     * @see https://phpspa.readthedocs.io/en/stable/routing/component-configuration/#setting-the-target-render-element
      */
     public function targetID(string $targetID): ComponentImpl;
 
@@ -70,6 +71,7 @@ interface IComponent
      * Sets the internal flag to treat operations as case sensitive.
      *
      * @return ComponentImpl Returns the current instance for method chaining.
+     * @https://phpspa.readthedocs.io/en/stable/routing/component-configuration/#route-case-sensitivity
      */
     public function caseSensitive(): ComponentImpl;
 
@@ -77,6 +79,7 @@ interface IComponent
      * Sets the component to operate in a case-insensitive mode.
      *
      * @return ComponentImpl Returns the current instance for method chaining.
+     * @see https://phpspa.readthedocs.io/en/stable/routing/component-configuration/#__tabbed_1_2
      */
     public function caseInsensitive(): ComponentImpl;
 
@@ -86,7 +89,8 @@ interface IComponent
      * @param callable $script The script to be executed.
      * @param string|null $name Optional name for the script asset.
      * @return ComponentImpl Returns the current instance for method chaining.
-     */
+     * @see https://phpspa.readthedocs.io/en/stable/performance/managing-styles-and-scripts/#component-specific-assets
+    */
     public function script(callable $script, ?string $name = null): ComponentImpl;
 
     /**
@@ -95,6 +99,7 @@ interface IComponent
      * @param callable $style The stylesheet to be executed.
      * @param string|null $name Optional name for the stylesheet.
      * @return ComponentImpl Returns the current instance for method chaining.
+     * @see https://phpspa.readthedocs.io/en/stable/performance/managing-styles-and-scripts/#component-specific-assets
      */
     public function styleSheet(callable $style, ?string $name = null): ComponentImpl;
 
@@ -102,7 +107,8 @@ interface IComponent
      * This sets the component to be called every particular interval given
      *
      * @param int $milliseconds
-      * @return ComponentImpl Returns the current instance for method chaining.
+     * @return ComponentImpl Returns the current instance for method chaining.
+     * @see https://phpspa.readthedocs.io/en/stable/requests/auto-reloading-components
      */
     public function reload(int $milliseconds): ComponentImpl;
 }

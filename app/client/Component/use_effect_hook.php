@@ -19,6 +19,7 @@ use PhpSPA\Core\Helper\StateManager;
  * @param StateManager[] $dependencies An array of state objects to watch for changes.
  * @return void
  * @throws InvalidArgumentException If a dependency is not an instance of StateManager.
+ * @see https://phpspa.readthedocs.io/en/stable/hooks/use-effect
  */
 function useEffect(Closure $callback, array $dependencies = []): void
 {

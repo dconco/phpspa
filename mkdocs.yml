@@ -128,7 +128,7 @@ nav:
    - Routing:
       - Defining Routes: routing/index.md
       - Advanced Routing: routing/advanced-routing.md
-      - Setting Page Title: routing/setting-the-page-title.md
+      - Component Configuration: routing/component-configuration.md
    - Components:
       - The Power of Components: components/index.md
       - Advanced Component Patterns: components/advanced-component.md

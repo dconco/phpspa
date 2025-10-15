@@ -27,7 +27,7 @@ use PhpSPA\Core\Helper\AssetLinkManager;
  * @link https://phpspa.readthedocs.io
  */
 class App extends \PhpSPA\Core\Impl\RealImpl\AppImpl implements
-    \PhpSPA\Interfaces\phpSpaInterface {
+    \PhpSPA\Interfaces\PhpSPAInterface {
 
     /**
      * App constructor.

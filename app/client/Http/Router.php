@@ -11,7 +11,7 @@ use PhpSPA\Core\Router\MapRoute;
  * @category PhpSPA\Http
  * @author Samuel Paschalson <samuelpaschalson@gmail.com>
  * @copyright 2025 Samuel Paschalson
- * @see https://phpspa.readthedocs.io/en/latest/v1.1.8
+ * @see https://phpspa.readthedocs.io/en/stable/references/response/#router-quick-examples
  */
 
 class Router

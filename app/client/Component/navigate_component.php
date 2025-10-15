@@ -11,8 +11,8 @@ use PhpSPA\Http\Security\Nonce;
  * @param string $path Target path
  * @param string|NavigateState $state Navigation state (push/replace)
  * @return string Navigation script tag
- * @see https://phpspa.readthedocs.io/en/latest/v1.1/8-navigate-component Navigation Documentation
  * @author dconco <concodave@gmail.com>
+ * @see https://phpspa.readthedocs.io/en/stable/navigations/navigate-component
  */
 function Navigate (
     string $path,
@@ -26,7 +26,7 @@ function Navigate (
 
     return <<<HTML
 	   <script $nonce>
-	      phpspa.navigate("$path", "$state");
+	      phpspa.navigate("{$path}", "{$state}");
 	   </script>
 	HTML;
 }

@@ -11,10 +11,10 @@ use PhpSPA\Core\Helper\FunctionCaller;
  * client-side JavaScript execution within the PhpSPA framework, enabling
  * secure invocation of PHP functions from the frontend with CSRF protection.
  *
- * @param callable $function The PHP function to make available for client-side calling.
- * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/2-php-js-integration PHP-JS Integration Documentation
- * @return FunctionCaller Handler object for secure function invocation.
  * @author dconco <concodave@gmail.com>
+ * @param callable $function The PHP function to make available for client-side calling.
+ * @return FunctionCaller Handler object for secure function invocation.
+ * @see https://phpspa.readthedocs.io/en/stable/hooks/use-function
  */
 function useFunction (callable $function): FunctionCaller
 {

@@ -12,7 +12,7 @@ use PhpSPA\Core\Helper\StateManager;
  * @param string $stateKey The unique key identifying the state variable.
  * @param mixed  $default  The default value to initialize the state with.
  * @return StateManager    The state manager instance.
- * @see https://phpspa.readthedocs.io/en/latest/17-state-management State Management Documentation
+ * @see https://phpspa.readthedocs.io/en/stable/hooks/use-state
  */
 function createState(string $stateKey, $default): StateManager
 {

@@ -11,9 +11,7 @@ namespace PhpSPA\Core\Interfaces;
  * @since v1.1.5
  * @copyright 2025 Dave Conco
  * @author dconco <concodave@gmail.com>
-*
- * @category PhpSPA\Core\Helper
- * @see https://phpspa.readthedocs.io/en/latest/v1.1.5/5-csrf-protection/ CSRF Protection Documentation
+ * @see https://phpspa.readthedocs.io/en/stable/security/csrf-protection
  */
 interface CsrfManagerInterface
 {
@@ -30,6 +28,7 @@ interface CsrfManagerInterface
      *
      * @param bool $expireAfterUse Whether to remove token after successful verification
      * @return bool True if token is valid and not expired, false otherwise
+     * @see https://phpspa.readthedocs.io/en/stable/security/csrf-protection/#verifying-the-token
      */
     public function verify(bool $expireAfterUse = true): bool;
 
