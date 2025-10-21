@@ -2,7 +2,7 @@
 
 namespace Component;
 
-use PhpSPA\Client\PendingRequest;
+use PhpSPA\Core\Client\PendingRequest;
 
 /**
  * Creates a new fluent HTTP request.

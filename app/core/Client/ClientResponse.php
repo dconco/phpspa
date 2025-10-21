@@ -1,6 +1,6 @@
 <?php
 
-namespace PhpSPA\Client;
+namespace PhpSPA\Core\Client;
 
 class ClientResponse {
    /**
@@ -9,8 +9,8 @@ class ClientResponse {
     * @param array $rawHeaders The raw response headers.
     */
    public function __construct (
-      private readonly int $statusCode,
       private readonly string|false $body,
+      private readonly int $statusCode,
       private readonly array $rawHeaders,
    ) {}
 
@@ -20,7 +20,7 @@ class ClientResponse {
    public function json (): ?array
    {
       if ($this->body === false) return null;
-      return is_array($this->body) ? json_decode($this->body, true) : null;
+      return json_decode($this->body, true);
    }
 
    /**
@@ -28,7 +28,7 @@ class ClientResponse {
     */
    public function text (): string|false
    {
-      return is_array($this->body) ? json_encode($this->body) : $this->body;
+      return $this->body;
    }
 
    /**

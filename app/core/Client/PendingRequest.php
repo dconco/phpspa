@@ -1,6 +1,6 @@
 <?php
 
-namespace PhpSPA\Client;
+namespace PhpSPA\Core\Client;
 
 use BadMethodCallException;
 use Exception;
@@ -36,13 +36,13 @@ enum RequestMethod {
  * - For POST, PUT, PATCH: request body data
  * 
  * @package Client
- * @method PendingRequest get(array|string $query = null)
- * @method PendingRequest post(array|string $body = null)
- * @method PendingRequest put(array|string $body = null)
- * @method PendingRequest delete(array|string $query = null)
- * @method PendingRequest patch(array|string $body = null)
- * @method PendingRequest head(array|string $query = null)
- * @method PendingRequest options(array|string $query = null)
+ * @method ClientResponse get(array|string $query = null)
+ * @method ClientResponse post(array|string $body = null)
+ * @method ClientResponse put(array|string $body = null)
+ * @method ClientResponse delete(array|string $query = null)
+ * @method ClientResponse patch(array|string $body = null)
+ * @method ClientResponse head(array|string $query = null)
+ * @method ClientResponse options(array|string $query = null)
  */
 class PendingRequest implements \ArrayAccess {
    private string $url;
