@@ -7,11 +7,13 @@ class ClientResponse {
     * @param string|false $body The raw response body.
     * @param int $statusCode The HTTP status code (e.g., 200, 404).
     * @param array $rawHeaders The raw response headers.
+    * @param string|null $error The error message if request failed.
     */
    public function __construct (
       private readonly string|false $body,
       private readonly int $statusCode,
       private readonly array $rawHeaders,
+      private readonly ?string $error = null,
    ) {}
 
    /**
@@ -45,6 +47,22 @@ class ClientResponse {
    public function ok (): bool
    {
       return $this->statusCode >= 200 && $this->statusCode < 300;
+   }
+
+   /**
+    * Checks if the request failed.
+    */
+   public function failed(): bool
+   {
+      return !$this->ok() || $this->body === false || $this->error !== null;
+   }
+
+   /**
+    * Gets the error message if request failed.
+    */
+   public function error(): ?string
+   {
+      return $this->error;
    }
 
    /**

@@ -58,6 +58,8 @@ class PendingRequest implements \ArrayAccess {
 
    private HttpClient $client;
 
+   private array $options = [];
+
    /**
     * Constructs a new PendingRequest instance.
     *
@@ -79,6 +81,96 @@ class PendingRequest implements \ArrayAccess {
    public function headers (array $headers): PendingRequest
    {
       $this->headers = array_merge($this->headers, $headers);
+      return $this;
+   }
+
+   /**
+    * Set request timeout in seconds.
+    *
+    * @param int $seconds Timeout in seconds
+    * @return PendingRequest
+    */
+   public function timeout(int $seconds): PendingRequest
+   {
+      $this->options['timeout'] = $seconds;
+      return $this;
+   }
+
+   /**
+    * Set connection timeout in seconds.
+    *
+    * Note: Only available when cURL is enabled. Ignored with PHP streams fallback.
+    *
+    * @param int $seconds Connection timeout in seconds
+    * @return PendingRequest
+    */
+   public function connectTimeout(int $seconds): PendingRequest
+   {
+      $this->options['connect_timeout'] = $seconds;
+      return $this;
+   }
+
+   /**
+    * Set custom options for the request.
+    *
+    * @param array $options Custom options array
+    * @return PendingRequest
+    */
+   public function withOptions(array $options): PendingRequest
+   {
+      $this->options = array_merge($this->options, $options);
+      return $this;
+   }
+
+   /**
+    * Enable or disable SSL verification.
+    *
+    * @param bool $verify Whether to verify SSL certificates
+    * @return PendingRequest
+    */
+   public function verifySSL(bool $verify = true): PendingRequest
+   {
+      $this->options['verify_ssl'] = $verify;
+      return $this;
+   }
+
+   /**
+    * Set path to CA certificate bundle.
+    *
+    * @param string $path Path to certificate file
+    * @return PendingRequest
+    */
+   public function withCertificate(string $path): PendingRequest
+   {
+      $this->options['cert_path'] = $path;
+      return $this;
+   }
+
+   /**
+    * Set custom User-Agent header.
+    *
+    * @param string $userAgent User-Agent string
+    * @return PendingRequest
+    */
+   public function withUserAgent(string $userAgent): PendingRequest
+   {
+      $this->options['user_agent'] = $userAgent;
+      return $this;
+   }
+
+   /**
+    * Enable or disable following redirects.
+    *
+    * Note: Only available when cURL is enabled. Ignored with PHP streams fallback.
+    *
+    * @param bool $follow Whether to follow redirects
+    * @param int $maxRedirects Maximum number of redirects to follow
+    * @return PendingRequest
+    */
+   public function followRedirects(bool $follow = true, int $maxRedirects = 10): PendingRequest
+   {
+      $this->options['follow_redirects'] = $follow;
+      $this->options['max_redirects'] = $maxRedirects;
       return $this;
    }
 
@@ -196,7 +288,8 @@ class PendingRequest implements \ArrayAccess {
          $this->url,
          $httpMethod,
          $this->headers,
-         $this->data
+         $this->data,
+         $this->options
       );
    }
 

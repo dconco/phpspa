@@ -17,10 +17,11 @@ interface HttpClient {
     * @param string $method The HTTP method
     * @param array $headers The request headers
     * @param string|null $body The request body
+    * @param array $options Additional options for the request
     * 
     * @return ClientResponse The HTTP response
     */
-   public function request(string $url, string $method, array $headers, ?string $body = null): ClientResponse;
+   public function request(string $url, string $method, array $headers, ?string $body = null, array $options = []): ClientResponse;
 
    /**
     * Check if the client is available.

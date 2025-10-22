@@ -14,35 +14,58 @@ class StreamHttpClient implements HttpClient {
    /**
     * {@inheritdoc}
     */
-   public function request(string $url, string $method, array $headers, ?string $body = null): ClientResponse
+   public function request(string $url, string $method, array $headers, ?string $body = null, array $options = []): ClientResponse
    {
-      $options = [
-         'http' => [
-            'method' => $method,
-            'header' => $this->buildHeaderString($headers),
-            'ignore_errors' => true,
-         ]
+      $httpOptions = [
+         'method' => $method,
+         'header' => $this->buildHeaderString($headers),
+         'ignore_errors' => true,
+         'timeout' => $options['timeout'] ?? 30,
       ];
+
+      if (isset($options['user_agent'])) {
+         $httpOptions['user_agent'] = $options['user_agent'];
+      }
 
       if ($body !== null) {
          $headers['Content-Type'] = $headers['Content-Type'] ?? 'application/json';
          $headers['Content-Length'] = strlen($body);
          
-         $options['http']['content'] = $body;
-         $options['http']['header'] = $this->buildHeaderString($headers);
+         $httpOptions['content'] = $body;
+         $httpOptions['header'] = $this->buildHeaderString($headers);
       }
 
-      $context = stream_context_create($options);
+      $contextOptions = ['http' => $httpOptions];
+
+      if (isset($options['verify_ssl']) && !$options['verify_ssl']) {
+         $contextOptions['ssl'] = [
+            'verify_peer' => false,
+            'verify_peer_name' => false,
+         ];
+      }
+
+      if (isset($options['cert_path'])) {
+         $contextOptions['ssl'] = $contextOptions['ssl'] ?? [];
+         $contextOptions['ssl']['cafile'] = $options['cert_path'];
+      }
+
+      $context = stream_context_create($contextOptions);
       $responseBody = @file_get_contents($url, false, $context);
 
       $responseHeaders = $http_response_header ?? [];
 
       $statusCode = 0;
+      $error = null;
+      
       if (isset($responseHeaders[0])) {
          @list( , $statusCode, ) = explode(' ', $responseHeaders[0], 3);
       }
 
-      return new ClientResponse($responseBody, (int) $statusCode, $responseHeaders);
+      if ($responseBody === false) {
+         $error = error_get_last()['message'] ?? 'Request failed';
+      }
+
+      return new ClientResponse($responseBody, (int) $statusCode, $responseHeaders, $error);
    }
 
    /**

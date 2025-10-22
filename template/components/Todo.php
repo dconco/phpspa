@@ -9,8 +9,16 @@ use function Component\useState;
 
 function TodoList ()
 {
-   $response = useFetch('https://jsonplaceholder.typicode.com/users');
-   echo($response->get()->text());
+   $response = useFetch('https://pipgalaxy.greenworldpower.com.ng')
+      ->headers(['X-Requested-With' => 'PHPSPA_REQUEST'])
+      ->get();
+
+   if ($response->failed()) {
+      var_dump($response->error());
+   } else {
+      echo($response->content);
+   }
+
    exit;
 
 

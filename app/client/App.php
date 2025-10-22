@@ -4,7 +4,6 @@ namespace PhpSPA;
 
 use PhpSPA\Http\Session;
 use PhpSPA\Core\Config\CompressionConfig;
-use PhpSPA\Core\Helper\AssetLinkManager;
 
 /**
  *
@@ -26,9 +25,7 @@ use PhpSPA\Core\Helper\AssetLinkManager;
  * @see https://phpspa.vercel.app/core-concepts
  * @link https://phpspa.vercel.app
  */
-class App extends \PhpSPA\Core\Impl\RealImpl\AppImpl implements
-    \PhpSPA\Interfaces\PhpSPAInterface {
-
+class App extends \PhpSPA\Core\Impl\RealImpl\AppImpl {
     /**
      * App constructor.
      *
@@ -51,40 +48,5 @@ class App extends \PhpSPA\Core\Impl\RealImpl\AppImpl implements
         if ($autoInitCompression) {
             CompressionConfig::autoDetect();
         }
-    }
-
-
-    public function compression (int $level, bool $gzip = true): self
-    {
-        CompressionConfig::custom($level, $gzip);
-        return $this;
-    }
-
-
-    public function compressionEnvironment (string $environment): self
-    {
-        CompressionConfig::initialize($environment);
-        return $this;
-    }
-
-
-    public function assetCacheHours (int $hours): self
-    {
-        AssetLinkManager::setCacheConfig($hours);
-        return $this;
-    }
-
-
-    public function script (callable $script, ?string $name = null): self
-    {
-        $this->scripts[] = [ $script, $name ];
-        return $this;
-    }
-
-
-    public function styleSheet (callable $style, ?string $name = null): self
-    {
-        $this->stylesheets[] = [ $style, $name ];
-        return $this;
     }
 }

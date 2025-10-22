@@ -2,12 +2,13 @@
 
 namespace PhpSPA\Core\Impl\RealImpl;
 
-use PhpSPA\App;
 use PhpSPA\Component;
 use PhpSPA\Http\Request;
 use PhpSPA\Http\Session;
+use PhpSPA\Http\Security\Nonce;
 use PhpSPA\Core\Router\MapRoute;
 use PhpSPA\Compression\Compressor;
+use PhpSPA\Core\Config\CompressionConfig;
 use PhpSPA\Core\Helper\CsrfManager;
 use PhpSPA\Core\Helper\SessionHandler;
 use PhpSPA\Core\Helper\CallableInspector;
@@ -15,7 +16,7 @@ use PhpSPA\Core\Helper\ComponentScope;
 use PhpSPA\Core\Helper\AssetLinkManager;
 use PhpSPA\Core\Helper\PathResolver;
 use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
-use PhpSPA\Http\Security\Nonce;
+use PhpSPA\Interfaces\ApplicationContract;
 
 use const PhpSPA\Core\Impl\Const\STATE_HANDLE;
 use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
@@ -34,7 +35,7 @@ use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  * @var string $request_uri
  * @abstract
  */
-abstract class AppImpl {
+abstract class AppImpl implements ApplicationContract {
     use ComponentTagFormatter;
     use \PhpSPA\Core\Utils\Validate;
 
@@ -104,25 +105,25 @@ abstract class AppImpl {
      */
     protected array $stylesheets = [];
 
-    public function defaultTargetID (string $targetID): App
+    public function defaultTargetID (string $targetID): ApplicationContract
     {
         $this->defaultTargetID = $targetID;
         return $this;
     }
 
-    public function defaultToCaseSensitive (): App
+    public function defaultToCaseSensitive (): ApplicationContract
     {
         $this->defaultCaseSensitive = true;
         return $this;
     }
 
-    public function attach (Component $component): App
+    public function attach (Component $component): ApplicationContract
     {
         $this->components[] = $component;
         return $this;
     }
 
-    public function detach (Component $component): App
+    public function detach (Component $component): ApplicationContract
     {
         $key = array_search($component, $this->components, true);
 
@@ -132,7 +133,7 @@ abstract class AppImpl {
         return $this;
     }
 
-    public function cors (array $data = []): App
+    public function cors (array $data = []): ApplicationContract
     {
         $this->cors = require __DIR__ . '/../../Config/Cors.php';
 
@@ -146,6 +147,36 @@ abstract class AppImpl {
             }
         }
 
+        return $this;
+    }
+
+    public function compression (int $level, bool $gzip = true): ApplicationContract
+    {
+        CompressionConfig::custom($level, $gzip);
+        return $this;
+    }
+
+    public function compressionEnvironment (string $environment): ApplicationContract
+    {
+        CompressionConfig::initialize($environment);
+        return $this;
+    }
+
+    public function assetCacheHours (int $hours): ApplicationContract
+    {
+        AssetLinkManager::setCacheConfig($hours);
+        return $this;
+    }
+
+    public function script (callable $script, ?string $name = null): ApplicationContract
+    {
+        $this->scripts[] = [ $script, $name ];
+        return $this;
+    }
+
+    public function styleSheet (callable $style, ?string $name = null): ApplicationContract
+    {
+        $this->stylesheets[] = [ $style, $name ];
         return $this;
     }
 
