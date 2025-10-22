@@ -36,14 +36,17 @@ enum RequestMethod {
  * - For GET, DELETE, HEAD, OPTIONS: query parameters
  * - For POST, PUT, PATCH: request body data
  * 
+ * When async() is called before the HTTP method, the return type changes to AsyncResponse.
+ * Otherwise, it returns ClientResponse for synchronous execution.
+ * 
  * @package Client
- * @method ClientResponse get(array|string $query = null)
- * @method ClientResponse post(array|string $body = null)
- * @method ClientResponse put(array|string $body = null)
- * @method ClientResponse delete(array|string $query = null)
- * @method ClientResponse patch(array|string $body = null)
- * @method ClientResponse head(array|string $query = null)
- * @method ClientResponse options(array|string $query = null)
+ * @method ClientResponse|AsyncResponse get(array|string $query = null)
+ * @method ClientResponse|AsyncResponse post(array|string $body = null)
+ * @method ClientResponse|AsyncResponse put(array|string $body = null)
+ * @method ClientResponse|AsyncResponse delete(array|string $query = null)
+ * @method ClientResponse|AsyncResponse patch(array|string $body = null)
+ * @method ClientResponse|AsyncResponse head(array|string $query = null)
+ * @method ClientResponse|AsyncResponse options(array|string $query = null)
  */
 class PendingRequest implements \ArrayAccess {
    private string $url;
@@ -59,6 +62,10 @@ class PendingRequest implements \ArrayAccess {
    private HttpClient $client;
 
    private array $options = [];
+
+   private bool $async = false;
+
+   private ?string $method = null;
 
    /**
     * Constructs a new PendingRequest instance.
@@ -161,7 +168,7 @@ class PendingRequest implements \ArrayAccess {
    /**
     * Enable or disable following redirects.
     *
-    * Note: Only available when cURL is enabled. Ignored with PHP streams fallback.
+    * Note: Only available when cURL is enabled. Ignored with file_get_contents fallback.
     *
     * @param bool $follow Whether to follow redirects
     * @param int $maxRedirects Maximum number of redirects to follow
@@ -171,6 +178,19 @@ class PendingRequest implements \ArrayAccess {
    {
       $this->options['follow_redirects'] = $follow;
       $this->options['max_redirects'] = $maxRedirects;
+      return $this;
+   }
+
+   /**
+    * Enable asynchronous request execution.
+    *
+    * Note: Only available when cURL is enabled. Returns AsyncResponse instead of ClientResponse.
+    *
+    * @return PendingRequest
+    */
+   public function async(): PendingRequest
+   {
+      $this->async = true;
       return $this;
    }
 
@@ -185,9 +205,9 @@ class PendingRequest implements \ArrayAccess {
     * @param string $method The name of the method being called
     * @param array $args The arguments passed to the method
     * 
-    * @return ClientResponse Returns a ClientResponse when the request is executed
+    * @return ClientResponse|AsyncResponse Returns a ClientResponse or AsyncResponse when the request is executed
     */
-   public function __call ($method, $args): ClientResponse
+   public function __call ($method, $args): ClientResponse|AsyncResponse
    {
       $httpMethod = strtoupper($method);
 
@@ -205,8 +225,8 @@ class PendingRequest implements \ArrayAccess {
          default => throw new BadMethodCallException("Method $method does not exist.")
       };
 
-      $this->response = $this->buildOptions($httpMethod);
-      return $this->response;
+      $this->method = $httpMethod;
+      return $this->buildOptions($httpMethod);
    }
 
 
@@ -282,8 +302,21 @@ class PendingRequest implements \ArrayAccess {
     * @param string $httpMethod The HTTP method to use
     * @return ClientResponse The response object containing the HTTP response data
     */
-   private function execute(string $httpMethod): ClientResponse
+   private function execute(string $httpMethod): ClientResponse|AsyncResponse
    {
+      // If async mode is enabled and client is CurlHttpClient, return AsyncResponse
+      if ($this->async && $this->client instanceof CurlHttpClient) {
+         $handle = $this->client->prepareAsync(
+            $this->url,
+            $httpMethod,
+            $this->headers,
+            $this->data,
+            $this->options
+         );
+         return new AsyncResponse($handle);
+      }
+
+      // Synchronous execution
       return $this->client->request(
          $this->url,
          $httpMethod,
@@ -341,7 +374,7 @@ class PendingRequest implements \ArrayAccess {
     * @param string $httpMethod The HTTP method for which to build the response
     * @return ClientResponse The response object
     */
-   private function buildOptions (string $httpMethod): ClientResponse
+   private function buildOptions (string $httpMethod): ClientResponse|AsyncResponse
    {
       if ($this->data !== null) {
          $this->headers = array_merge($this->headers, [

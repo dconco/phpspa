@@ -2,304 +2,177 @@
 
 The `useFetch` hook provides a fluent interface for making HTTP requests.
 
-## 1. Simple GET
+## 1. Basic Usage
 
-To perform a simple `GET` request, just use `useFetch` where you'd use a string or array. It will automatically make the request and return the body.
+### Simple GET Request
 
 ```php
-// Use 'echo' to get the raw text body
+// Direct usage - returns decoded JSON
 echo useFetch('https://api.example.com/users/1');
 
-// Use as an array to get the decoded JSON
+// Array access
 $user = useFetch('https://api.example.com/users/1');
 echo $user['data']['first_name'];
 
-// Use as an object to get the decoded JSON
-$user = useFetch('https://api.example.com/users/1');
-echo $user->data['first_name'];
+// With query parameters
+$response = useFetch('https://api.example.com/users')->get(['page' => 2]);
 ```
 
------
-
-## 2. Method Chaining
-
-For all other requests, you must chain the HTTP method. The method call (`->get()`, `->post()`, etc.) is always the *last* step and returns a `ClientResponse` object.
-
-**`->get(array $query = null)`**
-Sends query parameters.
+### Other HTTP Methods
 
 ```php
+// POST - sends JSON body
 $response = useFetch('https://api.example.com/users')
-               ->get(['page' => 2]);
-```
+    ->post(['name' => 'Dave', 'job' => 'Developer']);
 
-**`->post(array $body = null)`**
-Sends a JSON request body.
-
-```php
-$newUser = [
-   'name' => 'Dave Conco',
-   'job' => 'Developer'
-];
-$response = useFetch('https://api.example.com/users')
-               ->post($newUser);
-```
-
-**`->put(array $body = null)`**
-Sends a JSON request body.
-
-```php
-$updatedUser = [
-   'name' => 'Dave Conco',
-   'job' => 'Senior Developer'
-];
+// PUT - update resource
 $response = useFetch('https://api.example.com/users/2')
-               ->put($updatedUser);
-```
+    ->put(['job' => 'Senior Developer']);
 
-**`->patch(array $body = null)`**
-Sends a JSON request body.
-
-```php
-$update = ['job' => 'Lead Developer'];
+// PATCH - partial update
 $response = useFetch('https://api.example.com/users/2')
-               ->patch($update);
-```
+    ->patch(['job' => 'Lead Developer']);
 
-**`->delete(array $query = null)`**
-Sends query parameters (no body).
-
-```php
+// DELETE - with query params
 $response = useFetch('https://api.example.com/users/2')
-               ->delete(['force' => 'true']);
+    ->delete(['force' => 'true']);
 ```
 
 -----
 
-## 3. Adding Headers
+## 2. Configuration
 
-Use the `->headers()` method *before* the HTTP method.
+Chain configuration methods before the HTTP method:
 
 ```php
-$response = useFetch('https://api.example.com/user')
-               ->headers([
-                  'Authorization' => 'Bearer your_token_here',
-                  'X-Custom-Header' => 'MyValue'
-               ])
-               ->get();
+$response = useFetch('https://api.example.com/users')
+    ->headers(['Authorization' => 'Bearer token'])
+    ->timeout(30)              // Request timeout (seconds, supports decimals)
+    ->connectTimeout(5)        // Connection timeout (cURL only)
+    ->verifySSL(true)          // SSL verification
+    ->withCertificate('/path/to/cacert.pem')  // Custom CA bundle
+    ->followRedirects(true, 5) // Follow up to 5 redirects (cURL only)
+    ->withUserAgent('MyApp/1.0')
+    ->get();
 ```
 
 -----
 
-## 4. Request Configuration
-
-Configure request behavior using fluent methods *before* the HTTP method.
-
-### Timeout Configuration
-
-**`->timeout(int $seconds)`**
-Set request timeout in seconds. Supports decimals for sub-second timeouts.
-
-```php
-// 30 second timeout
-$response = useFetch('https://api.example.com/users')
-               ->timeout(30)
-               ->get();
-
-// 500ms timeout (0.5 seconds)
-$response = useFetch('https://api.example.com/users')
-               ->timeout(0.5)
-               ->get();
-```
-
-**`->connectTimeout(int $seconds)`**
-Set connection timeout in seconds. Only available when cURL is enabled.
-
-```php
-$response = useFetch('https://api.example.com/users')
-               ->connectTimeout(5)
-               ->timeout(30)
-               ->get();
-```
-
-### SSL/TLS Configuration
-
-**`->verifySSL(bool $verify = true)`**
-Enable or disable SSL certificate verification.
-
-```php
-// Disable SSL verification (not recommended for production)
-$response = useFetch('https://self-signed.example.com/api')
-               ->verifySSL(false)
-               ->get();
-```
-
-**`->withCertificate(string $path)`**
-Set path to CA certificate bundle for SSL verification.
-
-```php
-$response = useFetch('https://api.example.com/users')
-               ->withCertificate('/path/to/cacert.pem')
-               ->get();
-```
-
-### Redirect Configuration
-
-**`->followRedirects(bool $follow = true, int $maxRedirects = 10)`**
-Enable or disable following redirects. Only available when cURL is enabled.
-
-```php
-// Follow up to 5 redirects
-$response = useFetch('https://api.example.com/redirect')
-               ->followRedirects(true, 5)
-               ->get();
-
-// Disable redirects
-$response = useFetch('https://api.example.com/redirect')
-               ->followRedirects(false)
-               ->get();
-```
-
-### User Agent
-
-**`->withUserAgent(string $userAgent)`**
-Set a custom User-Agent header.
-
-```php
-$response = useFetch('https://api.example.com/users')
-               ->withUserAgent('MyApp/1.0')
-               ->get();
-```
-
-### Custom Options
-
-**`->withOptions(array $options)`**
-Set custom options directly. Advanced usage.
-
-```php
-$response = useFetch('https://api.example.com/users')
-               ->withOptions([
-                  'timeout' => 60,
-                  'verify_ssl' => false,
-                  'user_agent' => 'CustomAgent/2.0'
-               ])
-               ->get();
-```
-
------
-
-## 5. Handling the Response
-
-All chained methods return a `ClientResponse` object.
+## 3. Response Handling
 
 ```php
 $response = useFetch('https://api.example.com/users/2')->get();
 
-// Get the decoded JSON as an array
-$data = $response->json(); // e.g., ['data' => [...]]
+$data = $response->json();      // Decoded JSON array
+$text = $response->text();      // Raw response body
+$status = $response->status();  // HTTP status code (200, 404, etc.)
+$headers = $response->headers(); // Response headers array
 
-// Get the raw response body as a string
-$text = $response->text(); // e.g., '{"data":{...}}'
-
-// Get the HTTP status code
-$status = $response->status(); // e.g., 200
-
-// Get an associative array of response headers
-$headers = $response->headers(); // e.g., ['Content-Type' => 'application/json']
-
-// Check if the request was successful (status 200-299)
-if ($response->ok()) {
-   // ... success
-} else {
-   // ... handle error
+// Status checks
+if ($response->ok()) {          // 200-299
+    // Success
 }
 
-// Check if the request failed
-if ($response->failed()) {
-   echo 'Request failed: ' . $response->error();
+if ($response->failed()) {      // Any error
+    echo $response->error();    // Error message
 }
-
-// Get error message if request failed
-$error = $response->error(); // Returns null if no error, string if failed
 ```
 
 -----
 
-## 6. Complete Examples
+## 4. Asynchronous Requests
 
-### POST with Configuration
+!!! note "Requires cURL"
+    Async features require cURL extension.
+
+### Single Async Request
 
 ```php
-$data = [
-   'name' => 'Dave Conco',
-   'email' => 'dave@example.com'
+$promise = useFetch('https://api.example.com/users/1')->async()->get();
+// Do other work...
+$response = $promise->wait();
+echo $response->json()['name'];
+```
+
+### Parallel Execution (Recommended)
+
+Execute multiple requests simultaneously for better performance:
+
+```php
+use PhpSPA\Core\Client\AsyncResponse;
+
+// Prepare requests
+$user = useFetch('https://api.example.com/users/1')->async()->get();
+$posts = useFetch('https://api.example.com/posts')->async()->get(['userId' => 1]);
+$comments = useFetch('https://api.example.com/comments')->async()->get(['userId' => 1]);
+
+// Execute all in parallel
+[$userRes, $postsRes, $commentsRes] = AsyncResponse::all([$user, $posts, $comments]);
+
+echo $userRes->json()['name'];
+echo count($postsRes->json()) . " posts";
+```
+
+### With Callbacks
+
+```php
+useFetch('https://api.example.com/users/1')
+    ->async()
+    ->get()
+    ->then(fn($res) => print $res->json()['name'])
+    ->wait();
+```
+
+-----
+
+## 5. Complete Examples
+
+### POST with Error Handling
+
+```php
+$response = useFetch('https://api.example.com/users')
+    ->headers(['Authorization' => 'Bearer token'])
+    ->timeout(15)
+    ->post(['name' => 'Dave', 'email' => 'dave@example.com']);
+
+if ($response->ok()) {
+    echo "User created: " . $response->json()['id'];
+} else {
+    error_log('API Error: ' . $response->error());
+}
+```
+
+### Parallel API Calls
+
+```php
+use PhpSPA\Core\Client\AsyncResponse;
+
+$requests = [
+    useFetch('https://api.example.com/users/1')->async()->get(),
+    useFetch('https://api.example.com/users/2')->async()->get(),
+    useFetch('https://api.example.com/users/3')->async()->get(),
 ];
 
-$response = useFetch('https://api.example.com/users')
-               ->headers(['Authorization' => 'Bearer token123'])
-               ->timeout(15)
-               ->verifySSL(true)
-               ->withUserAgent('MyApp/1.0')
-               ->post($data);
+$responses = AsyncResponse::all($requests);
 
-if ($response->ok()) {
-   $result = $response->json();
-   echo "User created with ID: " . $result['id'];
-} else {
-   echo "Error: " . $response->error();
-}
-```
-
-### GET with Error Handling
-
-```php
-$response = useFetch('https://api.example.com/users/123')
-               ->timeout(10)
-               ->get();
-
-if ($response->failed()) {
-   // Handle error
-   error_log('API Error: ' . $response->error());
-   echo "Failed to fetch user";
-} else {
-   // Success
-   $user = $response->json();
-   echo "User: " . $user['name'];
-}
-```
-
-### Custom Configuration
-
-```php
-$response = useFetch('https://slow-api.example.com/data')
-               ->headers([
-                  'Authorization' => 'Bearer token',
-                  'X-Custom-Header' => 'value'
-               ])
-               ->timeout(60)
-               ->connectTimeout(10)
-               ->followRedirects(true, 3)
-               ->withUserAgent('MyApp/2.0')
-               ->verifySSL(true)
-               ->get(['page' => 1, 'limit' => 50]);
-
-if ($response->ok()) {
-   $data = $response->json();
-   echo "Received " . count($data['items']) . " items";
-} else {
-   echo "Request failed: " . $response->error();
-   echo "Status code: " . $response->status();
+foreach ($responses as $res) {
+    echo $res->json()['name'] . "\n";
 }
 ```
 
 -----
 
-### Avoid Same-Server Requests
+## 6. Important Notes
 
-```php
-// ❌ Don't do this - creates deadlock
-$response = useFetch('http://localhost:8000/same-app-route')->get();
+!!! warning "Avoid Same-Server Requests"
+    Don't make HTTP requests to the same server handling the current request - it causes deadlock:
+    ```php
+    // ❌ Don't do this
+    $response = useFetch('http://localhost:8000/same-app-route')->get();
+    
+    // ✅ Do this instead
+    $data = getSomeData();
+    ```
 
-// ✅ Instead, call the function directly
-$data = getSomeData();
-```
+!!! info "Async Behavior"
+    PHP is synchronous. `async()` prepares cURL handles without executing. Use `AsyncResponse::all()` for true parallel execution with curl_multi. Sequential `wait()` calls execute requests one by one.
