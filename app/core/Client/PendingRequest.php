@@ -7,14 +7,14 @@ use Exception;
 use PhpSPA\Core\Client\HttpClientFactory;
 
 /**
- * Enum representing HTTP request methods.
+ * class representing HTTP request methods.
  *
- * This enumeration defines the standard HTTP request methods that can be used
+ * This class defines the standard HTTP request methods that can be used
  * when making HTTP requests through the client.
  *
  * @package Client
  */
-enum RequestMethod {
+class RequestMethod {
    public const string GET = 'GET';
    public const string POST = 'POST';
    public const string PUT = 'PUT';
