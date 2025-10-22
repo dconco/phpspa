@@ -1,6 +1,23 @@
 # CHANGELOG
 
-## v2.0.0 (Current)
+## v2.0.1 (Current)
+
+### ✨ New Features
+
+#### **Async HTTP Requests** 🚀
+
+Added asynchronous HTTP request support to `useFetch()` hook with true parallel execution:
+
+- Non-blocking requests with `async()` method
+- Parallel execution with `AsyncResponse::all()` using `curl_multi`
+- Promise-like `then()` callbacks
+- Up to 3x faster for concurrent requests
+
+**Documentation:** [hooks/use-fetch](https://phpspa.vercel.app/references/hooks/use-fetch)
+
+---
+
+## v2.0.0
 
 > [!IMPORTANT]
 > This is a **MAJOR VERSION RELEASE** with significant breaking changes. Please read the migration guide carefully before upgrading.
