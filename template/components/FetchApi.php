@@ -72,25 +72,23 @@ return (new Component(function ()
    useFetch('https://jsonplaceholder.typicode.com/posts/2')
       ->async()
       ->get()
-      ->then(function ($response) use ($start, &$data)
+      ->then(function ($response) use ($start, &$html)
       {
          $duration = round((microtime(true) - $start) * 1000, 2);
 
          if ($response->ok()) {
             $res = $response->json();
 
-            $text = "✅ Callback executed! Duration: {$duration}ms<br>";
-            $text .= "Post ID: " . ($res['id'] ?? 'N/A') . " - Title: " . ($res['title'] ?? 'N/A') . "<br>";
-
-            $data($text);
+            $html .= "✅ Callback executed! Duration: {$duration}ms<br>";
+            $html .= "Post ID: " . ($res['id'] ?? 'N/A') . " - Title: " . ($res['title'] ?? 'N/A') . "<br>";
          }
          else {
-            $data("❌ Failed: " . $response->error() . "<br>");
+            $html .= "❌ Failed: " . $response->error() . "<br>";
          }
       });
 
    $html .= "<hr>";
    $html .= "<p><strong>All tests completed!</strong></p>";
 
-   return $html . $data();
+   return $html;
 }))->route('/fetch-api');
