@@ -1,5 +1,8 @@
 # `useFetch` API
 
+!!! success "New in v2.0.1"
+    :material-new-box: Async HTTP requests with parallel execution support
+
 <div class="grid cards" markdown>
 
 -   :material-lightning-bolt:{ .lg .middle } __Simple & Powerful__

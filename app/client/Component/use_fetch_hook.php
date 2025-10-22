@@ -10,6 +10,7 @@ use PhpSPA\Core\Client\PendingRequest;
  * @since v2.0.1
  * @param string $url The target URL.
  * @return PendingRequest
+ * @see https://phpspa.vercel.app/references/hooks/use-fetch
  */
 function useFetch(string $url): PendingRequest
 {
