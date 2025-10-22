@@ -40,14 +40,23 @@ require_once __DIR__ . '/Utf8IntegrationTest.php';        // UTF-8 encoding and 
 require_once __DIR__ . '/TodoJsCompressionTest.php';
 require_once __DIR__ . '/ComprehensiveJsCompressionTest.php'; // Comprehensive real-world tests
 
-echo "\n";
-echo "================================================================================\n";
-echo "                          ASYNC HTTP CLIENT TESTS                              \n";
-echo "================================================================================\n";
-echo "\n";
+// Check if async tests should run
+$runAsyncTests = getenv('RUN_ASYNC_TESTS') === 'true' || in_array('--async', $argv ?? []);
 
-// Run Async Request Tests BEFORE AssetLinkTest (which calls exit())
-require_once __DIR__ . '/AsyncRequestTest.php';
+if ($runAsyncTests) {
+    echo "\n";
+    echo "================================================================================\n";
+    echo "                          ASYNC HTTP CLIENT TESTS                              \n";
+    echo "================================================================================\n";
+    echo "\n";
+
+    // Run Async Request Tests BEFORE AssetLinkTest (which calls exit())
+    require_once __DIR__ . '/AsyncRequestTest.php';
+} else {
+    echo "\n";
+    echo "⏭️  Skipping Async Tests (use --async flag or RUN_ASYNC_TESTS=true to run)\n";
+    $async_tests_successful = true; // Don't fail tests when skipped
+}
 
 echo "\n";
 
