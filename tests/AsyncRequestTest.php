@@ -9,7 +9,14 @@
  * @author dconco <concodave@gmail.com>
  */
 
+use PhpSPA\Core\Client\AsyncResponse;
 use function Component\useFetch;
+
+// Check if cURL is available
+if (!extension_loaded('curl')) {
+    echo "❌ cURL extension is not loaded. Async tests require cURL.\n";
+    exit(1);
+}
 
 $async_tests_successful = true;
 
@@ -153,8 +160,6 @@ echo "\n=== All Async Tests PASSED ===\n";
 echo "\n";
 echo "Test 5: Parallel vs Sequential Execution\n";
 echo "------------------------------------------\n";
-
-use PhpSPA\Core\Client\AsyncResponse;
 
 // Parallel execution
 $startParallel = microtime(true);
