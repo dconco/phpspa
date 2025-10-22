@@ -15,6 +15,7 @@ $app = (new App(require 'layout/Layout.php'))
     ->attach(require 'components/Counter.php')
     ->attach(require 'components/HomePage.php')
     ->attach(require 'components/Todo.php')
+    ->attach(require 'components/FetchApi.php')
 
     ->defaultTargetID('app')
     ->defaultToCaseSensitive()

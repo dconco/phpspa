@@ -4,24 +4,10 @@ use PhpSPA\Component;
 use PhpSPA\Http\Session;
 
 use function Component\useEffect;
-use function Component\useFetch;
 use function Component\useState;
 
 function TodoList ()
 {
-   $response = useFetch('https://pipgalaxy.greenworldpower.com.ng')
-      ->headers(['X-Requested-With' => 'PHPSPA_REQUEST'])
-      ->get();
-
-   if ($response->failed()) {
-      var_dump($response->error());
-   } else {
-      echo($response->content);
-   }
-
-   exit;
-
-
    $initialTodos = Session::get('todos') ?: [
       [ 'id' => 1, 'text' => 'Learn phpspa' ],
       [ 'id' => 2, 'text' => 'Build an awesome app' ],

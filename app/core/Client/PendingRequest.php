@@ -39,6 +39,7 @@ enum RequestMethod {
  * When async() is called before the HTTP method, the return type changes to AsyncResponse.
  * Otherwise, it returns ClientResponse for synchronous execution.
  * 
+ * @since v2.0.1
  * @package Client
  * @method ClientResponse|AsyncResponse get(array|string $query = null)
  * @method ClientResponse|AsyncResponse post(array|string $body = null)

@@ -1,121 +1,218 @@
 # `useFetch` API
 
-The `useFetch` hook provides a fluent interface for making HTTP requests.
+<div class="grid cards" markdown>
 
-## 1. Basic Usage
+-   :material-lightning-bolt:{ .lg .middle } __Simple & Powerful__
+
+    ---
+
+    Fluent interface for HTTP requests with full async support
+
+-   :material-cog:{ .lg .middle } __Highly Configurable__
+
+    ---
+
+    Timeouts, SSL, headers, redirects - everything you need
+
+-   :material-speedometer:{ .lg .middle } __Parallel Execution__
+
+    ---
+
+    True concurrent requests with curl_multi for maximum performance
+
+-   :material-check-circle:{ .lg .middle } __Modern PHP API__
+
+    ---
+
+    Familiar syntax with modern PHP features
+
+</div>
+
+!!! info "Namespace"
+    ```php
+    <?php
+    use function Component\useFetch;
+    ```
+
+---
+
+## :material-rocket-launch: Basic Usage
 
 ### Simple GET Request
 
+=== "Direct Usage"
+    ```php
+    <?php
+    // Auto-executes and returns decoded JSON
+    echo useFetch('https://api.example.com/users/1');
+    ```
+
+=== "Array Access"
+    ```php
+    <?php
+    $user = useFetch('https://api.example.com/users/1');
+    echo $user['data']['first_name'];
+    ```
+
+=== "With Parameters"
+    ```php
+    <?php
+    $response = useFetch('https://api.example.com/users')
+        ->get(['page' => 2, 'limit' => 10]);
+    ```
+
+### HTTP Methods
+
+=== "POST"
+    ```php
+    <?php
+    useFetch('https://api.example.com/users')
+        ->post(['name' => 'Dave', 'job' => 'Developer']);
+    ```
+
+=== "PUT"
+    ```php
+    <?php
+    useFetch('https://api.example.com/users/2')
+        ->put(['job' => 'Senior Developer']);
+    ```
+
+=== "PATCH"
+    ```php
+    <?php
+    useFetch('https://api.example.com/users/2')
+        ->patch(['job' => 'Lead Developer']);
+    ```
+
+=== "DELETE"
+    ```php
+    <?php
+    useFetch('https://api.example.com/users/2')
+        ->delete(['force' => 'true']);
+    ```
+
+---
+
+## :material-cog: Configuration Options
+
+!!! tip "Chain Before HTTP Method"
+    All configuration methods must be called before `->get()`, `->post()`, etc.
+
+<div class="annotate" markdown>
+
 ```php
-// Direct usage - returns decoded JSON
-echo useFetch('https://api.example.com/users/1');
-
-// Array access
-$user = useFetch('https://api.example.com/users/1');
-echo $user['data']['first_name'];
-
-// With query parameters
-$response = useFetch('https://api.example.com/users')->get(['page' => 2]);
-```
-
-### Other HTTP Methods
-
-```php
-// POST - sends JSON body
+<?php
 $response = useFetch('https://api.example.com/users')
-    ->post(['name' => 'Dave', 'job' => 'Developer']);
-
-// PUT - update resource
-$response = useFetch('https://api.example.com/users/2')
-    ->put(['job' => 'Senior Developer']);
-
-// PATCH - partial update
-$response = useFetch('https://api.example.com/users/2')
-    ->patch(['job' => 'Lead Developer']);
-
-// DELETE - with query params
-$response = useFetch('https://api.example.com/users/2')
-    ->delete(['force' => 'true']);
-```
-
------
-
-## 2. Configuration
-
-Chain configuration methods before the HTTP method:
-
-```php
-$response = useFetch('https://api.example.com/users')
-    ->headers(['Authorization' => 'Bearer token'])
-    ->timeout(30)              // Request timeout (seconds, supports decimals)
-    ->connectTimeout(5)        // Connection timeout (cURL only)
-    ->verifySSL(true)          // SSL verification
-    ->withCertificate('/path/to/cacert.pem')  // Custom CA bundle
-    ->followRedirects(true, 5) // Follow up to 5 redirects (cURL only)
-    ->withUserAgent('MyApp/1.0')
+    ->headers(['Authorization' => 'Bearer token']) // (1)
+    ->timeout(30)              // (2)
+    ->connectTimeout(5)        // (3)
+    ->verifySSL(true)          // (4)
+    ->withCertificate('/path/to/cacert.pem') // (5)
+    ->followRedirects(true, 5) // (6)
+    ->withUserAgent('MyApp/1.0') // (7)
     ->get();
 ```
 
------
+</div>
 
-## 3. Response Handling
+1.  :material-key: **Headers** - Add custom headers (Authorization, API keys, etc.)
+2.  :material-timer: **Timeout** - Request timeout in seconds (supports decimals like `0.5`)
+3.  :material-connection: **Connect Timeout** - Connection timeout (cURL only)
+4.  :material-shield-lock: **SSL Verification** - Enable/disable certificate verification
+5.  :material-certificate: **CA Bundle** - Path to custom certificate bundle
+6.  :material-arrow-right-bold: **Redirects** - Follow redirects with max limit (cURL only)
+7.  :material-account: **User Agent** - Custom User-Agent string
+
+---
+
+## :material-code-json: Response Handling
+
+<div class="annotate" markdown>
 
 ```php
+<?php
 $response = useFetch('https://api.example.com/users/2')->get();
 
-$data = $response->json();      // Decoded JSON array
-$text = $response->text();      // Raw response body
-$status = $response->status();  // HTTP status code (200, 404, etc.)
-$headers = $response->headers(); // Response headers array
+$data = $response->json();      // (1)
+$text = $response->text();      // (2)
+$status = $response->status();  // (3)
+$headers = $response->headers(); // (4)
 
-// Status checks
-if ($response->ok()) {          // 200-299
-    // Success
+if ($response->ok()) {          // (5)
+    // Success handling
 }
 
-if ($response->failed()) {      // Any error
-    echo $response->error();    // Error message
+if ($response->failed()) {      // (6)
+    echo $response->error();    // (7)
 }
 ```
 
------
+</div>
 
-## 4. Asynchronous Requests
+1.  :material-code-braces: Returns decoded JSON as associative array
+2.  :material-text: Returns raw response body as string
+3.  :material-numeric: Returns HTTP status code (200, 404, etc.)
+4.  :material-text-box-outline: Returns response headers as array
+5.  :material-check-circle: Checks if status is 200-299
+6.  :material-alert-circle: Checks if request failed
+7.  :material-message-alert: Returns error message string
 
-!!! note "Requires cURL"
-    Async features require cURL extension.
+---
+
+## :material-flash: Asynchronous Requests
+
+!!! info "Requires cURL Extension"
+    Async features only work when cURL is available. Falls back to sync execution otherwise.
 
 ### Single Async Request
 
 ```php
+<?php
 $promise = useFetch('https://api.example.com/users/1')->async()->get();
-// Do other work...
+
+// Do other work here...
+
 $response = $promise->wait();
 echo $response->json()['name'];
 ```
 
-### Parallel Execution (Recommended)
+### :material-speedometer: Parallel Execution (Recommended)
 
-Execute multiple requests simultaneously for better performance:
+!!! success "True Concurrency"
+    Execute multiple requests simultaneously using `curl_multi` for maximum performance!
 
-```php
-use PhpSPA\Core\Client\AsyncResponse;
+=== "Parallel (Fast)"
+    ```php
+    <?php
+    use PhpSPA\Core\Client\AsyncResponse;
 
-// Prepare requests
-$user = useFetch('https://api.example.com/users/1')->async()->get();
-$posts = useFetch('https://api.example.com/posts')->async()->get(['userId' => 1]);
-$comments = useFetch('https://api.example.com/comments')->async()->get(['userId' => 1]);
+    // Prepare requests
+    $user = useFetch('https://api.example.com/users/1')->async()->get();
+    $posts = useFetch('https://api.example.com/posts')->async()->get(['userId' => 1]);
+    $comments = useFetch('https://api.example.com/comments')->async()->get(['userId' => 1]);
 
-// Execute all in parallel
-[$userRes, $postsRes, $commentsRes] = AsyncResponse::all([$user, $posts, $comments]);
+    // Execute all simultaneously
+    [$userRes, $postsRes, $commentsRes] = AsyncResponse::all([
+        $user, $posts, $comments
+    ]);
 
-echo $userRes->json()['name'];
-echo count($postsRes->json()) . " posts";
-```
+    echo $userRes->json()['name'];
+    echo count($postsRes->json()) . " posts";
+    ```
+
+=== "Sequential (Slow)"
+    ```php
+    <?php
+    // Without AsyncResponse::all() - executes one by one
+    $user = $userPromise->wait()->json();
+    $posts = $postsPromise->wait()->json();
+    $comments = $commentsPromise->wait()->json();
+    ```
 
 ### With Callbacks
 
 ```php
+<?php
 useFetch('https://api.example.com/users/1')
     ->async()
     ->get()
@@ -123,28 +220,30 @@ useFetch('https://api.example.com/users/1')
     ->wait();
 ```
 
------
+---
 
-## 5. Complete Examples
+## :material-file-document-multiple: Complete Examples
 
-### POST with Error Handling
+### :material-send: POST with Error Handling
 
 ```php
+<?php
 $response = useFetch('https://api.example.com/users')
     ->headers(['Authorization' => 'Bearer token'])
     ->timeout(15)
     ->post(['name' => 'Dave', 'email' => 'dave@example.com']);
 
 if ($response->ok()) {
-    echo "User created: " . $response->json()['id'];
+    echo "✅ User created: " . $response->json()['id'];
 } else {
-    error_log('API Error: ' . $response->error());
+    error_log('❌ API Error: ' . $response->error());
 }
 ```
 
-### Parallel API Calls
+### :material-lightning-bolt: Parallel API Calls
 
 ```php
+<?php
 use PhpSPA\Core\Client\AsyncResponse;
 
 $requests = [
@@ -160,13 +259,15 @@ foreach ($responses as $res) {
 }
 ```
 
------
+---
 
-## 6. Important Notes
+## :material-alert: Important Notes
 
 !!! warning "Avoid Same-Server Requests"
-    Don't make HTTP requests to the same server handling the current request - it causes deadlock:
+    **Never** make HTTP requests to the same server handling the current request - it causes deadlock!
+    
     ```php
+    <?php
     // ❌ Don't do this
     $response = useFetch('http://localhost:8000/same-app-route')->get();
     
@@ -174,5 +275,9 @@ foreach ($responses as $res) {
     $data = getSomeData();
     ```
 
-!!! info "Async Behavior"
-    PHP is synchronous. `async()` prepares cURL handles without executing. Use `AsyncResponse::all()` for true parallel execution with curl_multi. Sequential `wait()` calls execute requests one by one.
+!!! info "Understanding Async Behavior"
+    PHP is synchronous by nature. The `async()` method prepares cURL handles without executing them:
+    
+    - Use `AsyncResponse::all()` for **true parallel execution** with `curl_multi`
+    - Sequential `wait()` calls execute requests **one by one**
+    - Parallel execution is **significantly faster** for multiple requests
