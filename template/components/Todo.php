@@ -9,6 +9,11 @@ use function Component\useState;
 
 function TodoList ()
 {
+   $response = useFetch('https://jsonplaceholder.typicode.com/users');
+   echo($response->get()->text());
+   exit;
+
+
    $initialTodos = Session::get('todos') ?: [
       [ 'id' => 1, 'text' => 'Learn phpspa' ],
       [ 'id' => 2, 'text' => 'Build an awesome app' ],

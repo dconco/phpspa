@@ -4,6 +4,7 @@ namespace PhpSPA\Core\Client;
 
 use BadMethodCallException;
 use Exception;
+use PhpSPA\Core\Client\HttpClientFactory;
 
 /**
  * Enum representing HTTP request methods.
@@ -55,6 +56,8 @@ class PendingRequest implements \ArrayAccess {
 
    private ?array $responseData = null;
 
+   private HttpClient $client;
+
    /**
     * Constructs a new PendingRequest instance.
     *
@@ -63,6 +66,7 @@ class PendingRequest implements \ArrayAccess {
    public function __construct (string $url)
    {
       $this->url = $url;
+      $this->client = HttpClientFactory::create();
    }
 
    /**
@@ -181,52 +185,19 @@ class PendingRequest implements \ArrayAccess {
    }
 
    /**
-    * Execute the HTTP request with the given options.
+    * Execute the HTTP request.
     *
-    * This method performs the actual HTTP request using the provided options array
-    * and returns a ClientResponse object containing the result of the request.
-    *
-    * @param array $options An associative array of request options (headers, body, method, etc.)
-    * 
+    * @param string $httpMethod The HTTP method to use
     * @return ClientResponse The response object containing the HTTP response data
-    * 
-    * @throws \RuntimeException If the request execution fails
-    * @throws \InvalidArgumentException If the options array is invalid
     */
-   private function execute (array $options): ClientResponse
+   private function execute(string $httpMethod): ClientResponse
    {
-      $context = stream_context_create($options);
-      $body = @file_get_contents($this->url, false, $context);
-
-      // $http_response_header is a magic variable populated by file_get_contents
-      $responseHeaders = $http_response_header ?? [];
-
-      $statusCode = 0;
-      if (isset($responseHeaders[0])) {
-         // e.g., "HTTP/1.1 200 OK"
-         @list( , $statusCode, ) = explode(' ', $responseHeaders[0], 3);
-      }
-
-      return new ClientResponse($body, (int) $statusCode, $responseHeaders);
-   }
-
-   /**
-    * Builds a formatted header string from an array of headers.
-    *
-    * Converts an associative array of HTTP headers into a properly formatted
-    * header string suitable for use in HTTP requests.
-    *
-    * @param array $headers An associative array of header names and values
-    *                       where keys are header names and values are header values
-    * @return string A formatted header string with each header on a new line
-    */
-   private function buildHeaderString (array $headers): string
-   {
-      $lines = [];
-      foreach ($headers as $key => $value) {
-         $lines[] = "$key: $value";
-      }
-      return implode("\r\n", $lines);
+      return $this->client->request(
+         $this->url,
+         $httpMethod,
+         $this->headers,
+         $this->data
+      );
    }
 
 
@@ -272,34 +243,20 @@ class PendingRequest implements \ArrayAccess {
 
 
    /**
-    * Builds and returns the OPTIONS response for the pending request.
+    * Builds and returns the response for the pending request.
     *
-    * This method constructs an HTTP OPTIONS response, typically used to describe
-    * the communication options available for the target resource or server.
-    *
-    * @param string $httpMethod The HTTP method for which to build the OPTIONS response
-    * @return ClientResponse The OPTIONS response object containing allowed methods and headers
+    * @param string $httpMethod The HTTP method for which to build the response
+    * @return ClientResponse The response object
     */
    private function buildOptions (string $httpMethod): ClientResponse
    {
-      $options = [
-         'http' => [
-            'method' => $httpMethod,
-            'header' => $this->buildHeaderString($this->headers),
-            'ignore_errors' => true,
-         ]
-      ];
-
       if ($this->data !== null) {
-         $headers = array_merge($this->headers, [
+         $this->headers = array_merge($this->headers, [
             'Content-Type' => 'application/json',
             'Content-Length' => strlen($this->data),
          ]);
-
-         $options['http']['content'] = $this->data;
-         $options['http']['header'] = $this->buildHeaderString($headers);
       }
 
-      return $this->execute($options);
+      return $this->execute($httpMethod);
    }
 }
