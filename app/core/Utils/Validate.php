@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpSPA\Core\Utils;
 
+use stdClass;
+
 /**
  * Data validation and sanitization utilities
  *
@@ -11,7 +13,7 @@ namespace PhpSPA\Core\Utils;
  * within the PhpSPA framework. It ensures data integrity and security by applying
  * appropriate validation rules and sanitization techniques.
  *
- * @package PhpSPA\Core\Utils
+ * @category Utils
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
@@ -26,14 +28,12 @@ trait Validate
      * and sanitization to each item in the array or to the single provided value.
      * It also ensures that each item is validated according to its type.
      *
-     * @param bool|float|int|string|array|null $data The data to validate. Can be a single value or an array of values.
+     * @param mixed $data The data to validate. Can be a single value or an array of values.
      *
-     * @return bool|float|int|string|array|null Returns the validated data, maintaining its original type(s).
+     * @return mixed Returns the validated data, maintaining its original type(s).
      * If an array is passed, an array of validated values is returned.
      */
-    protected function validate(
-        bool|float|int|string|array|null $data,
-    ): bool|float|int|string|array|null {
+    protected function validate($data) {
         // If the data is an array, validate each item recursively
         if (is_array($data)) {
             return array_map(function ($item) {
@@ -43,6 +43,10 @@ trait Validate
                 }
                 return $this->realValidate($item); // Otherwise, validate the individual item
             }, $data);
+        }
+
+        if (is_object($data)) {
+            return $data;
         }
 
         // If the data is not an array, validate the value directly
@@ -55,16 +59,12 @@ trait Validate
      * This method converts the value to a string, sanitizes it using `htmlspecialchars`, and then converts it
      * back to its original type (boolean, integer, float, or string) based on the input type.
      *
-     * @param bool|float|int|string|null $value The value to be validated and sanitized.
+     * @param mixed $value The value to be validated and sanitized.
      *
-     * @return bool|float|int|string|null The validated and sanitized value, converted back to its original type.
+     * @return mixed The validated and sanitized value, converted back to its original type.
      */
-    private function realValidate(
-        bool|float|int|string|null $value,
-    ): bool|float|int|string|null {
-        if (!$value) {
-            return null;
-        }
+    private function realValidate($value) {
+        if ($value === null) return null;
 
         // Convert the value to string for sanitation
         $validatedValue = (string) $value;
@@ -74,17 +74,13 @@ trait Validate
         $type = gettype($value);
 
         // Convert the sanitized string back to its original type based on the initial value's type
-        $convertedValue =
-         is_bool($value) || $type === 'boolean'
-          ? (bool) $sanitizedValue
-          : (is_numeric($value) || is_int($value) || $type === 'integer'
-         ? (is_double($value) ||
-         is_float($value) ||
-         $type === 'double' ||
-         strpos((string) $value, '.') !== false
-          ? (float) $sanitizedValue
-          : (int) $sanitizedValue)
-         : $sanitizedValue);
+        $convertedValue = is_bool($value) || $type === 'boolean'
+            ? (bool) $sanitizedValue
+            : (is_numeric($value) || is_int($value) || $type === 'integer'
+                ? (is_double($value) || is_float($value) || $type === 'double' || strpos((string) $value, '.') !== false
+                    ? (float) $sanitizedValue
+                    : (int) $sanitizedValue)
+                : $sanitizedValue);
 
         return $convertedValue;
     }

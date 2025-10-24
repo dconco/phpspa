@@ -21,13 +21,23 @@ trait ComponentParser
     private static function parseAttributesToArray($attributes): array
     {
         $attrArray = [];
-        $pattern = '/([a-zA-Z_-]+)\s*=\s*(?|"([^"]*)"|\'([^\']*)\')/';
+        $pattern = '/([a-zA-Z_-]+)\s*=\s*"([^"]*)"/';
 
         // Remove newlines and excessive spaces for easier parsing
         $normalized = preg_replace('/\s+/', ' ', trim($attributes));
 
         if (preg_match_all($pattern, $normalized, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $match) {
+                $decoded = base64_decode($match[2], true);
+
+                if ($decoded !== false) {
+                    $unserialized = @unserialize($decoded);
+
+                    if ($unserialized !== false || $decoded === 'b:0;') {
+                        $attrArray[$match[1]] = $unserialized;
+                        continue;
+                    }
+                }
                 $attrArray[$match[1]] = $match[2];
             }
         }

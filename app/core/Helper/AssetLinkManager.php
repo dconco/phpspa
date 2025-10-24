@@ -25,17 +25,17 @@ class AssetLinkManager
     /**
      * Session key for storing asset mappings
      */
-    private const ASSET_MAPPINGS_KEY = 'phpspa_asset_mappings';
+    private const string ASSET_MAPPINGS_KEY = 'phpspa_asset_mappings';
 
     /**
      * Session key for storing cache configuration
      */
-    private const CACHE_CONFIG_KEY = 'phpspa_cache_config';
+    private const string CACHE_CONFIG_KEY = 'phpspa_cache_config';
 
     /**
      * Default cache duration in hours
      */
-    private const DEFAULT_CACHE_HOURS = 24;
+    private const int DEFAULT_CACHE_HOURS = 24;
 
     /**
      * Generate a unique session-based link for a CSS asset

@@ -339,10 +339,7 @@ abstract class AppImpl implements ApplicationContract {
              * @param array $router An associative array containing 'params' and 'request' to be passed as arguments.
              */
 
-            if (
-            CallableInspector::hasParam($componentFunction, 'path') &&
-            CallableInspector::hasParam($componentFunction, 'request')
-            ) {
+            if (CallableInspector::hasParam($componentFunction, 'path') && CallableInspector::hasParam($componentFunction, 'request')) {
                 $componentOutput = call_user_func(
                     $componentFunction,
                     path: $router['params'],

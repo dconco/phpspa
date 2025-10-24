@@ -85,7 +85,17 @@ trait ComponentTagFormatter
                $processedChildren = self::format($matches[3]);
 
                // Now assign the processed children
-               $attributes['children'] = $processedChildren;
+               $decoded = base64_decode($processedChildren ?? '', true);
+
+               if ($decoded !== false) {
+                  $unserialized = @unserialize($decoded);
+                  if ($unserialized !== false || $decoded === 'b:0;')
+                     $attributes['children'] = $unserialized;
+                  else
+                     $attributes['children'] = $processedChildren;
+               } else {
+                  $attributes['children'] = $processedChildren;
+               }
             }
 
             // Handle different component types
