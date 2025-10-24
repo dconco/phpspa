@@ -9,10 +9,10 @@ class HashCom {
 	) {}
 }
 
-function Paragraph(array $children, array $attr)
+function Paragraph(array $children, array $style)
 {
 	return <<<HTML
-	   <p attr="{$attr['style']}">{$children['children']}</p>
+	   <p style="{$style['style']}">{$children['children']}</p>
 	HTML;
 }
 
@@ -31,7 +31,7 @@ function HashComp($children, ...$attr)
 	return <<<HTML
 	   <div $attr>
 	      <Component.Link>
-	         <Paragraph attr="{$sss}">{$children()}</Paragraph>
+	         <Paragraph style="{$sss}">{$children()}</Paragraph>
 	      </Component.Link>
 	   </div>
 	HTML;
