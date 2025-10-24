@@ -3,7 +3,7 @@
 namespace PhpSPA\Core\Helper;
 
 use Closure;
-use PhpSPA\Http\Request;
+use PhpSPA\Core\Http\HttpRequest;
 use const PhpSPA\Core\Impl\Const\STATE_HANDLE;
 
 /**
@@ -39,7 +39,7 @@ class StateManager
 	{
 		$sessionData = SessionHandler::get(STATE_HANDLE);
 
-		if (!isset($sessionData[$stateKey]) && (new Request())->requestedWith() !== 'PHPSPA_REQUEST' && (new Request())->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT') {
+		if (!isset($sessionData[$stateKey]) && (new HttpRequest())->requestedWith() !== 'PHPSPA_REQUEST' && (new HttpRequest())->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT') {
 			self::$firstRender = true;
 		}
 

@@ -6,10 +6,10 @@ use PhpSPA\Component;
 
 /**
  * Core PhpSPA application contract
- *
- * This interface defines the essential contract for PhpSPA applications,
- * including methods for initialization, configuration, and core functionality
- * such as routing, CORS handling, and component management.
+ * 
+ * This application provides the foundational implementation for the PhpSPA application framework.
+ * It handles layout management, component registration,
+ * routing, and rendering logic that powers the single-page application experience.
  *
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
@@ -134,19 +134,19 @@ interface ApplicationContract {
     /**
      * Attaches a component to the current object.
      *
-     * @param Component $component The component instance to attach.
+     * @param IComponent|Component $component The component instance to attach.
      * @return self
      */
-    public function attach (Component $component): self;
+    public function attach (IComponent|Component $component): self;
 
 
     /**
      * Detaches the specified component from the current context.
      *
-     * @param Component $component The component instance to be detached.
+     * @param IComponent|Component $component The component instance to be detached.
      * @return self
      */
-    public function detach (Component $component): self;
+    public function detach (IComponent|Component $component): self;
 
 
     /**

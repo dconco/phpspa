@@ -2,8 +2,8 @@
 
 namespace PhpSPA\Core\Helper;
 
-use PhpSPA\Http\Request;
 use PhpSPA\Http\Session;
+use PhpSPA\Core\Http\HttpRequest;
 use PhpSPA\Core\Helper\SessionHandler;
 use PhpSPA\Core\Interfaces\CsrfManagerInterface;
 
@@ -60,7 +60,7 @@ class CsrfManager implements CsrfManagerInterface
 
         $storedTokenData = $this->getSessionData()[$this->name];
 
-        $request = new Request();
+        $request = new HttpRequest();
         $token = $request($this->name, $request->csrf());
 
         $isValid = hash_equals($storedTokenData['token'], $token);

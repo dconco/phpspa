@@ -3,10 +3,10 @@
 namespace PhpSPA\Core\Impl\RealImpl;
 
 use PhpSPA\Component;
-use PhpSPA\Http\Request;
 use PhpSPA\Http\Session;
 use PhpSPA\Http\Security\Nonce;
 use PhpSPA\Core\Router\MapRoute;
+use PhpSPA\Core\Http\HttpRequest;
 use PhpSPA\Compression\Compressor;
 use PhpSPA\Core\Config\CompressionConfig;
 use PhpSPA\Core\Helper\CsrfManager;
@@ -17,9 +17,11 @@ use PhpSPA\Core\Helper\AssetLinkManager;
 use PhpSPA\Core\Helper\PathResolver;
 use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 use PhpSPA\Interfaces\ApplicationContract;
+use PhpSPA\Interfaces\IComponent;
 
 use const PhpSPA\Core\Impl\Const\STATE_HANDLE;
 use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
+
 
 /**
  * Core application implementation class
@@ -27,12 +29,10 @@ use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  * It handles layout management, component registration,
  * routing, and rendering logic that powers the single-page application experience.
  *
- * @package PhpSPA\Core\Impl\RealImpl
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0
- * @var string $request_uri
  * @abstract
  */
 abstract class AppImpl implements ApplicationContract {
@@ -58,7 +58,7 @@ abstract class AppImpl implements ApplicationContract {
      * Each component can be accessed and managed by the application core.
      * Typically used for dependency injection or service management.
      *
-     * @var Component[]
+     * @var Component|IComponent[]
      */
     private array $components = [];
 
@@ -117,13 +117,13 @@ abstract class AppImpl implements ApplicationContract {
         return $this;
     }
 
-    public function attach (Component $component): ApplicationContract
+    public function attach (IComponent|Component $component): ApplicationContract
     {
         $this->components[] = $component;
         return $this;
     }
 
-    public function detach (Component $component): ApplicationContract
+    public function detach (IComponent|Component $component): ApplicationContract
     {
         $key = array_search($component, $this->components, true);
 
@@ -182,7 +182,7 @@ abstract class AppImpl implements ApplicationContract {
 
     public function run (): void
     {
-        $request = new Request();
+        $request = new HttpRequest();
 
         if (!headers_sent()) {
             foreach ($this->cors as $key => $value) {
@@ -492,7 +492,7 @@ abstract class AppImpl implements ApplicationContract {
      */
     private function generateAssetLinks ($route, array $scripts, array $stylesheets, array $globalScripts = [], array $globalStylesheets = []): array
     {
-        $request = new Request();
+        $request = new HttpRequest();
         $isPhpSpaRequest = $request->requestedWith() === 'PHPSPA_REQUEST' || $request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT';
 
         $result = [
@@ -567,6 +567,8 @@ abstract class AppImpl implements ApplicationContract {
      */
     private function serveAsset (array $assetInfo): void
     {
+        $request = new HttpRequest();
+
         // Check if this is a global asset
         if ($assetInfo['componentRoute'] === '__global__') {
             $content = $this->getGlobalAssetContent($assetInfo);
@@ -600,7 +602,6 @@ abstract class AppImpl implements ApplicationContract {
         }
 
         // Determine compression level
-        $request = new Request();
         $compressionLevel = ($request->requestedWith() === 'PHPSPA_REQUEST')
             ? Compressor::LEVEL_EXTREME
             : Compressor::getLevel();
@@ -619,9 +620,9 @@ abstract class AppImpl implements ApplicationContract {
      * Find a component by its route
      *
      * @param string $targetRoute The route to search for
-     * @return Component|null The component if found, null otherwise
+     * @return IComponent|Component|null The component if found, null otherwise
      */
-    private function findComponentByRoute (string $targetRoute): ?Component
+    private function findComponentByRoute (string $targetRoute): IComponent|Component|null
     {
         foreach ($this->components as $component) {
             $route = CallableInspector::getProperty($component, 'route');
@@ -642,11 +643,11 @@ abstract class AppImpl implements ApplicationContract {
     /**
      * Get asset content from component
      *
-     * @param Component $component The component containing the asset
+     * @param IComponent|Component $component The component containing the asset
      * @param array $assetInfo Asset information
      * @return string|null The asset content if found, null otherwise
      */
-    private function getAssetContent (Component $component, array $assetInfo): ?string
+    private function getAssetContent (IComponent|Component $component, array $assetInfo): ?string
     {
         if ($assetInfo['assetType'] === 'css') {
             $stylesheets = CallableInspector::getProperty($component, 'stylesheets');
@@ -676,6 +677,8 @@ abstract class AppImpl implements ApplicationContract {
      */
     private function getGlobalAssetContent (array $assetInfo): ?string
     {
+        $request = new HttpRequest();
+
         if ($assetInfo['assetType'] === 'css') {
             $stylesheet = $this->stylesheets[$assetInfo['assetIndex']] ?? null;
             $stylesheetCallable = is_array($stylesheet) ? $stylesheet[0] : $stylesheet;
@@ -686,7 +689,6 @@ abstract class AppImpl implements ApplicationContract {
         elseif ($assetInfo['assetType'] === 'js') {
             $script = $this->scripts[$assetInfo['assetIndex']] ?? null;
             $scriptCallable = is_array($script) ? $script[0] : $script;
-            $request = new Request();
 
             if ($scriptCallable && is_callable($scriptCallable)) {
                 $content = call_user_func($scriptCallable);

@@ -10,10 +10,36 @@ Added asynchronous HTTP request support to `useFetch()` hook with true parallel 
 
 - Non-blocking requests with `async()` method
 - Parallel execution with `AsyncResponse::all()` using `curl_multi`
+- Generator-based `AsyncPool` with `stream()` method for processing responses as they complete
 - Promise-like `then()` callbacks
 - Up to 3x faster for concurrent requests
 
 **Documentation:** [hooks/use-fetch](https://phpspa.vercel.app/references/hooks/use-fetch)
+
+#### **Component Props Type Preservation** 🎯
+
+Added `fmt()` helper function to preserve exact data types when passing props between components:
+
+- Supports passing custom classes, interfaces, and complex objects as component props
+- Automatic serialization and deserialization with type preservation
+- Works with strings, arrays, objects, and custom class instances
+
+```php
+class UserData {
+   public function __construct(
+      public readonly string $name,
+      public readonly int $age
+   ) {}
+}
+
+$user = new UserData('John', 25);
+fmt($user);
+
+// Pass to component - receives exact UserData instance
+return "<UserCard>{$user}</UserCard>";
+```
+
+**Documentation:** [hooks/use-fetch](https://phpspa.vercel.app/references/helpers/fmt)
 
 ---
 

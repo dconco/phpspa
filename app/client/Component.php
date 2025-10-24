@@ -11,7 +11,7 @@ namespace PhpSPA;
  *
  * @author dconco <concodave@gmail.com>
  */
-class Component extends \PhpSPA\Core\Impl\RealImpl\ComponentImpl implements \PhpSPA\Interfaces\IComponent
+class Component extends \PhpSPA\Core\Impl\RealImpl\ComponentImpl
 {
     /**
      * Constructor for the Component class.

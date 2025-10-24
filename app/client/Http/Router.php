@@ -3,12 +3,13 @@
 namespace PhpSPA\Http;
 
 use PhpSPA\App;
+use PhpSPA\Core\Http\HttpRequest;
 use PhpSPA\Core\Router\MapRoute;
 
 /**
  * Handles routing for the application.
  * 
- * @category PhpSPA\Http
+ * @category HTTP
  * @author Samuel Paschalson <samuelpaschalson@gmail.com>
  * @copyright 2025 Samuel Paschalson
  * @see https://phpspa.vercel.app/references/response/#router-quick-examples
@@ -165,7 +166,7 @@ class Router
     private static function ensureShutdownHandlerRegistered(?Request $request): void
     {
         if (self::$shutdownHandlerRegistered) return;
-        $request = $request ?? new Request();
+        $request = $request ?? new HttpRequest();
 
         register_shutdown_function([self::class, 'handle'], $request);
         self::$shutdownHandlerRegistered = true;
