@@ -39,16 +39,16 @@
     ---
 
     Build and customize HTTP responses with fluent API
-    
-    [:octicons-arrow-right-24: Learn more](response.md)
+
+    [:octicons-arrow-right-24: Learn more](./references/response/)
 
 -   :material-cloud-download:{ .lg .middle } **useFetch Hook** :material-new-box:
 
     ---
 
     Async HTTP client with parallel execution support
-    
-    [:octicons-arrow-right-24: Learn more](hooks/use-fetch.md)
+
+    [:octicons-arrow-right-24: Learn more](./references/hooks/use-fetch/)
 
 </div>
 
@@ -63,16 +63,16 @@
     ---
 
     Type-safe prop passing with automatic serialization
-    
-    [:octicons-arrow-right-24: Learn more](helpers/fmt.md)
+
+    [:octicons-arrow-right-24: Learn more](./references/helpers/fmt/)
 
 -   :material-file-upload:{ .lg .middle } **File Import Utility**
 
     ---
 
     Secure file imports with validation and metadata
-    
-    [:octicons-arrow-right-24: Learn more](file-import-utility.md)
+
+    [:octicons-arrow-right-24: Learn more](./references/file-import-utility/)
 
 </div>
 
@@ -84,7 +84,7 @@
 
     | Hook | Description | Version |
     |------|-------------|---------|
-    | [`useFetch()`](hooks/use-fetch.md) | Async HTTP client with parallel execution | v2.0.1 |
+    | [`useFetch()`](./references/hooks/use-fetch/) | Async HTTP client with parallel execution | v2.0.1 |
     | [`useState()`](../hooks/use-state.md) | Reactive state management | v2.0.0 |
     | [`useEffect()`](../hooks/use-effect.md) | Side effects and lifecycle hooks | v2.0.0 |
     | [`useFunction()`](../hooks/use-function.md) | Call PHP functions from JavaScript | v1.1.5 |
@@ -93,15 +93,15 @@
 
     | Helper | Description | Version |
     |--------|-------------|---------|
-    | [`fmt()`](helpers/fmt.md) | Type preservation for component props | v2.0.1 |
-    | [`import()`](file-import-utility.md) | Secure file imports | v1.1.0 |
-    | [`response()`](response.md) | HTTP response builder | v1.1.8 |
-    | [`router()`](../getting-started/routing.md) | Router instance access | v1.1.8 |
+    | [`fmt()`](./references/helpers/fmt/) | Type preservation for component props | v2.0.1 |
+    | [`import()`](./file-import-utility.md) | Secure file imports | v1.1.0 |
+    | [`response()`](./response.md) | HTTP response builder | v1.1.8 |
+    | [`router()`](./response.md#response-api-examples) | Router instance access | v1.1.8 |
 
 === "Components"
 
     | Component | Description | Version |
     |-----------|-------------|---------|
-    | [`<Component.Link>`](../components/link.md) | Client-side navigation | v1.1.0 |
+    | [`<Component.Link>`](../navigations/link-component.md) | Client-side navigation | v1.1.0 |
     | [`<Component.Csrf>`](../security/csrf-protection.md) | CSRF token management | v1.1.5 |
-    | [`<Component.Navigate>`](../components/navigate.md) | Programmatic navigation | v1.1.0 |
+    | [`<Component.Navigate>`](../navigations/navigate-component.md) | Programmatic navigation | v1.1.0 |

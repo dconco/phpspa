@@ -1,4 +1,4 @@
-# phpSPA v1.1.8 — Router & Response
+# PhpSPA v1.1.8 — Router & Response
 
 This document describes how to use the new Router and Response APIs introduced in v1.1.8. It contains full usage examples, API reference, and migration tips.
 
