@@ -14,7 +14,7 @@ namespace PhpSPA\Compression;
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0
- * @see https://phpspa.vercel.app/v1.1.5/1-compression-system/ Compression System Documentation
+ * @see https://phpspa.tech/v1.1.5/1-compression-system/ Compression System Documentation
  */
 class Compressor
 {

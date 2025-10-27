@@ -12,7 +12,7 @@ use PhpSPA\Core\Router\MapRoute;
  * @category HTTP
  * @author Samuel Paschalson <samuelpaschalson@gmail.com>
  * @copyright 2025 Samuel Paschalson
- * @see https://phpspa.vercel.app/references/response/#router-quick-examples
+ * @see https://phpspa.tech/references/response/#router-quick-examples
  */
 
 class Router

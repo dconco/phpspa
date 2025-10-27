@@ -9,7 +9,7 @@ namespace PhpSPA\Http;
  * @category HTTP
  * @author Samuel Paschalson <samuelpaschalson@gmail.com>
  * @copyright 2025 Samuel Paschalson
- * @see https://phpspa.vercel.app/references/response/#response-api-examples
+ * @see https://phpspa.tech/references/response/#response-api-examples
  */
 class Response
 {

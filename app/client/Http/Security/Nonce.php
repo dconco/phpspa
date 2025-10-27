@@ -14,7 +14,7 @@ namespace PhpSPA\Http\Security;
  * @category Security
  * @author dconco <concodave@gmail.com>
  * @version 1.0.0
- * @see https://phpspa.vercel.app/security/content-security-policy
+ * @see https://phpspa.tech/security/content-security-policy
  */
 class Nonce {
    private static $enabled = false;   // default off
@@ -42,7 +42,7 @@ class Nonce {
     *   'font-src'   => ["https://fonts.gstatic.com"]
     * ]);
     * ```
-    * @see https://phpspa.vercel.app/security/content-security-policy
+    * @see https://phpspa.tech/security/content-security-policy
     */
    public static function enable (array $sources = []): void
    {

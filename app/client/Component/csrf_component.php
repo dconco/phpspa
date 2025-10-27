@@ -9,7 +9,7 @@ namespace Component;
  * to prevent cross-site request forgery attacks.
  *
  * @author dconco <concodave@gmail.com>
- * @see https://phpspa.vercel.app/security/csrf-protection
+ * @see https://phpspa.tech/security/csrf-protection
  */
 class Csrf extends \PhpSPA\Core\Helper\CsrfManager
 {

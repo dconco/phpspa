@@ -84,7 +84,7 @@ trait HtmlCompressor
   • Performance-optimized for production
 
   Original source: Component-based PHP library with natural HTML syntax
-  Learn More: https://phpspa.vercel.app/v1.1.5/1-compression-system
+  Learn More: https://phpspa.tech/v1.1.5/1-compression-system
 -->\n";
 
         // Apply minification based on compression level

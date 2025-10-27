@@ -22,8 +22,8 @@ use PhpSPA\Core\Config\CompressionConfig;
  * @copyright 2025 Dave Conco
  * @license MIT
  *
- * @see https://phpspa.vercel.app/core-concepts
- * @link https://phpspa.vercel.app
+ * @see https://phpspa.tech/core-concepts
+ * @link https://phpspa.tech
  */
 class App extends \PhpSPA\Core\Impl\RealImpl\AppImpl {
     /**
@@ -33,8 +33,8 @@ class App extends \PhpSPA\Core\Impl\RealImpl\AppImpl {
      *
      * @param callable $layout The name of the layout to be used by the application.
      * @param bool $autoInitCompression Whether to auto-initialize compression settings
-     * @see https://phpspa.vercel.app/layout
-     * @see https://phpspa.vercel.app/performance/html-compression
+     * @see https://phpspa.tech/layout
+     * @see https://phpspa.tech/performance/html-compression
      */
     public function __construct (callable|string $layout, bool $autoInitCompression = true)
     {

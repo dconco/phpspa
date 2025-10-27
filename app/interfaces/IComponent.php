@@ -23,7 +23,7 @@ interface  IComponent
      * Initializes the component with a callable that defines the component function.
      *
      * @param callable $component The callable representing the component logic.
-     * @see https://phpspa.vercel.app/core-concepts
+     * @see https://phpspa.tech/core-concepts
      */
     public function __construct(callable $component);
 
@@ -32,7 +32,7 @@ interface  IComponent
      *
      * @param string $title The title to set.
      * @return self Returns the current instance for method chaining.
-     * @see https://phpspa.vercel.app/routing/component-configuration
+     * @see https://phpspa.tech/routing/component-configuration
      */
     public function title(string $title): self;
 
@@ -41,7 +41,7 @@ interface  IComponent
      *
      * @param string $method The name of the method to set, default to "GET|POST".
      * @return self Returns the current instance for method chaining.
-     * @see https://phpspa.vercel.app/routing/component-configuration/#specifying-http-methods
+     * @see https://phpspa.tech/routing/component-configuration/#specifying-http-methods
      */
     public function method(string $method): self;
 
@@ -50,7 +50,7 @@ interface  IComponent
      *
      * @param array|string $route The route to be set.
      * @return self Returns the current instance for method chaining.
-     * @see https://phpspa.vercel.app/routing/advanced-routing
+     * @see https://phpspa.tech/routing/advanced-routing
      */
     public function route(array|string $route): self;
 
@@ -59,7 +59,7 @@ interface  IComponent
      *
      * @param string $targetID The identifier of the target element.
      * @return self Returns the current instance for method chaining.
-     * @see https://phpspa.vercel.app/routing/component-configuration/#setting-the-target-render-element
+     * @see https://phpspa.tech/routing/component-configuration/#setting-the-target-render-element
      */
     public function targetID(string $targetID): self;
 
@@ -69,7 +69,7 @@ interface  IComponent
      * Sets the internal flag to treat operations as case sensitive.
      *
      * @return self Returns the current instance for method chaining.
-     * @https://phpspa.vercel.app/routing/component-configuration/#route-case-sensitivity
+     * @https://phpspa.tech/routing/component-configuration/#route-case-sensitivity
      */
     public function caseSensitive(): self;
 
@@ -77,7 +77,7 @@ interface  IComponent
      * Sets the component to operate in a case-insensitive mode.
      *
      * @return self Returns the current instance for method chaining.
-     * @see https://phpspa.vercel.app/routing/component-configuration/#__tabbed_1_2
+     * @see https://phpspa.tech/routing/component-configuration/#__tabbed_1_2
      */
     public function caseInsensitive(): self;
 
@@ -87,7 +87,7 @@ interface  IComponent
      * @param callable $script The script to be executed.
      * @param string|null $name Optional name for the script asset.
      * @return self Returns the current instance for method chaining.
-     * @see https://phpspa.vercel.app/performance/managing-styles-and-scripts/#component-specific-assets
+     * @see https://phpspa.tech/performance/managing-styles-and-scripts/#component-specific-assets
     */
     public function script(callable $script, ?string $name = null): self;
 
@@ -97,7 +97,7 @@ interface  IComponent
      * @param callable $style The stylesheet to be executed.
      * @param string|null $name Optional name for the stylesheet.
      * @return self Returns the current instance for method chaining.
-     * @see https://phpspa.vercel.app/performance/managing-styles-and-scripts/#component-specific-assets
+     * @see https://phpspa.tech/performance/managing-styles-and-scripts/#component-specific-assets
      */
     public function styleSheet(callable $style, ?string $name = null): self;
 
@@ -106,7 +106,7 @@ interface  IComponent
      *
      * @param int $milliseconds
      * @return self Returns the current instance for method chaining.
-     * @see https://phpspa.vercel.app/requests/auto-reloading-components
+     * @see https://phpspa.tech/requests/auto-reloading-components
      */
     public function reload(int $milliseconds): self;
 }

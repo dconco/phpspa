@@ -14,7 +14,7 @@ use PhpSPA\Core\Helper\FunctionCaller;
  * @author dconco <concodave@gmail.com>
  * @param callable $function The PHP function to make available for client-side calling.
  * @return FunctionCaller Handler object for secure function invocation.
- * @see https://phpspa.vercel.app/hooks/use-function
+ * @see https://phpspa.tech/hooks/use-function
  */
 function useFunction (callable $function): FunctionCaller
 {

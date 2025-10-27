@@ -10,7 +10,7 @@ namespace Component;
  * @param string $to Target URL/route
  * @param string ...$HtmlAttr Additional HTML attributes
  * @return string HTML anchor element
- * @see https://phpspa.vercel.app/navigations/link-component
+ * @see https://phpspa.tech/navigations/link-component
  */
 function Link(string $children, string $to = '#', string ...$HtmlAttr): string
 {

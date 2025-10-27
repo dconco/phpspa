@@ -14,7 +14,7 @@ Added asynchronous HTTP request support to `useFetch()` hook with true parallel 
 - Promise-like `then()` callbacks
 - Up to 3x faster for concurrent requests
 
-**Documentation:** [hooks/use-fetch](https://phpspa.vercel.app/references/hooks/use-fetch)
+**Documentation:** [hooks/use-fetch](https://phpspa.tech/references/hooks/use-fetch)
 
 #### **Component Props Type Preservation** 🎯
 
@@ -39,7 +39,7 @@ fmt($user);
 return "<UserCard>{$user}</UserCard>";
 ```
 
-**Documentation:** [hooks/use-fetch](https://phpspa.vercel.app/references/helpers/fmt)
+**Documentation:** [hooks/use-fetch](https://phpspa.tech/references/helpers/fmt)
 
 ---
 
@@ -130,7 +130,7 @@ function Counter() {
 }
 ```
 
-**Documentation:** [hooks/use-state](https://phpspa.vercel.app/hooks/use-state)
+**Documentation:** [hooks/use-state](https://phpspa.tech/hooks/use-state)
 
 ##### `useEffect()` Hook - NEW! 🎉
 Execute side effects when dependencies change:
@@ -154,7 +154,7 @@ function UserProfile() {
 }
 ```
 
-**Documentation:** [hooks/use-effect](https://phpspa.vercel.app/hooks/use-effect)
+**Documentation:** [hooks/use-effect](https://phpspa.tech/hooks/use-effect)
 
 #### 2. **Enhanced Security Features** 🔒
 
@@ -183,7 +183,7 @@ echo "<script nonce='{$nonce}'>console.log('secure');</script>";
 - Integration with inline scripts and styles
 - Protection against XSS attacks
 
-**Documentation:** [security/content-security-policy](https://phpspa.vercel.app/security/content-security-policy)
+**Documentation:** [security/content-security-policy](https://phpspa.tech/security/content-security-policy)
 
 #### 3. **Global Helper Functions** 🛠️
 
@@ -304,7 +304,7 @@ $assetPath = PathResolver::resolve('/assets/style.css');
    - Route registration now integrates with `phpSPA\Core\Router\MapRoute` for robust pattern and typed-parameter matching.
    - Response helpers (`Response::json`, `Response::error`, etc.) for concise route callbacks.
 
-   Docs: https://phpspa.vercel.app/v1.1.8
+   Docs: https://phpspa.tech/v1.1.8
 
 ## v1.1.7
 
@@ -576,7 +576,7 @@ $assetPath = PathResolver::resolve('/assets/style.css');
 
 - Updated phpSPA core from frontend to use the `Request` class instead of just global request `$_REQUEST`
 
-- Added Hooks Event Documentation. [View Docs](https://phpspa.vercel.app/hooks-event/)
+- Added Hooks Event Documentation. [View Docs](https://phpspa.tech/hooks-event/)
 
 ## v1.1.3
 
@@ -608,7 +608,7 @@ $assetPath = PathResolver::resolve('/assets/style.css');
 
 - ✨ Added `cors()` method to App class for CORS configuration
 
-[View Latest Documentation](https://phpspa.vercel.app/v1.1.2)
+[View Latest Documentation](https://phpspa.tech/v1.1.2)
 
 ## v1.1.1
 
@@ -616,25 +616,25 @@ $assetPath = PathResolver::resolve('/assets/style.css');
 
 ## v1.1.0
 
-- ✨ Added file import `phpSPA\Component\import()` function for importing files (images) to html. @see [File Import Utility](https://phpspa.vercel.app/v1.1/1-file-import-utility)
+- ✨ Added file import `phpSPA\Component\import()` function for importing files (images) to html. @see [File Import Utility](https://phpspa.tech/v1.1/1-file-import-utility)
 
-- ✨ Added `map()` method to state management, can now map array to html elements, `$stateItems->map(fn (item) => "<li>{$item}</li>")`. @see [Mapping In State Management](https://phpspa.vercel.app/v1.1/2-mapping-in-state-management)
+- ✨ Added `map()` method to state management, can now map array to html elements, `$stateItems->map(fn (item) => "<li>{$item}</li>")`. @see [Mapping In State Management](https://phpspa.tech/v1.1/2-mapping-in-state-management)
 
-- ✨ Added component to be accessible by html tags, `<Component />`, both inline tags and block tags `<Component></Component`. @see [Using Component Functions By HTML Tags](https://phpspa.vercel.app/v1.1/3-using-component-functions-by-html-tags)
+- ✨ Added component to be accessible by html tags, `<Component />`, both inline tags and block tags `<Component></Component`. @see [Using Component Functions By HTML Tags](https://phpspa.tech/v1.1/3-using-component-functions-by-html-tags)
 
-- ✨ Created component function `<Link />`, and made it be under the `phpSPA\Component` namespace. @see [Link Component](https://phpspa.vercel.app/v1.1/4-link-component)
+- ✨ Created component function `<Link />`, and made it be under the `phpSPA\Component` namespace. @see [Link Component](https://phpspa.tech/v1.1/4-link-component)
 
-- ✨ Added `phpSPA\Component\HTMLAttrInArrayToString()` function, use it when converting `...$props` rest properties in a component as rest of HTML attributes. @see [HTML Attribute In Array To String Conversion](https://phpspa.vercel.app/v1.1/5-html-attr-in-array-to-string-function)
+- ✨ Added `phpSPA\Component\HTMLAttrInArrayToString()` function, use it when converting `...$props` rest properties in a component as rest of HTML attributes. @see [HTML Attribute In Array To String Conversion](https://phpspa.tech/v1.1/5-html-attr-in-array-to-string-function)
 
-- ✨ Added function `phpSPA\Http\Redirect()` for redirecting to another URL. @see [Redirect Function](https://phpspa.vercel.app/v1.1/6-redirect-function.md)
+- ✨ Added function `phpSPA\Http\Redirect()` for redirecting to another URL. @see [Redirect Function](https://phpspa.tech/v1.1/6-redirect-function.md)
 
-- ✨ Created component function `<PhpSPA.Component.Navigate />`, for handling browser's navigation through PHP. @see [Navigate Component](https://phpspa.vercel.app/v1.1/7-navigate-component.md)
+- ✨ Created component function `<PhpSPA.Component.Navigate />`, for handling browser's navigation through PHP. @see [Navigate Component](https://phpspa.tech/v1.1/7-navigate-component.md)
 
 - ✨ Made JS `phpspa.setState()` available as just `setState()` function.
 
 ### Deprecated
 
-- ✨ Using HTML `<Link />` tag without the function namespace is deprecated. You must use the namespace in other to use the component function, `<PhpSPA.Component.Link />` See: [Deprecated HTML Link](https://phpspa.vercel.app/v1.1/4-link-component/#deprecated)
+- ✨ Using HTML `<Link />` tag without the function namespace is deprecated. You must use the namespace in other to use the component function, `<PhpSPA.Component.Link />` See: [Deprecated HTML Link](https://phpspa.tech/v1.1/4-link-component/#deprecated)
 
 ---
 
@@ -686,7 +686,7 @@ Include the JS engine:
 
 - GitHub: [dconco/phpspa](https://github.com/dconco/phpspa)
 - JS Engine: [dconco/phpspa-js](https://github.com/dconco/phpspa-js)
-- Website: [https://phpspa.vercel.app](https://phpspa.vercel.app)
+- Website: [https://phpspa.tech](https://phpspa.tech)
 - License: MIT
 
 ---

@@ -14,7 +14,7 @@ use PhpSPA\Compression\Compressor;
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
- * @see https://phpspa.vercel.app/v1.1.5/1-compression-system/ Compression System Documentation
+ * @see https://phpspa.tech/v1.1.5/1-compression-system/ Compression System Documentation
  */
 class CompressionConfig
 {

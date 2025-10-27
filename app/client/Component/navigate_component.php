@@ -12,7 +12,7 @@ use PhpSPA\Http\Security\Nonce;
  * @param string|NavigateState $state Navigation state (push/replace)
  * @return string Navigation script tag
  * @author dconco <concodave@gmail.com>
- * @see https://phpspa.vercel.app/navigations/navigate-component
+ * @see https://phpspa.tech/navigations/navigate-component
  */
 function Navigate (
     string $path,

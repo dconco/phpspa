@@ -12,7 +12,7 @@ use PhpSPA\Core\Helper\StateManager;
  * @param string $stateKey The unique key identifying the state variable.
  * @param mixed  $default  The default value to initialize the state with.
  * @return StateManager    The state manager instance.
- * @see https://phpspa.vercel.app/hooks/use-state
+ * @see https://phpspa.tech/hooks/use-state
  */
 function createState(string $stateKey, $default): StateManager
 {
