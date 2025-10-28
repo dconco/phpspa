@@ -40,7 +40,7 @@
 
     Build and customize HTTP responses with fluent API
 
-    [:octicons-arrow-right-24: Learn more](./references/response/)
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/response/)
 
 -   :material-cloud-download:{ .lg .middle } **useFetch Hook** :material-new-box:
 
@@ -48,7 +48,7 @@
 
     Async HTTP client with parallel execution support
 
-    [:octicons-arrow-right-24: Learn more](./references/hooks/use-fetch/)
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/hooks/use-fetch/)
 
 </div>
 
@@ -64,7 +64,7 @@
 
     Type-safe prop passing with automatic serialization
 
-    [:octicons-arrow-right-24: Learn more](./references/helpers/fmt/)
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/helpers/fmt/)
 
 -   :material-file-upload:{ .lg .middle } **File Import Utility**
 
@@ -72,7 +72,7 @@
 
     Secure file imports with validation and metadata
 
-    [:octicons-arrow-right-24: Learn more](./references/file-import-utility/)
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/file-import-utility/)
 
 </div>
 
@@ -84,7 +84,7 @@
 
     | Hook | Description | Version |
     |------|-------------|---------|
-    | [`useFetch()`](./references/hooks/use-fetch/) | Async HTTP client with parallel execution | v2.0.1 |
+    | [`useFetch()`](https://phpspa.readthedocs.io/en/stable/references/hooks/use-fetch/) | Async HTTP client with parallel execution | v2.0.1 |
     | [`useState()`](../hooks/use-state.md) | Reactive state management | v2.0.0 |
     | [`useEffect()`](../hooks/use-effect.md) | Side effects and lifecycle hooks | v2.0.0 |
     | [`useFunction()`](../hooks/use-function.md) | Call PHP functions from JavaScript | v1.1.5 |
@@ -93,10 +93,10 @@
 
     | Helper | Description | Version |
     |--------|-------------|---------|
-    | [`fmt()`](./references/helpers/fmt/) | Type preservation for component props | v2.0.1 |
-    | [`import()`](./file-import-utility.md) | Secure file imports | v1.1.0 |
-    | [`response()`](./response.md) | HTTP response builder | v1.1.8 |
-    | [`router()`](./response.md#response-api-examples) | Router instance access | v1.1.8 |
+    | [`fmt()`](https://phpspa.readthedocs.io/en/stable/references/helpers/fmt/) | Type preservation for component props | v2.0.1 |
+    | [`import()`](https://phpspa.readthedocs.io/en/stable/file-import-utility/) | Secure file imports | v1.1.0 |
+    | [`response()`](https://phpspa.readthedocs.io/en/stable/response/) | HTTP response builder | v1.1.8 |
+    | [`router()`](https://phpspa.readthedocs.io/en/stable/response/#response-api-examples) | Router instance access | v1.1.8 |
 
 === "Components"
 
