@@ -6,7 +6,7 @@
 
     ---
 
-    Comprehensive guides for all phpSPA APIs and utilities
+    Comprehensive guides for all PhpSPA APIs and utilities
 
 -   :material-code-tags:{ .lg .middle } __Code Examples__
 
