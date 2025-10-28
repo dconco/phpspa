@@ -102,6 +102,18 @@ composer start
 composer require dconco/phpspa
 ```
 
+### Namespace
+First you need to include the namespace at the beginning of your app.
+
+```php
+<?php
+
+use PhpSPA\App;
+use PhpSPA\Component;
+
+require_once 'vendor/autoload.php';
+```
+
 ### Create Component
 
 ```php
@@ -132,7 +144,7 @@ $app->run();
 - Run locally:
 
 ```bash
-composer install
+composer dumpautoload
 composer test
 ```
 
