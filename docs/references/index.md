@@ -94,9 +94,9 @@
     | Helper | Description | Version |
     |--------|-------------|---------|
     | [`fmt()`](https://phpspa.readthedocs.io/en/stable/references/helpers/fmt/) | Type preservation for component props | v2.0.1 |
-    | [`import()`](https://phpspa.readthedocs.io/en/stable/file-import-utility/) | Secure file imports | v1.1.0 |
-    | [`response()`](https://phpspa.readthedocs.io/en/stable/response/) | HTTP response builder | v1.1.8 |
-    | [`router()`](https://phpspa.readthedocs.io/en/stable/response/#response-api-examples) | Router instance access | v1.1.8 |
+    | [`import()`](https://phpspa.readthedocs.io/en/stable/references/file-import-utility/) | Secure file imports | v1.1.0 |
+    | [`response()`](https://phpspa.readthedocs.io/en/stable/references/response/) | HTTP response builder | v1.1.8 |
+    | [`router()`](https://phpspa.readthedocs.io/en/stable/references/response/#response-api-examples) | Router instance access | v1.1.8 |
 
 === "Components"
 
