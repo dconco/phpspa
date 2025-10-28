@@ -3,289 +3,244 @@
 namespace PhpSPA\Http;
 
 use stdClass;
-use PhpSPA\Core\Interfaces\RequestInterface;
 
+interface Request {
+    /**
+     * Invokes the request object to retrieve a parameter value by key.
+     *
+     * Checks if the specified key exists in the request parameters ($_REQUEST).
+     * If found, validates and returns the associated value.
+     * If not found, returns the provided default value.
+     *
+     * @param string $key The key to look for in the request parameters.
+     * @param string|null $default The default value to return if the key does not exist. Defaults to null.
+     * @return mixed The validated value associated with the key, or the default value if the key is not present.
+     * @see https://phpspa.tech/requests/request-object
+     */
+    public function __invoke (string $key, ?string $default = null): mixed;
 
-/**
- * Handles HTTP request data and provides methods to access request parameters,
- * headers, and other relevant information.
- *
- * This class is typically used to encapsulate all information about an incoming
- * HTTP request, such as GET, POST, and server variables.
- *
- * @author dconco <concodave@gmail.com>
- * @see https://phpspa.readthedocs.io/en/stable/requests/request-object
- * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods
- */
-class Request implements RequestInterface
-{
-    use \PhpSPA\Core\Utils\Validate;
-    use \PhpSPA\Core\Auth\Authentication;
+    /**
+     * Retrieves file data from the request by name.
+     *
+     * This method retrieves file data from the request. If a name is provided, it returns the file data for that specific
+     * input field; otherwise, it returns all file data as an object.
+     *
+     * @param ?string $name The name of the file input.
+     * @return ?array File data, or null if not set.
+     */
+    public function files (?string $name = null): ?array;
 
-    public function __invoke(string $key, ?string $default = null): mixed
-    {
-        // Check if the key exists in the request parameters
-        if (isset($_REQUEST[$key])) {
-            // Validate and return the value associated with the key
-            return $this->validate($_REQUEST[$key]);
-        }
+    /**
+     * Validates the API key from the request headers.
+     *
+     * @param string $key The name of the header containing the API key. Default is 'Api-Key'.
+     * @return bool Returns true if the API key is valid, false otherwise.
+     */
+    public function apiKey (string $key = 'Api-Key');
 
-        // If the key does not exist, return the default value
-        return $default;
-    }
+    /**
+     * Retrieves authentication credentials from the request.
+     *
+     * This method retrieves the authentication credentials from the request, including both Basic Auth and Bearer token.
+     * Returns an object with `basic` and `bearer` properties containing the respective credentials.
+     *
+     * @return stdClass The authentication credentials.
+     */
+    public function auth (): stdClass;
 
-    public function files(?string $name = null): ?array
-    {
-        if (!$name) {
-            return $_FILES;
-        }
-        if (!isset($_FILES[$name]) || $_FILES[$name]['error'] !== UPLOAD_ERR_OK) {
-            return null;
-        }
+    /**
+     * Parses and returns the query string parameters from the URL.
+     *
+     * This method parses the query string of the request URL and returns it as an object. If a name is specified,
+     * it will return the specific query parameter value.
+     *
+     * @param ?string $name If specified, returns a specific query parameter by name.
+     * @return mixed parsed query parameters or a specific parameter value.
+     */
+    public function urlQuery (?string $name = null);
 
-        return $_FILES[$name];
-    }
+    /**
+     * Retrieves headers from the request.
+     *
+     * This method returns the headers sent with the HTTP request. If a specific header name is provided,
+     * it will return the value of that header; otherwise, it returns all headers as an object.
+     *
+     * @param ?string $name The header name to retrieve. If omitted, returns all headers.
+     * @return mixed The header, or a specific header value if `$name` is provided.
+     */
+    public function header (?string $name = null);
 
-    public function apiKey(string $key = 'Api-Key')
-    {
-        return $this->validate(self::RequestApiKey($key));
-    }
+    /**
+     * Retrieves the request body as an associative array.
+     *
+     * This method parses the raw POST body data and returns it as an associative array.
+     * If a specific parameter is provided, it returns only that parameter's value.
+     *
+     * @param ?string $name The name of the body parameter to retrieve.
+     * @return mixed The json data or null if parsing fails.
+     */
+    public function json (?string $name = null);
 
-    public function auth(): stdClass
-    {
-        $cl = new stdClass();
-        $cl->basic = self::BasicAuthCredentials();
-        $cl->bearer = self::BearerToken();
+    /**
+     * Retrieves a GET parameter by key.
+     *
+     * This method retrieves the value of a GET parameter by key. If no key is specified, it returns all GET parameters
+     * as an object.
+     *
+     * @param ?string $key The key of the GET parameter.
+     * @return mixed The parameter value, or null if not set.
+     */
+    public function get (?string $key = null);
 
-        return $cl;
-    }
+    /**
+     * Retrieves a POST parameter by key.
+     *
+     * This method retrieves the value of a POST parameter by key. If no key is specified, it returns all POST parameters
+     * as an object.
+     *
+     * @param ?string $key The key of the POST parameter.
+     * @return mixed The parameter value, or null if not set.
+     */
+    public function post (?string $key = null);
 
-    public function urlQuery(?string $name = null)
-    {
-        if (php_sapi_name() == 'cli-server') {
-            $parsed = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
-        } else {
-            $parsed = parse_url(
-                $_REQUEST['uri'] ?? $_SERVER['REQUEST_URI'],
-                PHP_URL_QUERY,
-            );
-        }
+    /**
+     * Retrieves a cookie value by key, or all cookies if no key is provided.
+     *
+     * This method retrieves a specific cookie by its key. If no key is provided, it returns all cookies as an object.
+     *
+     * @param ?string $key The key of the cookie.
+     * @return mixed The cookie value, or null if not set.
+     */
+    public function cookie (?string $key = null);
 
-        $cl = new stdClass();
+    /**
+     * Retrieves a session value by key, or all session data if no key is provided.
+     *
+     * This method retrieves a specific session value by key. If no key is specified, it returns all session data as an object.
+     * It ensures that the session is started before accessing session data.
+     *
+     * @param ?string $key The key of the session value.
+     * @return mixed The session value, or null if not set.
+     */
+    public function session (?string $key = null);
 
-        if (!$parsed) {
-            return $cl;
-        }
-        $parsed = mb_split('&', urldecode($parsed));
+    /**
+     * Retrieves the HTTP request method (GET, POST, PUT, DELETE, etc.).
+     *
+     * This method provides the HTTP request method used in the current request, e.g., "GET", "POST", "PUT", etc.
+     *
+     * @return string The HTTP method of the request.
+     */
+    public function method (): string;
 
-        $i = 0;
-        while ($i < count($parsed)) {
-            $p = mb_split('=', $parsed[$i]);
-            $key = $p[0];
-            $value = $p[1] ? $this->validate($p[1]) : null;
+    /**
+     * Retrieves the IP address of the client making the request.
+     *
+     * This method returns the IP address of the client that initiated the request, taking into account possible proxies or load balancers.
+     *
+     * @return string The client's IP address.
+     */
+    public function ip (): string;
 
-            $cl->$key = $value;
-            $i++;
-        }
+    /**
+     * Checks if the current request is an AJAX request.
+     *
+     * This method determines if the current request was made via AJAX by checking the value of the `X-Requested-With` header.
+     *
+     * @return bool Returns true if the request is an AJAX request, otherwise false.
+     */
+    public function isAjax (): bool;
 
-        if (!$name) {
-            return $cl;
-        }
-        return $cl->$name;
-    }
+    /**
+     * Retrieves the URL of the referring page.
+     *
+     * @return string|null The referrer URL, or null if not set.
+     */
+    public function referrer (): ?string;
 
-    public function header(?string $name = null)
-    {
-        $headers = [];
+    /**
+     * Retrieves the server protocol used for the request.
+     *
+     * @return string|null The server protocol.
+     */
+    public function protocol (): ?string;
 
-        if (function_exists('getallheaders')) {
-            $headers = getallheaders();
-        } elseif (function_exists('apache_request_headers')) {
-            $headers = apache_request_headers();
-        } else {
-            // CLI fallback - construct headers from $_SERVER
-            foreach ($_SERVER as $key => $value) {
-                if (strpos($key, 'HTTP_') === 0) {
-                    $header = str_replace('_', '-', substr($key, 5));
-                    $headers[$header] = $value;
-                }
-            }
-        }
+    /**
+     * Checks if the request method matches a given method.
+     *
+     * @param string $method The HTTP method to check.
+     * @return bool True if the request method matches, false otherwise.
+     */
+    public function isMethod (string $method): bool;
 
-        if (!$name) {
-            return $this->validate($headers);
-        }
-        if (isset($headers[$name])) {
-            return $this->validate($headers[$name]);
-        } else {
-            return null;
-        }
-    }
+    /**
+     * Checks if the request is made over HTTPS.
+     *
+     * @return bool True if the request is HTTPS, false otherwise.
+     */
+    public function isHttps (): bool;
 
-    public function json(?string $name = null)
-    {
-        $data = json_decode(file_get_contents('php://input'), true);
+    /**
+     * Retrieves the time when the request was made.
+     *
+     * @return int The request time as a Unix timestamp.
+     */
+    public function requestTime (): int;
 
-        if ($data === null || json_last_error() !== JSON_ERROR_NONE) {
-            return null;
-        }
+    /**
+     * Returns the content type of the request.
+     *
+     * This method returns the value of the `Content-Type` header, which indicates the type of data being sent in the request.
+     *
+     * @return string|null The content type, or null if not set.
+     */
+    public function contentType (): ?string;
 
-        if ($name !== null) {
-            return $this->validate($data[$name]);
-        }
-        return $this->validate($data);
-    }
+    /**
+     * Returns the length of the request's body content.
+     *
+     * This method returns the value of the `Content-Length` header, which indicates the size of the request body in bytes.
+     *
+     * @return int|null The content length, or null if not set.
+     */
+    public function contentLength (): ?int;
 
-    public function get(?string $key = null)
-    {
-        if (!$key) {
-            return $this->validate($_GET);
-        }
-        if (!isset($_GET[$key])) {
-            return null;
-        }
-        return $this->validate($_GET[$key]);
-    }
+    /**
+     * Retrieves the CSRF (Cross-Site Request Forgery) token for the current request.
+     *
+     * This method is used to obtain the CSRF token that can be used to validate
+     * form submissions and protect against CSRF attacks.
+     *
+     * @see https://owasp.org/www-community/attacks/csrf
+     * @return string|null The CSRF token value, or null if not available
+     */
+    public function csrf ();
 
-    public function post(?string $key = null)
-    {
-        if (!$key) {
-            return $this->validate($_POST);
-        }
-        if (!isset($_POST[$key])) {
-            return null;
-        }
+    /**
+     * Returns the value of the X-Requested-With header.
+     *
+     * This method is typically used to determine if the request was made via AJAX.
+     * Common values include 'XMLHttpRequest' for AJAX requests.
+     *
+     * @return string|null The value of the X-Requested-With header, or null if not present
+     */
+    public function requestedWith ();
 
-        $data = $this->validate($_POST[$key]);
-        return $data;
-    }
+    /**
+     * Retrieves the request URI.
+     *
+     * @return string The request URI.
+     */
+    public function getUri (): string;
 
-    public function cookie(?string $key = null)
-    {
-        if (!$key) {
-            return (object) $this->validate($_COOKIE);
-        }
-        return isset($_COOKIE[$key]) ? $this->validate($_COOKIE[$key]) : null;
-    }
-
-    public function session(?string $key = null)
-    {
-        // Start the session if it's not already started
-        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            session_start();
-        }
-
-        // If no key is provided, return all session data as an object
-        if (!$key) {
-            return (object) $this->validate($_SESSION);
-        }
-
-        // If the session key exists, return its value; otherwise, return null
-        return isset($_SESSION[$key]) ? $this->validate($_SESSION[$key]) : null;
-    }
-
-    public function method(): string
-    {
-        return $_SERVER['REQUEST_METHOD'] ?? 'GET';
-    }
-
-    public function ip(): string
-    {
-        // Check for forwarded IP addresses from proxies or load balancers
-        if (
-            isset($_SERVER['HTTP_X_FORWARDED_FOR']) ||
-            $this->header('X-Forwarded-For')
-        ) {
-            return $_SERVER['HTTP_X_FORWARDED_FOR'] ?:
-                $this->header('X-Forwarded-For');
-        }
-        return $_SERVER['REMOTE_ADDR'] ?? '';
-    }
-
-    public function isAjax(): bool
-    {
-        return strtolower(
-            $_SERVER['HTTP_X_REQUESTED_WITH'] ?? $this->header('X-Requested-With'),
-        ) === 'xmlhttprequest';
-    }
-
-    public function referrer(): ?string
-    {
-        return $_SERVER['HTTP_REFERER'] ?? $this->header('Referer') !== null
-            ? $_SERVER['HTTP_REFERER']
-            : null;
-    }
-
-    public function protocol(): ?string
-    {
-        return $_SERVER['SERVER_PROTOCOL'] ?? null;
-    }
-
-    public function isMethod(string $method): bool
-    {
-        return strtoupper($this->method()) === strtoupper($method);
-    }
-
-    public function isHttps(): bool
-    {
-        return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
-            $_SERVER['SERVER_PORT'] == 443;
-    }
-
-    public function requestTime(): int
-    {
-        return (int) $_SERVER['REQUEST_TIME'];
-    }
-
-    public function contentType(): ?string
-    {
-        return $this->header('Content-Type') ??
-            ($_SERVER['CONTENT_TYPE'] ?? null);
-    }
-
-    public function contentLength(): ?int
-    {
-        return isset($_SERVER['CONTENT_LENGTH'])
-            ? (int) $_SERVER['CONTENT_LENGTH']
-            : null;
-    }
-
-    public function csrf()
-    {
-        return $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $this->header('X-CSRF-TOKEN') ?:
-            $this->header('X-Csrf-Token');
-    }
-
-    public function requestedWith()
-    {
-        return $_SERVER['HTTP_X_REQUESTED_WITH'] ??
-            $this->header('X-Requested-With');
-    }
-
-    public function getUri(): string
-    {
-        $uri = $_SERVER['REQUEST_URI'] ?? '/';
-
-        // Strip query string from URI
-        if (strpos($uri, '?') !== false) {
-            $uri = substr($uri, 0, strpos($uri, '?'));
-        }
-
-        return rawurldecode($uri);
-    }
-    
-    public function isSameOrigin(): bool {
-        $host = $_SERVER['HTTP_HOST'] ?? '';
-        $origin = $_SERVER['HTTP_ORIGIN'] ?? null;
-
-        // Case 1: Browser explicitly sent Origin
-        if ($origin !== null) {
-            $parsed = parse_url($origin, PHP_URL_HOST);
-            return $parsed === $host;
-        }
-
-        // Case 2: No Origin -> assume same-origin if Host matches server
-        $serverHost = $_SERVER['SERVER_NAME'] ?? '';
-        return $host === $serverHost;
-    }
+    /**
+     * Determines if the current HTTP request originates from the same origin as the server.
+     * 
+     * This method implements same-origin policy checking by comparing the request's
+     * origin with the server's host.
+     * 
+     * @see https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
+     * @return bool True if the request is from the same origin, false otherwise.
+     */
+    public function isSameOrigin (): bool;
 }

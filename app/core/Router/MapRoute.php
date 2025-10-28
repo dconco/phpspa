@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace PhpSPA\Core\Router;
 
 use PhpSPA\App;
-use PhpSPA\Http\Request;
+use PhpSPA\Core\Http\HttpRequest;
 use PhpSPA\Interfaces\MapInterface;
 
 /**
@@ -257,7 +257,7 @@ class MapRoute implements MapInterface
      */
     private function match_routing(): bool|array
     {
-        $request = new Request();
+        $request = new HttpRequest();
         $uri = [];
         $str_route = '';
 
@@ -331,7 +331,7 @@ class MapRoute implements MapInterface
      */
     private function validatePattern(string $pattern): array|bool
     {
-        $request = new Request();
+        $request = new HttpRequest();
         $pattern = preg_replace("/(^\/)|(\/$)/", '', trim(substr($pattern, 8)));
 
         if (fnmatch($pattern, self::$request_uri)) {

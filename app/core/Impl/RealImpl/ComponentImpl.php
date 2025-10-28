@@ -2,6 +2,8 @@
 
 namespace PhpSPA\Core\Impl\RealImpl;
 
+use PhpSPA\Interfaces\IComponent;
+
 /**
  * Core component implementation class
  *
@@ -9,19 +11,19 @@ namespace PhpSPA\Core\Impl\RealImpl;
  * within the PhpSPA framework. It handles component properties such as routes,
  * methods, titles, target IDs, and associated scripts and stylesheets.
  *
- * @package PhpSPA\Core\Impl\RealImpl
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0
- * @var callable $component
- * @var ?string $title
- * @var string $method GET|VIEW
- * @var string $route
- * @var ?string $targetID
- * @var ?string $caseSensitive
- * @var callable[] $scripts
- * @var callable[] $stylesheets
+ * @method IComponent title(string $title) Set the title of the component
+ * @method IComponent method(string $method) Set the HTTP method for the component
+ * @method IComponent route(array|string $route) Set the route(s) for the component
+ * @method IComponent targetID(string $targetID) Set the target ID for the component
+ * @method IComponent caseSensitive() Enable case sensitivity for the component
+ * @method IComponent caseInsensitive() Disable case sensitivity for the component
+ * @method IComponent script(callable $script, ?string $name = null) Add scripts to the component
+ * @method IComponent styleSheet(callable $style, ?string $name = null) Add stylesheets to the component
+ * @method IComponent reload(int $milliseconds) Set the reload interval for the component
  * @abstract
  */
 abstract class ComponentImpl
@@ -93,57 +95,27 @@ abstract class ComponentImpl
      */
     protected int $reloadTime = 0;
 
-    public function title(string $title): self
+    /**
+     * @param mixed $method
+     * @param mixed $args
+     * @throws \BadMethodCallException
+     * @return IComponent
+     */
+    public function __call($method, $args): static
     {
-        $this->title = $title;
-        return $this;
-    }
+        match ($method) {
+            'title',
+            'method',
+            'route',
+            'targetID' => $this->$method = $args[0],
+            'reload' => $this->reloadTime = $args[0],
+            'caseSensitive' => $this->caseSensitive = true,
+            'caseInsensitive' => $this->caseSensitive = false,
+            'styleSheet' => $this->stylesheets[] = $args,
+            'script' => $this->scripts[] = $args,
+            default => throw new \BadMethodCallException("Method {$method} does not exist in " . __CLASS__),
+        };
 
-    public function method(string $method): self
-    {
-        $this->method = $method;
-        return $this;
-    }
-
-    public function route(array|string $route): self
-    {
-        $this->route = $route;
-        return $this;
-    }
-
-    public function targetID(string $targetID): self
-    {
-        $this->targetID = $targetID;
-        return $this;
-    }
-
-    public function caseSensitive(): self
-    {
-        $this->caseSensitive = true;
-        return $this;
-    }
-
-    public function caseInsensitive(): self
-    {
-        $this->caseSensitive = false;
-        return $this;
-    }
-
-    public function script(callable $script, ?string $name = null): self
-    {
-        $this->scripts[] = [$script, $name];
-        return $this;
-    }
-
-    public function styleSheet(callable $style, ?string $name = null): self
-    {
-        $this->stylesheets[] = [$style, $name];
-        return $this;
-    }
-
-    public function reload(int $milliseconds): self
-    {
-        $this->reloadTime = $milliseconds;
         return $this;
     }
 }

@@ -5,12 +5,12 @@ use PhpSPA\Http\Request;
 use PhpSPA\Http\Security\Nonce;
 
 use function Component\import;
-use function Component\createState;
+use function Component\useState;
 
 return (new Component(function (Request $request): string {
    $name = $request('name', 'dconco');
 	$nonce = Nonce::attr();
-   $counter = createState('counter', 0);
+   $counter = useState('counter', 0);
    $icon = import(__DIR__ . '/../../docs/img/android-chrome-192x192.png');
 
    return <<<HTML
@@ -34,8 +34,8 @@ return (new Component(function (Request $request): string {
 		</script>
 	HTML;
 }))
-   ->title('Home Page')
-   ->route(['/', '/template'])
+	->title('Home Page')
+	->route(['/', '/template'])
 
    ->styleSheet(
       fn () => <<<CSS

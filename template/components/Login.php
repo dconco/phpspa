@@ -2,17 +2,17 @@
 
 use PhpSPA\Component;
 
-use function Component\createState;
+use function Component\useState;
 
 include_once 'HashComp.php';
 
 function Login(): string
 {
-    $loginDetails = createState('login', [
+    $loginDetails = useState('login', [
         'username' => null,
         'password' => null,
     ]);
-    $loading = createState('loading', false);
+    $loading = useState('loading', false);
 
     $loadingText = "$loading" == 'true' ? 'Loading' : 'LOGIN';
     $buttonDisabled = "$loading" == 'true' ? 'disabled' : '';

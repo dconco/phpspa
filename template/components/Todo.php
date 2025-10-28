@@ -13,6 +13,7 @@ function TodoList ()
       [ 'id' => 2, 'text' => 'Build an awesome app' ],
       [ 'id' => 3, 'text' => 'Deploy to production' ]
    ];
+
    $todos = useState('todos', $initialTodos);
 
    useEffect(fn ($todos) => Session::set('todos', $todos()), [ $todos ]);

@@ -1,4 +1,4 @@
-# phpSPA v1.1.8 — Router & Response
+# PhpSPA v1.1.8 — Router & Response
 
 This document describes how to use the new Router and Response APIs introduced in v1.1.8. It contains full usage examples, API reference, and migration tips.
 
@@ -135,4 +135,4 @@ MapRoute supports parameter patterns and strict types in route declarations. Exa
 - `/user/{id: int}` — typed parameter (int)
 - `/search/{q: string}` — string param
 
-For full details see https://phpspa.readthedocs.io/en/stable/routing/advanced-routing.
+For full details see https://phpspa.tech/routing/advanced-routing.

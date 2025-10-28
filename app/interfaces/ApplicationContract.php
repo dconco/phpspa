@@ -2,31 +2,30 @@
 
 namespace PhpSPA\Interfaces;
 
-use PhpSPA\App;
 use PhpSPA\Component;
 
 /**
- * Core PhpSPA application interface
- *
- * This interface defines the essential contract for PhpSPA applications,
- * including methods for initialization, configuration, and core functionality
- * such as routing, CORS handling, and component management.
+ * Core PhpSPA application contract
+ * 
+ * This application provides the foundational implementation for the PhpSPA application framework.
+ * It handles layout management, component registration,
+ * routing, and rendering logic that powers the single-page application experience.
  *
  * @author dconco <concodave@gmail.com>
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0
- * @see https://phpspa.readthedocs.io/en/stable/core-concepts
+ * @see https://phpspa.vercel.app/core-concepts
  */
-interface PhpSPAInterface {
+interface ApplicationContract {
     /**
      * Sets the target ID for the application.
      *
      * @param string $targetID The target ID to be set.
-     * @return App
-     * @see https://phpspa.readthedocs.io/en/stable/layout/#setting-the-default-target-id
+     * @return self
+     * @see https://phpspa.vercel.app/layout/#setting-the-default-target-id
      */
-    public function defaultTargetID (string $targetID): App;
+    public function defaultTargetID (string $targetID): self;
 
 
     /**
@@ -36,10 +35,10 @@ interface PhpSPAInterface {
      * to treat relevant operations (such as string comparisons or lookups)
      * as case sensitive by default.
      *
-     * @return App
-     * @see https://phpspa.readthedocs.io/en/stable/routing/component-configuration/#global-case-sensitivity
+     * @return self
+     * @see https://phpspa.vercel.app/routing/component-configuration/#global-case-sensitivity
      */
-    public function defaultToCaseSensitive (): App;
+    public function defaultToCaseSensitive (): self;
 
 
     /**
@@ -47,30 +46,30 @@ interface PhpSPAInterface {
      *
      * @param int $level Compression level (0=none, 1=auto, 2=basic, 3=aggressive, 4=extreme)
      * @param bool $gzip Enable gzip compression
-     * @return App
-     * @see https://phpspa.readthedocs.io/en/stable/performance/html-compression
+     * @return self
+     * @see https://phpspa.vercel.app/performance/html-compression
      */
-    public function compression (int $level, bool $gzip = true): App;
+    public function compression (int $level, bool $gzip = true): self;
 
 
     /**
      * Set cache duration for CSS/JS assets
      *
      * @param int $hours Number of hours to cache assets (0 for session-only) Default is 24 hours
-     * @return App
-     * @see https://phpspa.readthedocs.io/en/stable/performance/assets-caching
+     * @return self
+     * @see https://phpspa.vercel.app/performance/assets-caching
      */
-    public function assetCacheHours (int $hours): App;
+    public function assetCacheHours (int $hours): self;
 
 
     /**
      * Set compression based on environment
      *
      * @param string $environment Environment: 'development', 'staging', 'production'
-     * @return App
-     * @see https://phpspa.readthedocs.io/en/stable/performance/html-compression/#environment-based-configuration-recommended
+     * @return self
+     * @see https://phpspa.vercel.app/performance/html-compression/#environment-based-configuration-recommended
      */
-    public function compressionEnvironment (string $environment): App;
+    public function compressionEnvironment (string $environment): self;
 
 
     /**
@@ -82,10 +81,10 @@ interface PhpSPAInterface {
      *
      * @param callable $script The callable that returns the JavaScript code
      * @param string|null $name Optional name for the script asset
-     * @return App
-     * @see https://phpspa.readthedocs.io/en/stable/performance/managing-styles-and-scripts
+     * @return self
+     * @see https://phpspa.vercel.app/performance/managing-styles-and-scripts
      */
-    public function script (callable $script, ?string $name = null): App;
+    public function script (callable $script, ?string $name = null): self;
 
 
     /**
@@ -97,10 +96,10 @@ interface PhpSPAInterface {
      *
      * @param callable $style The callable that returns the CSS code
      * @param string|null $name Optional name for the stylesheet asset
-     * @return App
-     * @see https://phpspa.readthedocs.io/en/stable/performance/managing-styles-and-scripts
+     * @return self
+     * @see https://phpspa.vercel.app/performance/managing-styles-and-scripts
      */
-    public function styleSheet (callable $style, ?string $name = null): App;
+    public function styleSheet (callable $style, ?string $name = null): self;
 
 
     /**
@@ -126,28 +125,28 @@ interface PhpSPAInterface {
      *   'max_age': int,
      * } $data
      *
-     * @return App Returns the current instance for method chaining
-     * @see https://phpspa.readthedocs.io/en/stable/security/cors
+     * @return self Returns the current instance for method chaining
+     * @see https://phpspa.vercel.app/security/cors
      */
-    public function cors (array $data = []): App;
+    public function cors (array $data = []): self;
 
 
     /**
      * Attaches a component to the current object.
      *
-     * @param Component $component The component instance to attach.
-     * @return App
+     * @param IComponent|Component $component The component instance to attach.
+     * @return self
      */
-    public function attach (Component $component): App;
+    public function attach (IComponent|Component $component): self;
 
 
     /**
      * Detaches the specified component from the current context.
      *
-     * @param Component $component The component instance to be detached.
-     * @return App
+     * @param IComponent|Component $component The component instance to be detached.
+     * @return self
      */
-    public function detach (Component $component): App;
+    public function detach (IComponent|Component $component): self;
 
 
     /**

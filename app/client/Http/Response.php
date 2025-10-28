@@ -6,11 +6,10 @@ namespace PhpSPA\Http;
  * Handles HTTP responses for API calls in a PHP application.
  * Provides methods to set response data, status codes, headers, and output JSON.
  *
- * @package PhpSPA\Http
  * @category HTTP
  * @author Samuel Paschalson <samuelpaschalson@gmail.com>
  * @copyright 2025 Samuel Paschalson
- * @see https://phpspa.readthedocs.io/en/stable/references/response/#response-api-examples
+ * @see https://phpspa.tech/references/response/#response-api-examples
  */
 class Response
 {
@@ -22,22 +21,22 @@ class Response
     /**
      * @var int The HTTP status code.
      */
-    private $statusCode = 200;
+    private int $statusCode = 200;
 
     /**
      * @var array HTTP headers to be sent with the response.
      */
-    private $headers = [];
+    private array $headers = [];
 
     /**
      * @var Request|null The request instance associated with the response.
      */
-    private $fromRequest = null;
+    private ?Request $fromRequest = null;
 
     /**
      * @var array HTTP status codes and their messages.
      */
-    private $statusMessages = [
+    private array $statusMessages = [
         // 1xx: Informational
         100 => 'Continue',
         101 => 'Switching Protocols',

@@ -46,6 +46,11 @@
 	"minimum-stability": "stable",
 	"scripts": {
 		"test": "php tests/Test.php",
+		"test:async": "php tests/Test.php --async",
+		"start": [
+			"Composer\\Config::disableProcessTimeout",
+			"php -S localhost:8000 -t template"
+		],
 		"docs:serve": [
 			"Composer\\Config::disableProcessTimeout",
 			"py -m mkdocs serve --dev-addr=127.0.0.1:4000 --watch docs --watch mkdocs.yml --livereload"
