@@ -119,8 +119,8 @@ function HomePage() {
 ### Setup App
 
 ```php
-$app = new App('layout');
-$app->defaultTargetID('app');
+$app = new App(fn() => '<div id="app"></div>');
+
 $app->attach((new Component('HomePage'))->route('/'));
 $app->run();
 ```
