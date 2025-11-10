@@ -100,8 +100,7 @@ trait Authentication
             strpos(self::$authorizationHeader, 'Bearer ') === 0
         ) {
             // Extract the token by removing "Bearer " from the header
-            $token = substr(self::$authorizationHeader, 7);
-            return base64_decode($token);
+            return substr(self::$authorizationHeader, 7);
         }
 
         // Return null if no Bearer token is found
