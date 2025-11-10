@@ -606,6 +606,11 @@ abstract class AppImpl implements ApplicationContract {
             ? Compressor::LEVEL_EXTREME
             : Compressor::getLevel();
 
+        if (is_array($content)) {
+            $content = $content[0];
+            $compressionLevel = Compressor::LEVEL_NONE;
+        }
+
         // Compress the content
         $compressedContent = $this->compressAssetContent($content, $assetInfo['type'], $compressionLevel);
 
@@ -673,9 +678,9 @@ abstract class AppImpl implements ApplicationContract {
      * Get global asset content from the application
      *
      * @param array $assetInfo Asset information
-     * @return string|null The asset content if found, null otherwise
+     * @return string|array|null The asset content if found, null otherwise
      */
-    private function getGlobalAssetContent (array $assetInfo): ?string
+    private function getGlobalAssetContent (array $assetInfo): string|array|null
     {
         $request = new HttpRequest();
 
@@ -703,7 +708,7 @@ abstract class AppImpl implements ApplicationContract {
             }
 
             if ($assetInfo['assetIndex'] === -1 && $request->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT' && $request->requestedWith() !== 'PHPSPA_REQUEST') {
-                return file_get_contents(__DIR__ . '/../../../../src/script/phpspa.js');
+                return [file_get_contents(__DIR__ . '/../../../../src/script/phpspa.js')];
             }
         }
 
