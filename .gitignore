@@ -21,6 +21,8 @@
 /dist
 /build
 /site
+cmake-build-*/
+out/
 
 # Ignore environment files
 .env
@@ -35,3 +37,29 @@ access_log
 # Ignore Composer's lock file and binary
 composer.lock
 composer.phar
+
+# Compiled Object files
+*.o
+*.obj
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
