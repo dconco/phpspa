@@ -155,7 +155,7 @@ interface ApplicationContract {
      * This method is responsible for executing the main logic of the application,
      * including routing, rendering components, and managing the application lifecycle.
      *
-     * @return void
+     * @param bool $returnResult If true, returns the rendered output as a string instead of printing it.
      */
-    public function run (): void;
+    public function run ();
 }
