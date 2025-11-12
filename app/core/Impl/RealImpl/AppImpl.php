@@ -180,7 +180,7 @@ abstract class AppImpl implements ApplicationContract {
         return $this;
     }
 
-    public function run (): void
+    public function run ()
     {
         $request = new HttpRequest();
 
@@ -473,6 +473,9 @@ abstract class AppImpl implements ApplicationContract {
                     $this->renderedData,
                     'text/html',
                 );
+
+                $returnResult = func_get_args()[0] ?? false;
+                if ($returnResult) return $compressedOutput;
 
                 print_r($compressedOutput);
                 exit(0);
