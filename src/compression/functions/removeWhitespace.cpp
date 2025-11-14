@@ -9,36 +9,44 @@ std::string HtmlCompressor::removeWhitespace(const std::string& html) {
    std::string capturedContentToTrim;
    
    for (size_t i = 0; i < html.length(); i++) {
+      char c = html.at(i);
 
       if (!lastTag.empty()) {
-         std::cout << "Last Tag: " << lastTag << std::endl;
-         if (html.compare(i, lastTag.length() + 2, "</" + lastTag) == 0) {
+         std::string closingTag = "</" + lastTag + ">";
+
+         if (html.compare(i, closingTag.length(), closingTag) == 0) {
             // --- Closing tag found, trim captured content ---
-            capturedContentToTrim = trimWhitespace(capturedContentToTrim);
-            std::cout << "Trimming content inside <" << lastTag << ">: '" << capturedContentToTrim << "'" << std::endl;
-            // result += capturedContentToTrim;
-            // result += "</" + lastTag + ">";
-            // i += lastTag.length() + 3; // Move index to end of closing tag
-            // lastTag.clear();
-            // capturedContentToTrim.clear();
-         }
-      }
+            result += trimWhitespace(capturedContentToTrim) + closingTag;
+            i += closingTag.length() - 1; // Move index to end of closing tag
 
-      if (html.at(i) == '<') {
-         size_t endOpenTagPos = html.find('>', i);
-
-         if (endOpenTagPos != std::string::npos) {
-            std::string tag_name = html.substr(i + 1, endOpenTagPos + i - 1); // --- store tagname ---
-            lastTag = explode(" ", tag_name).front(); // --- get only tag name without attributes ---
-            result += "<" + tag_name + ">";
-            i = endOpenTagPos; // Move index to end of tag
+            lastTag.clear();
+            capturedContentToTrim.clear();
+            continue;
+         } else {
+            capturedContentToTrim += c;
             continue;
          }
       }
 
-      if (!lastTag.empty()) capturedContentToTrim += html.at(i);
-      else result += html.at(i);
+      if (c == '<' && i + 1 < html.length() && html[i + 1] != '/') {
+         size_t endOpenTagPos = html.find('>', i);
+
+         if (endOpenTagPos != std::string::npos) {
+            std::string fullTag = html.substr(i, endOpenTagPos - i + 1);
+
+            // Extract tag name (before space or >)
+            size_t tagNameEnd = fullTag.find_first_of(" >", 1);
+            lastTag = fullTag.substr(1, tagNameEnd - 1);
+
+            result += fullTag;
+            i = endOpenTagPos;
+            continue;
+         }
+      }
+
+      result += c;
    }
 
+   std::cout << "Final result: '" << result << "'" << std::endl;
    return result;
 }
