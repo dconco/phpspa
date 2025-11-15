@@ -23,8 +23,8 @@ std::string trim(const std::string& s) {
    return ltrim(rtrim(s));
 }
 
-bool isWhitespace(char c) {
-   return c == ' ' || c == '\n' || c == '\t' || c == '\r';
+bool isWhitespace(char ch) {
+   return ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r' || ch == '\f';
 }
 
 std::string trimWhitespace(const std::string& s) {

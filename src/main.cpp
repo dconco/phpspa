@@ -20,8 +20,6 @@ int main(int argc, char* argv[]) {
     }
 
     htmlContent = HtmlCompressor::compress(htmlContent, compressorLevel);
-
-    std::cout << "Compressor Level: " << compressorLevel << std::endl;
-    std::cout << "HTML Content: " << htmlContent << std::endl;
+    std::cout << htmlContent << std::endl;
     return 0;
 }

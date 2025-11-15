@@ -1,85 +1,123 @@
 #include <iostream>
 #include "../HtmlCompressor.h"
-#include "../../utils/trim.h"
 #include "../../helper/explode.h"
+#include "../../utils/trim.h"
+#include <algorithm>
+#include <cctype>
+#include <vector>
+#include <string>
 
 std::string HtmlCompressor::removeWhitespace(const std::string& html) {
+   auto normalizeTag = [](const std::string& tag) -> std::string {
+      std::string lowered = tag;
+      std::transform(lowered.begin(), lowered.end(), lowered.begin(), [](unsigned char ch) -> char {
+         return static_cast<char>(std::tolower(ch));
+      });
+      return lowered;
+   };
+
+   auto isSpecialTag = [](const std::string& tag) -> bool {
+      return tag == "pre" || tag == "script" || tag == "style" || tag == "textarea" || tag == "code";
+   };
+
    std::string result;
-   std::string lastTag;
-   std::string capturedContentToTrim;
-   int tagDepth = 0;
+   std::vector<std::string> tagStack;
+   bool insideSpecial = false;
+   bool pendingSpace = false;
 
-   for (size_t i = 0; i < html.length(); i++) {
-      char c = html.at(i);
+   const size_t length = html.length();
 
-      // --- MODE 1: We're inside a tag, capturing content ---
-      if (!lastTag.empty()) {
-         std::string closingTag = "</" + lastTag + ">";
-         std::string openingTag = "<" + lastTag;
+   for (size_t i = 0; i < length; ++i) {
+      char current = html[i];
 
-         // Check if this is a closing tag for our tracked tag
-         if (html.compare(i, closingTag.length(), closingTag) == 0) {
-            if (tagDepth == 0) {
-               // This is OUR closing tag - process and exit capture mode
-               // Check if THIS tag (lastTag) is a special tag
-               bool isSpecial = (lastTag == "pre" || lastTag == "script" || 
-                                lastTag == "style" || lastTag == "textarea");
+      if (current == '<') {
+         size_t tagEnd = html.find('>', i);
+         if (tagEnd == std::string::npos) {
+            break; // Malformed HTML, bail out
+         }
 
-               if (isSpecial) {
-                  // Keep whitespace as-is
-                  result += capturedContentToTrim + closingTag;
-               } else {
-                  // Normal processing - recurse without pre-trimming
-                  result += removeWhitespace(capturedContentToTrim) + closingTag;
+         std::string tagContent = html.substr(i, tagEnd - i + 1);
+         bool isClosingTag = (i + 1 < length && html[i + 1] == '/');
+         bool isComment = (i + 3 < length && html[i + 1] == '!' && html[i + 2] == '-' && html[i + 3] == '-');
+
+         if (isComment) {
+            // Comments should already be removed upstream, but copy as-is for safety
+            result += tagContent;
+            i = tagEnd;
+            pendingSpace = false;
+            continue;
+         }
+
+         std::string tagName;
+         bool selfClosing = false;
+
+         if (isClosingTag) {
+            size_t nameStart = i + 2;
+            size_t nameEnd = html.find_first_of(" \n\t\r>", nameStart);
+
+            if (nameEnd == std::string::npos || nameEnd > tagEnd) {
+               nameEnd = tagEnd;
+            }
+            tagName = normalizeTag(html.substr(nameStart, nameEnd - nameStart));
+
+            if (!tagStack.empty()) {
+               // Pop stack until matching tag is found
+               auto it = std::find(tagStack.rbegin(), tagStack.rend(), tagName);
+
+               if (it != tagStack.rend()) {
+                  size_t removeCount = std::distance(tagStack.rbegin(), it) + 1;
+                  while (removeCount-- > 0 && !tagStack.empty()) {
+                     tagStack.pop_back();
+                  }
                }
-               i += closingTag.length() - 1;
-               lastTag.clear();
-               capturedContentToTrim.clear();
-               tagDepth = 0;
-               continue;
-            } else {
-               // Nested same-tag closed, decrease depth
-               tagDepth--;
-               capturedContentToTrim += closingTag;
-               i += closingTag.length() - 1;
-               continue;
+            }
+
+            insideSpecial = false;
+            for (auto stackIt = tagStack.rbegin(); stackIt != tagStack.rend(); ++stackIt) {
+               if (isSpecialTag(*stackIt)) {
+                  insideSpecial = true;
+                  break;
+               }
+            }
+         } else {
+            size_t nameStart = i + 1;
+            size_t nameEnd = html.find_first_of(" \n\t\r/>", nameStart);
+            if (nameEnd == std::string::npos || nameEnd > tagEnd) {
+               nameEnd = tagEnd;
+            }
+            tagName = normalizeTag(html.substr(nameStart, nameEnd - nameStart));
+            selfClosing = (tagEnd > i + 1 && html[tagEnd - 1] == '/');
+
+            if (!selfClosing) {
+               tagStack.push_back(tagName);
+               if (isSpecialTag(tagName)) {
+                  insideSpecial = true;
+               }
             }
          }
 
-         // Check if this is an opening tag of same type (nested)
-         if (html.compare(i, openingTag.length(), openingTag) == 0) {
-            size_t nextCharPos = i + openingTag.length();
-            if (nextCharPos < html.length() && 
-                (html[nextCharPos] == '>' || html[nextCharPos] == ' ')) {
-               // Found nested same tag
-               tagDepth++;
-            }
-         }
-
-         // Still capturing - add character to buffer
-         capturedContentToTrim += c;
+         result += tagContent;
+         pendingSpace = false;
+         i = tagEnd;
          continue;
       }
 
-      // --- MODE 2: Not inside a tag, looking for opening tags ---
-      if (c == '<' && i + 1 < html.length() && html[i + 1] != '/') {
-         size_t endOpenTagPos = html.find('>', i);
-
-         if (endOpenTagPos != std::string::npos) {
-            std::string fullTag = html.substr(i + 1, endOpenTagPos - i - 1); // --- store tagname ---
-            std::string tagNameOnly = explode(" ", fullTag).front(); // --- get only tag name without attributes ---
-
-            // Start tracking this tag
-            lastTag = tagNameOnly;
-            result += "<" + fullTag + ">";
-            i = endOpenTagPos;
-            tagDepth = 0;
-            continue;
-         }
+      if (insideSpecial) {
+         result += current;
+         continue;
       }
 
-      // Regular character outside tags
-      result += c;
+      if (isWhitespace(current)) {
+         pendingSpace = true;
+         continue;
+      }
+
+      if (pendingSpace && !result.empty() && result.back() != '>') {
+         result += ' ';
+      }
+
+      result += current;
+      pendingSpace = false;
    }
 
    return result;

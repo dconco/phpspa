@@ -11,8 +11,21 @@ mkdocs.yml export-ignore
 requirements.txt export-ignore
 .readthedocs.yaml export-ignore
 
+# Exclude C++ sources from distribution
+src/*.cpp export-ignore
+src/*.h export-ignore
+src/**/*.cpp export-ignore
+src/**/*.h export-ignore
+src/**/*.hh export-ignore
+CMakeLists.txt export-ignore
+
+# Keep both binaries for cross-platform support
+!bin/compressor
+!bin/compressor.exe
+
 # Ignore development and environment files
 TODO.md export-ignore
+.github/ export-ignore
 .gitignore export-ignore
 .gitattributes export-ignore
 
