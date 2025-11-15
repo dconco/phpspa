@@ -13,6 +13,20 @@ jobs:
          - name: Checkout repository
            uses: actions/checkout@v4
 
+         - name: Install build dependencies
+           run: sudo apt-get update && sudo apt-get install -y build-essential cmake
+
+         - name: Configure compressor (Release)
+           run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+         - name: Build compressor binary
+           run: cmake --build build --target compressor -j 8
+
+         - name: Copy compressor into src/bin
+           run: |
+              mkdir -p src/bin
+              cp build/compressor src/bin/compressor
+
          - name: Setup PHP
            uses: shivammathur/setup-php@v2
            with:

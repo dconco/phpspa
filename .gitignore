@@ -23,7 +23,6 @@
 /site
 cmake-build-*/
 out/
-src/bin
 
 # Ignore environment files
 .env
@@ -64,3 +63,7 @@ cmake_install.cmake
 Makefile
 *.cmake
 !CMakeLists.txt
+
+src/bin/.gitignore
+!src/bin/compressor
+!src/bin/compressor.exe
