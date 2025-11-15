@@ -23,6 +23,8 @@
 /site
 cmake-build-*/
 out/
+src/bin
+src/bin2
 
 # Ignore environment files
 .env
