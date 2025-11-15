@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include "commands/formatCommandLineArguments.hh"
 #include "compression/HtmlCompressor.h"
@@ -6,12 +7,33 @@
 int main(int argc, char* argv[]) {
     std::map<std::string, std::string> arguments = formatCommandLineArguments(argc, argv);
 
-    if (!arguments.contains("level") || !arguments.contains("content")) {
-        std::cout << "--level && --content is required" << std::endl;
+    if (!arguments.contains("level") || !(arguments.contains("content") || arguments.contains("file"))) {
+        std::cout << "--level && --content/file is required" << std::endl;
         return 1;
     }
 
-    std::string htmlContent = arguments["content"];
+    std::string htmlContent;
+
+    if (arguments.contains("file")) {
+        std::string filePath = arguments["file"];
+        std::ifstream fileStream(filePath);
+
+        if (!fileStream.is_open()) {
+            std::cout << "Failed to open file: " << filePath << std::endl;
+            return 1;
+        }
+
+        std::string fileContent((std::istreambuf_iterator<char>(fileStream)),
+                                 std::istreambuf_iterator<char>());
+        htmlContent = fileContent;
+    } else if (arguments["content"] == "w") {
+        // Read from stdin
+        htmlContent = std::string((std::istreambuf_iterator<char>(std::cin)),
+                                   std::istreambuf_iterator<char>());
+    } else {
+        htmlContent = arguments["content"];
+    }
+
     HtmlCompressor::Level compressorLevel = static_cast<HtmlCompressor::Level>(std::stoi(arguments["level"]));
 
     if (compressorLevel < HtmlCompressor::BASIC || compressorLevel > HtmlCompressor::EXTREME) {
