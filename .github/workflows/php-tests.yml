@@ -19,20 +19,21 @@ jobs:
          - name: Configure compressor (Release)
            run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
-         - name: Build compressor binary
+         - name: Build compressor shared library
            run: cmake --build build --target compressor -j 8
 
-         - name: Copy compressor into src/bin
+         - name: Copy compressor shared library into src/bin
            run: |
               mkdir -p src/bin
-              cp build/compressor src/bin/compressor
+              cp build/libcompressor.so src/bin/libcompressor.so
 
          - name: Setup PHP
            uses: shivammathur/setup-php@v2
            with:
               php-version: "8.2"
-              extensions: curl
+              extensions: curl, ffi
               coverage: none
+              ini-values: ffi.enable=1
 
          - name: Validate composer.json and composer.lock
            run: composer validate --no-check-all --strict

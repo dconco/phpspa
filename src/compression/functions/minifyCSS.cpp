@@ -4,6 +4,7 @@ std::string HtmlCompressor::minifyCSS(const std::string& css) {
    if (currentLevel < AGGRESSIVE) return css;
 
    std::string result;
+   result.reserve(css.length()); // Pre-allocate to avoid reallocations
    bool inString = false;
    bool inUrl = false;
    char stringChar = '\0';

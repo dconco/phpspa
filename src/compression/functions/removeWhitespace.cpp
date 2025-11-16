@@ -20,6 +20,7 @@ std::string HtmlCompressor::removeWhitespace(const std::string& html) {
    };
 
    std::string result;
+   result.reserve(html.length()); // Pre-allocate to avoid reallocations
    std::vector<std::string> tagStack;
    bool insideSpecial = false;
    bool pendingSpace = false;
@@ -98,39 +99,35 @@ std::string HtmlCompressor::removeWhitespace(const std::string& html) {
          tagContent = optimizeAttributes(tagContent);
          result += tagContent;
 
+         // If we just opened a script or style tag, process its content now
+         if (!selfClosing && !isClosingTag && (tagName == "script" || tagName == "style")) {
+            size_t contentStart = tagEnd + 1;
+            std::string closingTag = "</" + tagName;
+            size_t closingPos = html.find(closingTag, contentStart);
+            
+            if (closingPos != std::string::npos) {
+               std::string content = html.substr(contentStart, closingPos - contentStart);
+               
+               // Minify based on tag type
+               if (tagName == "script") {
+                  content = minifyJS(content);
+               } else if (tagName == "style") {
+                  content = minifyCSS(content);
+               }
+               
+               result += content;
+               i = closingPos - 1; // Will process closing tag on next iteration
+               insideSpecial = false; // Reset flag
+               continue;
+            }
+         }
+
          pendingSpace = false;
          i = tagEnd;
          continue;
       }
 
       if (insideSpecial) {
-         // Check if we're inside script or style tags to minify their content
-         if (!tagStack.empty()) {
-            std::string currentTag = tagStack.back();
-            
-            if (currentTag == "script" || currentTag == "style") {
-               // Find the closing tag
-               std::string closingTag = "</" + currentTag;
-               size_t closingPos = html.find(closingTag, i);
-               
-               if (closingPos != std::string::npos) {
-                  // Extract content between opening and closing tags
-                  std::string content = html.substr(i, closingPos - i);
-                  
-                  // Minify based on tag type
-                  if (currentTag == "script") {
-                     content = minifyJS(content);
-                  } else if (currentTag == "style") {
-                     content = minifyCSS(content);
-                  }
-                  
-                  result += content;
-                  i = closingPos - 1; // Will be incremented by loop
-                  continue;
-               }
-            }
-         }
-         
          result += current;
          continue;
       }

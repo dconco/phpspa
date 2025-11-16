@@ -3,6 +3,7 @@
 
 std::string HtmlCompressor::removeComments(const std::string& html) {
    std::string result;
+   result.reserve(html.length()); // Pre-allocate to avoid reallocations
    size_t lastPos = 0;
    size_t pos = 0;
 

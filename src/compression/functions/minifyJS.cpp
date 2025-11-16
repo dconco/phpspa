@@ -5,6 +5,7 @@ std::string HtmlCompressor::minifyJS(const std::string& js) {
    if (currentLevel < AGGRESSIVE) return js;
 
    std::string result;
+   result.reserve(js.length()); // Pre-allocate to avoid reallocations
    bool inString = false;
    bool inRegex = false;
    bool inSingleComment = false;

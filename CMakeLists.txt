@@ -9,11 +9,11 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     if(MSVC)
         # MSVC: Optimize for size and speed
         add_compile_options(/O2 /Oi /Ot /GL)  # O2=optimize, Oi=intrinsics, Ot=favor speed, GL=whole program
-        set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LTCG /OPT:REF /OPT:ICF")
+        set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /LTCG /OPT:REF /OPT:ICF")
     else()
         # GCC/Clang (Linux/macOS): Strip symbols and optimize
         add_compile_options(-Os -ffunction-sections -fdata-sections)  # Os=optimize for size
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s -Wl,--gc-sections")  # Strip + remove unused sections
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -s -Wl,--gc-sections")  # Strip + remove unused sections
     endif()
 endif()
 
@@ -37,11 +37,11 @@ endif()
 
 # MSVC-specific optimizations
 if(MSVC)
-    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LTCG")  # Link-time code generation
+    set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /LTCG")  # Link-time code generation
 endif()
 
 # Find all C++ source files recursively in src/ and subdirectories
-file(GLOB_RECURSE SOURCES 
+file(GLOB_RECURSE SOURCES
    "src/*.cpp"
    "src/*.cxx" 
    "src/*.cc"
@@ -53,7 +53,7 @@ file(GLOB_RECURSE SOURCES
 file(GLOB_RECURSE C_SOURCES "src/*.c")
 
 # Find header files recursively (for IDE support, not compilation)
-file(GLOB_RECURSE HEADERS 
+file(GLOB_RECURSE HEADERS
    "src/*.hh"
    "src/*.hpp"
    "src/*.hxx"
@@ -61,5 +61,5 @@ file(GLOB_RECURSE HEADERS
    "src/*.hp"
 )
 
-# Create executable with all source files
-add_executable(compressor ${SOURCES} ${C_SOURCES} ${HEADERS})
+# Create shared library with all source files
+add_library(compressor SHARED ${SOURCES} ${C_SOURCES} ${HEADERS})

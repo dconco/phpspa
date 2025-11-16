@@ -6,6 +6,7 @@ std::string HtmlCompressor::optimizeAttributes(const std::string& tagContent) {
    if (HtmlCompressor::currentLevel < AGGRESSIVE) return tagContent;
 
    std::string optimizedContent;
+   optimizedContent.reserve(tagContent.length()); // Pre-allocate to avoid reallocations
    bool lastWasSpace = false;
 
    for (size_t i = 0; i < tagContent.length(); ++i) {
