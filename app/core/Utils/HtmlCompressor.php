@@ -145,11 +145,11 @@ trait HtmlCompressor
      */
     private static function compressWithBinary(string $html, int $level): string
     {
-        $binDir = dirname(__DIR__, 3) . '/src/bin';
+        // $binDir = dirname(__DIR__, 3) . '/src/bin'; // --- PRODUCTION MODE ---
+        $binDir = dirname(__DIR__, 3) . '/build/MinSizeRel'; // --- DEVELOPMENT MODE ---
         $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
-        $binaryPath = $binDir . '/compressor' . ($isWindows ? '.exe' : '');
+        $binaryPath = realpath($binDir . '/compressor' . ($isWindows ? '.exe' : ''));
 
-        // Map compression levels to binary flags
         $levelMap = [
             Compressor::LEVEL_BASIC => 1,
             Compressor::LEVEL_AGGRESSIVE => 2,
@@ -158,7 +158,6 @@ trait HtmlCompressor
 
         $binaryLevel = $levelMap[$level] ?? 1;
 
-        // Use proc_open for direct stdin/stdout communication (faster, no temp files)
         $descriptors = [
             0 => ['pipe', 'r'],  // stdin
             1 => ['pipe', 'w'],  // stdout
@@ -169,7 +168,7 @@ trait HtmlCompressor
         $process = proc_open($command, $descriptors, $pipes);
 
         if (!is_resource($process)) {
-            return $html; // Fallback if process fails
+            return self::compressWithFallback($html, $level); // Fallback if process fails
         }
 
         // Write HTML to stdin
@@ -187,7 +186,7 @@ trait HtmlCompressor
         $returnCode = proc_close($process);
 
         // Return compressed output or fallback to original
-        return ($returnCode === 0 && !empty($output)) ? trim($output) : $html;
+        return ($returnCode === 0 && !empty($output)) ? trim($output) : self::compressWithFallback($html, $level);
     }
 
 

@@ -7,8 +7,8 @@ class HtmlCompressor {
    public:
       enum Level {
          BASIC = 1,
-         AGGRESSIVE = 3,
-         EXTREME = 4
+         AGGRESSIVE = 2,
+         EXTREME = 3
       };
 
       /**
@@ -20,6 +20,8 @@ class HtmlCompressor {
       static std::string compress(const std::string& html, const Level level);
 
    private:
+      static Level currentLevel;
+
       // --- Remove HTML comments (<!-- -->) ---
       static std::string removeComments(const std::string& html);
       
@@ -30,7 +32,7 @@ class HtmlCompressor {
       static std::string removeWhitespaceFromSpecialTags(const std::string& html);
 
       // --- Optimize attributes (remove quotes where safe, trim values) ---
-      static std::string optimizeAttributes(const std::string& html);
+      static std::string optimizeAttributes(const std::string& tagContent);
       
       // --- Check if we're inside a special tag where whitespace matters ---
       static bool isInsideSpecialTag(const std::string& html, size_t pos);

@@ -27,7 +27,6 @@ int main(int argc, char* argv[]) {
                                  std::istreambuf_iterator<char>());
         htmlContent = fileContent;
     } else if (arguments["content"] == "w") {
-        // Read from stdin
         htmlContent = std::string((std::istreambuf_iterator<char>(std::cin)),
                                    std::istreambuf_iterator<char>());
     } else {

@@ -20,7 +20,7 @@ $app = (new App(require 'layout/Layout.php'))
     ->defaultTargetID('app')
     ->defaultToCaseSensitive()
 
-    ->compression(Compressor::LEVEL_NONE, true)
+    ->compression(Compressor::LEVEL_EXTREME, true)
 
     ->cors()
 

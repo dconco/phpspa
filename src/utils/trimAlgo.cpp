@@ -5,17 +5,15 @@
 
 std::string ltrim(const std::string& s) {
    size_t start = 0;
-   while (start < s.length() && isWhitespace(s[start])) {
-      start++;
-   }
+   while (start < s.length() && isWhitespace(s[start]))
+      ++start;
    return s.substr(start);
 }
 
 std::string rtrim(const std::string& s) {
    size_t end = s.length();
-   while (end > 0 && isWhitespace(s[end - 1])) {
-      end--;
-   }
+   while (end > 0 && isWhitespace(s[end - 1]))
+      --end;
    return s.substr(0, end);
 }
 

@@ -96,7 +96,9 @@ std::string HtmlCompressor::removeWhitespace(const std::string& html) {
             }
          }
 
+         tagContent = optimizeAttributes(tagContent);
          result += tagContent;
+
          pendingSpace = false;
          i = tagEnd;
          continue;
