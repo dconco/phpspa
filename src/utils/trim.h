@@ -1,4 +1,5 @@
 #include <string>
+#pragma once
 
 // --- Trim from start (left) ---
 std::string ltrim(const std::string& s);

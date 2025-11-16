@@ -23,9 +23,8 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        std::string fileContent((std::istreambuf_iterator<char>(fileStream)),
+        htmlContent = std::string((std::istreambuf_iterator<char>(fileStream)),
                                  std::istreambuf_iterator<char>());
-        htmlContent = fileContent;
     } else if (arguments["content"] == "w") {
         htmlContent = std::string((std::istreambuf_iterator<char>(std::cin)),
                                    std::istreambuf_iterator<char>());

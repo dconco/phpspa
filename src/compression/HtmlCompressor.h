@@ -28,14 +28,8 @@ class HtmlCompressor {
       // --- Remove unnecessary whitespace (multiple spaces, newlines, tabs) ---
       static std::string removeWhitespace(const std::string& html);
 
-      // --- Remove whitespace from special tags like <pre>, <code>, <textarea> ---
-      static std::string removeWhitespaceFromSpecialTags(const std::string& html);
-
       // --- Optimize attributes (remove quotes where safe, trim values) ---
       static std::string optimizeAttributes(const std::string& tagContent);
-      
-      // --- Check if we're inside a special tag where whitespace matters ---
-      static bool isInsideSpecialTag(const std::string& html, size_t pos);
 };
 
 #endif // HTML_COMPRESSOR_H
