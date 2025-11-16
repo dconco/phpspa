@@ -3,22 +3,21 @@
 
 std::string HtmlCompressor::removeComments(const std::string& html) {
    std::string result;
-   size_t position = 0;
+   size_t lastPos = 0;
+   size_t pos = 0;
 
-   for (position = 0; position < html.length();) {
-      if (html.compare(position, 4, "<!--") == 0) {
-         size_t endComment = html.find("-->", position + 4);
-
-         if (endComment != std::string::npos) {
-            position = endComment + 3; // Move past the end of the comment
-         } else {
-            break; // No closing tag found, exit loop
-         }
+   while ((pos = html.find("<!--", lastPos)) != std::string::npos) {
+      result += html.substr(lastPos, pos - lastPos);  // Copy content before comment
+      size_t endPos = html.find("-->", pos + 4);
+      
+      if (endPos != std::string::npos) {
+         lastPos = endPos + 3;  // Move past the comment
       } else {
-         result += html[position];
-         position++;
+         lastPos = html.length();  // No closing tag, skip to end
+         break;
       }
    }
 
+   result += html.substr(lastPos);  // Copy remaining content after last comment
    return result;
 }

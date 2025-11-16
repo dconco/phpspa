@@ -1,4 +1,3 @@
-#include <string>
 #include <iostream>
 #include "../HtmlCompressor.h"
 #include "../../utils/trim.h"
@@ -9,7 +8,7 @@ std::string HtmlCompressor::optimizeAttributes(const std::string& tagContent) {
    std::string optimizedContent;
    bool lastWasSpace = false;
 
-   for (size_t i = 0; i < tagContent.size(); ++i) {
+   for (size_t i = 0; i < tagContent.length(); ++i) {
       char currentChar = tagContent[i];
 
       if (isWhitespace(currentChar)) {
@@ -33,15 +32,20 @@ std::string HtmlCompressor::optimizeAttributes(const std::string& tagContent) {
 
    if (HtmlCompressor::currentLevel < EXTREME) return optimizedContent;
 
-   for (size_t i = 0; i < optimizedContent.size(); ++i) {
-      if (optimizedContent[i] == '=' && i + 1 < optimizedContent.size()) {
+   std::string result;
+   for (size_t i = 0; i < optimizedContent.length(); ++i) {
+      char current = optimizedContent[i];
+
+      if (current == '=' && i + 1 < optimizedContent.length()) {
          char nextChar = optimizedContent[i + 1];
 
          if (nextChar == '"' || nextChar == '\'') {
-            if (i + 2 < optimizedContent.size() && optimizedContent[i + 2] == nextChar) {
-               optimizedContent.erase(i, 3); // Remove ="" or =''
+            if (i + 2 < optimizedContent.length() && optimizedContent[i + 2] == nextChar) {
+               i += 2;  // Skip ="" or =''
                continue;
             }
+
+            result += '=';  // Add the equals sign
 
             // Find the closing quote
             char quoteChar = nextChar;
@@ -52,7 +56,7 @@ std::string HtmlCompressor::optimizeAttributes(const std::string& tagContent) {
                std::string attributeValue = optimizedContent.substr(valueStart, valueEnd - valueStart);
 
                // Check if the value is safe to unquote
-               bool canUnquote = true;
+               bool canUnquote = !attributeValue.empty();
                for (char ch : attributeValue) {
                   if (isWhitespace(ch) || ch == '>' || ch == '<' || ch == '=' || ch == '"' || ch == '\'' || ch == '`') {
                      canUnquote = false;
@@ -61,18 +65,23 @@ std::string HtmlCompressor::optimizeAttributes(const std::string& tagContent) {
                }
 
                if (canUnquote) {
-                  // Remove the quotes
-                  optimizedContent.erase(valueEnd, 1); // Remove closing quote
-                  optimizedContent.erase(i + 1, 1);    // Remove opening quote
-                  i = valueEnd - 2; // Adjust index after removal
+                  // Add value without quotes
+                  result += attributeValue;
                } else {
-                  i = valueEnd; // Skip to the end of the quoted value
+                  // Keep the quotes
+                  result += quoteChar;
+                  result += attributeValue;
+                  result += quoteChar;
                }
+
+               i = valueEnd;  // Move to closing quote position
+               continue;
             }
          }
       }
+
+      result += current;
    }
 
-
-   return optimizedContent;
+   return result;
 }

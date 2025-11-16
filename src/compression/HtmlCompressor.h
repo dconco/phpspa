@@ -30,6 +30,12 @@ class HtmlCompressor {
 
       // --- Optimize attributes (remove quotes where safe, trim values) ---
       static std::string optimizeAttributes(const std::string& tagContent);
+
+      // --- Minify inline CSS content ---
+      static std::string minifyCSS(const std::string& css);
+
+      // --- Minify inline JavaScript content ---
+      static std::string minifyJS(const std::string& js);
 };
 
 #endif // HTML_COMPRESSOR_H

@@ -130,7 +130,7 @@ trait HtmlCompressor
     {
         $binDir = dirname(__DIR__, 3) . '/src/bin';
         $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
-        $binaryPath = $binDir . '/compressor' . ($isWindows ? '.exe' : '');
+        $binaryPath = realpath($binDir . '/compressor' . ($isWindows ? '.exe' : ''));
         
         return file_exists($binaryPath) && is_executable($binaryPath);
     }

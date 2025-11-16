@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <cctype>
 #include <vector>
-#include <string>
 #include "../HtmlCompressor.h"
 #include "../../helper/explode.h"
 #include "../../utils/trim.h"
@@ -105,6 +104,33 @@ std::string HtmlCompressor::removeWhitespace(const std::string& html) {
       }
 
       if (insideSpecial) {
+         // Check if we're inside script or style tags to minify their content
+         if (!tagStack.empty()) {
+            std::string currentTag = tagStack.back();
+            
+            if (currentTag == "script" || currentTag == "style") {
+               // Find the closing tag
+               std::string closingTag = "</" + currentTag;
+               size_t closingPos = html.find(closingTag, i);
+               
+               if (closingPos != std::string::npos) {
+                  // Extract content between opening and closing tags
+                  std::string content = html.substr(i, closingPos - i);
+                  
+                  // Minify based on tag type
+                  if (currentTag == "script") {
+                     content = minifyJS(content);
+                  } else if (currentTag == "style") {
+                     content = minifyCSS(content);
+                  }
+                  
+                  result += content;
+                  i = closingPos - 1; // Will be incremented by loop
+                  continue;
+               }
+            }
+         }
+         
          result += current;
          continue;
       }

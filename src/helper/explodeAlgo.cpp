@@ -1,5 +1,4 @@
 #include <list>
-#include <string>
 #include "explode.h"
 
 std::list<std::string> explode(const std::string& delimiter, const std::string &str) {
