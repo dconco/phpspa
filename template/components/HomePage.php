@@ -18,7 +18,7 @@ return (new Component(function (Request $request): string {
 			<img src="" />
 			<p>Welcome to my PHP SPA project! @$name</p>
 			<br />
-			<button id="btn">Counter: $counter</button>
+			<button id="btn ss">Counter: $counter</button>
 			<Component.Link to="./login#hashID" id="link-elem">GO TO LOGIN</Component.Link>
 			<br />
 			<button id="navigate-btn">Counter</button> &nbsp;-

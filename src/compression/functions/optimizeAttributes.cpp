@@ -27,6 +27,10 @@ std::string HtmlCompressor::optimizeAttributes(const std::string& tagContent) {
       lastWasSpace = false;
    }
 
+
+   // --- EXTREME LEVEL OPTIMIZATIONS ---
+   // --- REMOVE QUOTES FROM ATTRIBUTES WHERE SAFE ---
+
    if (HtmlCompressor::currentLevel < EXTREME) return optimizedContent;
 
    for (size_t i = 0; i < optimizedContent.size(); ++i) {

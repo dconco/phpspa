@@ -1,11 +1,11 @@
 #include <iostream>
-#include "../HtmlCompressor.h"
-#include "../../helper/explode.h"
-#include "../../utils/trim.h"
 #include <algorithm>
 #include <cctype>
 #include <vector>
 #include <string>
+#include "../HtmlCompressor.h"
+#include "../../helper/explode.h"
+#include "../../utils/trim.h"
 
 std::string HtmlCompressor::removeWhitespace(const std::string& html) {
    auto normalizeTag = [](const std::string& tag) -> std::string {
