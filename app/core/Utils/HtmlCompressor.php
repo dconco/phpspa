@@ -71,15 +71,15 @@ trait HtmlCompressor
       string $html,
       ?string $contentType = null,
    ): string {
+      $CONTENT_LENGTH = strlen($html);
+
       if (self::$compressionLevel === Compressor::LEVEL_NONE) {
          self::setCompressionEngine('disabled');
          self::emitEngineHeader();
-         if (!headers_sent()) {
-            header('Content-Length: ' . strlen($html));
 
-            if ($contentType !== null) {
-               header("Content-Type: $contentType; charset=UTF-8");
-            }
+         if (!headers_sent()) {
+            header("Content-Length: $CONTENT_LENGTH");
+            if ($contentType !== null) header("Content-Type: $contentType; charset=UTF-8");
          }
 
          return $html;
@@ -99,8 +99,7 @@ trait HtmlCompressor
 -->\n";
 
       // Apply minification based on compression level
-      $html = self::minify($html, 'HTML', self::$compressionLevel);
-      self::emitEngineHeader();
+      $html = self::minify($html, 'HTML', self::$compressionLevel, $CONTENT_LENGTH);
 
       // Append Comments
       $html = $comment . $html;
@@ -119,36 +118,44 @@ trait HtmlCompressor
     * @param int $level Compression level
     * @return string Minified HTML
     */
-   private static function minify(string $content, $type, int $level): string
+   private static function minify(string $content, $type, int $level, ?int $CONTENT_LENGTH = null): string
    {
+      if (!$CONTENT_LENGTH) $CONTENT_LENGTH = strlen($content);
+
       if ($level === Compressor::LEVEL_AUTO) {
-         $level = self::detectOptimalLevel($content);
+         $level = self::detectOptimalLevel($content, $CONTENT_LENGTH);
       }
 
-      if (self::isNativeCompressorAvailable()) return self::compressWithNative($content, $type, $level);
+      if (self::isNativeCompressorAvailable($CONTENT_LENGTH))
+         return self::compressWithNative($content, $level, $type);
 
       // Fallback to PHP implementation
-      else return self::compressWithFallback($content, $type, $level);
+      else return self::compressWithFallback($content, $level, $type);
    }
 
-   private static function isNativeCompressorAvailable(): bool
+   private static function isNativeCompressorAvailable(int $CONTENT_LENGTH): bool
    {
+      static $THRESHOLD_SIZE = 5120; // 5KB = 5120 bytes
+
       $strategy = self::compressionStrategy();
 
       if ($strategy !== 'fallback') {
          if (NativeCompressor::isAvailable()) {
-            try {
-               self::setCompressionEngine('native');
-               return true;
-            } catch (\Throwable $exception) {
-               if ($strategy === 'native') 
-                  throw new RuntimeException('Native compressor is required but failed to execute.', 0, $exception);
-            }
+            if ($CONTENT_LENGTH > $THRESHOLD_SIZE)
+               try {
+                  self::setCompressionEngine('native');
+                  self::emitEngineHeader();
+                  return true;
+               } catch (\Throwable $exception) {
+                  if ($strategy === 'native') 
+                     throw new RuntimeException('Native compressor is required but failed to execute.', 0, $exception);
+               };
          } elseif ($strategy === 'native')
             throw new RuntimeException('Native compressor is required but unavailable.');
       }
 
       self::setCompressionEngine('php');
+      self::emitEngineHeader();
       return false;
    }
 
@@ -310,14 +317,14 @@ trait HtmlCompressor
     * @param string $content Content to analyze
     * @return int Recommended compression level
     */
-   private static function detectOptimalLevel(string $content): int
+   private static function detectOptimalLevel(string $content, ?int $CONTENT_LENGTH = null): int
    {
-      $size = strlen($content);
+      if (!$CONTENT_LENGTH) $CONTENT_LENGTH = strlen($content);
 
-      if ($size < 1024) {
+      if ($CONTENT_LENGTH < 1024) {
          // Less than 1KB
          return Compressor::LEVEL_BASIC;
-      } elseif ($size < 10240) {
+      } elseif ($CONTENT_LENGTH < 10240) {
          // Less than 10KB
          return Compressor::LEVEL_AGGRESSIVE;
       } else {
@@ -346,13 +353,7 @@ trait HtmlCompressor
     */
    public static function compressWithLevel(string $content, int $level, $type = 'HTML'): string
    {
-      $originalLevel = self::$compressionLevel;
-      self::$compressionLevel = $level;
-
-      $compressed = self::minify($content, $type, $level);
-
-      self::$compressionLevel = $originalLevel;
-      return $compressed;
+      return self::minify($content, $type, $level);
    }
 
    public static function getCompressionEngine(): string

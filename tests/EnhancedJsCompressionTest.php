@@ -21,13 +21,7 @@ $test2_successful = true;
 
 function compressJs(string $js): string
 {
-    Compressor::setLevel(Compressor::LEVEL_EXTREME);
-    $input = '<script>' . $js . '</script>';
-    $result = Compressor::compress($input);
-
-    // Extract just the JS content from the script tag
-    preg_match('/<script>(.*?)<\/script>/s', $result, $matches);
-    return $matches[1] ?? $result;
+    return Compressor::compressWithLevel($js, Compressor::LEVEL_EXTREME, 'JS');
 }
 
 function run_enhanced_js_tests(): bool
