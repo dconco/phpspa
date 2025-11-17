@@ -141,7 +141,7 @@ trait HtmlCompressor
 
       if ($strategy !== 'fallback') {
          if (NativeCompressor::isAvailable()) {
-            if ($CONTENT_LENGTH > $THRESHOLD_SIZE)
+            // if ($CONTENT_LENGTH > $THRESHOLD_SIZE)
                try {
                   self::setCompressionEngine('native');
                   self::emitEngineHeader();

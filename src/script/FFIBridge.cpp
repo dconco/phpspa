@@ -21,13 +21,16 @@ extern "C" {
       result.reserve(strlen(input));
 
       try {
-         if (type == "HTML")
+         if (strcmp(type, "HTML") == 0) {
             result = HtmlCompressor::compress(input);
-         else {
+         } else {
             std::string content{input};
 
-            if (type == "CSS") HtmlCompressor::minifyCSS(content);
-            else if (type == "JS") HtmlCompressor::minifyJS(content);
+            if (strcmp(type, "CSS") == 0) {
+               HtmlCompressor::minifyCSS(content);
+            } else if (strcmp(type, "JS") == 0) {
+               HtmlCompressor::minifyJS(content);
+            }
 
             result = content;
          }

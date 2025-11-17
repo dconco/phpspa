@@ -682,7 +682,7 @@ abstract class AppImpl implements ApplicationContract {
          $stylesheet = $this->stylesheets[$assetInfo['assetIndex']] ?? null;
          $stylesheetCallable = \is_array($stylesheet) ? $stylesheet[0] ?? null : $stylesheet;
 
-         if ($stylesheetCallable && \is_callable($stylesheetCallable)) {
+         if ($stylesheetCallable && \is_callable($stylesheetCallable))
             return \call_user_func($stylesheetCallable);
       }
       elseif ($assetInfo['assetType'] === 'js') {

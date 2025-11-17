@@ -44,13 +44,14 @@ final class NativeCompressor
          throw new \RuntimeException('Native compressor returned a null pointer.');
       }
 
-      $length = (int) $outLen;
+      $length = $outLen->cdata;
       if ($length === 0) {
          throw new \RuntimeException("Native compressor returned an empty result.");
       }
 
       try {
-         return \FFI::string($resultPointer, $length);
+         $s = \FFI::string($resultPointer, $length);
+         exit($s);
       } finally {
          self::invoke('phpspa_free_string', $resultPointer);
       }
@@ -137,7 +138,7 @@ final class NativeCompressor
    private static function cDefinition(): string
    {
       return <<<'CDEF'
-char* phpspa_compress_html(const char* input, int level, size_t* out_len);
+char* phpspa_compress_html(const char* input, int level, const char* type, size_t* out_len);
 void phpspa_free_string(char* buffer);
 CDEF;
    }
