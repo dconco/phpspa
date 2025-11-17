@@ -94,12 +94,12 @@ final class NativeCompressor
 
       $baseDir = \dirname(__DIR__, 3);
       $directories = [
+         $baseDir . '/src/bin',
          $baseDir . '/build/MinSizeRel',
          $baseDir . '/build/Release',
          $baseDir . '/build/RelWithDebInfo',
          $baseDir . '/build/Debug',
          $baseDir . '/build',
-         $baseDir . '/src/bin',
       ];
 
       foreach ($directories as $directory) {
