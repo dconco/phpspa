@@ -52,7 +52,7 @@ namespace {
 
 } // namespace
 
-void HtmlCompressor::removeWhitespace(std::string& html) {
+void HtmlCompressor::minifyHTML(std::string& html) {
    if (html.empty()) {
       return;
    }

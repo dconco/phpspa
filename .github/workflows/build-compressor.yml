@@ -112,7 +112,7 @@ jobs:
       - name: Upload packed shared libraries
         uses: actions/upload-artifact@v4
         with:
-          name: phpspa-compressors
+          name: phpspa-compressed-compressors
           path: |
             src/bin/libcompressor.so
             src/bin/compressor.dll

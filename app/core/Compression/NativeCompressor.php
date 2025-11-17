@@ -24,26 +24,27 @@ final class NativeCompressor
    /**
     * Compress HTML using the native shared library.
     *
-    * @param string $html HTML payload to compress
-    * @param int $nativeLevel Native compressor level (1-3)
+    * @param string $content Content payload to compress
+   * @param int $nativeLevel Native compressor level (1-3)
+   * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @return string
     */
-   public static function compress(string $html, int $nativeLevel): string
+   public static function compress(string $content, int $nativeLevel, string $type): string
    {
       if (!self::initialize()) {
          throw new \RuntimeException('Native compressor is unavailable.');
       }
 
       $level = max(1, min(3, $nativeLevel));
-      $outLen = \FFI::new('size_t');
+      $outLen = self::$ffi->new('size_t');
 
-      $resultPointer = self::invoke('phpspa_compress_html', $html, $level, \FFI::addr($outLen));
+      $resultPointer = self::invoke('phpspa_compress_html', $content, $level, $type, \FFI::addr($outLen));
 
       if (\FFI::isNull($resultPointer)) {
          throw new \RuntimeException('Native compressor returned a null pointer.');
       }
 
-      $length = $outLen->cdata;
+      $length = (int) $outLen;
       if ($length === 0) {
          throw new \RuntimeException("Native compressor returned an empty result.");
       }
@@ -79,7 +80,7 @@ final class NativeCompressor
          self::$ffi = \FFI::cdef(self::cDefinition(), $libraryPath);
          self::$libraryPath = $libraryPath;
          return true;
-      } catch (\Throwable $exception) {
+      } catch (\Throwable $e) {
          self::$ffi = null;
          return false;
       }

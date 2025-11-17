@@ -30,21 +30,34 @@ extension=ffi
 
 ### 2️⃣ Download Prebuilt Libraries (Optional)
 
-PhpSPA **auto-detects** the compressor library from your installation. For custom locations, download the appropriate binary:
+PhpSPA **auto-detects** the compressor library from your installation. Windows and Linux binaries are included by default.
+
+!!! info "macOS Users"
+    The macOS binary (`libcompressor.dylib`) is **not included** in the Composer package. Download it manually and configure the path:
 
 !!! download "Latest Release"
     [:material-download: Download from GitHub Releases](https://github.com/dconco/phpspa/releases/latest){ .md-button .md-button--primary }
 
-| Platform | Library File | Direct Link |
-|----------|-------------|-------------|
-| :fontawesome-brands-windows: **Windows** | `compressor.dll` | [Download](https://github.com/dconco/phpspa/releases/latest/download/compressor.dll) |
-| :fontawesome-brands-linux: **Linux** | `libcompressor.so` | [Download](https://github.com/dconco/phpspa/releases/latest/download/libcompressor.so) |
-| :fontawesome-brands-apple: **macOS** | `libcompressor.dylib` | [Download](https://github.com/dconco/phpspa/releases/latest/download/libcompressor.dylib) |
+| Platform | Library File | Direct Link | Included via Composer |
+|----------|-------------|-------------|----------------------|
+| :fontawesome-brands-windows: **Windows** | `compressor.dll` | [Download](https://github.com/dconco/phpspa/releases/latest/download/compressor.dll) | ✅ Yes |
+| :fontawesome-brands-linux: **Linux** | `libcompressor.so` | [Download](https://github.com/dconco/phpspa/releases/latest/download/libcompressor.so) | ✅ Yes |
+| :fontawesome-brands-apple: **macOS** | `libcompressor.dylib` | [Download](https://github.com/dconco/phpspa/releases/latest/download/libcompressor.dylib) | ❌ No (manual download required) |
 
-Then configure the custom path:
+**Configure custom path (macOS required):**
+
+```php
+// Set before creating the App instance
+$path = __DIR__ . '/path/to/libcompressor.dylib';
+putenv("PHPSPA_COMPRESSOR_LIB=$path");
+
+$app = new \PhpSPA\App();
+```
+
+Or via shell environment:
 
 ```bash
-export PHPSPA_COMPRESSOR_LIB="/absolute/path/to/libcompressor.so"
+export PHPSPA_COMPRESSOR_LIB="/absolute/path/to/libcompressor.dylib"
 ```
 
 ---
@@ -52,6 +65,15 @@ export PHPSPA_COMPRESSOR_LIB="/absolute/path/to/libcompressor.so"
 ### 3️⃣ Force Native Mode (Optional)
 
 To **require** native compression (fails if library unavailable):
+
+```php
+// Set before creating the App instance
+putenv('PHPSPA_COMPRESSION_STRATEGY=native');
+
+$app = new \PhpSPA\App();
+```
+
+Or via shell environment:
 
 ```bash
 export PHPSPA_COMPRESSION_STRATEGY=native

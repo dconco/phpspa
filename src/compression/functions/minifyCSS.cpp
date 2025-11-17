@@ -48,11 +48,13 @@ void HtmlCompressor::minifyCSS(std::string& css) {
       }
 
       // Remove CSS comments
-      if (current == '/' && i + 1 < css.length() && css[i + 1] == '*') {
-         size_t endComment = css.find("*/", i + 2);
-         if (endComment != std::string::npos) {
-            i = endComment + 2;
-            continue;
+      if (currentLevel == EXTREME) {
+         if (current == '/' && i + 1 < css.length() && css[i + 1] == '*') {
+            size_t endComment = css.find("*/", i + 2);
+            if (endComment != std::string::npos) {
+               i = endComment + 2;
+               continue;
+            }
          }
       }
 

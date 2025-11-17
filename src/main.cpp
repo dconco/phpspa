@@ -32,14 +32,14 @@ int main(int argc, char* argv[]) {
         htmlContent = arguments["content"];
     }
 
-    HtmlCompressor::Level compressorLevel = static_cast<HtmlCompressor::Level>(std::stoi(arguments["level"]));
+    HtmlCompressor::currentLevel = static_cast<HtmlCompressor::Level>(std::stoi(arguments["level"]));
 
-    if (compressorLevel < HtmlCompressor::BASIC || compressorLevel > HtmlCompressor::EXTREME) {
+    if (HtmlCompressor::currentLevel < HtmlCompressor::BASIC || HtmlCompressor::currentLevel > HtmlCompressor::EXTREME) {
         std::cout << "Compressor level must be between 1 and 3." << std::endl;
         return 1;
     }
 
-    htmlContent = HtmlCompressor::compress(htmlContent, compressorLevel);
+    HtmlCompressor::compress(htmlContent);
     std::cout << htmlContent << std::endl;
     return 0;
 }

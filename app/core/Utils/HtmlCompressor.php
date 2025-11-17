@@ -2,6 +2,9 @@
 
 namespace PhpSPA\Core\Utils;
 
+use function strlen;
+use function is_string;
+use RuntimeException;
 use PhpSPA\Compression\Compressor;
 use PhpSPA\Core\Compression\NativeCompressor;
 
@@ -96,7 +99,7 @@ trait HtmlCompressor
 -->\n";
 
       // Apply minification based on compression level
-      $html = self::minify($html, self::$compressionLevel);
+      $html = self::minify($html, 'HTML', self::$compressionLevel);
       self::emitEngineHeader();
 
       // Append Comments
@@ -111,47 +114,48 @@ trait HtmlCompressor
    /**
     * Minify HTML content
     *
-    * @param string $html HTML content
+    * @param string $content HTML content
+    * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @param int $level Compression level
     * @return string Minified HTML
     */
-   private static function minify(string $html, int $level): string
+   private static function minify(string $content, $type, int $level): string
    {
       if ($level === Compressor::LEVEL_AUTO) {
-         $level = self::detectOptimalLevel($html);
+         $level = self::detectOptimalLevel($content);
       }
 
+      if (self::isNativeCompressorAvailable()) return self::compressWithNative($content, $type, $level);
+
+      // Fallback to PHP implementation
+      else return self::compressWithFallback($content, $type, $level);
+   }
+
+   private static function isNativeCompressorAvailable(): bool
+   {
       $strategy = self::compressionStrategy();
 
       if ($strategy !== 'fallback') {
          if (NativeCompressor::isAvailable()) {
             try {
-               $result = self::compressWithNative($html, $level);
                self::setCompressionEngine('native');
-               return $result;
+               return true;
             } catch (\Throwable $exception) {
-               if ($strategy === 'native') {
-                  throw new \RuntimeException(
-                     'Native compressor is required but failed to execute.',
-                     0,
-                     $exception,
-                  );
-               }
+               if ($strategy === 'native') 
+                  throw new RuntimeException('Native compressor is required but failed to execute.', 0, $exception);
             }
-         } elseif ($strategy === 'native') {
-            throw new \RuntimeException('Native compressor is required but unavailable.');
-         }
+         } elseif ($strategy === 'native')
+            throw new RuntimeException('Native compressor is required but unavailable.');
       }
 
       self::setCompressionEngine('php');
-      // Fallback to PHP implementation
-      return self::compressWithFallback($html, $level);
+      return false;
    }
 
    /**
     * Compress using the native shared library via FFI
     */
-   private static function compressWithNative(string $html, int $level): string
+   private static function compressWithNative(string $html, int $level, string $type): string
    {
 		$nativeLevel = match ($level) {
          Compressor::LEVEL_AGGRESSIVE => 2,
@@ -159,24 +163,34 @@ trait HtmlCompressor
          default => 1,
       };
 
-      return NativeCompressor::compress($html, $nativeLevel);
+      return NativeCompressor::compress($html, $nativeLevel, $type);
    }
 
    /**
     * Compress using PHP fallback
     *
-    * @param string $html HTML content
+    * @param string $content HTML content
+    * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @param int $level Compression level
     * @return string Compressed HTML
     */
-   private static function compressWithFallback(string $html, int $level): string
+   private static function compressWithFallback(string $content, int $level, string $type): string
    {
-      return match ($level) {
-         Compressor::LEVEL_BASIC => FallbackCompressor::basicMinify($html),
-         Compressor::LEVEL_AGGRESSIVE => FallbackCompressor::aggressiveMinify($html),
-         Compressor::LEVEL_EXTREME => FallbackCompressor::extremeMinify($html),
-         default => $html,
+      if ($type === 'JS') $content = "<script>$content</script>";
+      elseif ($type === 'CSS') $content = "<style>$content</style>";
+
+      $result = match ($level) {
+         Compressor::LEVEL_BASIC => FallbackCompressor::basicMinify($content),
+         Compressor::LEVEL_AGGRESSIVE => FallbackCompressor::aggressiveMinify($content),
+         Compressor::LEVEL_EXTREME => FallbackCompressor::extremeMinify($content),
+         default => $content,
       };
+      $result = trim($result);
+
+      if ($type === 'JS') $result = substr($result, 8, -9); // Extract content inside <script> tags
+      elseif ($type === 'CSS') $result = substr($result, 7, -8); // Extract content inside <style> tags
+
+      return $result;
    }
 
    private static function compressionStrategy(): string
@@ -187,7 +201,7 @@ trait HtmlCompressor
          return $strategy;
       }
 
-      $envStrategy = getenv('PHPSPA_COMPRESSION_STRATEGY');
+      $envStrategy = $_ENV['PHPSPA_COMPRESSION_STRATEGY'] ?? null;
       $normalized = is_string($envStrategy)
          ? strtolower(trim($envStrategy))
          : '';
@@ -279,12 +293,13 @@ trait HtmlCompressor
     * Compress component content for SPA responses
     *
     * @param string $content Component HTML content
+    * @param string $type Content type enum['HTML', 'JS', 'CSS'] 
     * @return string Base64 encoded compressed content
     */
-   public static function compressComponent(string $content): string
+   public static function compressComponent(string $content, $type = 'HTML'): string
    {
       // Apply minification based on compression level
-      return self::minify($content, Compressor::LEVEL_EXTREME);
+      return self::minify($content, $type, Compressor::LEVEL_EXTREME);
    }
 
 
@@ -297,7 +312,7 @@ trait HtmlCompressor
     */
    private static function detectOptimalLevel(string $content): int
    {
-      $size = \strlen($content);
+      $size = strlen($content);
 
       if ($size < 1024) {
          // Less than 1KB
@@ -325,15 +340,16 @@ trait HtmlCompressor
     * Compress content with specific level
     *
     * @param string $content Content to compress
+    * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @param int $level Compression level
     * @return string Compressed content
     */
-   public static function compressWithLevel(string $content, int $level): string
+   public static function compressWithLevel(string $content, int $level, $type = 'HTML'): string
    {
       $originalLevel = self::$compressionLevel;
       self::$compressionLevel = $level;
 
-      $compressed = self::minify($content, $level);
+      $compressed = self::minify($content, $type, $level);
 
       self::$compressionLevel = $originalLevel;
       return $compressed;

@@ -2,6 +2,7 @@
 
 namespace PhpSPA\Core\Config;
 
+use function in_array;
 use PhpSPA\Compression\Compressor;
 
 /**
@@ -24,9 +25,7 @@ class CompressionConfig
      * @param string $environment Environment name
      * @return void
      */
-    public static function initialize(
-        string $environment = Compressor::ENV_PRODUCTION,
-    ): void {
+    public static function initialize(string $environment = Compressor::ENV_PRODUCTION): void {
         switch ($environment) {
             case Compressor::ENV_DEVELOPMENT:
                 self::setupDevelopment();

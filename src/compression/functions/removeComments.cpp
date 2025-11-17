@@ -2,13 +2,13 @@
 
 namespace {
 
-constexpr char kCommentOpen[] = "<!--";
-constexpr char kCommentClose[] = "-->";
+   constexpr char kCommentOpen[] = "<!--";
+   constexpr char kCommentClose[] = "-->";
 
-bool isCommentStart(const std::string& html, size_t pos) {
-   return pos + 3 < html.size() &&
-      html[pos] == '<' && html[pos + 1] == '!' && html[pos + 2] == '-' && html[pos + 3] == '-';
-}
+   bool isCommentStart(const std::string& html, size_t pos) {
+      return pos + 3 < html.size() &&
+         html[pos] == '<' && html[pos + 1] == '!' && html[pos + 2] == '-' && html[pos + 3] == '-';
+   }
 
 } // namespace
 

@@ -11,21 +11,26 @@
 #endif
 
 extern "C" {
-   PHPSPA_EXPORT char* phpspa_compress_html(const char* input, int level, size_t* out_len) {
+   PHPSPA_EXPORT char* phpspa_compress_html(const char* input, int level, const char* type, size_t* out_len) {
       if (!input || !out_len) return nullptr;
 
-      HtmlCompressor::Level compressorLevel = HtmlCompressor::BASIC;
-
-      if (level >= HtmlCompressor::BASIC && level <= HtmlCompressor::EXTREME) {
-         compressorLevel = static_cast<HtmlCompressor::Level>(level);
-      }
+      HtmlCompressor::currentLevel = static_cast<HtmlCompressor::Level>(level);
 
       // Reserve to avoid reallocs during compression
       std::string result;
       result.reserve(strlen(input));
 
       try {
-         result = HtmlCompressor::compress(input, compressorLevel);
+         if (type == "HTML")
+            result = HtmlCompressor::compress(input);
+         else {
+            std::string content{input};
+
+            if (type == "CSS") HtmlCompressor::minifyCSS(content);
+            else if (type == "JS") HtmlCompressor::minifyJS(content);
+
+            result = content;
+         }
       } catch (...) {
          return nullptr;
       }
