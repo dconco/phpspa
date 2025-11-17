@@ -1,94 +1,142 @@
-#include <iostream>
 #include <algorithm>
 #include <cctype>
+#include <cstring>
 #include <vector>
 #include "../HtmlCompressor.h"
 #include "../../helper/explode.h"
 #include "../../utils/trim.h"
 
-void HtmlCompressor::removeWhitespace(std::string& html) {
-   auto normalizeTag = [](const std::string& tag) -> std::string {
-      std::string lowered = tag;
+namespace {
 
-      std::transform(lowered.begin(), lowered.end(), lowered.begin(), [](unsigned char ch) -> char {
+   bool isSpecialTag(const std::string& tag) {
+      return tag == "pre" || tag == "script" || tag == "style" || tag == "textarea" || tag == "code";
+   }
+
+   void toLowerInPlace(std::string& text) {
+      std::transform(text.begin(), text.end(), text.begin(), [](unsigned char ch) -> char {
          return static_cast<char>(std::tolower(ch));
       });
-      return lowered;
-   };
+   }
 
-   auto isSpecialTag = [](const std::string& tag) -> bool {
-      return tag == "pre" || tag == "script" || tag == "style" || tag == "textarea" || tag == "code";
-   };
+   bool isSelfClosing(const std::string& tagContent) {
+      for (size_t i = tagContent.size(); i > 0; --i) {
+         const char ch = tagContent[i - 1];
+         if (ch == '>') {
+            continue;
+         }
+         if (std::isspace(static_cast<unsigned char>(ch))) {
+            continue;
+         }
+         return ch == '/';
+      }
+      return false;
+   }
 
-   std::string result;
-   result.reserve(html.length()); // Pre-allocate to avoid reallocations
+   void writeChunk(std::string& html, const std::string& chunk, size_t& writePos) {
+      const size_t needed = writePos + chunk.size();
+      if (needed > html.size()) {
+         html.resize(needed);
+      }
+      std::memcpy(&html[writePos], chunk.data(), chunk.size());
+      writePos = needed;
+   }
+
+   void writeChar(std::string& html, char ch, size_t& writePos) {
+      if (writePos == html.size()) {
+         html.push_back(ch);
+      } else {
+         html[writePos] = ch;
+      }
+      ++writePos;
+   }
+
+} // namespace
+
+void HtmlCompressor::removeWhitespace(std::string& html) {
+   if (html.empty()) {
+      return;
+   }
+
+   const size_t originalLength = html.length();
+   size_t readPos = 0;
+   size_t writePos = 0;
    std::vector<std::string> tagStack;
+   tagStack.reserve(16);
    bool insideSpecial = false;
    bool pendingSpace = false;
+   std::string tagContent;
+   std::string tagName;
 
-   const size_t length = html.length();
+   auto refreshInsideSpecial = [&]() {
+      insideSpecial = false;
+      for (auto it = tagStack.rbegin(); it != tagStack.rend(); ++it) {
+         if (isSpecialTag(*it)) {
+            insideSpecial = true;
+            break;
+         }
+      }
+   };
 
-   for (size_t i = 0; i < length; ++i) {
-      char current = html[i];
+   while (readPos < originalLength) {
+      char current = html[readPos];
 
       if (current == '<') {
-         size_t tagEnd = html.find('>', i);
+         const size_t tagEnd = html.find('>', readPos);
          if (tagEnd == std::string::npos) {
-            break; // Malformed HTML, bail out
+            break;
          }
 
-         std::string tagContent = html.substr(i, tagEnd - i + 1);
-         bool isClosingTag = (i + 1 < length && html[i + 1] == '/');
-         bool isComment = (i + 3 < length && html[i + 1] == '!' && html[i + 2] == '-' && html[i + 3] == '-');
+         tagContent.assign(html.data() + readPos, tagEnd - readPos + 1);
+         const bool isComment = tagContent.size() >= 4 && tagContent[1] == '!' && tagContent[2] == '-' && tagContent[3] == '-';
+         const bool isClosingTag = tagContent.size() >= 3 && tagContent[1] == '/';
 
          if (isComment) {
-            // Comments should already be removed upstream, but copy as-is for safety
-            result += tagContent;
-            i = tagEnd;
+            writeChunk(html, tagContent, writePos);
+            readPos = tagEnd + 1;
             pendingSpace = false;
             continue;
          }
 
-         std::string tagName;
-         bool selfClosing = false;
-
          if (isClosingTag) {
-            size_t nameStart = i + 2;
-            size_t nameEnd = html.find_first_of(" \n\t\r>", nameStart);
-
-            if (nameEnd == std::string::npos || nameEnd > tagEnd) {
-               nameEnd = tagEnd;
+            size_t nameStart = 2;
+            while (nameStart < tagContent.size() && std::isspace(static_cast<unsigned char>(tagContent[nameStart]))) {
+               ++nameStart;
             }
-            tagName = normalizeTag(html.substr(nameStart, nameEnd - nameStart));
+
+            size_t nameEnd = nameStart;
+            while (nameEnd < tagContent.size() && !std::isspace(static_cast<unsigned char>(tagContent[nameEnd])) && tagContent[nameEnd] != '>') {
+               ++nameEnd;
+            }
+
+            tagName.assign(tagContent.begin() + nameStart, tagContent.begin() + nameEnd);
+            toLowerInPlace(tagName);
 
             if (!tagStack.empty()) {
-               // Pop stack until matching tag is found
                auto it = std::find(tagStack.rbegin(), tagStack.rend(), tagName);
-
                if (it != tagStack.rend()) {
-                  size_t removeCount = std::distance(tagStack.rbegin(), it) + 1;
-                  while (removeCount-- > 0 && !tagStack.empty()) {
+                  const size_t removeCount = static_cast<size_t>(std::distance(tagStack.rbegin(), it)) + 1;
+                  for (size_t count = 0; count < removeCount && !tagStack.empty(); ++count) {
                      tagStack.pop_back();
                   }
                }
             }
 
-            insideSpecial = false;
-            for (auto stackIt = tagStack.rbegin(); stackIt != tagStack.rend(); ++stackIt) {
-               if (isSpecialTag(*stackIt)) {
-                  insideSpecial = true;
-                  break;
-               }
-            }
+            refreshInsideSpecial();
          } else {
-            size_t nameStart = i + 1;
-            size_t nameEnd = html.find_first_of(" \n\t\r/>", nameStart);
-            if (nameEnd == std::string::npos || nameEnd > tagEnd) {
-               nameEnd = tagEnd;
+            size_t nameStart = 1;
+            while (nameStart < tagContent.size() && std::isspace(static_cast<unsigned char>(tagContent[nameStart]))) {
+               ++nameStart;
             }
-            tagName = normalizeTag(html.substr(nameStart, nameEnd - nameStart));
-            selfClosing = (tagEnd > i + 1 && html[tagEnd - 1] == '/');
 
+            size_t nameEnd = nameStart;
+            while (nameEnd < tagContent.size() && !std::isspace(static_cast<unsigned char>(tagContent[nameEnd])) && tagContent[nameEnd] != '>' && tagContent[nameEnd] != '/') {
+               ++nameEnd;
+            }
+
+            tagName.assign(tagContent.begin() + nameStart, tagContent.begin() + nameEnd);
+            toLowerInPlace(tagName);
+
+            const bool selfClosing = isSelfClosing(tagContent);
             if (!selfClosing) {
                tagStack.push_back(tagName);
                if (isSpecialTag(tagName)) {
@@ -98,57 +146,52 @@ void HtmlCompressor::removeWhitespace(std::string& html) {
          }
 
          optimizeAttributes(tagContent);
-         result += tagContent;
+         writeChunk(html, tagContent, writePos);
 
          pendingSpace = false;
-         i = tagEnd;
+         readPos = tagEnd + 1;
          continue;
       }
 
       if (insideSpecial) {
-         // Check if we're inside script or style tags to minify their content
          if (!tagStack.empty()) {
-            std::string currentTag = tagStack.back();
-            
+            const std::string& currentTag = tagStack.back();
             if (currentTag == "script" || currentTag == "style") {
-               // Find the closing tag
                std::string closingTag = "</" + currentTag;
-               size_t closingPos = html.find(closingTag, i);
-               
+               const size_t closingPos = html.find(closingTag, readPos);
                if (closingPos != std::string::npos) {
-                  // Extract content between opening and closing tags
-                  std::string content = html.substr(i, closingPos - i);
-                  
-                  // Minify based on tag type
+                  std::string content = html.substr(readPos, closingPos - readPos);
                   if (currentTag == "script") {
                      minifyJS(content);
-                  } else if (currentTag == "style") {
+                  } else {
                      minifyCSS(content);
                   }
-                  
-                  result += content;
-                  i = closingPos - 1; // Will be incremented by loop
+                  writeChunk(html, content, writePos);
+                  readPos = closingPos;
                   continue;
                }
             }
          }
-         
-         result += current;
+
+         writeChar(html, current, writePos);
+         ++readPos;
          continue;
-      }
+   }
 
       if (isWhitespace(current)) {
          pendingSpace = true;
+         ++readPos;
          continue;
       }
 
-      if (pendingSpace && !result.empty() && result.back() != '>') {
-         result += ' ';
+      if (pendingSpace && writePos > 0 && html[writePos - 1] != '>') {
+         writeChar(html, ' ', writePos);
       }
 
-      result += current;
+      writeChar(html, current, writePos);
       pendingSpace = false;
+      ++readPos;
    }
 
-   html = result;
+   html.resize(writePos);
 }

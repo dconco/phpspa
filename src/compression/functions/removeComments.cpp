@@ -1,24 +1,41 @@
-#include <iostream>
 #include "../HtmlCompressor.h"
 
-void HtmlCompressor::removeComments(std::string& html) {
-   std::string result;
-   result.reserve(html.length()); // Pre-allocate to avoid reallocations
-   size_t lastPos = 0;
-   size_t pos = 0;
+namespace {
 
-   while ((pos = html.find("<!--", lastPos)) != std::string::npos) {
-      result += html.substr(lastPos, pos - lastPos);  // Copy content before comment
-      size_t endPos = html.find("-->", pos + 4);
-      
-      if (endPos != std::string::npos) {
-         lastPos = endPos + 3;  // Move past the comment
-      } else {
-         lastPos = html.length();  // No closing tag, skip to end
-         break;
-      }
+constexpr char kCommentOpen[] = "<!--";
+constexpr char kCommentClose[] = "-->";
+
+bool isCommentStart(const std::string& html, size_t pos) {
+   return pos + 3 < html.size() &&
+      html[pos] == '<' && html[pos + 1] == '!' && html[pos + 2] == '-' && html[pos + 3] == '-';
+}
+
+} // namespace
+
+void HtmlCompressor::removeComments(std::string& html) {
+   if (html.empty()) {
+      return;
    }
 
-   result += html.substr(lastPos);  // Copy remaining content after last comment
-   html = result;
+   size_t readPos = 0;
+   size_t writePos = 0;
+   const size_t length = html.length();
+
+   while (readPos < length) {
+      if (isCommentStart(html, readPos)) {
+         const size_t commentEnd = html.find(kCommentClose, readPos + sizeof(kCommentOpen) - 1);
+
+         if (commentEnd == std::string::npos) {
+            html.resize(writePos); // Unclosed comment drops trailing content, matching previous behavior.
+            return;
+         }
+
+         readPos = commentEnd + sizeof(kCommentClose) - 1;
+         continue;
+      }
+
+      html[writePos++] = html[readPos++];
+   }
+
+   html.resize(writePos);
 }
