@@ -19,10 +19,6 @@ src/**/*.h export-ignore
 src/**/*.hh export-ignore
 CMakeLists.txt export-ignore
 
-# Keep both binaries for cross-platform support
-!src/bin/compressor
-!src/bin/compressor.exe
-
 # Ignore development and environment files
 TODO.md export-ignore
 .github/ export-ignore

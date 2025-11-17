@@ -86,7 +86,7 @@ jobs:
           cp artifacts/macos/libcompressor.dylib build/libcompressor.dylib
           upx --best --lzma build/compressor.dll
           upx --best --lzma build/libcompressor.so
-          upx -d build/libcompressor.dylib || echo "UPX failed for dylib (macOS binaries may not support UPX)"
+          strip -x build/libcompressor.dylib || echo "UPX failed for dylib (macOS binaries may not support UPX)"
 
       - name: Copy shared libraries to src/bin
         run: |
