@@ -39,8 +39,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure (MinSizeRel)
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=MinSizeRel
+      - name: Configure (Release)
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
       - name: Build compressor.dylib
         run: cmake --build build --target compressor -j 8
@@ -86,7 +86,7 @@ jobs:
           cp artifacts/macos/libcompressor.dylib build/libcompressor.dylib
           upx --best --lzma build/compressor.dll
           upx --best --lzma build/libcompressor.so
-          upx --best --lzma build/libcompressor.dylib || echo "UPX failed for dylib (macOS binaries may not support UPX)"
+          upx -d build/libcompressor.dylib || echo "UPX failed for dylib (macOS binaries may not support UPX)"
 
       - name: Copy shared libraries to src/bin
         run: |
