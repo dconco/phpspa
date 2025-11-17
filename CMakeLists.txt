@@ -11,9 +11,16 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
         add_compile_options(/O2 /Oi /Ot /GL)  # O2=optimize, Oi=intrinsics, Ot=favor speed, GL=whole program
         set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /LTCG /OPT:REF /OPT:ICF")
     else()
-        # GCC/Clang (Linux/macOS): Strip symbols and optimize
+        # GCC/Clang (Linux/macOS): Optimize for size
         add_compile_options(-Os -ffunction-sections -fdata-sections)  # Os=optimize for size
-        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -s -Wl,--gc-sections")  # Strip + remove unused sections
+        
+        if(APPLE)
+            # macOS: Use -Wl,-dead_strip instead of --gc-sections
+            set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-dead_strip")
+        else()
+            # Linux: Strip symbols and remove unused sections
+            set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -s -Wl,--gc-sections")
+        endif()
     endif()
 endif()
 

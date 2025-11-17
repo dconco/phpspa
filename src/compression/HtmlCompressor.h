@@ -23,19 +23,19 @@ class HtmlCompressor {
       static Level currentLevel;
 
       // --- Remove HTML comments (<!-- -->) ---
-      static std::string removeComments(const std::string& html);
+      static void removeComments(std::string& html);
       
       // --- Remove unnecessary whitespace (multiple spaces, newlines, tabs) ---
-      static std::string removeWhitespace(const std::string& html);
+      static void removeWhitespace(std::string& html);
 
       // --- Optimize attributes (remove quotes where safe, trim values) ---
-      static std::string optimizeAttributes(const std::string& tagContent);
+      static void optimizeAttributes(std::string& tagContent);
 
       // --- Minify inline CSS content ---
-      static std::string minifyCSS(const std::string& css);
+      static void minifyCSS(std::string& css);
 
       // --- Minify inline JavaScript content ---
-      static std::string minifyJS(const std::string& js);
+      static void minifyJS(std::string& js);
 };
 
 #endif // HTML_COMPRESSOR_H

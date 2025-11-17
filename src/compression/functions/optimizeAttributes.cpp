@@ -2,8 +2,8 @@
 #include "../HtmlCompressor.h"
 #include "../../utils/trim.h"
 
-std::string HtmlCompressor::optimizeAttributes(const std::string& tagContent) {
-   if (HtmlCompressor::currentLevel < AGGRESSIVE) return tagContent;
+void HtmlCompressor::optimizeAttributes(std::string& tagContent) {
+   if (HtmlCompressor::currentLevel < AGGRESSIVE) return;
 
    std::string optimizedContent;
    optimizedContent.reserve(tagContent.length()); // Pre-allocate to avoid reallocations
@@ -27,11 +27,14 @@ std::string HtmlCompressor::optimizeAttributes(const std::string& tagContent) {
       lastWasSpace = false;
    }
 
-
    // --- EXTREME LEVEL OPTIMIZATIONS ---
-   // --- REMOVE QUOTES FROM ATTRIBUTES WHERE SAFE ---
 
-   if (HtmlCompressor::currentLevel < EXTREME) return optimizedContent;
+   if (HtmlCompressor::currentLevel < EXTREME) {
+      tagContent = optimizedContent;
+      return;
+   }
+
+   // --- REMOVE QUOTES FROM ATTRIBUTES WHERE SAFE ---
 
    std::string result;
    for (size_t i = 0; i < optimizedContent.length(); ++i) {
@@ -84,5 +87,5 @@ std::string HtmlCompressor::optimizeAttributes(const std::string& tagContent) {
       result += current;
    }
 
-   return result;
+   tagContent = result;
 }

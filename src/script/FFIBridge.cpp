@@ -1,4 +1,4 @@
-#include "HtmlCompressor.h"
+#include "../compression/HtmlCompressor.h"
 
 #include <cstdlib>
 #include <cstring>
@@ -11,10 +11,8 @@
 #endif
 
 extern "C" {
-   PHPSPA_EXPORT char* phpspa_compress_html(const char* input, int level) {
-      if (input == nullptr) {
-         return nullptr;
-      }
+   PHPSPA_EXPORT char* phpspa_compress_html(const char* input, int level, size_t* out_len) {
+      if (!input || !out_len) return nullptr;
 
       HtmlCompressor::Level compressorLevel = HtmlCompressor::BASIC;
 
@@ -22,28 +20,28 @@ extern "C" {
          compressorLevel = static_cast<HtmlCompressor::Level>(level);
       }
 
+      // Reserve to avoid reallocs during compression
       std::string result;
+      result.reserve(strlen(input));
 
       try {
-         result = HtmlCompressor::compress(std::string(input), compressorLevel);
+         result = HtmlCompressor::compress(input, compressorLevel);
       } catch (...) {
          return nullptr;
       }
 
-      const std::size_t outputSize = result.size() + 1;
-      char* buffer = static_cast<char*>(std::malloc(outputSize));
+      *out_len = result.size();
 
-      if (buffer == nullptr) {
-         return nullptr;
-      }
+      // allocate once
+      char* buffer = (char*) malloc(result.size() + 1);
+      if (!buffer) return nullptr;
 
-      std::memcpy(buffer, result.c_str(), outputSize);
+      memcpy(buffer, result.c_str(), result.size() + 1);
+
       return buffer;
    }
 
    PHPSPA_EXPORT void phpspa_free_string(char* buffer) {
-      if (buffer != nullptr) {
-         std::free(buffer);
-      }
+      free(buffer);
    }
 }

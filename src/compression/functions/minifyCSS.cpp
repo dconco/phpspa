@@ -1,7 +1,7 @@
 #include "../HtmlCompressor.h"
 
-std::string HtmlCompressor::minifyCSS(const std::string& css) {
-   if (currentLevel < AGGRESSIVE) return css;
+void HtmlCompressor::minifyCSS(std::string& css) {
+   if (currentLevel < AGGRESSIVE) return;
 
    std::string result;
    result.reserve(css.length()); // Pre-allocate to avoid reallocations
@@ -66,5 +66,5 @@ std::string HtmlCompressor::minifyCSS(const std::string& css) {
       ++i;
    }
 
-   return result;
+   css = result;
 }

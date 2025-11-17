@@ -35,14 +35,21 @@ final class NativeCompressor
       }
 
       $level = max(1, min(3, $nativeLevel));
+      $outLen = \FFI::new('size_t');
 
-      $resultPointer = self::invoke('phpspa_compress_html', $html, $level);
-      if ($resultPointer === null) {
-         throw new \RuntimeException('Native compressor returned an empty result.');
+      $resultPointer = self::invoke('phpspa_compress_html', $html, $level, \FFI::addr($outLen));
+
+      if (\FFI::isNull($resultPointer)) {
+         throw new \RuntimeException('Native compressor returned a null pointer.');
+      }
+
+      $length = $outLen->cdata;
+      if ($length === 0) {
+         throw new \RuntimeException("Native compressor returned an empty result.");
       }
 
       try {
-         return \FFI::string($resultPointer);
+         return \FFI::string($resultPointer, $length);
       } finally {
          self::invoke('phpspa_free_string', $resultPointer);
       }
@@ -129,7 +136,7 @@ final class NativeCompressor
    private static function cDefinition(): string
    {
       return <<<'CDEF'
-char* phpspa_compress_html(const char* input, int level);
+char* phpspa_compress_html(const char* input, int level, size_t* out_len);
 void phpspa_free_string(char* buffer);
 CDEF;
    }

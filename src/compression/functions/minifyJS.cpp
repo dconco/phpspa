@@ -1,8 +1,8 @@
 #include <cctype>
 #include "../HtmlCompressor.h"
 
-std::string HtmlCompressor::minifyJS(const std::string& js) {
-   if (currentLevel < AGGRESSIVE) return js;
+void HtmlCompressor::minifyJS(std::string& js) {
+   if (currentLevel < AGGRESSIVE) return;
 
    std::string result;
    result.reserve(js.length()); // Pre-allocate to avoid reallocations
@@ -91,5 +91,5 @@ std::string HtmlCompressor::minifyJS(const std::string& js) {
       ++i;
    }
 
-   return result;
+   js = result;
 }
