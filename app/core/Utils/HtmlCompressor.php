@@ -130,7 +130,7 @@ trait HtmlCompressor
          return self::compressWithNative($content, $level, $type);
 
       // Fallback to PHP implementation
-      else return self::compressWithFallback($content, $level, $type);
+      return self::compressWithFallback($content, $level, $type);
    }
 
    private static function isNativeCompressorAvailable(int $CONTENT_LENGTH): bool
@@ -208,7 +208,7 @@ trait HtmlCompressor
          return $strategy;
       }
 
-      $envStrategy = $_ENV['PHPSPA_COMPRESSION_STRATEGY'] ?? null;
+      $envStrategy = getenv('PHPSPA_COMPRESSION_STRATEGY');
       $normalized = is_string($envStrategy)
          ? strtolower(trim($envStrategy))
          : '';

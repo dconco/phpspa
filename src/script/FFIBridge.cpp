@@ -21,6 +21,7 @@ extern "C" {
       result.reserve(strlen(input));
 
       try {
+         result = input;
          if (strcmp(type, "HTML") == 0) {
             result = HtmlCompressor::compress(input);
          } else {

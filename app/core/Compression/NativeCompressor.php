@@ -40,7 +40,7 @@ final class NativeCompressor
 
       $resultPointer = self::invoke('phpspa_compress_html', $content, $level, $type, \FFI::addr($outLen));
 
-      if (\FFI::isNull($resultPointer)) {
+      if ($resultPointer === null || \FFI::isNull($resultPointer)) {
          throw new \RuntimeException('Native compressor returned a null pointer.');
       }
 
@@ -50,8 +50,7 @@ final class NativeCompressor
       }
 
       try {
-         $s = \FFI::string($resultPointer, $length);
-         exit($s);
+         return \FFI::string($resultPointer, $length);
       } finally {
          self::invoke('phpspa_free_string', $resultPointer);
       }
