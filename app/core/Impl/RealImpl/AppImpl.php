@@ -602,17 +602,15 @@ abstract class AppImpl implements ApplicationContract {
 
       if (\is_array($content)) {
          $content = $content[0];
-         $compressionLevel = Compressor::LEVEL_NONE;
+      } else {
+         // Compress the content
+         $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type']);
       }
 
-      // Compress the content
-      $compressedContent = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type']);
-
       // Set appropriate headers
-      $this->setAssetHeaders($assetInfo['type'], $compressedContent);
-
+      $this->setAssetHeaders($assetInfo['type'], $content);
       // Output the content
-      echo $compressedContent;
+      echo $content;
    }
 
    /**
