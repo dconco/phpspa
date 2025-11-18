@@ -1,9 +1,5 @@
 # ⚡ Native Compression (C++ FFI)
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/dconco/dconco/refs/heads/main/phpspa-icon.jpg" width="100" style="border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); margin: 1.5rem 0;" />
-</div>
-
 !!! success "New in v2.0.3"
     :material-new-box: **Native C++ compressor** for lightning-fast HTML/CSS/JS minification
 
@@ -47,6 +43,7 @@ PhpSPA **auto-detects** the compressor library from your installation. Windows a
 **Configure custom path (macOS required):**
 
 ```php
+<?php
 // Set before creating the App instance
 $path = __DIR__ . '/path/to/libcompressor.dylib';
 putenv("PHPSPA_COMPRESSOR_LIB=$path");
@@ -67,6 +64,7 @@ export PHPSPA_COMPRESSOR_LIB="/absolute/path/to/libcompressor.dylib"
 To **require** native compression (fails if library unavailable):
 
 ```php
+<?php
 // Set before creating the App instance
 putenv('PHPSPA_COMPRESSION_STRATEGY=native');
 
@@ -128,11 +126,11 @@ graph LR
     # Set explicit path
     export PHPSPA_COMPRESSOR_LIB="/full/path/to/libcompressor.so"
     
-    # Or place library in one of these auto-detected paths:
-    # - build/MinSizeRel/
-    # - build/Release/
-    # - build/
-    # - src/bin/
+    # Or place library in one of these auto-detected paths inside the phpspa library:
+    # - vendor/dconco/phpspa/build/MinSizeRel/
+    # - vendor/dconco/phpspa/build/Release/
+    # - vendor/dconco/phpspa/build/
+    # - vendor/dconco/phpspa/src/bin/
     ```
 
 !!! warning "Fallback Mode Active"
@@ -162,6 +160,7 @@ X-PhpSPA-Compression-Level: 2
 ### Basic Setup
 
 ```php
+<?php
 use PhpSPA\Compression\Compressor;
 
 // Enable aggressive compression with native engine
@@ -188,6 +187,7 @@ $app->compression(Compressor::LEVEL_AGGRESSIVE, true);
     Minify HTML programmatically without affecting runtime configuration:
 
     ```php
+    <?php
     use PhpSPA\Compression\Compressor;
 
     $html = '<div>\n  <span> Hello World </span>\n</div>';
@@ -203,6 +203,7 @@ $app->compression(Compressor::LEVEL_AGGRESSIVE, true);
 
     !!! info "Signature"
         ```php
+        <?php
         public static function compressWithLevel(
             string $html, 
             int $level
@@ -214,6 +215,7 @@ $app->compression(Compressor::LEVEL_AGGRESSIVE, true);
     Inspect which engine handled the last compression:
 
     ```php
+    <?php
     use PhpSPA\Compression\Compressor;
 
     $compressed = Compressor::compressWithLevel($html, Compressor::LEVEL_EXTREME);
@@ -228,6 +230,7 @@ $app->compression(Compressor::LEVEL_AGGRESSIVE, true);
 
     !!! info "Signature"
         ```php
+        <?php
         public static function getCompressionEngine(): string
         ```
 
@@ -279,14 +282,3 @@ echo "Savings: " . round((1 - strlen($compressed) / strlen($html)) * 100, 1) . "
     Explore compression best practices, performance benchmarks, and advanced configuration options.
 
 ---
-
-<div align="center">
-  <img src="https://raw.githubusercontent.com/dconco/dconco/refs/heads/main/phpspa-icon.jpg" width="120" style="border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); margin: 2rem 0;" />
-  
-  **PhpSPA Native Compression**
-  
-  *Lightning-fast, zero-overhead minification for modern PHP apps* ⚡
-  
-  [:fontawesome-brands-github: View on GitHub](https://github.com/dconco/phpspa){ .md-button .md-button--primary }
-  [:material-file-document: Documentation](https://phpspa.readthedocs.io){ .md-button }
-</div>
