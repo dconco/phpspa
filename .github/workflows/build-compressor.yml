@@ -6,7 +6,6 @@ permissions:
 on:
   push:
     branches:
-      - main
       - dev
   release:
     types: [published]
@@ -95,7 +94,7 @@ jobs:
           cp build/libcompressor.dylib src/bin/libcompressor.dylib
 
       - name: Commit and push updated shared libraries
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+        if: github.ref == 'refs/heads/dev'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
