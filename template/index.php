@@ -6,6 +6,8 @@ require_once '../vendor/autoload.php';
 use PhpSPA\App;
 use PhpSPA\Compression\Compressor;
 
+putenv('PHPSPA_COMPRESSION_STRATEGY=native');
+
 /* Initialize a new Application  */
 $app = (new App(require 'layout/Layout.php'))
     /* Attach and Run Application */
@@ -20,7 +22,7 @@ $app = (new App(require 'layout/Layout.php'))
     ->defaultTargetID('app')
     ->defaultToCaseSensitive()
 
-    ->compression(Compressor::LEVEL_NONE, true)
+    ->compression(Compressor::LEVEL_EXTREME, true)
 
     ->cors()
 

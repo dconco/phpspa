@@ -18,9 +18,7 @@ $test2_successful = true;
 
 function compressJs(string $js): string
 {
-	Compressor::setLevel(Compressor::LEVEL_EXTREME);
-	$input = '<script>' . $js . '</script>';
-	return Compressor::compress($input);
+	return Compressor::compressWithLevel($js, Compressor::LEVEL_EXTREME, 'JS');
 }
 
 function run_semicolon_tests(): bool

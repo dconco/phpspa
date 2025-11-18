@@ -2,7 +2,27 @@ cmake_minimum_required(VERSION 3.10)
 project(PhpSPA)
 
 # Set C++ standard
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
+
+# Size optimization flags
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    if(MSVC)
+        # MSVC: Optimize for size and speed
+        add_compile_options(/O2 /Oi /Ot /GL)  # O2=optimize, Oi=intrinsics, Ot=favor speed, GL=whole program
+        set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /LTCG /OPT:REF /OPT:ICF")
+    else()
+        # GCC/Clang (Linux/macOS): Optimize for size
+        add_compile_options(-Os -ffunction-sections -fdata-sections)  # Os=optimize for size
+        
+        if(APPLE)
+            # macOS: Use -Wl,-dead_strip instead of --gc-sections
+            set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-dead_strip")
+        else()
+            # Linux: Strip symbols and remove unused sections
+            set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -s -Wl,--gc-sections")
+        endif()
+    endif()
+endif()
 
 # Force ccache usage
 find_program(CCACHE_PROGRAM ccache)
@@ -14,11 +34,21 @@ else()
 endif()
 
 # Add DEBUG options for debug builds
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
-set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+if(MSVC)
+    set(CMAKE_CXX_FLAGS_DEBUG "/Zi /Od")
+    set(CMAKE_CXX_FLAGS_RELEASE "/O2 /DNDEBUG /GL")
+else()
+    set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+endif()
+
+# MSVC-specific optimizations
+if(MSVC)
+    set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /LTCG")  # Link-time code generation
+endif()
 
 # Find all C++ source files recursively in src/ and subdirectories
-file(GLOB_RECURSE SOURCES 
+file(GLOB_RECURSE SOURCES
    "src/*.cpp"
    "src/*.cxx" 
    "src/*.cc"
@@ -30,7 +60,7 @@ file(GLOB_RECURSE SOURCES
 file(GLOB_RECURSE C_SOURCES "src/*.c")
 
 # Find header files recursively (for IDE support, not compilation)
-file(GLOB_RECURSE HEADERS 
+file(GLOB_RECURSE HEADERS
    "src/*.hh"
    "src/*.hpp"
    "src/*.hxx"
@@ -38,5 +68,5 @@ file(GLOB_RECURSE HEADERS
    "src/*.hp"
 )
 
-# Create executable with all source files
-add_executable(phpspa-app ${SOURCES} ${C_SOURCES} ${HEADERS})
+# Create shared library with all source files
+add_library(compressor SHARED ${SOURCES} ${C_SOURCES} ${HEADERS})
