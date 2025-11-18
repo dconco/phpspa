@@ -12,6 +12,7 @@ requirements.txt export-ignore
 .readthedocs.yaml export-ignore
 
 # Exclude C++ sources from distribution
+*.cpp export-ignore
 src/*.cpp export-ignore
 src/*.h export-ignore
 src/**/*.cpp export-ignore
