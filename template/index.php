@@ -1,5 +1,7 @@
 <?php
 
+use PhpSPA\Component;
+
 chdir(__DIR__);
 require_once '../vendor/autoload.php';
 
@@ -9,7 +11,7 @@ use PhpSPA\Compression\Compressor;
 putenv('PHPSPA_COMPRESSION_STRATEGY=native');
 
 /* Initialize a new Application  */
-$app = (new App(require 'layout/Layout.php'))
+(new App(require 'layout/Layout.php'))
     /* Attach and Run Application */
 
     ->attach(require 'components/Login.php')
@@ -86,6 +88,31 @@ $app = (new App(require 'layout/Layout.php'))
     )
 
     ->run();
+
+
+
+
+// --- APP 2 ---
+(new App(fn () => '<div id="root"></div>'))
+    ->attach(new Component(fn () => <<<HTML
+        <div>
+            <h2>Hello This is About Us Page</h2>
+            <br />
+            <Component.Link to="/feed">Move to News Page</Component.Link>
+        </div>
+    HTML)->title('App 2 - About Us')->route('/about')->targetID('app'))
+
+    ->attach(new Component(fn () => <<<HTML
+        <div>
+            <h2>Welcome to News Feed</h2>
+            <br />
+            <Component.Link to="/">Go back to Home Page</Component.Link>
+        </div>
+    HTML)->title('App 2 - News Feed')->route('/feed'))
+
+    ->defaultTargetID('root')
+    ->run();
+
 
 // --- NOT FOUND ---
 echo "404 Not Found";
