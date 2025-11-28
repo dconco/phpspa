@@ -33,7 +33,7 @@ Project maintainers have the right and responsibility to remove, edit, or reject
 Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by:
 
 - Opening an issue on GitHub
-- Contacting the project maintainer at [concodave@gmail.com](mailto:concodave@gmail.com)
+- Contacting the project maintainer at [me@dconco.tech](mailto:me@dconco.tech)
 
 All complaints will be reviewed and investigated promptly and fairly.
 
