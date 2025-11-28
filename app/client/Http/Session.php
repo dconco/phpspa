@@ -11,7 +11,7 @@ namespace PhpSPA\Http;
  * error handling and validation. This class ensures secure and consistent
  * session management throughout the PhpSPA framework.
  *
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  */
 class Session
 {

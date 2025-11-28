@@ -9,7 +9,7 @@ use ReflectionFunction;
  * Provides utilities for inspecting and analyzing PHP callables.
  * Useful for determining callable types, extracting reflection information,
  * and facilitating dynamic invocation or introspection of functions, methods, or closures.
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @package PhpSPA\Core\Helper
  * @static

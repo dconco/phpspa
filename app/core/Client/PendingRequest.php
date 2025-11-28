@@ -41,7 +41,7 @@ class RequestMethod {
  * 
  * @since v2.0.1
  * @package Client
- * @see https://phpspa.vercel.app/references/hooks/use-fetch
+ * @see https://phpspa.tech/references/hooks/use-fetch
  * @method ClientResponse|AsyncResponse get(array|string $query = null)
  * @method ClientResponse|AsyncResponse post(array|string $body = null)
  * @method ClientResponse|AsyncResponse put(array|string $body = null)

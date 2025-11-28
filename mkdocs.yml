@@ -185,7 +185,7 @@ extra:
         link: https://youtube.com/@daveconco
         name: YouTube Channel
       - icon: fontawesome/solid/envelope
-        link: mailto:concodave@gmail.com
+        link: mailto:me@dconco.tech
         name: Email Contact
       - icon: fontawesome/brands/linkedin
         link: https://linkedin.com/in/dconco

@@ -21,7 +21,7 @@
  * - All scripts and logic must be attached per component using `$component->script(...)`.
  * - This library assumes server-rendered HTML responses with placeholder target IDs.
  *
- * @author Dave Conco <concodave@gmail.com>
+ * @author Dave Conco <me@dconco.tech>
  * @link https://github.com/dconco/phpspa-js
  * @version 2.0.0
  * @license MIT

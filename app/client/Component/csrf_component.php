@@ -8,7 +8,7 @@ namespace Component;
  * Provides automatic CSRF token generation and validation for HTML forms
  * to prevent cross-site request forgery attacks.
  *
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @see https://phpspa.tech/security/csrf-protection
  */
 class Csrf extends \PhpSPA\Core\Helper\CsrfManager

@@ -12,7 +12,7 @@ namespace PhpSPA\Http\Security;
  *
  * @package PhpSPA\Http\Security
  * @category Security
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @version 1.0.0
  * @see https://phpspa.tech/security/content-security-policy
  */

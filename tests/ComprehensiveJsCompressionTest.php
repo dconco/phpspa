@@ -7,7 +7,7 @@
  * issues mentioned in TODO item 6 and ensures proper ASI (Automatic Semicolon Insertion).
  *
  * @since v1.1.6
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  */
 
 echo "\n============== COMPREHENSIVE JS COMPRESSION TEST STARTED ==============\n\n";

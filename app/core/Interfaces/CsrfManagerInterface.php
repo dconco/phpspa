@@ -10,7 +10,7 @@ namespace PhpSPA\Core\Interfaces;
  *
  * @since v1.1.5
  * @copyright 2025 Dave Conco
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @see https://phpspa.tech/security/csrf-protection
  */
 interface CsrfManagerInterface

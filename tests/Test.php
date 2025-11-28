@@ -7,7 +7,7 @@
  * This test runner is CLI-only for security and is used in CI/CD workflows.
  *
  * @since v1.1.5
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  */
 // Ensure this test runner only executes from the command line (for CI/workflows)
 if (php_sapi_name() !== 'cli') {

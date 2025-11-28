@@ -14,7 +14,7 @@ use PhpSPA\Core\Compression\NativeCompressor;
  * Provides HTML minification and compression capabilities for PhpSPA
  * to reduce payload sizes and improve performance.
  *
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
  */

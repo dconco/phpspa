@@ -15,7 +15,7 @@ use PhpSPA\Exceptions\AppException;
  * information about supported types and validation errors.
  *
  * @package PhpSPA\Core\Utils\Routes\Exceptions
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0

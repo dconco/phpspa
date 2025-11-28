@@ -18,7 +18,7 @@ use PhpSPA\Core\Config\CompressionConfig;
  * - Environment-based compression settings
  *
  * @package PhpSPA
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
  *

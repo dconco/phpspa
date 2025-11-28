@@ -11,7 +11,7 @@ namespace PhpSPA\Core\Helper;
  * variable name collisions between different components.
  *
  * @package PhpSPA\Core\Helper
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
  */

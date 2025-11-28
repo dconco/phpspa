@@ -10,7 +10,7 @@ namespace PhpSPA\Core\Impl\Const;
  * These constants ensure consistent naming and behavior across the framework.
  *
  * @package PhpSPA\Core\Impl\Const
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0

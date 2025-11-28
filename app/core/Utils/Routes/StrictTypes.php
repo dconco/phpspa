@@ -14,7 +14,7 @@ use PhpSPA\Core\Utils\Routes\Exceptions\InvalidTypesException;
  * data types and provides validation mechanisms for type safety.
  *
  * @package PhpSPA\Core\Utils\Routes
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0

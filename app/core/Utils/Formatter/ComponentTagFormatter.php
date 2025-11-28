@@ -14,7 +14,7 @@ use ReflectionMethod;
  * into executable PHP components within the PhpSPA framework.
  *
  * @package PhpSPA\Core\Utils\Formatter
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
  */

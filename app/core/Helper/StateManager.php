@@ -14,7 +14,7 @@ use const PhpSPA\Core\Impl\Const\STATE_HANDLE;
  * and providing access to state information throughout the application lifecycle.
  *
  * @package PhpSPA\Core\Helper
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @var string $stateKey
  * @var string $value

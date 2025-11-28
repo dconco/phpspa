@@ -27,9 +27,15 @@ $app->compression(Compressor::LEVEL_AGGRESSIVE, true);
 putenv('PHPSPA_COMPRESSION_STRATEGY=native');
 ```
 
-**Documentation:** [Native Compression Guide](https://phpspa.readthedocs.io/en/stable/references/compression/)
+**Documentation:** [Native Compression Guide](https://phpspa.tech/references/compression/)
+
+
+
 
 ---
+
+
+
 
 ## v2.0.1
 
@@ -72,7 +78,13 @@ return "<UserCard>{$user}</UserCard>";
 
 **Documentation:** [hooks/use-fetch](https://phpspa.tech/references/helpers/fmt)
 
+
+
+
 ---
+
+
+
 
 ## v2.0.0
 
@@ -129,12 +141,12 @@ Added optional naming parameter for better asset management:
 ```php
 // Before (v1.1.9 and earlier)
 $app->script(function() {
-    return "console.log('app loaded');";
+   return "console.log('app loaded');";
 });
 
 // After (v2.0.0) - with optional name parameter
 $app->script(function() {
-    return "console.log('app loaded');";
+   return "console.log('app loaded');";
 }, 'app-init');
 ```
 
@@ -153,11 +165,11 @@ Renamed from `createState()` for better consistency:
 use function Component\useState;
 
 function Counter() {
-    $count = useState("counter", 0);
-    return <<<HTML
-        <h1>Count: {$count}</h1>
-        <button onclick="setState('counter', {$count} + 1)">Increment</button>
-    HTML;
+   $count = useState("counter", 0);
+   return <<<HTML
+      <h1>Count: {$count}</h1>
+      <button onclick="setState('counter', {$count} + 1)">Increment</button>
+   HTML;
 }
 ```
 
@@ -170,18 +182,18 @@ Execute side effects when dependencies change:
 use function Component\{useState, useEffect};
 
 function UserProfile() {
-    $userId = useState("userId", 1);
-    $userData = useState("userData", null);
-    
-    useEffect(function() use ($userId, $userData) {
-        // Fetch user data when userId changes
-        $data = fetchUserFromAPI($userId());
-        $userData->set($data);
-    }, [$userId]);
-    
-    return <<<HTML
-        <div>User: {$userData()->name}</div>
-    HTML;
+   $userId = useState("userId", 1);
+   $userData = useState("userData", null);
+   
+   useEffect(function() use ($userId, $userData) {
+      // Fetch user data when userId changes
+      $data = fetchUserFromAPI($userId());
+      $userData->set($data);
+   }, [$userId]);
+   
+   return <<<HTML
+      <div>User: {$userData()->name}</div>
+   HTML;
 }
 ```
 
@@ -198,9 +210,9 @@ use PhpSPA\Http\Security\Nonce;
 
 // Enable CSP with nonce
 Nonce::enable([
-    'script-src' => ["https://cdn.jsdelivr.net"],
-    'style-src'  => ["https://fonts.googleapis.com"],
-    'font-src'   => ["https://fonts.gstatic.com"]
+   'script-src' => ["https://cdn.jsdelivr.net"],
+   'style-src'  => ["https://fonts.googleapis.com"],
+   'font-src'   => ["https://fonts.gstatic.com"]
 ]);
 
 // Use nonce in templates
@@ -232,7 +244,7 @@ return response()->error('Not found', 404);
 ```php
 // Quick router access
 router()->get('/api/users', function() {
-    return response()->json(['users' => getUsers()]);
+   return response()->json(['users' => getUsers()]);
 });
 ```
 
@@ -240,8 +252,8 @@ router()->get('/api/users', function() {
 ```php
 // Register component scope variables
 scope([
-    'User' => fn() => getCurrentUser(),
-    'Config' => fn() => getAppConfig()
+   'User' => fn() => getCurrentUser(),
+   'Config' => fn() => getAppConfig()
 ]);
 
 // Use in components with @ or $ syntax
@@ -323,7 +335,13 @@ $assetPath = PathResolver::resolve('/assets/style.css');
 - **Contributor:** [Samuel Paschalson](https://github.com/SamuelPaschalson) - Router & Response overhaul
 - **Community:** All contributors and testers who helped make v2.0.0 possible
 
+
+
+
 ---
+
+
+
 
 ## v1.1.8
 
@@ -336,6 +354,13 @@ $assetPath = PathResolver::resolve('/assets/style.css');
    - Response helpers (`Response::json`, `Response::error`, etc.) for concise route callbacks.
 
    Docs: https://phpspa.tech/v1.1.8
+
+
+
+---
+
+
+
 
 ## v1.1.7
 
@@ -376,7 +401,13 @@ $assetPath = PathResolver::resolve('/assets/style.css');
    - `app/core/Helper/AssetLinkManager.php` - Enhanced with cache configuration management
    - `app/core/Impl/RealImpl/AppImpl.php` - Updated asset generation logic to support global assets
 
+
+
+
 ---
+
+
+
 
 ## v1.1.6
 
@@ -409,7 +440,13 @@ $assetPath = PathResolver::resolve('/assets/style.css');
 
 2. **Better Error Handling**: Added more robust error handling in compression callback logic to prevent incorrect processing of whitespace as script tags.
 
+
+
+
 ---
+
+
+
 
 ## v1.1.5
 
@@ -641,9 +678,22 @@ $assetPath = PathResolver::resolve('/assets/style.css');
 
 [View Latest Documentation](https://phpspa.tech/v1.1.2)
 
+
+
+---
+
+
+
 ## v1.1.1
 
 ✅ Fixes Bugs and Errors.
+
+
+
+---
+
+
+
 
 ## v1.1.0
 
@@ -667,7 +717,13 @@ $assetPath = PathResolver::resolve('/assets/style.css');
 
 - ✨ Using HTML `<Link />` tag without the function namespace is deprecated. You must use the namespace in other to use the component function, `<PhpSPA.Component.Link />` See: [Deprecated HTML Link](https://phpspa.tech/v1.1/4-link-component/#deprecated)
 
+
+
+
 ---
+
+
+
 
 ## v1.0.0 - Initial Release
 

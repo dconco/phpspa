@@ -11,7 +11,7 @@ use PhpSPA\Interfaces\IComponent;
  * within the PhpSPA framework. It handles component properties such as routes,
  * methods, titles, target IDs, and associated scripts and stylesheets.
  *
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0
