@@ -170,19 +170,6 @@ You’ll see `X-PhpSPA-Compression-Engine: native` in response headers when acti
 
 ---
 
-## 🧪 **Testing**
-
-- Run locally:
-
-```bash
-composer dumpautoload
-composer test
-```
-
-- CI: Tests run on push/PR to `main` and `dev` via GitHub Actions (see badge above). The entrypoint is `tests/Test.php` which runs the semicolon/ASI suite and a simple compression check.
-
----
-
 ## 🎨 **What You Get**
 
 <table>
@@ -233,6 +220,14 @@ composer test
 👉 **[API References](https://phpspa.tech/references)** — Detailed API documentation for all PhpSPA features
 
 📦 **[Packagist](https://packagist.org/packages/dconco/phpspa)** — Installation and versions
+
+---
+
+## 🤝 **Contributing**
+
+We welcome contributions from the community! Whether you want to add new hooks, fix bugs, or improve documentation, your help is appreciated.
+
+👉 **[Read our Contributing Guide](CONTRIBUTING.md)** to get started
 
 ---
 
