@@ -120,6 +120,8 @@ jobs:
       - name: Attach shared libraries to release
         if: github.event_name == 'release' && github.event.action == 'published'
         uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: |
             src/bin/libcompressor.so
