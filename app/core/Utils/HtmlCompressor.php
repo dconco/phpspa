@@ -2,7 +2,11 @@
 
 namespace PhpSPA\Core\Utils;
 
+use function strlen;
+use function is_string;
+use RuntimeException;
 use PhpSPA\Compression\Compressor;
+use PhpSPA\Core\Compression\NativeCompressor;
 
 /**
  * HTML Compression Utility
@@ -16,65 +20,72 @@ use PhpSPA\Compression\Compressor;
  */
 trait HtmlCompressor
 {
-    /**
-     * Current compression level
-     *
-     * @var int
-     */
-    private static int $compressionLevel = 1; // Default to LEVEL_AUTO
+   /**
+    * Current compression level
+    *
+    * @var int
+    */
+   private static int $compressionLevel = 1; // Default to LEVEL_AUTO
 
-    /**
-     * Whether to use gzip compression
-     *
-     * @var bool
-     */
-    private static bool $useGzip = true;
+   /**
+    * Whether to use gzip compression
+    *
+    * @var bool
+    */
+   private static bool $useGzip = true;
 
-    /**
-     * Set compression level
-     *
-     * @param int $level Compression level (0-4)
-     * @return void
-     */
-    public static function setLevel(int $level): void
-    {
-        self::$compressionLevel = max(0, min(4, $level));
-    }
+   /**
+    * Tracks which engine handled the last compression call.
+    */
+   private static string $compressionEngine = 'php';
 
-    /**
-     * Enable or disable gzip compression
-     *
-     * @param bool $enabled Whether to use gzip
-     * @return void
-     */
-    public static function setGzipEnabled(bool $enabled): void
-    {
-        self::$useGzip = $enabled;
-    }
+   /**
+    * Set compression level
+    *
+    * @param int $level Compression level (0-4)
+    * @return void
+    */
+   public static function setLevel(int $level): void
+   {
+      self::$compressionLevel = max(0, min(4, $level));
+   }
 
-    /**
-     * Compress HTML content
-     *
-     * @param string $html HTML content to compress
-     * @return string Compressed HTML
-     */
-    public static function compress(
-        string $html,
-        ?string $contentType = null,
-    ): string {
-        if (self::$compressionLevel === Compressor::LEVEL_NONE) {
-            if (!headers_sent()) {
-                header('Content-Length: ' . strlen($html));
+   /**
+    * Enable or disable gzip compression
+    *
+    * @param bool $enabled Whether to use gzip
+    * @return void
+    */
+   public static function setGzipEnabled(bool $enabled): void
+   {
+      self::$useGzip = $enabled;
+   }
 
-                if ($contentType !== null) {
-                    header("Content-Type: $contentType; charset=UTF-8");
-                }
-            }
+   /**
+    * Compress HTML content
+    *
+    * @param string $html HTML content to compress
+    * @return string Compressed HTML
+    */
+   public static function compress(
+      string $html,
+      ?string $contentType = null,
+   ): string {
+      $CONTENT_LENGTH = strlen($html);
 
-            return $html;
-        }
+      if (self::$compressionLevel === Compressor::LEVEL_NONE) {
+         self::setCompressionEngine('disabled');
+         self::emitEngineHeader();
 
-        $comment = "<!--
+         if (!headers_sent()) {
+            header("Content-Length: $CONTENT_LENGTH");
+            if ($contentType !== null) header("Content-Type: $contentType; charset=UTF-8");
+         }
+
+         return $html;
+      }
+
+      $comment = "<!--
   🧩 PhpSPA Engine - Minified Output
 
   This HTML has been automatically minified by the PhpSPA runtime engine:
@@ -87,745 +98,266 @@ trait HtmlCompressor
   Learn More: https://phpspa.tech/v1.1.5/1-compression-system
 -->\n";
 
-        // Apply minification based on compression level
-        $html = self::minify($html, self::$compressionLevel);
-
-        // Append Comments
-        $html = $comment . $html;
-
-        // Apply gzip compression if enabled and supported
-        $html = self::gzipCompress($html, $contentType);
-
-        return $html;
-    }
-
-    /**
-     * Minify HTML content
-     *
-     * @param string $html HTML content
-     * @param int $level Compression level
-     * @return string Minified HTML
-     */
-    private static function minify(string $html, int $level): string
-    {
-        if ($level === Compressor::LEVEL_AUTO) {
-            $level = self::detectOptimalLevel($html);
-        }
-
-        switch ($level) {
-            case Compressor::LEVEL_BASIC:
-                return self::basicMinify($html);
-
-            case Compressor::LEVEL_AGGRESSIVE:
-                return self::aggressiveMinify($html);
-
-            case Compressor::LEVEL_EXTREME:
-                return self::extremeMinify($html);
-
-            default:
-                return $html;
-        }
-    }
-
-    /**
-     * Basic HTML minification
-     *
-     * @param string $html HTML content
-     * @return string Minified HTML
-     */
-    private static function basicMinify(string $html): string
-    {
-        // Remove HTML comments (but preserve IE conditional comments)
-        $html = preg_replace(
-            '/<!--(?!\s*(?:\[if\s|<!|>))(?:(?!-->).)*.?-->/s',
-            '',
-            $html,
-        );
-
-        // Remove extra whitespace between tags
-        $html = preg_replace('/>\s+</', '><', $html);
-
-        // Remove leading/trailing whitespace from lines
-        $html = preg_replace('/^\s+|\s+$/m', '', $html);
-
-        // Collapse multiple whitespace characters into single space,
-        // but preserve newlines inside script and style tags for later processing
-        $html = preg_replace_callback(
-            '/(<script[^>]*>)(.*?)(<\/script>)|(<style[^>]*>)(.*?)(<\/style>)|(\s+)/s',
-            function ($matches) {
-                if (!empty($matches[1]) && isset($matches[2]) && !empty($matches[3])) {
-                    // This is a script tag - preserve newlines in the content
-                    return $matches[1] . $matches[2] . $matches[3];
-                } elseif (!empty($matches[4]) && isset($matches[5]) && !empty($matches[6])) {
-                    // This is a style tag - preserve newlines in the content
-                    return $matches[4] . $matches[5] . $matches[6];
-                } else {
-                    // This is regular whitespace - collapse to single space
-                    return ' ';
-                }
-            },
-            $html
-        );
-
-        return trim($html);
-    }
-
-    /**
-     * Aggressive HTML minification
-     *
-     * @param string $html HTML content
-     * @return string Minified HTML
-     */
-    private static function aggressiveMinify(string $html): string
-    {
-        $html = self::basicMinify($html);
-
-        // Remove whitespace around block elements
-        $blockElements =
-            'div|p|h[1-6]|ul|ol|li|table|thead|tbody|tr|td|th|form|fieldset|nav|header|footer|section|article|aside|main';
-        $html = preg_replace(
-            '/\s*(<(?:\/?' . $blockElements . ')[^>]*>)\s*/',
-            '$1',
-            $html,
-        );
-
-        // Remove empty attributes (but preserve required ones)
-        $html = preg_replace('/\s(class|id|style)=""\s*/', ' ', $html);
-
-        // Remove unnecessary quotes from attributes (simple values only)
-        $html = preg_replace(
-            '/\s([a-zA-Z-]+)="([a-zA-Z0-9-_\.]+)"\s*/',
-            ' $1=$2 ',
-            $html,
-        );
-
-        // Minify JavaScript inside script tags
-        $html = preg_replace_callback(
-            '/<script[^>]*>(.*?)<\/script>/si',
-            function ($matches) {
-                $scriptTag = $matches[0];
-                $jsContent = $matches[1];
-
-                // Only minify if it's not an external script (has content)
-                if (trim($jsContent)) {
-                    $minifiedJs = self::minifyJavaScript($jsContent);
-                    return str_replace($jsContent, $minifiedJs, $scriptTag);
-                }
-
-                return $scriptTag;
-            },
-            $html,
-        );
-
-        // Minify CSS inside style tags
-        $html = preg_replace_callback(
-            '/<style[^>]*>(.*?)<\/style>/si',
-            function ($matches) {
-                $styleTag = $matches[0];
-                $cssContent = $matches[1];
-
-                // Only minify if it has content
-                if (trim($cssContent)) {
-                    $minifiedCss = self::minifyCSS($cssContent);
-                    return str_replace($cssContent, $minifiedCss, $styleTag);
-                }
-
-                return $styleTag;
-            },
-            $html,
-        );
-
-        return $html;
-    }
-
-    /**
-     * Extreme HTML minification
-     *
-     * @param string $html HTML content
-     * @return string Minified HTML
-     */
-    private static function extremeMinify(string $html): string
-    {
-        $html = self::aggressiveMinify($html);
-
-        // Advanced JavaScript minification for extreme level
-        $html = preg_replace_callback(
-            '/<script[^>]*>(.*?)<\/script>/si',
-            function ($matches) {
-                $scriptTag = $matches[0];
-                $jsContent = $matches[1];
-
-                // Only minify if it's not an external script (has content)
-                if (trim($jsContent)) {
-                    $minifiedJs = self::extremeMinifyJavaScript($jsContent);
-                    return str_replace($jsContent, $minifiedJs, $scriptTag);
-                }
-
-                return $scriptTag;
-            },
-            $html,
-        );
-
-        // Advanced CSS minification for extreme level
-        $html = preg_replace_callback(
-            '/<style[^>]*>(.*?)<\/style>/si',
-            function ($matches) {
-                $styleTag = $matches[0];
-                $cssContent = $matches[1];
-
-                // Only minify if it has content
-                if (trim($cssContent)) {
-                    $minifiedCss = self::extremeMinifyCSS($cssContent);
-                    return str_replace($cssContent, $minifiedCss, $styleTag);
-                }
-
-                return $styleTag;
-            },
-            $html,
-        );
-
-        // Remove newlines and tabs
-        $html = str_replace(["\r\n", "\r", "\n", "\t"], '', $html);
-
-        // Collapse multiple consecutive spaces into single spaces
-        $html = preg_replace('/\s+/', ' ', $html);
-
-        // Remove spaces around = in attributes, but NOT the space before attribute names
-        $html = preg_replace('/\s*=\s*/', '=', $html);
-
-        // Remove trailing spaces before >
-        $html = preg_replace('/\s+>/', '>', $html);
-
-        // Remove spaces after < ONLY for closing tags and self-closing tags
-        $html = preg_replace('/<\s+\//', '</', $html);  // closing tags like </ div> -> </div>
-
-        // For opening tags, only remove space after < if there are no attributes
-        // This regex only matches tags that have NO attributes (no space followed by attribute name)
-        $html = preg_replace('/<\s+([a-zA-Z][a-zA-Z0-9-]*)\s*>/', '<$1>', $html);
-
-        // Ensure DOCTYPE is properly formatted
-        $html = preg_replace('/<!DOCTYPE\s+html>/', '<!DOCTYPE html>', $html);
-
-        return $html;
-    }
-
-    /**
-     * Minify JavaScript code
-     *
-     * @param string $js JavaScript content
-     * @return string Minified JavaScript
-     */
-    private static function minifyJavaScript(string $js): string
-    {
-        // Safely remove single-line (//...) and multi-line (/*...*/)
-        // while preserving string and template literals.
-        $js = preg_replace_callback(
-            '/(["\'`])(?:(?=(\\?))\2.)*?\1|\/\/.*?$|\/\*[\s\S]*?\*\//m',
-            function ($m) {
-                $match = $m[0];
-                // If the match starts with // or /* it's a comment -> remove it
-                if (str_starts_with($match, '//') || str_starts_with($match, '/*')) {
-                    return '';
-                }
-
-                // Otherwise it's a string/template literal -> keep as-is
-                return $match;
-            },
-            $js
-        );
-
-        // Remove leading and trailing whitespace from lines
-        $js = preg_replace('/^\s+|\s+$/m', '', $js);
-
-        // IMPORTANT: Insert semicolons BEFORE removing newlines
-        // This way we can use the newline information to determine where ASI should apply
-        $js = self::insertSemicolonsWhereNeeded($js);
-
-        // Now remove empty lines and newlines
-        $js = preg_replace('/^\s*\n/m', '', $js);
-        $js = preg_replace('/\n/', '', $js);
-
-        // Collapse multiple spaces into single space (but preserve strings)
-        $js = preg_replace_callback(
-            '/(["\'])(?:(?=(\\\\?))\2.)*?\1|(\s+)/',
-            function ($matches) {
-                if (isset($matches[1])) {
-                    // This is a string literal, don't modify
-                    return $matches[0];
-                } else {
-                    // This is whitespace, collapse to single space
-                    return ' ';
-                }
-            },
-            $js,
-        );
-
-        // Remove spaces around operators (be careful with strings)
-        $js = preg_replace_callback(
-            '/(["\'])(?:(?=(\\\\?))\2.)*?\1|(\s*([=+\-*\/&|<>!]+)\s*)/',
-            function ($matches) {
-                if (isset($matches[1])) {
-                    // This is a string literal, don't modify
-                    return $matches[0];
-                } else {
-                    // This is an operator, remove surrounding spaces
-                    return $matches[4];
-                }
-            },
-            $js,
-        );
-
-        // Remove spaces around semicolons, commas, braces, brackets
-        $js = preg_replace_callback(
-            '/(["\'])(?:(?=(\\\\?))\2.)*?\1|(\s*([;,{}()\[\]:])\s*)/',
-            function ($matches) {
-                if (isset($matches[1])) {
-                    // This is a string literal, don't modify
-                    return $matches[0];
-                } else {
-                    // Remove spaces around punctuation
-                    return $matches[4];
-                }
-            },
-            $js,
-        );
-
-        // Ensure proper spacing after semicolons when followed by keywords/identifiers
-        $js = preg_replace('/;(?=[a-zA-Z_$])/', '; ', $js);
-
-        // Remove unnecessary semicolons before closing braces
-        $js = preg_replace('/;\s*}/', '}', $js);
-
-        // Trim and remove final newlines
-        return trim($js);
-    }
-
-    /**
-     * Minify CSS code
-     *
-     * @param string $css CSS content
-     * @return string Minified CSS
-     */
-    private static function minifyCSS(string $css): string
-    {
-        // Protect string literals and url(...) contents to avoid breaking
-        // data: URIs, SVG fragments, or urls that contain colons/slashes.
-        $placeholders = [];
-        $phIndex = 0;
-
-        // Protect strings (single/double) and url(...) contents
-        $css = preg_replace_callback(
-            "/(\"(?:[^\"\\\\]|\\\\.)*\"|'(?:[^'\\\\]|\\\\.)*'|url\((?:[^)\\\\]|\\\\.)*\))/s",
-            function ($m) use (&$placeholders, &$phIndex) {
-                $ph = '___CSS_PH_' . $phIndex++ . '___';
-                $placeholders[$ph] = $m[0];
-                return $ph;
-            },
-            $css
-        );
-
-        // Remove CSS comments (safe now)
-        $css = preg_replace('/\/\*.*?\*\//s', '', $css);
-
-        // Remove leading/trailing whitespace on lines and empty lines
-        $css = preg_replace('/^\s+|\s+$/m', '', $css);
-        $css = preg_replace('/^\s*\n/m', '', $css);
-
-        // Collapse multiple whitespace into single space
-        $css = preg_replace('/\s+/', ' ', $css);
-
-        // Tighten common separators
-        $css = preg_replace('/\s*{\s*/', '{', $css);
-        $css = preg_replace('/\s*}\s*/', '}', $css);
-        $css = preg_replace('/\s*;\s*/', ';', $css);
-        $css = preg_replace('/\s*:\s*/', ':', $css);
-        $css = preg_replace('/\s*,\s*/', ',', $css);
-
-        // Remove last semicolon before closing brace
-        $css = preg_replace('/;(?=\s*})/', '', $css);
-
-        // Convert zero values (0px, 0em, etc.) to just 0
-        $css = preg_replace(
-            '/\b0+(px|em|rem|%|pt|pc|in|cm|mm|ex|ch|vw|vh|vmin|vmax)\b/',
-            '0',
-            $css
-        );
-
-        // Remove leading zeros from decimal values
-        $css = preg_replace('/\b0+(\.\d+)/', '$1', $css);
-
-        // Convert RGB values to shorter hex when possible
-        $css = preg_replace_callback(
-            '/rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/',
-            function ($matches) {
-                $r = sprintf('%02x', $matches[1]);
-                $g = sprintf('%02x', $matches[2]);
-                $b = sprintf('%02x', $matches[3]);
-
-                if ($r[0] === $r[1] && $g[0] === $g[1] && $b[0] === $b[1]) {
-                    return '#' . $r[0] . $g[0] . $b[0];
-                }
-
-                return '#' . $r . $g . $b;
-            },
-            $css
-        );
-
-        // Restore placeholders
-        foreach ($placeholders as $ph => $orig) {
-            $css = str_replace($ph, $orig, $css);
-        }
-
-        return trim($css);
-    }
-
-    /**
-     * Apply gzip compression
-     *
-     * @param string $content Content to compress
-     * @return string Compressed content
-     */
-    private static function gzipCompress(
-        string $content,
-        ?string $contentType,
-    ): string {
-        if (self::supportsGzip() && self::$useGzip) {
-            $compressed = gzencode($content, 9); // Maximum compression level
-
-            // Set appropriate headers for gzip compression
-            if (!headers_sent()) {
-                header('Content-Encoding: gzip');
-                header('Vary: Accept-Encoding');
-                header('Content-Length: ' . strlen($compressed));
-
-                if ($contentType !== null) {
-                    header("Content-Type: $contentType; charset=UTF-8");
-                }
-            }
-
-            return $compressed;
-        }
-
-        if (!headers_sent()) {
-            header('Content-Length: ' . strlen($content));
+      // Apply minification based on compression level
+      $html = self::minify($html, 'HTML', self::$compressionLevel, $CONTENT_LENGTH);
+
+      // Append Comments
+      $html = $comment . $html;
+
+      // Apply gzip compression if enabled and supported
+      $html = self::gzipCompress($html, $contentType);
+
+      return $html;
+   }
+
+   /**
+    * Minify HTML content
+    *
+    * @param string $content HTML content
+    * @param string $type Content type enum['HTML', 'JS', 'CSS']
+    * @param int $level Compression level
+    * @return string Minified HTML
+    */
+   private static function minify(string $content, $type, int $level, ?int $CONTENT_LENGTH = null): string
+   {
+      if (!$CONTENT_LENGTH) $CONTENT_LENGTH = strlen($content);
+
+      if ($level === Compressor::LEVEL_AUTO) {
+         $level = self::detectOptimalLevel($content, $CONTENT_LENGTH);
+      }
+
+      if (self::isNativeCompressorAvailable($CONTENT_LENGTH))
+         return self::compressWithNative($content, $level, $type);
+
+      // Fallback to PHP implementation
+      return self::compressWithFallback($content, $level, $type);
+   }
+
+   private static function isNativeCompressorAvailable(int $CONTENT_LENGTH): bool
+   {
+      static $THRESHOLD_SIZE = 5120; // 5KB = 5120 bytes
+
+      $strategy = self::compressionStrategy();
+
+      if ($strategy !== 'fallback') {
+         if (NativeCompressor::isAvailable()) {
+            // if ($CONTENT_LENGTH > $THRESHOLD_SIZE)
+               try {
+                  self::setCompressionEngine('native');
+                  self::emitEngineHeader();
+                  return true;
+               } catch (\Throwable $exception) {
+                  if ($strategy === 'native') 
+                     throw new RuntimeException('Native compressor is required but failed to execute.', 0, $exception);
+               };
+         } elseif ($strategy === 'native')
+            throw new RuntimeException('Native compressor is required but unavailable.');
+      }
+
+      self::setCompressionEngine('php');
+      self::emitEngineHeader();
+      return false;
+   }
+
+   /**
+    * Compress using the native shared library via FFI
+    */
+   private static function compressWithNative(string $html, int $level, string $type): string
+   {
+		$nativeLevel = match ($level) {
+         Compressor::LEVEL_AGGRESSIVE => 2,
+         Compressor::LEVEL_EXTREME => 3,
+         default => 1,
+      };
+
+      return NativeCompressor::compress($html, $nativeLevel, $type);
+   }
+
+   /**
+    * Compress using PHP fallback
+    *
+    * @param string $content HTML content
+    * @param string $type Content type enum['HTML', 'JS', 'CSS']
+    * @param int $level Compression level
+    * @return string Compressed HTML
+    */
+   private static function compressWithFallback(string $content, int $level, string $type): string
+   {
+      if ($type === 'JS') $content = "<script>$content</script>";
+      elseif ($type === 'CSS') $content = "<style>$content</style>";
+
+      $result = match ($level) {
+         Compressor::LEVEL_BASIC => FallbackCompressor::basicMinify($content),
+         Compressor::LEVEL_AGGRESSIVE => FallbackCompressor::aggressiveMinify($content),
+         Compressor::LEVEL_EXTREME => FallbackCompressor::extremeMinify($content),
+         default => $content,
+      };
+      $result = trim($result);
+
+      if ($type === 'JS') $result = substr($result, 8, -9); // Extract content inside <script> tags
+      elseif ($type === 'CSS') $result = substr($result, 7, -8); // Extract content inside <style> tags
+
+      return $result;
+   }
+
+   private static function compressionStrategy(): string
+   {
+      static $strategy = null;
+
+      if ($strategy !== null) {
+         return $strategy;
+      }
+
+      $envStrategy = getenv('PHPSPA_COMPRESSION_STRATEGY');
+      $normalized = is_string($envStrategy)
+         ? strtolower(trim($envStrategy))
+         : '';
+
+      if ($normalized === 'native' || $normalized === 'fallback') {
+         return $strategy = $normalized;
+      }
+
+      return $strategy = 'auto';
+   }
+
+   private static function emitEngineHeader(): void
+   {
+      if (PHP_SAPI === 'cli' || headers_sent()) {
+         return;
+      }
+
+      header('X-PhpSPA-Compression-Engine: ' . self::$compressionEngine);
+   }
+
+   private static function setCompressionEngine(string $engine): void
+   {
+      self::$compressionEngine = $engine;
+   }
+
+
+   /**
+    * Apply gzip compression
+    *
+    * @param string $content Content to compress
+    * @return string Compressed content
+    */
+   private static function gzipCompress(
+      string $content,
+      ?string $contentType,
+   ): string {
+      if (self::supportsGzip() && self::$useGzip) {
+         $compressed = gzencode($content, 9); // Maximum compression level
+
+         // Set appropriate headers for gzip compression
+         if (!headers_sent()) {
+            header('Content-Encoding: gzip');
+            header('Vary: Accept-Encoding');
+            header('Content-Length: ' . strlen($compressed));
 
             if ($contentType !== null) {
-                header("Content-Type: $contentType; charset=UTF-8");
+               header("Content-Type: $contentType; charset=UTF-8");
             }
-        }
-        return $content;
-    }
+         }
 
-    /**
-     * Check if client supports gzip compression
-     *
-     * @return bool
-     */
-    public static function supportsGzip(): bool
-    {
-        return function_exists('gzencode') &&
-            isset($_SERVER['HTTP_ACCEPT_ENCODING']) &&
-            strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== false;
-    }
+         return $compressed;
+      }
 
-    /**
-     * Compress JSON response
-     *
-     * @param array $data Data to JSON encode and compress
-     * @return string Compressed JSON
-     */
-    public static function compressJson(array $data): string
-    {
-        $json = json_encode($data);
-        return self::gzipCompress($json, 'application/json');
-    }
+      if (!headers_sent()) {
+         header('Content-Length: ' . strlen($content));
 
-    /**
-     * Compress component content for SPA responses
-     *
-     * @param string $content Component HTML content
-     * @return string Base64 encoded compressed content
-     */
-    public static function compressComponent(string $content): string
-    {
-        // Apply minification based on compression level
-        return self::minify($content, Compressor::LEVEL_EXTREME);
-    }
+         if ($contentType !== null) {
+            header("Content-Type: $contentType; charset=UTF-8");
+         }
+      }
+      return $content;
+   }
 
-    /**
-     * Advanced JavaScript minification for extreme level
-     *
-     * @param string $js JavaScript content
-     * @return string Minified JavaScript
-     */
-    private static function extremeMinifyJavaScript(string $js): string
-    {
-        // At this point, the JS has already been minified by aggressiveMinify()
-        // which called minifyJavaScript() and inserted semicolons correctly.
-        // We just need to apply additional extreme-level optimizations without
-        // breaking the semicolon logic.
+   /**
+    * Check if client supports gzip compression
+    *
+    * @return bool
+    */
+   public static function supportsGzip(): bool
+   {
+      return function_exists('gzencode') &&
+         isset($_SERVER['HTTP_ACCEPT_ENCODING']) &&
+         strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== false;
+   }
 
-        // Remove all unnecessary spaces around operators (but preserve string literals and space after semicolons)
-        $js = preg_replace_callback(
-            '/(["\'])(?:(?=(\\\\?))\2.)*?\1|(\s*([+\-*\/=<>!&|%,:?])\s*)/',
-            function ($matches) {
-                if (isset($matches[1])) {
-                    // This is a string literal, don't modify
-                    return $matches[0];
-                } else {
-                    // This is an operator, remove surrounding spaces
-                    return $matches[4];
-                }
-            },
-            $js,
-        );
+   /**
+    * Compress JSON response
+    *
+    * @param array $data Data to JSON encode and compress
+    * @return string Compressed JSON
+    */
+   public static function compressJson(array $data): string
+   {
+      $json = json_encode($data);
+      return self::gzipCompress($json, 'application/json');
+   }
 
-        // Remove spaces around punctuation (but preserve string literals)
-        $js = preg_replace_callback(
-            '/(["\'])(?:(?=(\\\\?))\2.)*?\1|(\s*([()[\]{}.])\s*)/',
-            function ($matches) {
-                if (isset($matches[1])) {
-                    // This is a string literal, don't modify
-                    return $matches[0];
-                } else {
-                    // Remove spaces around punctuation
-                    return $matches[4];
-                }
-            },
-            $js,
-        );
+   /**
+    * Compress component content for SPA responses
+    *
+    * @param string $content Component HTML content
+    * @param string $type Content type enum['HTML', 'JS', 'CSS'] 
+    * @return string Base64 encoded compressed content
+    */
+   public static function compressComponent(string $content, $type = 'HTML'): string
+   {
+      // Apply minification based on compression level
+      return self::minify($content, $type, Compressor::LEVEL_EXTREME);
+   }
 
-        // Handle semicolons separately to preserve necessary spacing
-        $js = preg_replace_callback(
-            '/(["\'])(?:(?=(\\\\?))\2.)*?\1|(\s*;\s*)/',
-            function ($matches) {
-                if (isset($matches[1])) {
-                    // This is a string literal, don't modify
-                    return $matches[0];
-                } else {
-                    // Remove spaces around semicolon
-                    return ';';
-                }
-            },
-            $js,
-        );
 
-        // Add back necessary spaces after semicolons when followed by keywords/identifiers
-        $js = preg_replace('/;(?=[a-zA-Z_$])/', '; ', $js);
 
-        // Remove extra spaces (multiple spaces to single space) but preserve string literals
-        $js = preg_replace_callback(
-            '/(["\'])(?:(?=(\\\\?))\2.)*?\1|(\s+)/',
-            function ($matches) {
-                if (isset($matches[1])) {
-                    // This is a string literal, don't modify
-                    return $matches[0];
-                } else {
-                    // Collapse multiple spaces to single space
-                    return ' ';
-                }
-            },
-            $js,
-        );
+   /**
+    * Auto-detect best compression level based on content size
+    *
+    * @param string $content Content to analyze
+    * @return int Recommended compression level
+    */
+   private static function detectOptimalLevel(string $content, ?int $CONTENT_LENGTH = null): int
+   {
+      if (!$CONTENT_LENGTH) $CONTENT_LENGTH = strlen($content);
 
-        // Remove leading/trailing whitespace
-        $js = trim($js);
+      if ($CONTENT_LENGTH < 1024) {
+         // Less than 1KB
+         return Compressor::LEVEL_BASIC;
+      } elseif ($CONTENT_LENGTH < 10240) {
+         // Less than 10KB
+         return Compressor::LEVEL_AGGRESSIVE;
+      } else {
+         // 10KB or more
+         return Compressor::LEVEL_EXTREME;
+      }
+   }
 
-        return $js;
-    }
+   /**
+    * Get current compression level
+    *
+    * @return int Current compression level
+    */
+   public static function getLevel(): int
+   {
+      return self::$compressionLevel;
+   }
 
-    /**
-     * Insert semicolons at risky boundaries where newline-based ASI would have applied.
-     *
-     * Examples handled:
-     *   - ")" or "]" followed immediately by an identifier (e.g., ")btn" ➜ ");btn")
-     *   - identifier/number followed immediately by a statement-starting keyword (e.g., "x=1const" ➜ "x=1;const")
-     *
-     * We deliberately avoid inserting before else/catch/finally to not break if/try chains.
-     */
-    private static function insertSemicolonsWhereNeeded(string $js): string
-    {
-        // First, let's protect string literals and template literals by temporarily replacing them
-        $stringPlaceholders = [];
-        $stringIndex = 0;
+   /**
+    * Compress content with specific level
+    *
+    * @param string $content Content to compress
+    * @param string $type Content type enum['HTML', 'JS', 'CSS']
+    * @param int $level Compression level
+    * @return string Compressed content
+    */
+   public static function compressWithLevel(string $content, int $level, $type = 'HTML'): string
+   {
+      return self::minify($content, $type, $level);
+   }
 
-        // Extract and protect string literals (including template literals)
-        $js = preg_replace_callback(
-            '/(["\'])(?:(?=(\\\\?))\2.)*?\1|`(?:[^`\\\\]|\\\\.)*`/',
-            function ($matches) use (&$stringPlaceholders, &$stringIndex) {
-                $placeholder = '___STRING_PLACEHOLDER_' . $stringIndex . '___';
-                $stringPlaceholders[$placeholder] = $matches[0];
-                $stringIndex++;
-                return $placeholder;
-            },
-            $js
-        );
-
-        // JavaScript ASI rules: Insert semicolons where newlines would trigger ASI
-        // Split into lines and process line by line
-        $lines = explode("\n", $js);
-        $processedLines = [];
-
-        for ($i = 0; $i < count($lines); $i++) {
-            $currentLine = trim($lines[$i]);
-            $nextLine = isset($lines[$i + 1]) ? trim($lines[$i + 1]) : '';
-
-            // Skip empty lines
-            if (empty($currentLine)) {
-                continue;
-            }
-
-            // Check if current line needs a semicolon based on next line
-            $needsSemicolon = false;
-
-            if (!empty($nextLine)) {
-                // Check if current line could end a statement (after trimming)
-                // Look for: identifiers, numbers, ), ], }, `, etc.
-                $currentEndsWithStatement = preg_match('/[a-zA-Z0-9_$\)\]\}`"]\\s*$/', $currentLine);
-
-                // Check if next line starts with something that begins a new statement
-                $nextStartsWithStatement = preg_match('/^(const|let|var|function|class|async|import|export|return|throw|if|for|while|do|try|switch|case|default|break|continue|yield|new)\b/', $nextLine);
-
-                // Check for IIFE patterns
-                $nextStartsWithIIFE = preg_match('/^\((?:function|async\s+function|\()/', $nextLine);
-
-                // Check if next line starts with an identifier (potential method call or variable reference)
-                $nextStartsWithIdentifier = preg_match('/^[a-zA-Z_$]/', $nextLine) && !$nextStartsWithStatement;
-
-                // Don't insert semicolon before else, catch, finally, while (in do-while)
-                $nextIsControlContinuation = preg_match('/^(else|catch|finally)\b/', $nextLine);
-                $nextIsDoWhile = preg_match('/^while\s*\(/', $nextLine) && preg_match('/\}\s*$/', $currentLine);
-
-                if ($currentEndsWithStatement && !$nextIsControlContinuation && !$nextIsDoWhile) {
-                    if ($nextStartsWithStatement || $nextStartsWithIIFE || $nextStartsWithIdentifier) {
-                        // Special case: don't insert semicolon between constructor and opening paren
-                        // e.g., "new IntersectionObserver" followed by "(function..." should NOT get semicolon
-                        $isConstructorCall = preg_match('/\bnew\s+[a-zA-Z_$][a-zA-Z0-9_$]*\s*$/', $currentLine) &&
-                            preg_match('/^\(/', $nextLine);
-
-                        if (!$isConstructorCall) {
-                            $needsSemicolon = true;
-                        }
-                    }
-                }
-            }
-
-            // Add semicolon if needed and line doesn't already end with semicolon or brace
-            if ($needsSemicolon && !preg_match('/[;}]\s*$/', $currentLine)) {
-                $currentLine .= ';';
-            }
-
-            $processedLines[] = $currentLine;
-        }
-
-        // Join lines back together
-        $js = implode('', $processedLines);
-
-        // Post-pass: ensure semicolons exist between a statement-ending token
-        // and a following statement-starting keyword or identifier. This
-        // covers edge cases (e.g. `}const x =` or `)const x =`) where the
-        // line-by-line logic may miss boundaries (blank lines, complex
-        // expressions, or template-driven input).
-        $js = preg_replace(
-            '/([)\]\}a-zA-Z0-9_$])(?=\s*(?:const|let|var|function|class|async|import|export)\b)/',
-            '$1;',
-            $js
-        );
-
-        // Additional specific fixes for edge cases that might have been created
-        $js = str_replace('forEach;', 'forEach', $js);
-        $js = str_replace('map;', 'map', $js);
-        $js = str_replace('filter;', 'filter', $js);
-        $js = str_replace('reduce;', 'reduce', $js);
-        $js = str_replace('addEventListener;', 'addEventListener', $js);
-        $js = str_replace('querySelector;', 'querySelector', $js);
-        $js = str_replace('getElementById;', 'getElementById', $js);
-
-        // Fix constructor calls that might have gotten semicolons
-        $js = preg_replace('/\bnew\s+([a-zA-Z_$][a-zA-Z0-9_$]*);(\()/', 'new $1$2', $js);
-
-        // Restore string literals
-        foreach ($stringPlaceholders as $placeholder => $original) {
-            $js = str_replace($placeholder, $original, $js);
-        }
-
-        return $js;
-    }
-
-    /**
-     * Advanced CSS minification for extreme level
-     *
-     * @param string $css CSS content
-     * @return string Minified CSS
-     */
-    private static function extremeMinifyCSS(string $css): string
-    {
-        // Start with aggressive minification
-        $css = self::minifyCSS($css);
-
-        // Remove all unnecessary spaces around operators and symbols
-        $css = preg_replace('/\s*([{}:;,>+~])\s*/', '$1', $css);
-
-        // Remove spaces around parentheses
-        $css = preg_replace('/\s*\(\s*/', '(', $css);
-        $css = preg_replace('/\s*\)\s*/', ')', $css);
-
-        // Remove any remaining multiple spaces
-        $css = preg_replace('/\s+/', ' ', $css);
-
-        // Remove leading/trailing whitespace
-        $css = trim($css);
-
-        return $css;
-    }
-
-    /**
-     * Auto-detect best compression level based on content size
-     *
-     * @param string $content Content to analyze
-     * @return int Recommended compression level
-     */
-    private static function detectOptimalLevel(string $content): int
-    {
-        $size = strlen($content);
-
-        if ($size < 1024) {
-            // Less than 1KB
-            return Compressor::LEVEL_BASIC;
-        } elseif ($size < 10240) {
-            // Less than 10KB
-            return Compressor::LEVEL_AGGRESSIVE;
-        } else {
-            // 10KB or more
-            return Compressor::LEVEL_EXTREME;
-        }
-    }
-
-    /**
-     * Get current compression level
-     *
-     * @return int Current compression level
-     */
-    public static function getLevel(): int
-    {
-        return self::$compressionLevel;
-    }
-
-    /**
-     * Compress content with specific level
-     *
-     * @param string $content Content to compress
-     * @param int $level Compression level
-     * @return string Compressed content
-     */
-    public static function compressWithLevel(string $content, int $level): string
-    {
-        $originalLevel = self::$compressionLevel;
-        self::$compressionLevel = $level;
-
-        $compressed = self::minify($content, $level);
-
-        self::$compressionLevel = $originalLevel;
-        return $compressed;
-    }
+   public static function getCompressionEngine(): string
+   {
+      return self::$compressionEngine;
+   }
 }
