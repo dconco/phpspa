@@ -9,7 +9,7 @@ namespace PhpSPA;
  * and state handling. Supports class components with __render method and namespace
  * organization.
  *
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  */
 class Component extends \PhpSPA\Core\Impl\RealImpl\ComponentImpl
 {

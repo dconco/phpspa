@@ -12,7 +12,7 @@ use PhpSPA\Compression\Compressor;
  * Provides easy configuration options for different environments.
  *
  * @package PhpSPA\Core\Config
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
  * @see https://phpspa.tech/v1.1.5/1-compression-system/ Compression System Documentation

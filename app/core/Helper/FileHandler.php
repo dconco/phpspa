@@ -12,7 +12,7 @@ use PhpSPA\Exceptions\AppException;
  * It ensures secure and reliable file handling across the application.
  *
  * @package PhpSPA\Core\Helper
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0

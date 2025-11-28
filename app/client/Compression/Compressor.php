@@ -10,7 +10,7 @@ namespace PhpSPA\Compression;
  * various compression levels and environment-specific optimizations.
  *
  * @package PhpSPA\Compression
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0

@@ -10,7 +10,7 @@ namespace PhpSPA\Core\Utils;
  * and processing within the application's workflow.
  *
  * @package PhpSPA\Core\Utils
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @var string $dataUri
  * @var string $contentType

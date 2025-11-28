@@ -29,7 +29,7 @@ use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  * It handles layout management, component registration,
  * routing, and rendering logic that powers the single-page application experience.
  *
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0

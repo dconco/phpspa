@@ -5,7 +5,7 @@ namespace Component;
 /**
  * Converts HTML attributes array to string.
  *
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @param array $HtmlAttr Array of attribute name-value pairs.
  * @return string HTML attributes string.
  * @see https://phpspa.tech/components HTML Attributes Documentation

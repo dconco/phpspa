@@ -12,7 +12,7 @@ namespace phpspa\Core\Auth;
  * and other authentication schemes within the PhpSPA framework.
  *
  * @package PhpSPA\Core\Auth
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0

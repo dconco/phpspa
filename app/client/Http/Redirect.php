@@ -8,7 +8,7 @@ namespace PhpSPA\Http;
  * This function sends a redirect response to the client and terminates script execution.
  * It provides a clean way to perform HTTP redirects within the PhpSPA framework.
  *
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @param string $url The URL to redirect to.
  * @param int $code The HTTP status code for the redirect (e.g., 301, 302).
  * @return never This function does not return; it terminates script execution.

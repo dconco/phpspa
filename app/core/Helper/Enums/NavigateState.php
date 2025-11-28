@@ -10,7 +10,7 @@ namespace PhpSPA\Core\Helper\Enums;
  * is managed during navigation operations.
  *
  * @package PhpSPA\Core\Helper\Enums
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.1.0

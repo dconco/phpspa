@@ -8,7 +8,7 @@
  *
  * @see https://phpspa.tech/v1.1.5/1-compression-system/ Compression System Documentation
  * @since v1.1.5
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  */
 
 use PhpSPA\Compression\Compressor;

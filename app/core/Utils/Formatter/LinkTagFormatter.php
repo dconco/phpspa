@@ -10,7 +10,7 @@ namespace PhpSPA\Core\Utils\Formatter;
  * for stylesheets, icons, and other external resources with proper formatting.
  *
  * @package PhpSPA\Core\Utils\Formatter
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0

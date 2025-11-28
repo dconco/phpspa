@@ -170,19 +170,6 @@ You’ll see `X-PhpSPA-Compression-Engine: native` in response headers when acti
 
 ---
 
-## 🧪 **Testing**
-
-- Run locally:
-
-```bash
-composer dumpautoload
-composer test
-```
-
-- CI: Tests run on push/PR to `main` and `dev` via GitHub Actions (see badge above). The entrypoint is `tests/Test.php` which runs the semicolon/ASI suite and a simple compression check.
-
----
-
 ## 🎨 **What You Get**
 
 <table>
@@ -236,6 +223,14 @@ composer test
 
 ---
 
+## 🤝 **Contributing**
+
+We welcome contributions from the community! Whether you want to add new hooks, fix bugs, or improve documentation, your help is appreciated.
+
+👉 **[Read our Contributing Guide](CONTRIBUTING.md)** to get started
+
+---
+
 <br>
 <br>
 
@@ -259,10 +254,10 @@ _Building modern web applications with the simplicity of PHP_
   <a href="https://twitter.com/dave_conco">
     <img src="https://img.shields.io/badge/Twitter-@dave_conco-1DA1F2?style=flat&logo=twitter&logoColor=white" alt="Twitter">
   </a>
-  <a href="mailto:concodave@gmail.com">
+  <a href="mailto:me@dconco.tech">
     <img src="https://img.shields.io/badge/Email-Me%21-D14836?style=flat&logo=gmail&logoColor=white" alt="Email">
   </a>
-  <a href="https://dconco.vercel.app">
+  <a href="https://dconco.tech">
     <img src="https://img.shields.io/badge/Website-Portfolio-FF7139?style=flat&logo=Firefox-Browser&logoColor=white" alt="Website">
   </a>
 </p>
