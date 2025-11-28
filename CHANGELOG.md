@@ -1,6 +1,37 @@
 # CHANGELOG
 
-## v2.0.1 (Current)
+## v2.0.3 (Current)
+
+### ✨ New Features
+
+#### **Native C++ Compression Engine** ⚡
+Added lightning-fast native C++ compressor with FFI support for HTML/CSS/JS minification:
+
+- **Zero-overhead compression** - Native C++ performance without PHP overhead
+- **FFI Integration** - Seamless PHP-to-C++ bridge using PHP's FFI extension
+- **Cross-platform binaries** - Prebuilt libraries for Windows (`.dll`), Linux (`.so`), and macOS (`.dylib`)
+- **Auto-detection** - Automatically finds compression library in standard locations
+- **Fallback support** - Gracefully falls back to PHP compression if native library unavailable
+- **Multiple compression levels** - Disabled, Basic, Aggressive, and Extreme modes
+- **Performance monitoring** - Response headers show which engine handled compression (`X-PhpSPA-Compression-Engine`)
+
+**Usage:**
+```php
+<?php
+use PhpSPA\Compression\Compressor;
+
+// Enable native compression
+$app->compression(Compressor::LEVEL_AGGRESSIVE, true);
+
+// Force native mode (optional)
+putenv('PHPSPA_COMPRESSION_STRATEGY=native');
+```
+
+**Documentation:** [Native Compression Guide](https://phpspa.readthedocs.io/en/stable/references/compression/)
+
+---
+
+## v2.0.1
 
 ### ✨ New Features
 

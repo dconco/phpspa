@@ -55,6 +55,7 @@ composer.phar
 *.exe
 *.out
 *.app
+speedTest
 
 # CMake
 CMakeCache.txt
