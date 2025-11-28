@@ -38,11 +38,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure (Release)
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Configure (MinSizeRel)
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=MinSizeRel
 
       - name: Build compressor.dylib
-        run: cmake --build build --target compressor -j 8
+        run: cmake --build build --config MinSizeRel --target compressor -j 8
 
       - name: Upload macOS dylib
         uses: actions/upload-artifact@v4
@@ -70,11 +70,11 @@ jobs:
           name: macos-compressor
           path: artifacts/macos
 
-      - name: Configure (Release)
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Configure (MinSizeRel)
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=MinSizeRel
 
       - name: Build linux compressor shared library
-        run: cmake --build build --target compressor -j 8
+        run: cmake --build build --config MinSizeRel --target compressor -j 8
 
       - name: Install UPX
         run: sudo apt-get update && sudo apt-get install -y upx
@@ -86,12 +86,11 @@ jobs:
           upx --best --lzma build/compressor.dll
           upx --best --lzma build/libcompressor.so
 
-      - name: Copy shared libraries to src/bin
+      - name: Copy compressed shared libraries to src/bin
         run: |
           mkdir -p src/bin
           cp build/libcompressor.so src/bin/libcompressor.so
-          cp build/compressor.dll src/bin/compressor.dll
-          cp build/libcompressor.dylib src/bin/libcompressor.dylib
+          cp build/compressor.dll src/bin/compressor.DLL
 
       - name: Commit and push updated shared libraries
         if: github.ref == 'refs/heads/dev'
@@ -124,6 +123,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: |
-            src/bin/libcompressor.so
-            src/bin/compressor.dll
-            src/bin/libcompressor.dylib
+            build/libcompressor.so
+            build/compressor.dll
+            artifacts/macos/libcompressor.dylib
