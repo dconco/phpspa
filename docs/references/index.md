@@ -1,5 +1,7 @@
 # API References
 
+<div class="grid cards" markdown>
+
 -   :material-book-open-variant:{ .lg .middle } __Complete Documentation__
 
     ---
@@ -112,10 +114,16 @@
     | [`response()`](https://phpspa.readthedocs.io/en/stable/references/response/) | HTTP response builder | v1.1.8 |
     | [`router()`](https://phpspa.readthedocs.io/en/stable/references/response/#response-api-examples) | Router instance access | v1.1.8 |
 
+=== "Components"
+
+    | Component | Description | Version |
+    |-----------|-------------|---------|
+    | [`<Component.Link>`](../navigations/link-component.md) | Client-side navigation | v1.1.0 |
+    | [`<Component.Csrf>`](../security/csrf-protection.md) | CSRF token management | v1.1.5 |
+    | [`<Component.Navigate>`](../navigations/navigate-component.md) | Programmatic navigation | v1.1.0 |
+
 === "Performance"
 
     | Feature | Description | Version |
     |---------|-------------|---------|
-    | [`Native Compression (C++ FFI)`](https://phpspa.readthedocs.io/en/stable/references/compression/) | Lightning-fast HTML/CSS/JS minification | v2.0.3 |
-
----
+    | [Native Compression (C++ FFI)](https://phpspa.readthedocs.io/en/stable/references/compression/) | Lightning-fast HTML/CSS/JS minification | v2.0.3 |

@@ -21,6 +21,8 @@ return (new Component(function (Request $request): string {
 			<button id=btn>Counter: $counter</button>
 			<Component.Link to="./login#hashID" id="link-elem">GO TO LOGIN</Component.Link>
 			<br />
+			<Component.Link to="./about">GO TO ABOUT US</Component.Link>
+			<br />
 			<button id="navigate-btn">Counter</button> &nbsp;-
 		</div>
 		<!-- Script to handle button clicks -->
