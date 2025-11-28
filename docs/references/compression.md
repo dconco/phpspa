@@ -83,13 +83,12 @@ export PHPSPA_COMPRESSION_STRATEGY=native
 ---
 
 ## 🔧 How It Works
-
 ```mermaid
 graph LR
-    A[PhpSPA Request] --> B{FFI Available?}
-    B -->|Yes| C{Native Library Found?}
+    A[PhpSPA Request] --> B{"FFI Available?"}
+    B -->|Yes| C{"Native Library Found?"}
     B -->|No| E[PHP Fallback]
-    C -->|Yes| D[⚡ Native Compression]
+    C -->|Yes| D["⚡ Native Compression"]
     C -->|No| E
     D --> F[Response]
     E --> F
