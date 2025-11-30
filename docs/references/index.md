@@ -2,6 +2,62 @@
 
 <div class="grid cards" markdown>
 
+-   :material-book-open-variant:{ .lg .middle } __Complete Documentation__
+
+    ---
+
+    Comprehensive guides for all PhpSPA APIs and utilities
+
+-   :material-code-tags:{ .lg .middle } __Code Examples__
+
+    ---
+
+    Practical examples for every feature
+
+-   :material-lightbulb-on:{ .lg .middle } __Best Practices__
+
+    ---
+
+    Learn the recommended patterns and techniques
+
+-   :material-update:{ .lg .middle } __Always Current__
+
+    ---
+
+    Updated documentation for the latest version
+
+</div>
+
+---
+
+## :material-webhook: HTTP & Networking
+
+<div class="grid cards" markdown>
+
+-   :material-api:{ .lg .middle } **Response API**
+
+    ---
+
+    Build and customize HTTP responses with fluent API
+
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/response/)
+
+-   :material-cloud-download:{ .lg .middle } **useFetch Hook** :material-new-box:
+
+    ---
+
+    Async HTTP client with parallel execution support
+
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/hooks/use-fetch/)
+
+</div>
+
+---
+
+## :material-tools: Helpers & Utilities
+
+<div class="grid cards" markdown>
+
 -   :material-package-variant:{ .lg .middle } **fmt() Helper** :material-new-box:
 
     ---
@@ -18,13 +74,11 @@
 
     [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/file-import-utility/)
 
--   :material-format-title:{ .lg .middle } **DOM Utilities** :material-new-box:
-
     ---
 
     Dynamic page title manipulation
 
-    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/dom-utilities/)
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/latest/references/dom-utilities/)
 
 </div>
 
@@ -46,6 +100,24 @@
 
 ---
 
+---
+
+## :material-view-module: Component Features
+
+<div class="grid cards" markdown>
+
+-   :material-layers-triple:{ .lg .middle } **Component Preloading** :material-new-box:
+
+    ---
+
+    Load multiple components on different target IDs for complex layouts
+
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/latest/references/preloading-component/)
+
+</div>
+
+---
+
 ## :material-view-grid: Browse by Category
 
 === "Hooks"
@@ -61,11 +133,11 @@
 
     | Helper | Description | Version |
     |--------|-------------|---------|
+    | [`DOM::Title()`](https://phpspa.readthedocs.io/en/latest/references/dom-utilities/) | Get or set page title dynamically | v2.0.4 |
     | [`fmt()`](https://phpspa.readthedocs.io/en/stable/references/helpers/fmt/) | Type preservation for component props | v2.0.1 |
     | [`import()`](https://phpspa.readthedocs.io/en/stable/references/file-import-utility/) | Secure file imports | v1.1.0 |
     | [`response()`](https://phpspa.readthedocs.io/en/stable/references/response/) | HTTP response builder | v1.1.8 |
     | [`router()`](https://phpspa.readthedocs.io/en/stable/references/response/#response-api-examples) | Router instance access | v1.1.8 |
-    | [`DOM::Title()`](https://phpspa.readthedocs.io/en/stable/references/dom-utilities/) | Get or set page title dynamically | v2.0.4 |
 
 === "Components"
 
