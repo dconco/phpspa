@@ -10,9 +10,7 @@
 composer require dconco/phpspa:v2.0.4.x-dev
 ```
 
-### ✨ New Features
-
-#### **Advanced Component Features** 🎯
+### **Advanced Component Features** 🎯
 
 - **Component Preloading** - Load multiple components on different target IDs simultaneously for multi-section layouts
 - **Exact Route Matching** - Render components only on exact URL matches with automatic fallback to default content
@@ -60,7 +58,10 @@ $form = (new Component(function() {
 }))->method('GET', 'POST');
 ```
 
-#### **DOM Utilities** 🛠️
+[📖 **Full Documentation**](https://phpspa.readthedocs.io/en/latest/references/preloading-component/)
+
+
+### **DOM Utilities** 🛠️
 
 - **`DOM::Title()`** - Get or set page title dynamically from within components
 
@@ -79,14 +80,11 @@ function UserProfile() {
 $currentTitle = DOM::Title(); // Returns: "User Profile - My App"
 ```
 
-[:material-book-open-variant: **Full Documentation**](https://phpspa.readthedocs.io/en/stable/references/advanced-components/){ .md-button .md-button--primary }
-
----
+[📖 **Full Documentation**](https://phpspa.readthedocs.io/en/latest/references/dom-utilities/)
 
 
 
 ---
-
 
 
 
