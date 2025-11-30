@@ -74,7 +74,9 @@
 
     [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/file-import-utility/)
 
-    ---
+-   :material-web:{ .lg .middle } **DOM Utilities**
+
+    --
 
     Dynamic page title manipulation
 
