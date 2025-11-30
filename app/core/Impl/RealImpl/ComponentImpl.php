@@ -2,6 +2,7 @@
 
 namespace PhpSPA\Core\Impl\RealImpl;
 
+use PhpSPA\Core\Utils\ArrayFlat;
 use PhpSPA\Interfaces\IComponent;
 
 /**
@@ -16,8 +17,12 @@ use PhpSPA\Interfaces\IComponent;
  * @license MIT
  * @since v1.0.0
  * @method IComponent title(string $title) Set the title of the component
- * @method IComponent method(string $method) Set the HTTP method for the component
- * @method IComponent route(array|string $route) Set the route(s) for the component
+ * @method IComponent method(string ...$method) Set the HTTP method for the component, defaults to 'GET|VIEW'
+ * @method IComponent route(string|array ...$route) Set the route(s) for the component
+ * @method IComponent pattern() Shows that the given route value is a pattern in `fnmatch` format
+ * @method IComponent exact() Make the component show only for that specific route
+ * @method IComponent preload(string ...$componentName) This loads the component with the specific name as a layout on the exact URL on this page
+ * @method IComponent name(string $value) This is a unique key for each components to use for preloading
  * @method IComponent targetID(string $targetID) Set the target ID for the component
  * @method IComponent caseSensitive() Enable case sensitivity for the component
  * @method IComponent caseInsensitive() Disable case sensitivity for the component
@@ -28,94 +33,110 @@ use PhpSPA\Interfaces\IComponent;
  */
 abstract class ComponentImpl
 {
-    /**
-     * The callable component that defines the behavior of this component.
-     *
-     * @var callable $component
-     */
-    protected $component;
+   /**
+    * @var callable
+    */
+   protected $component;
 
-    /**
-     * The title of the component.
-     * This can be used for display purposes, such as in a header or navigation.
-     *
-     * @var string|null $title The title can be a string or null if not set.
-     */
-    protected ?string $title = null;
+   /**
+    * @var string|null
+    */
+   protected ?string $title = null;
 
-    /**
-     * The HTTP method to be used for the component's request.
-     *
-     * @var string $method Defaults to 'GET|VIEW'.
-     */
-    protected string $method = 'GET|VIEW';
+   /**
+    * @var string
+    */
+   protected string $method {
+		get => strtoupper($this->method);
 
-    /**
-     * The route associated with the component to be rendered.
-     *
-     * @var array|string $route
-     */
-    protected array|string $route;
+      set(mixed $m) {
+			if (is_array($m)) {
+            $m = array_map('trim', $m);
+				$this->method = implode('|', $m);
+         } else
+				$this->method = $m;
+      }
+   }
 
-    /**
-     * The ID of the target element associated with this component.
-     * This is typically used to specify where the component's content should be rendered in the DOM.
-     *
-     * @var string|null The target element's ID, or null if to use the default target.
-     */
-    protected ?string $targetID = null;
+   /**
+    * @var array
+    */
+   protected array $route {
+		set(array $r) => new ArrayFlat(array: $r)->flat();
+	}
 
-    /**
-     * Indicates whether the component should treat values as case sensitive.
-     *
-     * @var bool|null If true, case sensitivity is enabled; if false, it is disabled; if null, the default behavior is used.
-     */
-    protected ?bool $caseSensitive = null;
+   /**
+    * @var bool
+    */
+   protected bool $pattern = false;
 
-    /**
-     * The scripts to be executed when the component is mounted.
-     * This can be used to add interactivity or dynamic behavior to the component.
-     *
-     * @var array<array{0: callable, 1: string|null}> $scripts
-     */
-    protected array $scripts = [];
+   /**
+    * @var bool
+    */
+   protected bool $exact;
 
-    /**
-     * The styles to be executed when the component is mounted.
-     * This can be used to add interactivity or dynamic behavior to the component.
-     *
-     * @var array<array{0: callable, 1: string|null}> $stylesheets
-     */
-    protected array $stylesheets = [];
+   /**
+    * @var array
+    */
+   protected array $preload;
 
-    /**
-     * This registers the route to be called every particular interval provided.
-     *
-     * @var int $reloadTime
-     */
-    protected int $reloadTime = 0;
+   /**
+    * @var string
+    */
+   protected string $name;
 
-    /**
-     * @param mixed $method
-     * @param mixed $args
-     * @throws \BadMethodCallException
-     * @return IComponent
-     */
-    public function __call($method, $args): static
-    {
-        match ($method) {
-            'title',
-            'method',
-            'route',
-            'targetID' => $this->$method = $args[0],
-            'reload' => $this->reloadTime = $args[0],
-            'caseSensitive' => $this->caseSensitive = true,
-            'caseInsensitive' => $this->caseSensitive = false,
-            'styleSheet' => $this->stylesheets[] = $args,
-            'script' => $this->scripts[] = $args,
-            default => throw new \BadMethodCallException("Method {$method} does not exist in " . __CLASS__),
-        };
+   /**
+    * @var string|null
+    */
+   protected ?string $targetID = null;
 
-        return $this;
-    }
+   /**
+    * Indicates whether the component should treat values as case sensitive.
+    *
+    * @var bool|null If true, case sensitivity is enabled; if false, it is disabled; if null, the default behavior is used.
+    */
+   protected ?bool $caseSensitive = null;
+
+   /**
+    * @var array<array{0: callable, 1: string|null}>
+    */
+   protected array $scripts = [];
+
+   /**
+    * @var array<array{0: callable, 1: string|null}>
+    */
+   protected array $stylesheets = [];
+
+   /**
+    * @var int
+    */
+   protected int $reloadTime = 0;
+
+   /**
+    * @param mixed $method
+    * @param mixed $args
+    * @throws \BadMethodCallException
+    * @return IComponent
+    */
+   public function __call($method, $args): static
+   {
+      match ($method) {
+         'name',
+         'title',
+         'targetID' => $this->$method = $args[0],
+         'route',
+         'method',
+         'preload' => $this->$method = $args,
+         'exact',
+         'pattern',
+         'caseSensitive' => $this->$method = true,
+         'caseInsensitive' => $this->caseSensitive = false,
+         'reload' => $this->reloadTime = $args[0],
+         'styleSheet' => $this->stylesheets[] = $args,
+         'script' => $this->scripts[] = $args,
+         default => throw new \BadMethodCallException("Method {$method} does not exist in " . __CLASS__),
+      };
+
+      return $this;
+   }
 }

@@ -4,6 +4,7 @@ namespace PhpSPA;
 
 use PhpSPA\Http\Session;
 use PhpSPA\Core\Config\CompressionConfig;
+use PhpSPA\Core\Impl\RealImpl\AppImpl;
 
 /**
  *
@@ -25,7 +26,7 @@ use PhpSPA\Core\Config\CompressionConfig;
  * @see https://phpspa.tech/core-concepts
  * @link https://phpspa.tech
  */
-class App extends \PhpSPA\Core\Impl\RealImpl\AppImpl {
+class App extends AppImpl {
     /**
      * App constructor.
      *

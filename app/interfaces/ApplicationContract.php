@@ -109,20 +109,14 @@ interface ApplicationContract {
      * custom settings provided via the data parameter. Automatically removes
      * duplicate values from array-type configuration options.
      *
-     * @param array $data Optional custom CORS configuration to merge with defaults.
-     *                    Can include keys like:
-     *                    - 'allow_origins': array of allowed origin URLs
-     *                    - 'allow_methods': array of allowed HTTP methods
-     *                    - 'allow_headers': array of allowed request headers
-     *                    - 'allow_credentials': boolean for credential support
-     *                    - 'max_age': integer for preflight cache duration
-     * 
-     * @var array{
-     *   'allow_origins': array<string>,
-     *   'allow_methods': array<string>,
-     *   'allow_headers': array<string>,
-     *   'allow_credentials': bool,
-     *   'max_age': int,
+     * @param array{
+     *   allow_origin: array<string>,
+     *   allow_methods: array<string>,
+     *   allow_headers: array<string>,
+     *   allow_credentials: bool,
+     *   supports_credentials: bool,
+     *   expose_headers: array<string>,
+     *   max_age: int,
      * } $data
      *
      * @return self Returns the current instance for method chaining

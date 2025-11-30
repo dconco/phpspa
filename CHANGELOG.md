@@ -1,5 +1,146 @@
 # CHANGELOG
 
+## dev-v2.0.4 (Latest)
+
+> [!IMPORTANT]
+> This version requires **PHP 8.4 or higher**
+
+### ✨ New Features
+
+#### **Component Preloading System** 🎯
+
+The new preloading system allows you to load multiple components on different target IDs simultaneously. This is perfect for building multi-section layouts like messaging apps, dashboards, or any interface with independent content areas.
+
+**How it works:**
+
+1. **Name your components** - Give components unique identifiers using `name()`
+2. **Set target IDs** - Specify where each component renders with `targetID()`
+3. **Preload components** - Reference named components in `preload()` to render them together
+
+**Real-world Example: WhatsApp Web Clone**
+
+```php
+use PhpSPA\Component;
+
+// Layout with two sections
+function Layout() {
+   return <<<HTML
+      <div class="container">
+         <section id="users"></section>
+         <section id="chat">
+            <div class="welcome">Welcome! Select a user to start chatting.</div>
+         </section>
+      </div>
+   HTML;
+}
+
+// User list component (sidebar)
+$userList = (new Component(function() {
+   return <<<HTML
+      <div class="user-list">
+         <h3>Chats</h3>
+         <!-- List of users -->
+      </div>
+   HTML;
+}))
+   ->route('/')
+   ->targetID('users')
+   ->name('userList'); // Named for preloading
+
+// Chat component (main content)
+$chatView = (new Component(function($path) {
+   $userId = $path['id'];
+   return <<<HTML
+      <div class="chat-messages">
+         <h3>Chat with User {$userId}</h3>
+         <!-- Messages -->
+      </div>
+   HTML;
+}))
+   ->route('/chat/{id}')
+   ->targetID('chat')
+   ->preload('userList')  // Load user list on the same page
+   ->exact();             // Revert to welcome message when navigating away
+
+$app = new App(Layout(...))
+   ->attach($userList)
+   ->attach($chatView)
+   ->run();
+```
+
+**What happens:**
+
+- **On `/` route**: User list renders in `id="users"`, chat section shows welcome message
+- **On `/chat/123`**: Chat messages render in `id="chat"`, user list renders in `id="users"` (because of `preload()`)
+- **Navigate back to `/`**: Chat section reverts to welcome message (because of `exact()`)
+
+#### **Exact Route Matching** 🎯
+
+The `exact()` method ensures components render only on exact URL matches and revert to default content when navigating away:
+
+```php
+$profile = (new Component(function() {
+   return "<div>User Profile Content</div>";
+}))
+   ->route('/profile/{id}')
+   ->targetID('content')
+   ->exact(); // Reverts to default content when route doesn't match
+```
+
+**Use Cases:**
+- Multi-section layouts where components should disappear on navigation
+- Dynamic content that should reset to defaults
+- Preventing stale content from previous routes
+
+#### **Pattern-based Routing** 🔍
+
+Match routes using fnmatch-style patterns for flexible URL matching:
+
+```php
+$blogPost = (new Component(function() {
+   return "<article>Blog Post Content</article>";
+}))
+   ->route('/blog/*', '/articles/*', '/posts/*')
+   ->pattern(); // Matches /blog/my-post, /articles/2024/jan, etc.
+```
+
+#### **Named Components** 🏷️
+
+Assign unique identifiers to components for easy reference in preloading:
+
+```php
+$navbar = (new Component(function() {
+   return "<nav>Navigation Menu</nav>";
+}))
+   ->name('navbar')
+   ->targetID('header');
+```
+
+#### **Multiple HTTP Methods & Routes** 🛤️
+
+Define multiple HTTP methods and routes in a cleaner way:
+
+```php
+// Multiple HTTP methods
+$formHandler = (new Component(function() {
+   return "<form>Contact Form</form>";
+}))
+   ->method('GET', 'POST'); // Accept both GET and POST
+
+// Multiple routes pointing to same component
+$contact = (new Component(function() {
+   return "<h1>Contact Us</h1>";
+}))
+   ->route('/contact', '/contact-us', '/get-in-touch');
+
+
+
+
+---
+
+
+
+
 ## v2.0.3 (Current)
 
 ### ✨ New Features

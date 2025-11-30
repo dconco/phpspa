@@ -174,7 +174,7 @@ class HttpRequest implements Request
 
     public function method(): string
     {
-        return $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        return strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
     }
 
     public function ip(): string
@@ -211,7 +211,7 @@ class HttpRequest implements Request
 
     public function isMethod(string $method): bool
     {
-        return strtoupper($this->method()) === strtoupper($method);
+        return $this->method() === strtoupper($method);
     }
 
     public function isHttps(): bool
@@ -261,7 +261,7 @@ class HttpRequest implements Request
 
         return rawurldecode($uri);
     }
-    
+
     public function isSameOrigin(): bool {
         $host = $_SERVER['HTTP_HOST'] ?? '';
         $origin = $_SERVER['HTTP_ORIGIN'] ?? null;

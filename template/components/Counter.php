@@ -72,5 +72,7 @@ return (new Component(function (): string
       </div>
    HTML;
 }))
+  ->name('counter')
+  ->targetID('counter')
   ->route([ '/counter', '/template/counter' ])
   ->title('Counter Component');

@@ -53,7 +53,7 @@ function Login(): string
 }
 
 return (new Component('Login'))
-    ->method('POST|GET')
+    ->method('POST', 'GET')
     ->title('Login Page')
     ->route('/login')
     ->caseInsensitive()

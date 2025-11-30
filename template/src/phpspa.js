@@ -23,7 +23,7 @@
  *
  * @author Dave Conco <me@dconco.tech>
  * @link https://github.com/dconco/phpspa-js
- * @version 2.0.0
+ * @version 2.0.1
  * @license MIT
  */
 
@@ -48,7 +48,7 @@ function utf8ToBase64(str) {
       } catch (fallbackError) {
          // Final fallback: encode each character individually
          return btoa(
-            str.split('').map(function(c) {
+            str.split('').map(function (c) {
                return String.fromCharCode(c.charCodeAt(0) & 0xff);
             }).join('')
          );
@@ -77,6 +77,7 @@ function base64ToUtf8(str) {
       return atob(str);
    }
 }
+
 (function () {
    /**
     * Initialize PhpSPA when DOM is ready
@@ -108,12 +109,21 @@ function base64ToUtf8(str) {
             );
          }
 
+         // Check if component has exact target
+         if (targetElement.hasAttribute("phpspa-target-exact")) {
+            initialState.exact = true;
+            initialState.exactTargetID = targetElement.id;
+            initialState.defaultContent = base64ToUtf8(targetElement.getAttribute("phpspa-target-exact"))
+         }
+
          // Replace current history state with PhpSPA data
          RuntimeManager.replaceState(
             initialState,
             document.title,
             location.href
          );
+
+         RuntimeManager.currentState = initialState;
 
          // Set up auto-reload if specified
          if (targetElement.hasAttribute("phpspa-reload-time")) {
@@ -159,6 +169,16 @@ function base64ToUtf8(str) {
          // Find target container or fallback to body
          const targetContainer =
             document.getElementById(navigationState.targetID) ?? document.body;
+
+         // Reset current state content before updating new content
+         const currentState = RuntimeManager.currentState;
+
+         if (currentState?.exact === true && currentState.exactTargetID !== navigationState.targetID) {
+            let currentHTML = document.getElementById(currentState.exactTargetID)
+            if (currentHTML) {
+               currentHTML.innerHTML = currentState.defaultContent
+            }
+         }
 
          // Decode and restore HTML content
          const updateDOM = () => {
@@ -356,7 +376,16 @@ class phpspa {
             document.getElementById(history.state?.targetID) ??
             document.body;
 
-         // Update content - decode base64 if provided, otherwise use raw data
+         // Reset current state content before updating new content
+         const currentState = RuntimeManager.currentState;
+         if (currentState?.exact === true && currentState.exactTargetID !== responseData?.targetID) {
+            let currentHTML = document.getElementById(currentState.exactTargetID)
+            if (currentHTML) {
+               currentHTML.innerHTML = currentState.defaultContent
+            }
+         }
+
+         // Update content
          const updateDOM = () => {
             targetElement.innerHTML = responseData?.content
                ? responseData.content
@@ -369,7 +398,16 @@ class phpspa {
             title: responseData?.title ?? document.title,
             targetID: responseData?.targetID ?? targetElement.id,
             content: responseData?.content ?? responseData,
+            defaultContent: currentState?.defaultContent,
+            exact: currentState?.exact,
+            exactTargetID: currentState?.exactTargetID
          };
+
+         if (!document.getElementById(stateData.exactTargetID)) {
+            stateData['exact'] = responseData?.exact || false;
+            stateData['exactTargetID'] = responseData?.targetID || targetElement.id;
+            stateData['defaultContent'] = document.getElementById(responseData?.targetID)?.innerHTML || '';
+         }
 
          // Include reload time if specified
          if (typeof responseData.reloadTime !== "undefined") {
@@ -377,12 +415,16 @@ class phpspa {
          }
 
          const completedDOMUpdate = () => {
+
             // Update browser history
             if (state === "push") {
                RuntimeManager.pushState(stateData, stateData.title, url);
             } else if (state === "replace") {
                RuntimeManager.replaceState(stateData, stateData.title, url);
             }
+
+            // --- Save the current state ---
+            RuntimeManager.currentState = history.state
 
             // Handle URL fragments (hash navigation)
             const hashElement = document.getElementById(url?.hash?.substring(1));
@@ -401,7 +443,7 @@ class phpspa {
 
             // Execute any inline scripts and styles in the new content
             RuntimeManager.runAll(targetElement);
-            
+
 
             // Emit successful load event
             RuntimeManager.emit("load", {
@@ -699,7 +741,7 @@ class phpspa {
             document.getElementById(responseData?.targetID) ??
             document.getElementById(history.state?.targetID) ??
             document.body;
-         
+
          const updateDOM = () => {
             targetElement.innerHTML = responseData?.content
                ? responseData.content
@@ -834,6 +876,8 @@ class RuntimeManager {
     */
    static ScriptsCachedContent = {};
 
+   static currentState = {};
+
    /**
     * Internal event registry for custom events
     * @type {Object<string, Function[]>}
@@ -918,7 +962,7 @@ class RuntimeManager {
                newScript.textContent = this.ScriptsCachedContent[scriptUrl];
                newScript.type = 'text/javascript';
                newScript.nonce = nonce;
-               
+
                // Execute and immediately remove from DOM
                document.head.appendChild(newScript).remove();
                return;
@@ -929,10 +973,10 @@ class RuntimeManager {
                   "X-Requested-With": "PHPSPA_REQUEST_SCRIPT",
                },
             });
-            
+
             if (response.ok) {
                const scriptContent = await response.text();
-               
+
                // Create new script element
                const newScript = document.createElement("script");
                newScript.textContent = scriptContent;
@@ -941,7 +985,7 @@ class RuntimeManager {
 
                // Execute and immediately remove from DOM
                document.head.appendChild(newScript).remove();
-   
+
                // Cache the fetched script content
                this.ScriptsCachedContent[scriptUrl] = scriptContent;
             } else {
