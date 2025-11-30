@@ -58,7 +58,7 @@ $form = (new Component(function() {
 }))->method('GET', 'POST');
 ```
 
-[📖 **Full Documentation**](https://phpspa.readthedocs.io/en/latest/references/preloading-component/)
+**Documentation:** [references/preloading-component](https://phpspa.readthedocs.io/en/latest/references/preloading-component/)
 
 
 ### **DOM Utilities** 🛠️
@@ -80,7 +80,7 @@ function UserProfile() {
 $currentTitle = DOM::Title(); // Returns: "User Profile - My App"
 ```
 
-[📖 **Full Documentation**](https://phpspa.readthedocs.io/en/latest/references/dom-utilities/)
+**Documentation:** [references/dom-utilities](https://phpspa.readthedocs.io/en/latest/references/dom-utilities/)
 
 
 
@@ -115,7 +115,7 @@ $app->compression(Compressor::LEVEL_AGGRESSIVE, true);
 putenv('PHPSPA_COMPRESSION_STRATEGY=native');
 ```
 
-**Documentation:** [Native Compression Guide](https://phpspa.tech/references/compression/)
+**Documentation:** [references/compression](https://phpspa.tech/references/compression/)
 
 
 
@@ -164,7 +164,7 @@ fmt($user);
 return "<UserCard>{$user}</UserCard>";
 ```
 
-**Documentation:** [hooks/use-fetch](https://phpspa.tech/references/helpers/fmt)
+**Documentation:** [references/helpers/fmt](https://phpspa.tech/references/helpers/fmt)
 
 
 

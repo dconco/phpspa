@@ -76,7 +76,7 @@
 
 -   :material-web:{ .lg .middle } **DOM Utilities**
 
-    --
+    ---
 
     Dynamic page title manipulation
 
