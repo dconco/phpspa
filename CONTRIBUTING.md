@@ -61,7 +61,8 @@ Documentation is located in the `docs` folder and uses MkDocs format.
 - Follow MkDocs markdown format and conventions
 - Ensure proper formatting and structure
 - Example documentation file structure:
-  ```markdown
+
+```markdown
   # Page Title
 
   Brief introduction to the topic.
@@ -70,14 +71,14 @@ Documentation is located in the `docs` folder and uses MkDocs format.
 
   Content with code examples:
 
-  ```php
+  \`\`\`php
   // Code example
-  ```
+  \`\`\`
 
   ## Another Section
 
   More content...
-  ```
+```
 
 ---
 
@@ -98,8 +99,7 @@ composer test
 
 1. Commit your changes to your forked repository
 2. Create a pull request to the main repository
-3. **Important**: Target the `dev` branch (`dconco/phpspa:dev`)
-4. Provide a clear description of your changes and why they're useful
+3. Provide a clear description of your changes and why they're useful
 
 ---
 

@@ -1,138 +1,87 @@
 # CHANGELOG
 
-## dev-v2.0.4 (Latest)
+## dev-v2.0.4 (Latest) (Unreleased)
 
 > [!IMPORTANT]
 > This version requires **PHP 8.4 or higher**
 
+**Installation:**
+```bash
+composer require dconco/phpspa:v2.0.4.x-dev
+```
+
 ### ✨ New Features
 
-#### **Component Preloading System** 🎯
+#### **Advanced Component Features** 🎯
 
-The new preloading system allows you to load multiple components on different target IDs simultaneously. This is perfect for building multi-section layouts like messaging apps, dashboards, or any interface with independent content areas.
+- **Component Preloading** - Load multiple components on different target IDs simultaneously for multi-section layouts
+- **Exact Route Matching** - Render components only on exact URL matches with automatic fallback to default content
+- **Pattern-based Routing** - Match routes using fnmatch-style patterns (e.g., `/blog/*`)
+- **Named Components** - Assign unique identifiers to components for easy reference
+- **Multiple Routes & Methods** - Define multiple routes and HTTP methods in a cleaner way
 
-**How it works:**
+**Perfect for building:**
+- Multi-section layouts (messaging apps, dashboards)
+- Dynamic content with independent sections
+- Complex routing patterns
 
-1. **Name your components** - Give components unique identifiers using `name()`
-2. **Set target IDs** - Specify where each component renders with `targetID()`
-3. **Preload components** - Reference named components in `preload()` to render them together
-
-**Real-world Example: WhatsApp Web Clone**
+**Quick Example:**
 
 ```php
 use PhpSPA\Component;
 
-// Layout with two sections
-function Layout() {
-   return <<<HTML
-      <div class="container">
-         <section id="users"></section>
-         <section id="chat">
-            <div class="welcome">Welcome! Select a user to start chatting.</div>
-         </section>
-      </div>
-   HTML;
-}
-
-// User list component (sidebar)
+// User list sidebar (always visible)
 $userList = (new Component(function() {
-   return <<<HTML
-      <div class="user-list">
-         <h3>Chats</h3>
-         <!-- List of users -->
-      </div>
-   HTML;
+   return "<aside>User List</aside>";
 }))
    ->route('/')
-   ->targetID('users')
-   ->name('userList'); // Named for preloading
+   ->targetID('sidebar')
+   ->name('userList');
 
-// Chat component (main content)
-$chatView = (new Component(function($path) {
-   $userId = $path['id'];
-   return <<<HTML
-      <div class="chat-messages">
-         <h3>Chat with User {$userId}</h3>
-         <!-- Messages -->
-      </div>
-   HTML;
+// Chat view with preloaded sidebar
+$chatView = (new Component(function(array $path) {
+   return "<main>Chat with user {$path['id']}</main>";
 }))
-   ->route('/chat/{id}')
-   ->targetID('chat')
-   ->preload('userList')  // Load user list on the same page
-   ->exact();             // Revert to welcome message when navigating away
-
-$app = new App(Layout(...))
-   ->attach($userList)
-   ->attach($chatView)
-   ->run();
-```
-
-**What happens:**
-
-- **On `/` route**: User list renders in `id="users"`, chat section shows welcome message
-- **On `/chat/123`**: Chat messages render in `id="chat"`, user list renders in `id="users"` (because of `preload()`)
-- **Navigate back to `/`**: Chat section reverts to welcome message (because of `exact()`)
-
-#### **Exact Route Matching** 🎯
-
-The `exact()` method ensures components render only on exact URL matches and revert to default content when navigating away:
-
-```php
-$profile = (new Component(function() {
-   return "<div>User Profile Content</div>";
-}))
-   ->route('/profile/{id}')
+   ->route('/chat/{id: int}')
    ->targetID('content')
-   ->exact(); // Reverts to default content when route doesn't match
-```
+   ->preload('userList')  // Sidebar stays visible
+   ->exact();             // Reverts when navigating away
 
-**Use Cases:**
-- Multi-section layouts where components should disappear on navigation
-- Dynamic content that should reset to defaults
-- Preventing stale content from previous routes
-
-#### **Pattern-based Routing** 🔍
-
-Match routes using fnmatch-style patterns for flexible URL matching:
-
-```php
-$blogPost = (new Component(function() {
-   return "<article>Blog Post Content</article>";
+// Pattern matching for blog posts
+$blog = (new Component(function() {
+   return "<article>Blog Content</article>";
 }))
-   ->route('/blog/*', '/articles/*', '/posts/*')
-   ->pattern(); // Matches /blog/my-post, /articles/2024/jan, etc.
-```
+   ->route('/blog/*', '/articles/*')
+   ->pattern();
 
-#### **Named Components** 🏷️
-
-Assign unique identifiers to components for easy reference in preloading:
-
-```php
-$navbar = (new Component(function() {
-   return "<nav>Navigation Menu</nav>";
-}))
-   ->name('navbar')
-   ->targetID('header');
-```
-
-#### **Multiple HTTP Methods & Routes** 🛤️
-
-Define multiple HTTP methods and routes in a cleaner way:
-
-```php
-// Multiple HTTP methods
-$formHandler = (new Component(function() {
+// Multiple methods
+$form = (new Component(function() {
    return "<form>Contact Form</form>";
-}))
-   ->method('GET', 'POST'); // Accept both GET and POST
+}))->method('GET', 'POST');
+```
 
-// Multiple routes pointing to same component
-$contact = (new Component(function() {
-   return "<h1>Contact Us</h1>";
-}))
-   ->route('/contact', '/contact-us', '/get-in-touch');
+#### **DOM Utilities** 🛠️
 
+- **`DOM::Title()`** - Get or set page title dynamically from within components
+
+**Example:**
+
+```php
+use PhpSPA\DOM;
+
+function UserProfile() {
+   DOM::Title('User Profile - My App');
+   
+   return "<h1>User Profile</h1>";
+}
+
+// Get the current title
+$currentTitle = DOM::Title(); // Returns: "User Profile - My App"
+```
+
+[:material-book-open-variant: **Full Documentation**](https://phpspa.readthedocs.io/en/stable/references/advanced-components/){ .md-button .md-button--primary }
+
+---
 
 
 

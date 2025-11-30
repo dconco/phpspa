@@ -2,62 +2,6 @@
 
 <div class="grid cards" markdown>
 
--   :material-book-open-variant:{ .lg .middle } __Complete Documentation__
-
-    ---
-
-    Comprehensive guides for all PhpSPA APIs and utilities
-
--   :material-code-tags:{ .lg .middle } __Code Examples__
-
-    ---
-
-    Practical examples for every feature
-
--   :material-lightbulb-on:{ .lg .middle } __Best Practices__
-
-    ---
-
-    Learn the recommended patterns and techniques
-
--   :material-update:{ .lg .middle } __Always Current__
-
-    ---
-
-    Updated documentation for the latest version
-
-</div>
-
----
-
-## :material-webhook: HTTP & Networking
-
-<div class="grid cards" markdown>
-
--   :material-api:{ .lg .middle } **Response API**
-
-    ---
-
-    Build and customize HTTP responses with fluent API
-
-    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/response/)
-
--   :material-cloud-download:{ .lg .middle } **useFetch Hook** :material-new-box:
-
-    ---
-
-    Async HTTP client with parallel execution support
-
-    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/hooks/use-fetch/)
-
-</div>
-
----
-
-## :material-tools: Helpers & Utilities
-
-<div class="grid cards" markdown>
-
 -   :material-package-variant:{ .lg .middle } **fmt() Helper** :material-new-box:
 
     ---
@@ -73,6 +17,14 @@
     Secure file imports with validation and metadata
 
     [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/file-import-utility/)
+
+-   :material-format-title:{ .lg .middle } **DOM Utilities** :material-new-box:
+
+    ---
+
+    Dynamic page title manipulation
+
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/dom-utilities/)
 
 </div>
 
@@ -113,11 +65,13 @@
     | [`import()`](https://phpspa.readthedocs.io/en/stable/references/file-import-utility/) | Secure file imports | v1.1.0 |
     | [`response()`](https://phpspa.readthedocs.io/en/stable/references/response/) | HTTP response builder | v1.1.8 |
     | [`router()`](https://phpspa.readthedocs.io/en/stable/references/response/#response-api-examples) | Router instance access | v1.1.8 |
+    | [`DOM::Title()`](https://phpspa.readthedocs.io/en/stable/references/dom-utilities/) | Get or set page title dynamically | v2.0.4 |
 
 === "Components"
 
-    | Component | Description | Version |
-    |-----------|-------------|---------|
+    | Feature | Description | Version |
+    |---------|-------------|---------|
+    | [Component Preloading](https://phpspa.readthedocs.io/en/stable/references/preloading-component/) | Multi-section layouts with independent updates | v2.0.4 |
     | [`<Component.Link>`](../navigations/link-component.md) | Client-side navigation | v1.1.0 |
     | [`<Component.Csrf>`](../security/csrf-protection.md) | CSRF token management | v1.1.5 |
     | [`<Component.Navigate>`](../navigations/navigate-component.md) | Programmatic navigation | v1.1.0 |
@@ -127,3 +81,6 @@
     | Feature | Description | Version |
     |---------|-------------|---------|
     | [Native Compression (C++ FFI)](https://phpspa.readthedocs.io/en/stable/references/compression/) | Lightning-fast HTML/CSS/JS minification | v2.0.3 |
+    | [HTML Compression](../performance/html-compression.md) | Enable compression for faster page loads | v1.1.5 |
+    | [Assets Caching](../performance/assets-caching.md) | Configure asset caching duration | v1.1.7 |
+    | [Managing Styles & Scripts](../performance/managing-styles-and-scripts.md) | Global and component-level asset management | v1.1.7 |
