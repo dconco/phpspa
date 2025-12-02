@@ -2,12 +2,9 @@
 
 namespace PhpSPA\Core\Utils;
 
-use NoDiscard;
-
 CLASS ArrayFlat {
    PUBLIC FUNCTION __construct(PRIVATE ARRAY$array) {}
 
-   #[NoDiscard()]
    PUBLIC FUNCTION flat(): ARRAY {
       $arr = [];
 
@@ -20,7 +17,6 @@ CLASS ArrayFlat {
       return $arr;
    }
 
-   #[NoDiscard()]
    PUBLIC FUNCTION flatRecursive(): ARRAY {
       $arr = [];
 
