@@ -120,6 +120,7 @@ First you need to include the namespace at the beginning of your app.
 
 use PhpSPA\App;
 use PhpSPA\Component;
+use function Component\useState;
 
 require_once 'vendor/autoload.php';
 ```
