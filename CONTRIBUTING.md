@@ -71,9 +71,9 @@ Documentation is located in the `docs` folder and uses MkDocs format.
 
   Content with code examples:
 
-  ```php
+  ````php
   // Code example
-  \```
+  ````
 
   ## Another Section
 
