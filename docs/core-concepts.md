@@ -25,7 +25,86 @@ Everything in PhpSPA revolves around two main classes: <code style="background: 
 
 ---
 
+!!! note "Required Namespaces"
+    All PhpSPA applications require these namespace imports:
+    ```php
+    <?php
+    use PhpSPA\App;
+    use PhpSPA\Component;
+    ```
+    Include these at the top of your PHP files.
+
+---
+
 ## Here's how they work together:
+
+**1. Define a Layout**
+
+```php
+<?php
+
+$Layout = function () {
+   return '<div id="app"></div>';
+};
+```
+
+The layout defines where components will render.
+
+**2. Create the App**
+
+```php
+<?php
+
+$app = new App($Layout);
+```
+
+Initialize the main application with your layout.
+
+**3. Build a Component**
+
+```php
+<?php
+
+$homePage = new Component(function () {
+   return "<h1>Welcome to the Home Page!</h1>";
+});
+```
+
+Components are functions that return HTML.
+
+**4. Set the Route**
+
+```php
+<?php
+
+$homePage->route('/');
+```
+
+Configure which URL path triggers this component.
+
+**5. Attach to App**
+
+```php
+<?php
+
+$app->attach($homePage);
+```
+
+Register the component with the application.
+
+**6. Run the Application**
+
+```php
+<?php
+
+$app->run();
+```
+
+Render the page.
+
+---
+
+## Complete Example
 
 ```php
 <?php
@@ -33,25 +112,17 @@ Everything in PhpSPA revolves around two main classes: <code style="background: 
 use PhpSPA\App;
 use PhpSPA\Component;
 
-// 1. Define a layout. It must have a `body()` function.
 $Layout = function () {
-   return body(); // This is where your component's content will be rendered.
+   return '<div id="app"></div>';
 };
 
-// 2. Create the main application instance with your layout.
 $app = new App($Layout);
 
-// 3. Create a component. It's just a function that returns HTML.
 $homePage = new Component(function () {
    return "<h1>Welcome to the Home Page!</h1>";
 });
 
-// 4. Configure the component (e.g., set its route).
 $homePage->route('/');
-
-// 5. Attach the component to the app.
 $app->attach($homePage);
-
-// 6. Run the application to render the page.
 $app->run();
 ```

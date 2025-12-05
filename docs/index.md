@@ -89,9 +89,9 @@ hide:
     <?php
 
     function Button() {
-       return <<<HTML
-         <button>Click Me</button>
-       HTML;
+		return <<<HTML
+			<button>Click Me</button>
+		HTML;
     }
     ```
 
@@ -102,11 +102,15 @@ hide:
     ```php
     <?php
 
+    use function Component\useState;
+
     $count = useState('count', 0);
 
-    return "<button onclick='setState(\"count\", {$count} + 1)'>
-       Count: {$count}
-    </button>";
+    echo  <<<HTML
+		<button onclick="setState('count', {$count} + 1)">
+			Count: {$count}
+		</button>
+	HTML;
     ```
 
 === "Client-Side Routing"
@@ -124,9 +128,11 @@ hide:
     ```php
     <?php
 
+    use function Component\useFunction;
+
     $greeter = useFunction(fn($name) => "Hello, $name!");
 
-    const greeting = await {$greeter('name')};
+	const greeting = await {$greeter('name')};
     ```
 
 ---
