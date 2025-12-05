@@ -62,7 +62,7 @@ Documentation is located in the `docs` folder and uses MkDocs format.
 - Ensure proper formatting and structure
 - Example documentation file structure:
 
-```markdown
+````markdown
   # Page Title
 
   Brief introduction to the topic.
@@ -71,14 +71,14 @@ Documentation is located in the `docs` folder and uses MkDocs format.
 
   Content with code examples:
 
-  ````php
+  ```php
   // Code example
-  ````
+  ```
 
   ## Another Section
 
   More content...
-```
+````
 
 ---
 
