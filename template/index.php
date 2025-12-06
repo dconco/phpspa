@@ -72,9 +72,9 @@ $app = (new App(require 'layout/Layout.php'))
 				if (!success) console.log('But an error occured: ', error);
 			})
 
-			document.onclick = () => {
-				console.log('Document clicked!');
-			}
+			// document.onclick = () => {
+			// 	console.log('Document clicked!');
+			// }
 			
 			// Global utility function
 			window.globalUtils = {
