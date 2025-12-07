@@ -45,7 +45,8 @@ class FunctionCaller
         $args = func_get_args();
 
         foreach ($args as $value) {
-            $arg .= ', ' . "$value";
+            if (is_array($value)) $value = json_encode($value);
+            $arg .= ", $value";
         }
 
         return "phpspa.__call('{$this->token}'{$arg})";
