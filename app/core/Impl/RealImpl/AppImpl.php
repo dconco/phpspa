@@ -277,7 +277,7 @@ abstract class AppImpl implements ApplicationContract {
                Session::remove(CALL_FUNC_HANDLE);
             }
 
-            $data = json_decode($request->auth()->bearer ?? '', true);
+            $data = json_decode(base64_decode($request->auth()->bearer ?? ''), true);
             $data = $this->validate($data);
 
             if (isset($data['state'])) {

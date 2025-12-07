@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace phpspa\Core\Auth;
 
 /**
@@ -12,7 +10,7 @@ namespace phpspa\Core\Auth;
  * and other authentication schemes within the PhpSPA framework.
  *
  * @package PhpSPA\Core\Auth
- * @author dconco <concodave@gmail.com>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.0.0
@@ -32,7 +30,14 @@ trait Authentication
      */
     private static function getAuthorizationHeader(): void
     {
-        $headers = getallheaders() ?? apache_request_headers();
+        $headers = [];
+
+        if (function_exists('\getallheaders')) {
+            $headers = \getallheaders();
+        } else if (function_exists('\apache_request_headers')) {
+            $headers = \apache_request_headers();
+        }
+
         self::$authorizationHeader =
             $headers['Authorization'] ?? ($_SERVER['HTTP_AUTHORIZATION'] ?? null);
     }
@@ -120,7 +125,16 @@ trait Authentication
      */
     protected static function RequestApiKey(string $key)
     {
-        return getallheaders()[$key] ??
-            (apache_request_headers()[$key] ?? ($_SERVER["HTTP_$key"] ?? null));
+        if (function_exists('\getallheaders')) {
+            $val = \getallheaders()[$key] ?? null;
+            if ($val) return $val;
+        }
+
+        if (function_exists('\apache_request_headers')) {
+            $val = \apache_request_headers()[$key] ?? null;
+            if ($val) return $val;
+        }
+
+        return $_SERVER["HTTP_$key"] ?? null;
     }
 }
