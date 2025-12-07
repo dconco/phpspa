@@ -259,6 +259,7 @@ abstract class AppImpl implements ApplicationContract {
          if ($request->header('X-Phpspa-Target') === 'navigate') {
             Session::remove(STATE_HANDLE);
             Session::remove(CALL_FUNC_HANDLE);
+            return;
          }
 
          $data = json_decode($request->auth()->bearer ?? '', true);
@@ -266,6 +267,7 @@ abstract class AppImpl implements ApplicationContract {
 
          if (isset($data['state'])) {
             $state = $data['state'];
+            var_dump($state); exit;
 
             if (!empty($state['key']) && !empty($state['value'])) {
                $sessionData = SessionHandler::get(STATE_HANDLE);

@@ -9,9 +9,95 @@ Often, you need to run PHP logic—like saving to a database—without a full pa
 !!! info "Secure Bridge"
     It securely exposes a PHP function so your client-side JavaScript can call it directly.
 
+---
+
+!!! note "Required Namespace"
+    ```php
+    use function Component\useFunction;
+    ```
+    Include this at the top of your PHP files to use the `useFunction` hook.
+
+---
+
+## Syntax
+
+```php
+<?php
+
+$phpFunction = function($arg) {
+    return "result";
+};
+
+$caller = useFunction($phpFunction);
+```
+
+**In JavaScript:**
+
+```javascript
+const result = await {$caller('arg')};
+```
+
+The `useFunction` hook wraps a PHP function and returns a caller that can be invoked from JavaScript.
+
+---
+
 ## Example: A Simple Greeter Form
 
 Let's build a form where a user enters their name, and the server sends back a personalized greeting.
+
+**1. Define the PHP Function**
+
+```php
+<?php
+
+$sayHello = function (string $name): string {
+    return "Hello, " . htmlspecialchars($name) . "!";
+};
+```
+
+This function accepts a name and returns a greeting.
+
+**2. Wrap with useFunction**
+
+```php
+<?php
+
+$greeter = useFunction($sayHello);
+```
+
+This creates a JavaScript-callable version of your PHP function.
+
+**3. Create the HTML Form**
+
+```php
+<?php
+
+echo <<<HTML
+    <input type="text" id="nameInput" placeholder="Enter your name">
+    <button id="greetBtn">Greet Me</button>
+HTML;
+```
+
+Simple input and button for user interaction.
+
+**4. Call from JavaScript**
+
+```javascript
+const nameInput = document.getElementById('nameInput');
+const greetBtn = document.getElementById('greetBtn');
+
+greetBtn.onclick = async () => {
+    const name = nameInput.value;
+    const greeting = await {$greeter('name')};
+    alert(greeting);
+};
+```
+
+The JavaScript calls the PHP function and displays the result.
+
+---
+
+### Complete Example
 
 ```php
 <?php
@@ -21,7 +107,6 @@ use function Component\useFunction;
 
 $greeterPage = new Component(function () {
     // 1. Define the PHP function you want to call.
-    // It can accept arguments and should return the raw data.
     $sayHello = function (string $name): string {
         return "Hello, " . htmlspecialchars($name) . "!";
     };
@@ -41,8 +126,6 @@ $greeterPage = new Component(function () {
                 const name = nameInput.value;
 
                 // 3. Call the PHP function from JavaScript!
-                // The argument 'name' here is treated as a JavaScript expression.
-                // It becomes the 'name' variable from the line above.
                 const greeting = await {$greeter('name')};
 
                 // The returned value is the direct output of your PHP function.
