@@ -52,11 +52,11 @@ class StreamHttpClient implements HttpClient {
       $context = stream_context_create($contextOptions);
       $responseBody = @file_get_contents($url, false, $context);
 
-      $responseHeaders = $http_response_header ?? [];
+      $responseHeaders = http_get_last_response_headers() ?? $http_response_header ?? [];
 
       $statusCode = 0;
       $error = null;
-      
+
       if (isset($responseHeaders[0])) {
          @list( , $statusCode, ) = explode(' ', $responseHeaders[0], 3);
       }
