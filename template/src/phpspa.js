@@ -983,6 +983,7 @@
 
             const completedDOMUpdate = () => {
                // --- Clear old executed scripts cache ---
+               RuntimeManager.clearEffects();
                RuntimeManager.clearExecutedScripts();
 
                // --- Execute any inline scripts and styles in the restored content ---
@@ -1334,6 +1335,17 @@
             RuntimeManager.events[event] = [];
          }
          RuntimeManager.events[event].push(callback);
+      }
+
+      /**
+       * Registers a side effect to be executed after component updates.
+       * Alias for RuntimeManager.registerEffect.
+       * 
+       * @param {Function} callback - The effect callback
+       * @param {Array<string>} dependencies - Array of state keys to listen for
+       */
+      static useEffect(callback, dependencies = null) {
+         RuntimeManager.registerEffect(callback, dependencies);
       }
 
       /**
@@ -1746,7 +1758,7 @@
        * @param {Array<string>} dependencies - Array of state keys to listen for
        */
       static registerEffect(callback, dependencies = null) {
-         // Run immediately (mount)
+         // --- Run immediately (mount) ---
          const cleanup = callback();
 
          const effect = {
@@ -1767,10 +1779,10 @@
       static triggerEffects(key, value) {
          RuntimeManager.effects.forEach(effect => {
             if (effect.dependencies === null || effect.dependencies.includes(key)) {
-               // Run cleanup if exists
+               // --- Run cleanup if exists ---
                if (effect.cleanup) effect.cleanup();
 
-               // Re-run callback
+               // --- Re-run callback ---
                const cleanup = effect.callback();
                effect.cleanup = typeof cleanup === 'function' ? cleanup : null;
             }
@@ -1991,32 +2003,20 @@
       }
    }
 
-   /**
-    * Global helper function for updating application state
-    * Provides a convenient shorthand for phpspa.setState()
-    *
-    * @param {string} key - The state key to update
-    * @param {any} value - The new value for the state key
-    * @returns {Promise<void>} Promise that resolves when state is updated
-    */
-   if (typeof window !== "undefined" && typeof window.setState !== "function") {
-      window.setState = (key, value) => phpspa.setState(key, value);
-   }
 
-   /**
-    * Global helper function for making server calls
-    * Provides a convenient shorthand for phpspa.__call()
-    *
-    * @param {string} token - The function token/identifier
-    * @param {...any} args - Arguments to pass to the server function
-    * @returns {Promise<string>} Promise that resolves with the server response
-    */
-   if (typeof window !== "undefined" && typeof window.__call !== "function") {
-      window.__call = (token, ...args) => phpspa.__call(token, ...args);
-   }
+   if (typeof window !== "undefined") {
+      if (typeof window.setState !== "function") {
+         window.setState = phpspa.setState;
+      }
 
-   window.RuntimeManager = RuntimeManager;
-   window.useEffect = RuntimeManager.registerEffect;
+      if (typeof window.__call !== "function") {
+         window.__call = phpspa.__call;
+      }
+
+      if (typeof window.useEffect !== "function") {
+         window.useEffect = phpspa.useEffect;
+      }
+   }
 
    /**
     * Export phpspa for UMD pattern
