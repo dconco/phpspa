@@ -1462,12 +1462,8 @@
                   RuntimeManager.runAll(targetElement);
                };
 
-               if (document.startViewTransition) {
-                  document.startViewTransition(updateDOM).finished.then(completedDOMUpdate);
-               } else {
-                  updateDOM();
-                  completedDOMUpdate();
-               }
+               updateDOM();
+               completedDOMUpdate();
             }
          });
       }
