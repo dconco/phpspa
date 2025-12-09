@@ -1,6 +1,7 @@
 <?php
 
 use PhpSPA\Component;
+use PhpSPA\DOM;
 
 use function Component\useState;
 use function Component\useEffect;
@@ -29,19 +30,19 @@ return (new Component(function (): string
    $counter = useState('counter', 0);
    $message = useState('message', 'Waiting for an update...');
 
-   useEffect(function () use ($counter, &$message)
-   {
-      $newCounter = $counter() + 1;
-      $name = [ 'Dave', 'John', 'Jane' ][array_rand([ 'Dave', 'John', 'Jane' ])];
-      $newMsg = "Counter updated to: $counter but the effect changed it to $newCounter by $name";
+   // useEffect(function () use ($counter, &$message)
+   // {
+   //    $newCounter = $counter() + 1;
+   //    $name = [ 'Dave', 'John', 'Jane' ][array_rand([ 'Dave', 'John', 'Jane' ])];
+   //    $newMsg = "Counter updated to: $counter but the effect changed it to $newCounter by $name";
       
-      $message($newMsg);
-      $counter($newCounter);
-   }, [ $counter ]);
+   //    $message($newMsg);
+   //    $counter($newCounter);
+   // }, [ $counter ]);
 
    // 1. Define all your private components
    $Button = fn ($counter) => <<<HTML
-      <button id="btn">
+      <button id="counter-btn">
          Clicks: {$counter}
       </button>
       <br />
@@ -61,12 +62,12 @@ return (new Component(function (): string
          <LinkComponent />
 
          <script>
-            const btn = document.getElementById('btn')
+            const btn = document.getElementById('counter-btn')
+            let currentCounter = {$counter} + 1;
 
             btn.onclick = async () => {
-               const res = await {$caller($counter)}
-               setState('counter', $counter + 1)
-               // alert(res.data)
+               console.log(currentCounter+1);
+               await setState('counter', currentCounter)
             }
          </script>
       </div>

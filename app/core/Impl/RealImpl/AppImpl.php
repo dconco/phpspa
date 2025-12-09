@@ -17,6 +17,7 @@ use PhpSPA\Core\Helper\ComponentScope;
 use PhpSPA\Core\Helper\AssetLinkManager;
 use PhpSPA\Core\Helper\PathResolver;
 use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
+use PhpSPA\DOM;
 use PhpSPA\Interfaces\ApplicationContract;
 use PhpSPA\Interfaces\IComponent;
 
@@ -262,18 +263,19 @@ abstract class AppImpl implements ApplicationContract {
             return;
          }
 
-         $data = json_decode($request->auth()->bearer ?? '', true);
+         $data = json_decode(base64_decode($request->auth()->bearer ?? ''), true);
          $data = $this->validate($data);
 
          if (isset($data['state'])) {
             $state = $data['state'];
-            var_dump($state); exit;
-
+            
             if (!empty($state['key']) && !empty($state['value'])) {
                $sessionData = SessionHandler::get(STATE_HANDLE);
                $sessionData[$state['key']] = $state['value'];
                SessionHandler::set(STATE_HANDLE, $sessionData);
             }
+            
+            return;
          }
 
          if (isset($data['__call'])) {
@@ -283,9 +285,10 @@ abstract class AppImpl implements ApplicationContract {
 
                $token = $tokenData[1] ?? null;
                $functionName = $tokenData[0] ?? null;
+               $use_once = $tokenData[3] ?? false;
                $csrf = new CsrfManager($functionName, CALL_FUNC_HANDLE);
 
-               if ($csrf->verifyToken($token, false)) {
+               if ($csrf->verifyToken($token, $use_once)) {
                   $res = call_user_func_array(
                      $functionName,
                      $data['__call']['args'],
@@ -317,6 +320,7 @@ abstract class AppImpl implements ApplicationContract {
       $request = new HttpRequest();
 
       $route = CallableInspector::getProperty($component, 'route');
+      $name = CallableInspector::getProperty($component, 'name');
       $pattern = CallableInspector::getProperty($component, 'pattern');
       $method = CallableInspector::getProperty($component, 'method') ?? 'GET|VIEW';
       $caseSensitive = CallableInspector::getProperty($component, 'caseSensitive') ?? $this->defaultCaseSensitive;
@@ -336,12 +340,20 @@ abstract class AppImpl implements ApplicationContract {
       if (!$route && !$isPreloadingComponent) {
          $m = explode('|', $method);
          if (!in_array($request->method(), $m)) return;
-      } else {
+      } else if (!$isPreloadingComponent) {
          $router = (new MapRoute($method, $route, $caseSensitive, $pattern))->match();
 
-         if (!$router && !$isPreloadingComponent)
+         if (!$router)
             return; // Skip if no match found
+   
+         DOM::CurrentRoutes(self::$request_uri);
       }
+
+      if ($isPreloadingComponent && !str_contains($route[0] ?? '', '{')) {
+         DOM::CurrentRoutes($route[0] ?? '');
+      }
+
+      if ($name) DOM::CurrentComponents($name);
 
       // Clear component scope before each component execution
       ComponentScope::clearAll();
@@ -509,13 +521,41 @@ abstract class AppImpl implements ApplicationContract {
 
       $tt ??=  "";
 
+      // --- This render the component to the target ID ---
       $this->renderedData = preg_replace_callback(
          $tag,
-         function ($matches) use (&$tt, $componentOutput, $isPreloadingComponent, $exact) {
-            // $matches[1] contains the tag name, $matches[2] contains attributes with the target ID, $matches[3] contains the default content inside the tag
-            if (!$isPreloadingComponent && $exact === true) {
-               $content = base64_encode($matches[3]);
-               $tt .= " phpspa-target-exact=\"$content\"";
+         function ($matches) use (&$tt, $componentOutput, $compressOutput, $isPreloadingComponent, $exact, $preload) {
+            // --- $matches[1] contains the tag name, ---
+            // --- $matches[2] contains attributes with the target ID, ---
+            // --- $matches[3] contains the default content inside the tag ---
+
+            // --- Initialize static variable once ---
+            static $targetInformation = [];
+
+            // --- Set values only on the first component (main component) ---
+            if (!$isPreloadingComponent && empty($targetInformation)) {
+               $targetInformation = [
+                  'exact' => $exact,
+                  'defaultContent' => $matches[3],
+               ];
+            }
+
+            // --- Update on main component and preloading components ---
+            $targetInformation['currentRoutes'] = DOM::CurrentRoutes();
+
+            // --- Check if preload component does not exists ---
+            // --- If it does not exist then there is no preloading component to attach it to ---
+            // --- Then attach it directly to the component target element ---
+            if (!$isPreloadingComponent && (!isset($this->components[@$preload[0]]))) {
+               $targetInformation = base64_encode(json_encode($targetInformation));
+               $tt .= " phpspa-target-data=\"$targetInformation\"";
+            }
+
+            // --- This is the end of a preloading component ---
+            // --- Now you can attach the info to the target element ---
+            if ($isPreloadingComponent && $compressOutput) {
+               $targetInformation = base64_encode(json_encode($targetInformation));
+               $tt .= " phpspa-target-data=\"$targetInformation\"";
             }
 
             return '<' . $matches[1] . $matches[2] . "$tt>" .
@@ -533,14 +573,13 @@ abstract class AppImpl implements ApplicationContract {
          $this->renderedData = $this->injectGlobalAssets($this->renderedData, $assetLinks['component']['scripts']);
       }
 
-
       // --- Check if preload component exists ---
       if (!$isPreloadingComponent && (isset($preload[0]) && isset($this->components[$preload[0]]))) {
          static $lastPreloadKey = array_key_last($preload);
          
          foreach ($preload as $preloadKey => $componentKey) {
             $preloadComponent = $this->components[$componentKey];
-            
+
             $response = $this->runComponent(
                component: $preloadComponent,
                compressOutput: $preloadKey === $lastPreloadKey, // --- compress output if it is the final component ---
@@ -621,7 +660,7 @@ abstract class AppImpl implements ApplicationContract {
             $scriptCallable = is_array($script) ? $script[0] ?? null : $script;
             if (is_callable($scriptCallable)) {
                $jsLink = AssetLinkManager::generateJsLink("__global__", $index, $name);
-               $result['global']['scripts'] .= $isPhpSpaRequest ? "\n<phpspa-script src=\"$jsLink\"></phpspa-script>\n" : "\n<script type=\"text/javascript\" data-type=\"phpspa/script\" src=\"$jsLink\"></script>\n";
+               $result['global']['scripts'] .= $isPhpSpaRequest ? "\n<script src=\"$jsLink\"></script>\n" : "\n<script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
             }
          }
       }
@@ -633,7 +672,7 @@ abstract class AppImpl implements ApplicationContract {
             $scriptCallable = is_array($script) ? $script[0] ?? null : $script;
             if (is_callable($scriptCallable)) {
                $jsLink = AssetLinkManager::generateJsLink($primaryRoute, $index, $name);
-               $result['component']['scripts'] .= $isPhpSpaRequest ? "\n<phpspa-script src=\"$jsLink\"></phpspa-script>\n" : "\n<script type=\"text/javascript\" data-type=\"phpspa/script\" src=\"$jsLink\"></script>\n";
+               $result['component']['scripts'] .= $isPhpSpaRequest ? "\n<script src=\"$jsLink\"></script>\n" : "\n<script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
             }
          }
       }
@@ -786,8 +825,8 @@ abstract class AppImpl implements ApplicationContract {
 
          if ($assetInfo['assetIndex'] === -1 && $request->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT' && $request->requestedWith() !== 'PHPSPA_REQUEST') {
             $scriptPath = dirname(__DIR__, 4);
-            $path = '/src/script/phpspa.min.js'; // --- PRODUCTION ---
-            // $path = '/template/src/phpspa.js'; // --- DEVELOPMENT ---
+            // $path = '/src/script/phpspa.min.js'; // --- PRODUCTION ---
+            $path = '/template/src/phpspa.js'; // --- DEVELOPMENT ---
 
             return [file_get_contents($scriptPath . $path)];
          }

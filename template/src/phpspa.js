@@ -849,47 +849,54 @@
        */
       window.addEventListener("DOMContentLoaded", () => {
          const targetElement = document.querySelector("[data-phpspa-target]");
+         const uri = location.toString();
 
          RuntimeManager.emit('load', {
-            route: location.href,
+            route: uri,
             success: true,
             error: false
          });
 
          if (targetElement) {
-            // Create initial state object with current page data
+            // --- Create initial state object with current page data
             const initialState = {
-               url: location.href,
+               url: uri,
                title: document.title,
                targetID: targetElement.id,
                content: targetElement.innerHTML,
                root: true,
             };
 
-            // Check if component has auto-reload functionality
+            // --- Check if component has auto-reload functionality ---
             if (targetElement.hasAttribute("phpspa-reload-time")) {
                initialState.reloadTime = Number(
                   targetElement.getAttribute("phpspa-reload-time")
                );
             }
 
-            // Check if component has exact target
-            if (targetElement.hasAttribute("phpspa-target-exact")) {
-               initialState.exact = true;
-               initialState.exactTargetID = targetElement.id;
-               initialState.defaultContent = base64ToUtf8(targetElement.getAttribute("phpspa-target-exact"))
+            // --- Check if component has target info ---
+            if (targetElement.hasAttribute("phpspa-target-data")) {
+               let targetData = targetElement.getAttribute("phpspa-target-data");
+               targetData = json_decode(base64ToUtf8(targetData));
+
+               console.log(targetData);
+               // initialState.exact = true;
+               // initialState.exactTargetID = targetElement.id;
+               // initialState.defaultContent = base64ToUtf8()
             }
 
-            // Replace current history state with PhpSPA data
+            // --- Replace current history state with PhpSPA data ---
             RuntimeManager.replaceState(
                initialState,
                document.title,
-               location.href
+               uri
             );
+
+            RuntimeManager.currentRoutes[initialState.targetID] = new URL(uri);
 
             RuntimeManager.currentState = initialState;
 
-            // Set up auto-reload if specified
+            // --- Set up auto-reload if specified ---
             if (targetElement.hasAttribute("phpspa-reload-time")) {
                setTimeout(phpspa.reloadComponent, initialState.reloadTime);
             }
@@ -905,10 +912,10 @@
          const spaLink = event.target.closest('a[data-type="phpspa-link-tag"]');
 
          if (spaLink) {
-            // Prevent default browser navigation
+            // --- Prevent default browser navigation ---
             event.preventDefault();
 
-            // Navigate using PhpSPA system
+            // --- Navigate using PhpSPA system ---
             phpspa.navigate(new URL(spaLink.href, location.href), "push");
          }
       });
@@ -920,23 +927,25 @@
       window.addEventListener("popstate", (event) => {
          const navigationState = event.state;
 
-         RuntimeManager.emit('beforeload', { route: location.href });
+         RuntimeManager.emit('beforeload', { route: location.toString() });
 
-         // Enable automatic scroll restoration
+         // --- Enable automatic scroll restoration ---
          history.scrollRestoration = "auto";
 
-         // Check if we have valid PhpSPA state data
+         // --- Check if we have valid PhpSPA state data ---
          if (navigationState && navigationState.content) {
-            // Restore page title
+            // --- Restore page title ---
             document.title = navigationState.title ?? document.title;
 
-            // Find target container or fallback to body
+            // --- Find target container or fallback to body ---
             const targetContainer =
                document.getElementById(navigationState.targetID) ?? document.body;
 
-            // Reset current state content before updating new content
             const currentState = RuntimeManager.currentState;
 
+            RuntimeManager.currentRoutes[navigationState.targetID] = navigationState.url;
+
+            // --- Reset current state content before updating new content ---
             if (currentState?.exact === true && currentState.exactTargetID !== navigationState.targetID) {
                let currentHTML = document.getElementById(currentState.exactTargetID)
                if (currentHTML) {
@@ -950,7 +959,7 @@
                }
             }
 
-            // Decode and restore HTML content
+            // --- Decode and restore HTML content ---
             const updateDOM = () => {
                try {
                   morphdom(targetContainer, '<div>' + navigationState.content + '</div>', {
@@ -962,19 +971,26 @@
             }
 
             const completedDOMUpdate = () => {
-               // Clear old executed scripts cache
+               // --- Clear old executed scripts cache ---
                RuntimeManager.clearExecutedScripts();
 
-               // Execute any inline scripts and styles in the restored content
+               // --- Execute any inline scripts and styles in the restored content ---
                RuntimeManager.runAll(navigationState.root ? document.body : targetContainer);
 
-               // Restart auto-reload timer if needed
+               if (currentState.defaultContent == document.getElementById(navigationState.exactTargetID)?.innerHTML) {
+                  delete RuntimeManager.currentRoutes[navigationState.exactTargetID];
+               }
+
+               // --- Save the current state ---
+               RuntimeManager.currentState = navigationState
+
+               // --- Restart auto-reload timer if needed ---
                if (typeof navigationState.reloadTime !== "undefined") {
                   setTimeout(phpspa.reloadComponent, navigationState.reloadTime);
                }
 
                RuntimeManager.emit('load', {
-                  route: location.href,
+                  route: navigationState.url,
                   success: true,
                   error: false
                });
@@ -994,8 +1010,8 @@
             }
 
          } else {
-            // No valid state found - navigate to current URL to refresh
-            phpspa.navigate(new URL(location.href), "replace");
+            // --- No valid state found - navigate to current URL to refresh ---
+            phpspa.navigate(location.toString(), "replace");
          }
       });
    })();
@@ -1044,10 +1060,12 @@
        * @fires phpspa#load - Emitted after attempting to load the new route, with success or error status.
        */
       static navigate(url, state = "push") {
-         // Emit beforeload event for loading indicators
+         url = url instanceof URL ? url : new URL(url, location.href);
+
+         // --- Emit beforeload event for loading indicators ---
          RuntimeManager.emit("beforeload", { route: url });
 
-         // Fetch content from the server with PhpSPA headers
+         // --- Fetch content from the server with PhpSPA headers ---
          fetch(url, {
             headers: {
                "X-Requested-With": "PHPSPA_REQUEST",
@@ -1063,7 +1081,7 @@
                   .then((responseText) => {
                      let responseData;
 
-                     // Try to parse JSON response, fallback to raw text
+                     // --- Try to parse JSON response, fallback to raw text ---
                      if (responseText && responseText.trim().startsWith("{")) {
                         try {
                            responseData = JSON.parse(responseText);
@@ -1071,7 +1089,7 @@
                            responseData = responseText;
                         }
                      } else {
-                        responseData = responseText || ""; // Handle empty responses
+                        responseData = responseText || ""; // --- Handle empty responses ---
                      }
 
                      processResponse(responseData);
@@ -1085,7 +1103,7 @@
           * @param {Error} error - The error object from the failed request
           */
          function handleError(error) {
-            // Check if the error has a response body (HTTP 4xx/5xx errors)
+            // --- Check if the error has a response body (HTTP 4xx/5xx errors) ---
             if (error.response) {
                error.response
                   .text()
@@ -1093,19 +1111,19 @@
                      let errorData;
 
                      try {
-                        // Attempt to parse error response as JSON
+                        // --- Attempt to parse error response as JSON ---
                         errorData = fallbackResponse.trim().startsWith("{")
                            ? JSON.parse(fallbackResponse)
                            : fallbackResponse;
                      } catch (parseError) {
-                        // If parsing fails, use raw text
+                        // --- If parsing fails, use raw text ---
                         errorData = fallbackResponse;
                      }
 
                      processResponse(errorData || "");
 
                      RuntimeManager.emit("load", {
-                        route: url,
+                        route: url?.toString() || url,
                         success: false,
                         error: error.message || "Server returned an error",
                         data: errorData,
@@ -1114,9 +1132,9 @@
                   .catch(() => {
                      processResponse("");
 
-                     // Failed to read error response body
+                     // --- Failed to read error response body ---
                      RuntimeManager.emit("load", {
-                        route: url,
+                        route: url?.toString() || url,
                         success: false,
                         error: error.message || "Failed to read error response",
                      });
@@ -1124,9 +1142,9 @@
             } else {
                processResponse("");
 
-               // Network error, same-origin issue, or other connection problems
+               // --- Network error, same-origin issue, or other connection problems ---
                RuntimeManager.emit("load", {
-                  route: url,
+                  route: url?.toString() || url,
                   success: false,
                   error: error.message || "No connection to server",
                });
@@ -1138,7 +1156,7 @@
           * @param {string|Object} responseData - The processed response data
           */
          function processResponse(responseData) {
-            // Update document title if provided
+            // --- Update document title if provided ---
             if (
                typeof responseData?.title === "string" ||
                typeof responseData?.title === "number"
@@ -1146,28 +1164,33 @@
                document.title = responseData.title;
             }
 
-            // Find target element for content replacement
+            // --- Find target element for content replacement ---
             const targetElement =
                document.getElementById(responseData?.targetID) ??
                document.getElementById(history.state?.targetID) ??
                document.body;
 
-            // Reset current state content before updating new content
+            // --- Reset current state content before updating new content ---
             const currentState = RuntimeManager.currentState;
-            if (currentState?.exact === true && currentState.exactTargetID !== responseData?.targetID) {
-               let currentHTML = document.getElementById(currentState.exactTargetID)
-               if (currentHTML) {
-                  try {
-                     morphdom(currentHTML, '<div>' + currentState.defaultContent + '</div>', {
-                        childrenOnly: true
-                     });
-                  } catch {
-                     currentHTML.innerHTML = currentState.defaultContent;
+
+            RuntimeManager.currentRoutes[responseData?.targetID || currentState.targetID] = url;
+
+            if (currentState?.exact === true) {
+               if (currentState.exactTargetID !== responseData?.targetID) {
+                  let currentHTML = document.getElementById(currentState.exactTargetID)
+                  if (currentHTML) {
+                     try {
+                        morphdom(currentHTML, '<div>' + currentState.defaultContent + '</div>', {
+                           childrenOnly: true
+                        });
+                     } catch {
+                        currentHTML.innerHTML = currentState.defaultContent;
+                     }
                   }
                }
             }
 
-            // Update content
+            // --- Update content ---
             const updateDOM = () => {
                try {
                   morphdom(targetElement, '<div>' + responseData?.content || responseData + '</div>', {
@@ -1178,9 +1201,9 @@
                }
             }
 
-            // Prepare state data for browser history
+            // --- Prepare state data for browser history ---
             const stateData = {
-               url: url?.href ?? url,
+               url: url?.toString() ?? url,
                title: responseData?.title ?? document.title,
                targetID: responseData?.targetID ?? targetElement.id,
                content: responseData?.content ?? responseData,
@@ -1195,24 +1218,28 @@
                stateData['defaultContent'] = document.getElementById(responseData?.targetID)?.innerHTML || '';
             }
 
-            // Include reload time if specified
+            // --- Include reload time if specified ---
             if (typeof responseData.reloadTime !== "undefined") {
                stateData.reloadTime = responseData.reloadTime;
             }
 
             const completedDOMUpdate = () => {
 
-               // Update browser history
+               // --- Update browser history ---
                if (state === "push") {
                   RuntimeManager.pushState(stateData, stateData.title, url);
                } else if (state === "replace") {
                   RuntimeManager.replaceState(stateData, stateData.title, url);
                }
 
+               if (currentState.defaultContent == document.getElementById(stateData.exactTargetID)?.innerHTML) {
+                  delete RuntimeManager.currentRoutes[stateData.exactTargetID];
+               }
+
                // --- Save the current state ---
                RuntimeManager.currentState = history.state
 
-               // Handle URL fragments (hash navigation)
+               // --- Handle URL fragments (hash navigation) ---
                const hashElement = document.getElementById(url?.hash?.substring(1));
 
                if (hashElement) {
@@ -1221,24 +1248,24 @@
                      left: hashElement.offsetLeft,
                   });
                } else {
-                  scroll(0, 0); // Scroll to top if no hash or element not found
+                  scroll(0, 0); // --- Scroll to top if no hash or element not found ---
                }
 
-               // Clear old executed scripts cache
+               // --- Clear old executed scripts cache ---
                RuntimeManager.clearExecutedScripts();
 
-               // Execute any inline scripts and styles in the new content
+               // --- Execute any inline scripts and styles in the new content ---
                RuntimeManager.runAll(targetElement);
 
 
-               // Emit successful load event
+               // --- Emit successful load event ---
                RuntimeManager.emit("load", {
-                  route: url,
+                  route: url?.toString() || url,
                   success: true,
                   error: false,
                });
 
-               // Set up auto-reload if specified
+               // --- Set up auto-reload if specified ---
                if (typeof responseData.reloadTime !== "undefined") {
                   setTimeout(phpspa.reloadComponent, responseData.reloadTime);
                }
@@ -1247,14 +1274,13 @@
             if (document.startViewTransition) {
                document.startViewTransition(updateDOM).finished.then(completedDOMUpdate).catch((reason) => {
                   RuntimeManager.emit('load', {
-                     route: url,
+                     route: url?.toString() || url,
                      success: false,
                      error: reason || 'Unknown error during view transition',
                   });
                });
             } else {
                updateDOM();
-               completedDOMUpdate();
             }
          }
       }
@@ -1280,7 +1306,7 @@
        * This does not add a new entry to the browser's history stack.
        */
       static reload() {
-         phpspa.navigate(new URL(location.href), "replace");
+         phpspa.navigate(location.toString(), "replace");
       }
 
       /**
@@ -1301,7 +1327,7 @@
        * Preserves the current scroll position during the update.
        *
        * @param {string} key - The key representing the state to update.
-       * @param {*} value - The new value to set for the specified state key.
+       * @param {string|array|object|null} value - The new value to set for the specified state key.
        * @returns {Promise<void>} A promise that resolves when the state is updated successfully.
        *
        * @example
@@ -1310,55 +1336,54 @@
        *   .catch(err => console.error('Failed to update state:', err));
        */
       static setState(key, value) {
-         return new Promise((resolve, reject) => {
-            // Preserve current scroll position
-            const currentScroll = {
-               top: scrollY,
-               left: scrollX,
-            };
-
-            const currentUrl = new URL(location.href);
+         return new Promise(async (resolve, reject) => {
+            const currentUrls = RuntimeManager.currentRoutes;
             const statePayload = JSON.stringify({ state: { key, value } });
+            const promises = [];
 
-            // Send state update request with authorization header
-            fetch(currentUrl, {
-               headers: {
-                  "X-Requested-With": "PHPSPA_REQUEST",
-                  Authorization: `Bearer ${utf8ToBase64(statePayload)}`,
-               },
-               mode: "same-origin",
-               redirect: "follow",
-               keepalive: true,
-            })
-               .then((response) => {
-                  response
-                     .text()
-                     .then((responseText) => {
-                        let responseData;
+            for (const id in currentUrls) {
+               if (!Object.hasOwn(currentUrls, id)) continue;
 
-                        // Parse response as JSON if possible
-                        if (responseText && responseText.trim().startsWith("{")) {
-                           try {
-                              responseData = JSON.parse(responseText);
-                           } catch (parseError) {
-                              responseData = responseText;
-                           }
-                        } else {
-                           responseData = responseText || "";
-                        }
+               const url = currentUrls[id];
 
-                        resolve();
-                        updateContent(responseData);
-                     })
-                     .catch((error) => {
-                        reject(error.message);
-                        handleStateError(error);
-                     });
-               })
-               .catch((error) => {
+               const prom = fetch(url, {
+                  headers: {
+                     "X-Requested-With": "PHPSPA_REQUEST",
+                     Authorization: `Bearer ${utf8ToBase64(statePayload)}`,
+                  },
+                  mode: "same-origin",
+                  redirect: "follow",
+                  keepalive: true,
+               });
+               promises.push(prom);
+            }
+
+            const responses = await Promise.all(promises);
+
+            responses.forEach(async (response) => {
+               try {
+                  const responseText = await response.text();
+                  let responseData;
+
+                  // --- Parse response as JSON if possible ---
+                  if (responseText && responseText.trim().startsWith("{")) {
+                     try {
+                        responseData = JSON.parse(responseText);
+                     } catch (parseError) {
+                        responseData = responseText;
+                     }
+                  } else {
+                     responseData = responseText || "";
+                  }
+
+                  resolve();
+                  updateContent(responseData);
+               } catch (error) {
                   reject(error.message);
                   handleStateError(error);
-               });
+               }
+            });
+
 
             /**
              * Handles errors during state update requests
@@ -1394,7 +1419,7 @@
              * @param {string|Object} responseData - The response data to process
              */
             function updateContent(responseData) {
-               // Update title if provided
+               // --- Update title if provided ---
                if (
                   typeof responseData?.title === "string" ||
                   typeof responseData?.title === "number"
@@ -1402,7 +1427,7 @@
                   document.title = responseData.title;
                }
 
-               // Find target element and update content
+               // --- Find target element and update content ---
                const targetElement =
                   document.getElementById(responseData?.targetID) ??
                   document.getElementById(history.state?.targetID) ??
@@ -1419,8 +1444,12 @@
                };
 
                const completedDOMUpdate = () => {
-                  scroll(currentScroll);
-               }
+                  // --- Clear old executed scripts cache ---
+                  RuntimeManager.clearExecutedScripts();
+
+                  // --- Execute any inline scripts and styles in the new content ---
+                  RuntimeManager.runAll(targetElement);
+               };
 
                if (document.startViewTransition) {
                   document.startViewTransition(updateDOM).finished.then(completedDOMUpdate);
@@ -1437,13 +1466,13 @@
        * Useful for refreshing dynamic content without full page navigation.
        */
       static reloadComponent() {
-         // Save current scroll position
+         // --- Save current scroll position ---
          const currentScroll = {
             top: scrollY,
             left: scrollX,
          };
 
-         // Fetch current page content
+         // --- Fetch current page content ---
          fetch(new URL(location.href), {
             headers: {
                "X-Requested-With": "PHPSPA_REQUEST",
@@ -1458,7 +1487,7 @@
                   .then((responseText) => {
                      let responseData;
 
-                     // Parse response
+                     // --- Parse response ---
                      if (responseText && responseText.trim().startsWith("{")) {
                         try {
                            responseData = JSON.parse(responseText);
@@ -1513,7 +1542,7 @@
           * @param {string|Object} responseData - The response data
           */
          function updateComponentContent(responseData) {
-            // Update title if provided
+            // --- Update title if provided ---
             if (
                typeof responseData?.title === "string" ||
                typeof responseData?.title === "number"
@@ -1521,7 +1550,7 @@
                document.title = responseData.title;
             }
 
-            // Find target and update content
+            // --- Find target and update content ---
             const targetElement =
                document.getElementById(responseData?.targetID) ??
                document.getElementById(history.state?.targetID) ??
@@ -1538,14 +1567,7 @@
             };
 
             const completedDOMUpdate = () => {
-               // Clear old executed scripts cache
-               RuntimeManager.clearExecutedScripts();
-
-               // Execute scripts and restore scroll
-               RuntimeManager.runAll(targetElement);
-               scroll(currentScroll);
-
-               // Set up next auto-reload if specified
+               // --- Set up next auto-reload if specified ---
                if (typeof responseData.reloadTime !== "undefined") {
                   setTimeout(phpspa.reloadComponent, responseData.reloadTime);
                }
@@ -1569,7 +1591,7 @@
        * @returns {Promise<string>} The decoded response from the server
        */
       static async __call(token, ...args) {
-         const currentUrl = new URL(location.href);
+         const currentUrl = new URL(location.toString());
          const callPayload = JSON.stringify({ __call: { token, args } });
 
          try {
@@ -1586,7 +1608,7 @@
             const responseText = await response.text();
             let responseData;
 
-            // Parse and decode response
+            // --- Parse and decode response ---
             if (responseText && responseText.trim().startsWith("{")) {
                try {
                   responseData = JSON.parse(responseText);
@@ -1602,7 +1624,7 @@
 
             return responseData;
          } catch (error) {
-            // Handle errors with response bodies
+            // --- Handle errors with response bodies ---
             if (error.response) {
                try {
                   const fallbackResponse = await error.response.text();
@@ -1625,7 +1647,7 @@
                   return "";
                }
             } else {
-               // Network errors or other issues
+               // --- Network errors or other issues ---
                return "";
             }
          }
@@ -1665,7 +1687,25 @@
        */
       static ScriptsCachedContent = {};
 
+      /**
+       * Current history state
+       *
+       * @type {{
+       *    url: string,
+       *    title: string,
+       *    targetID: string,
+       *    content: string,
+       *    defaultContent: string,
+       *    exact: boolean,
+       *    exactTargetID: string
+       * }}
+       */
       static currentState = {};
+
+      /**
+       * @type {Object<string, URL}>
+       */
+      static currentRoutes = {};
 
       /**
        * Internal event registry for custom events
@@ -1701,33 +1741,33 @@
          const nonce = document.documentElement.getAttribute('x-phpspa');
 
          scripts.forEach((script) => {
-            // Use base64 encoded content as unique identifier
+            // --- Use base64 encoded content as unique identifier ---
             const contentHash = utf8ToBase64(script.textContent.trim());
 
-            // Skip if this script has already been executed
+            // --- Skip if this script has already been executed ---
             if (!this.executedScripts.has(contentHash) && script.textContent.trim() !== "") {
                this.executedScripts.add(contentHash);
 
-               // Create new script element
+               // --- Create new script element ---
                const newScript = document.createElement("script");
                newScript.nonce = nonce;
 
-               // Copy all attributes except the data-type identifier
+               // --- Copy all attributes except the data-type identifier ---
                for (const attribute of script.attributes) {
                   newScript.setAttribute(attribute.name, attribute.value);
                }
 
-               // Check if script should run in async context
+               // --- Check if script should run in async context ---
                const isAsync = script.hasAttribute("async");
 
-               // Wrap in IIFE to create isolated scope
+               // --- Wrap in IIFE to create isolated scope ---
                if (isAsync) {
                   newScript.textContent = `(async function() {\n${script.textContent}\n})();`;
                } else {
                   newScript.textContent = `(function() {\n${script.textContent}\n})();`;
                }
 
-               // Execute and immediately remove from DOM
+               // --- Execute and immediately remove from DOM ---
                document.head.appendChild(newScript).remove();
             }
          });
@@ -1741,18 +1781,18 @@
             const scriptUrl = script.getAttribute('src');
             const nonce = document.documentElement.getAttribute('x-phpspa');
 
-            // Skip if this script has already been executed
+            // --- Skip if this script has already been executed ---
             if (!this.executedScripts.has(scriptUrl)) {
                this.executedScripts.add(scriptUrl);
 
-               // Check cache first
+               // --- Check cache first ---
                if (this.ScriptsCachedContent[scriptUrl]) {
                   const newScript = document.createElement("script");
                   newScript.textContent = this.ScriptsCachedContent[scriptUrl];
                   newScript.type = 'text/javascript';
                   newScript.nonce = nonce;
 
-                  // Execute and immediately remove from DOM
+                  // --- Execute and immediately remove from DOM ---
                   document.head.appendChild(newScript).remove();
                   return;
                }
@@ -1766,16 +1806,16 @@
                if (response.ok) {
                   const scriptContent = await response.text();
 
-                  // Create new script element
+                  // --- Create new script element ---
                   const newScript = document.createElement("script");
                   newScript.textContent = scriptContent;
                   newScript.type = 'text/javascript';
                   newScript.nonce = nonce;
 
-                  // Execute and immediately remove from DOM
+                  // --- Execute and immediately remove from DOM ---
                   document.head.appendChild(newScript).remove();
 
-                  // Cache the fetched script content
+                  // --- Cache the fetched script content ---
                   this.ScriptsCachedContent[scriptUrl] = scriptContent;
                } else {
                   console.error(`Failed to load script from ${scriptUrl}: ${response.statusText}`);
@@ -1810,23 +1850,23 @@
          const nonce = document.documentElement.getAttribute('x-phpspa');
 
          styles.forEach((style) => {
-            // Use base64 encoded content as unique identifier
+            // --- Use base64 encoded content as unique identifier ---
             const contentHash = utf8ToBase64(style.textContent.trim());
 
-            // Skip if this style has already been injected
+            // --- Skip if this style has already been injected ---
             if (!this.executedStyles.has(contentHash) && style.textContent.trim() !== "") {
                this.executedStyles.add(contentHash);
 
-               // Create new style element
+               // --- Create new style element ---
                const newStyle = document.createElement("style");
                newStyle.nonce = nonce;
 
-               // Copy all attributes except the data-type identifier
+               // --- Copy all attributes except the data-type identifier ---
                for (const attribute of style.attributes) {
                   newStyle.setAttribute(attribute.name, attribute.value);
                }
 
-               // Copy style content and inject into head
+               // --- Copy style content and inject into head ---
                newStyle.textContent = style.textContent;
                document.head.appendChild(newStyle).remove();
             }
@@ -1843,13 +1883,13 @@
       static emit(eventName, payload) {
          const callbacks = this.events[eventName] || [];
 
-         // Execute all registered callbacks for this event
+         // --- Execute all registered callbacks for this event ---
          for (const callback of callbacks) {
             if (typeof callback === "function") {
                try {
                   callback(payload);
                } catch (error) {
-                  // Log callback errors but don't break the chain
+                  // --- Log callback errors but don't break the chain ---
                   console.error(`Error in ${eventName} event callback:`, error);
                }
             }
@@ -1866,7 +1906,7 @@
          try {
             history.pushState(...stateArgs);
          } catch (error) {
-            // Silently handle history API restrictions
+            // --- Silently handle history API restrictions ---
             console.warn("Failed to push history state:", error.message);
          }
       }
@@ -1881,7 +1921,7 @@
          try {
             history.replaceState(...stateArgs);
          } catch (error) {
-            // Silently handle history API restrictions
+            // --- Silently handle history API restrictions ---
             console.warn("Failed to replace history state:", error.message);
          }
       }
@@ -1896,9 +1936,7 @@
     * @returns {Promise<void>} Promise that resolves when state is updated
     */
    if (typeof window !== "undefined" && typeof window.setState !== "function") {
-      window.setState = function (key, value) {
-         return phpspa.setState(key, value);
-      };
+      window.setState = (key, value) => phpspa.setState(key, value);
    }
 
    /**
@@ -1910,10 +1948,10 @@
     * @returns {Promise<string>} Promise that resolves with the server response
     */
    if (typeof window !== "undefined" && typeof window.__call !== "function") {
-      window.__call = function (token, ...args) {
-         return phpspa.__call(token, ...args);
-      };
+      window.__call = (token, ...args) => phpspa.__call(token, ...args);
    }
+
+   window.RuntimeManager = RuntimeManager;
 
    /**
     * Export phpspa for UMD pattern

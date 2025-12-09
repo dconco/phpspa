@@ -1,26 +1,46 @@
 <?php
 
-NAMESPACE PhpSPA;
+namespace PhpSPA;
 
-CLASS DOM {
-   PRIVATE STATIC ?STRING$_title = NULL;
-   PRIVATE STATIC ?STRING$_jsType = 'text/javascript';
+class DOM {
+   private static ?string $_title = null;
+   private static ?array $_currentRoutes = [];
+   private static ?array $_currentComponents = [];
+   private static ?string $_jsType = 'text/javascript';
 
-   PUBLIC STATIC FUNCTION Title(): ?STRING {
-      $title = @func_get_args()[0];
+   public static function Title(): ?string {
+      $title = func_get_args()[0] ?? null;
 
       if ($title)
-         SELF::$_title = $title;
+         static::$_title = $title;
 
-      return @SELF::$_title;
+      return static::$_title;
    }
-   
-   PUBLIC STATIC FUNCTION JSType(): STRING {
-      $jsType = @func_get_args()[0];
+
+   public static function JSType(): string {
+      $jsType = func_get_args()[0] ?? null;
    
       if ($jsType)
-         SELF::$_jsType = $jsType;
+         static::$_jsType = $jsType;
    
-      return @SELF::$_jsType;
+      return static::$_jsType;
+   }
+
+   public static function CurrentRoutes(): array {
+      $currentRoute = func_get_args()[0] ?? null;
+
+      if ($currentRoute)
+         static::$_currentRoutes[] = $currentRoute;
+
+      return static::$_currentRoutes;
+   }
+
+   public static function CurrentComponents(): array {
+      $currentComponent = func_get_args()[0] ?? null;
+
+      if ($currentComponent)
+         static::$_currentComponents[] = $currentComponent;
+
+      return static::$_currentComponents;
    }
 }

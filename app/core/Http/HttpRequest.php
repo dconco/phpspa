@@ -3,6 +3,7 @@
 namespace PhpSPA\Core\Http;
 
 use PhpSPA\Http\Request;
+use PhpSPA\Http\Session;
 use stdClass;
 
 class HttpRequest implements Request
@@ -50,14 +51,7 @@ class HttpRequest implements Request
 
     public function urlQuery(?string $name = null)
     {
-        if (php_sapi_name() == 'cli-server') {
-            $parsed = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
-        } else {
-            $parsed = parse_url(
-                $_REQUEST['uri'] ?? $_SERVER['REQUEST_URI'],
-                PHP_URL_QUERY,
-            );
-        }
+        $parsed = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
 
         $cl = new stdClass();
 
@@ -158,10 +152,7 @@ class HttpRequest implements Request
 
     public function session(?string $key = null)
     {
-        // Start the session if it's not already started
-        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            session_start();
-        }
+        Session::start();
 
         // If no key is provided, return all session data as an object
         if (!$key) {
@@ -169,7 +160,7 @@ class HttpRequest implements Request
         }
 
         // If the session key exists, return its value; otherwise, return null
-        return isset($_SESSION[$key]) ? $this->validate($_SESSION[$key]) : null;
+        return $this->validate(Session::get($key));
     }
 
     public function method(): string
