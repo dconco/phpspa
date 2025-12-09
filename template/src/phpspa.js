@@ -1262,7 +1262,9 @@
                   scroll(0, 0); // --- Scroll to top if no hash or element not found ---
                }
 
+
                // --- Clear old executed scripts cache ---
+               RuntimeManager.clearEffects();
                RuntimeManager.clearExecutedScripts();
 
                // --- Execute any inline scripts and styles in the new content ---
@@ -1292,6 +1294,7 @@
                });
             } else {
                updateDOM();
+               completedDOMUpdate();
             }
          }
       }
@@ -1455,11 +1458,8 @@
                };
 
                const completedDOMUpdate = () => {
-                  // --- Clear old executed scripts cache ---
-                  RuntimeManager.clearExecutedScripts();
-
-                  // --- Execute any inline scripts and styles in the new content ---
-                  RuntimeManager.runAll(targetElement);
+                  // --- Trigger effects for the changed key ---
+                  RuntimeManager.triggerEffects(key, value);
                };
 
                updateDOM();
@@ -1473,14 +1473,9 @@
        * Useful for refreshing dynamic content without full page navigation.
        */
       static reloadComponent() {
-         // --- Save current scroll position ---
-         const currentScroll = {
-            top: scrollY,
-            left: scrollX,
-         };
 
          // --- Fetch current page content ---
-         fetch(new URL(location.href), {
+         fetch(location.toString(), {
             headers: {
                "X-Requested-With": "PHPSPA_REQUEST",
             },
@@ -1574,18 +1569,21 @@
             };
 
             const completedDOMUpdate = () => {
+               // --- Clear old executed scripts cache ---
+               RuntimeManager.clearEffects();
+               RuntimeManager.clearExecutedScripts();
+
+               // --- Execute any inline scripts and styles in the new content ---
+               RuntimeManager.runAll(targetElement);
+
                // --- Set up next auto-reload if specified ---
                if (typeof responseData.reloadTime !== "undefined") {
                   setTimeout(phpspa.reloadComponent, responseData.reloadTime);
                }
             }
 
-            if (document.startViewTransition) {
-               document.startViewTransition(updateDOM).finished.then(completedDOMUpdate);
-            } else {
-               updateDOM();
-               completedDOMUpdate();
-            }
+            updateDOM();
+            completedDOMUpdate();
          }
       }
 
@@ -1730,6 +1728,65 @@
        *
        * @param {HTMLElement} container - The container element to search for scripts and styles
        */
+
+      /**
+       * @type {Set<{
+       *    callback: Function,
+       *    dependencies: Array<string>|null,
+       *    cleanup: Function|null
+       * }>}
+       */
+      static effects = new Set();
+
+      /**
+       * Registers a side effect to be executed when state changes
+       * similar to React's useEffect but using state keys strings as dependencies
+       *
+       * @param {Function} callback - The effect callback
+       * @param {Array<string>} dependencies - Array of state keys to listen for
+       */
+      static registerEffect(callback, dependencies = null) {
+         // Run immediately (mount)
+         const cleanup = callback();
+
+         const effect = {
+            callback,
+            dependencies,
+            cleanup: typeof cleanup === 'function' ? cleanup : null
+         };
+
+         RuntimeManager.effects.add(effect);
+      }
+
+      /**
+       * Triggers effects that depend on the specific state key
+       *
+       * @param {string} key - The state key that changed
+       * @param {any} value - The new value (optional)
+       */
+      static triggerEffects(key, value) {
+         RuntimeManager.effects.forEach(effect => {
+            if (effect.dependencies === null || effect.dependencies.includes(key)) {
+               // Run cleanup if exists
+               if (effect.cleanup) effect.cleanup();
+
+               // Re-run callback
+               const cleanup = effect.callback();
+               effect.cleanup = typeof cleanup === 'function' ? cleanup : null;
+            }
+         });
+      }
+
+      /**
+       * Clears all registered effects and runs their cleanup functions
+       */
+      static clearEffects() {
+         RuntimeManager.effects.forEach(effect => {
+            if (effect.cleanup) effect.cleanup();
+         });
+         RuntimeManager.effects.clear();
+      }
+
       static runAll(container) {
          this.runInlineScripts(container);
          this.runInlineStyles(container);
@@ -1959,6 +2016,7 @@
    }
 
    window.RuntimeManager = RuntimeManager;
+   window.useEffect = RuntimeManager.registerEffect;
 
    /**
     * Export phpspa for UMD pattern

@@ -62,13 +62,20 @@ return (new Component(function (): string
          <LinkComponent />
 
          <script>
-            const btn = document.getElementById('counter-btn')
-            let currentCounter = {$counter} + 1;
+            let currentCounter = {$counter};
 
-            btn.onclick = async () => {
-               console.log(currentCounter+1);
-               await setState('counter', currentCounter)
-            }
+            useEffect(() => {
+               const btn = document.getElementById('counter-btn');
+               
+               const handleClick = async () => {
+                  currentCounter++;
+                  await phpspa.setState('counter', currentCounter);
+               };
+
+               btn.addEventListener('click', handleClick);
+
+               return () => btn.removeEventListener('click', handleClick);
+            }, ['counter']);
          </script>
       </div>
    HTML;
