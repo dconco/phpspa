@@ -467,6 +467,9 @@ abstract class AppImpl implements ApplicationContract {
       $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput;
       $nonce = Nonce::nonce();
 
+      // --- Initialize static variable once ---
+      static $targetInformation = [];
+
       if (!$isPreloadingComponent) {
          if ($title) {
             $count = 0;
@@ -524,13 +527,10 @@ abstract class AppImpl implements ApplicationContract {
       // --- This render the component to the target ID ---
       $this->renderedData = preg_replace_callback(
          $tag,
-         function ($matches) use (&$tt, $componentOutput, $compressOutput, $isPreloadingComponent, $exact, $preload) {
+         function ($matches) use (&$targetInformation, &$tt, $componentOutput, $compressOutput, $isPreloadingComponent, $exact, $preload, $targetID) {
             // --- $matches[1] contains the tag name, ---
             // --- $matches[2] contains attributes with the target ID, ---
             // --- $matches[3] contains the default content inside the tag ---
-
-            // --- Initialize static variable once ---
-            static $targetInformation = [];
 
             // --- Set values only on the first component (main component) ---
             if (!$isPreloadingComponent && empty($targetInformation)) {
@@ -542,6 +542,7 @@ abstract class AppImpl implements ApplicationContract {
 
             // --- Update on main component and preloading components ---
             $targetInformation['currentRoutes'] = DOM::CurrentRoutes();
+            $targetInformation['targetIDs'][] = $targetID;
 
             // --- Check if preload component does not exists ---
             // --- If it does not exist then there is no preloading component to attach it to ---

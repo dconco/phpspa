@@ -849,6 +849,7 @@
        */
       window.addEventListener("DOMContentLoaded", () => {
          const targetElement = document.querySelector("[data-phpspa-target]");
+         const targetElementInfo = document.querySelector("[phpspa-target-data]");
          const uri = location.toString();
 
          RuntimeManager.emit('load', {
@@ -875,14 +876,26 @@
             }
 
             // --- Check if component has target info ---
-            if (targetElement.hasAttribute("phpspa-target-data")) {
-               let targetData = targetElement.getAttribute("phpspa-target-data");
-               targetData = json_decode(base64ToUtf8(targetData));
+            if (targetElementInfo) {
+               const targetData = targetElementInfo.getAttribute("phpspa-target-data");
 
-               console.log(targetData);
-               // initialState.exact = true;
-               // initialState.exactTargetID = targetElement.id;
-               // initialState.defaultContent = base64ToUtf8()
+               /**
+                * @type {{
+                *    targetIDs: string[],
+                *    currentRoutes: string[],
+                *    defaultContent: string,
+                *    exact: boolean,
+                * }}
+                */
+               const targetDataInfo = JSON.parse(base64ToUtf8(targetData));
+
+               targetDataInfo.targetIDs.forEach((value, index) => {
+                  RuntimeManager.currentRoutes[value] = new URL(targetDataInfo.currentRoutes[index], uri);
+               })
+
+               initialState.exact = targetDataInfo.exact;
+               initialState.exactTargetID = targetElement.id;
+               initialState.defaultContent = targetDataInfo.defaultContent;
             }
 
             // --- Replace current history state with PhpSPA data ---
@@ -891,8 +904,6 @@
                document.title,
                uri
             );
-
-            RuntimeManager.currentRoutes[initialState.targetID] = new URL(uri);
 
             RuntimeManager.currentState = initialState;
 
