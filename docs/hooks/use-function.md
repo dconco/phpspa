@@ -4,7 +4,7 @@
 code { background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); padding: 2px 6px; border-radius: 3px; }
 </style>
 
-Often, you need to run PHP logic—like saving to a database—without a full page reload. The `useFunction` hook makes this simple without creating separate API routes.
+Often, you need to run PHP logic — like saving to a database — without a full page reload. The `useFunction` hook makes this simple without creating separate API routes.
 
 !!! info "Secure Bridge"
     It securely exposes a PHP function so your client-side JavaScript can call it directly.
@@ -13,6 +13,7 @@ Often, you need to run PHP logic—like saving to a database—without a full pa
 
 !!! note "Required Namespace"
     ```php
+    <?php
     use function Component\useFunction;
     ```
     Include this at the top of your PHP files to use the `useFunction` hook.
@@ -24,17 +25,17 @@ Often, you need to run PHP logic—like saving to a database—without a full pa
 ```php
 <?php
 
-$phpFunction = function($arg) {
+function phpFunction($arg) {
     return "result";
 };
 
-$caller = useFunction($phpFunction);
+$caller = useFunction("phpFunction");
 ```
 
 **In JavaScript:**
 
 ```javascript
-const result = await {$caller('arg')};
+const result = await {$caller("'arg value'")};
 ```
 
 The `useFunction` hook wraps a PHP function and returns a caller that can be invoked from JavaScript.
@@ -50,8 +51,8 @@ Let's build a form where a user enters their name, and the server sends back a p
 ```php
 <?php
 
-$sayHello = function (string $name): string {
-    return "Hello, " . htmlspecialchars($name) . "!";
+function sayHello(string $name): string {
+    return "Hello, $name!";
 };
 ```
 
@@ -62,7 +63,7 @@ This function accepts a name and returns a greeting.
 ```php
 <?php
 
-$greeter = useFunction($sayHello);
+$greeter = useFunction("sayHello");
 ```
 
 This creates a JavaScript-callable version of your PHP function.
@@ -88,7 +89,7 @@ const greetBtn = document.getElementById('greetBtn');
 
 greetBtn.onclick = async () => {
     const name = nameInput.value;
-    const greeting = await {$greeter('name')};
+    const greeting = await {$greeter('name')}; // Take note: the value in the parameter is js code
     alert(greeting);
 };
 ```
@@ -107,29 +108,44 @@ use function Component\useFunction;
 
 $greeterPage = new Component(function () {
     // 1. Define the PHP function you want to call.
-    $sayHello = function (string $name): string {
-        return "Hello, " . htmlspecialchars($name) . "!";
+    function sayHello(string $name, int $age): string {
+        return [
+            "name" => $name,
+            "age" => $age,
+            "greeting" => "Hello, $name! You are $age years old",
+        ];
     };
 
     // 2. Wrap your function with useFunction().
-    $greeter = useFunction($sayHello);
+    $greeter = useFunction("sayHello");
 
     echo <<<HTML
         <input type="text" id="nameInput" placeholder="Enter your name">
+        <input type="number" id="ageInput" placeholder="Enter your age">
         <button id="greetBtn">Greet Me</button>
 
         <script>
             const nameInput = document.getElementById('nameInput');
+            const ageInput = document.getElementById('ageInput');
             const greetBtn = document.getElementById('greetBtn');
 
             greetBtn.onclick = async () => {
                 const name = nameInput.value;
+                const age = Number(ageInput.value);
 
                 // 3. Call the PHP function from JavaScript!
-                const greeting = await {$greeter('name')};
+                const greeting = await {$greeter('name', 'age')};
 
                 // The returned value is the direct output of your PHP function.
-                alert(greeting); // Shows "Hello, [Name]!"
+                console.log(greeting); // Shows a javascript object like:
+
+                // {
+                //    "name": "Dave",
+                //    "age": 17,
+                //    "greeting": "Hello, Dave!"
+                // }
+
+                alert(greeting.name); // Shows "Dave".
             };
         </script>
     HTML;

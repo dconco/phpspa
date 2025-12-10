@@ -42,6 +42,8 @@ $app = (new App(require 'layout/Layout.php'))
 
 	->cors()
 
+	->assetCacheHours(0)
+
 	->styleSheet(
 		fn () => <<<CSS
 		/* Global styles for the application */

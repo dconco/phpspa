@@ -827,7 +827,7 @@ abstract class AppImpl implements ApplicationContract {
          if ($assetInfo['assetIndex'] === -1 && $request->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT' && $request->requestedWith() !== 'PHPSPA_REQUEST') {
             $scriptPath = dirname(__DIR__, 4);
             // $path = '/src/script/phpspa.min.js'; // --- PRODUCTION ---
-            $path = '/template/src/phpspa.js'; // --- DEVELOPMENT ---
+            $path = '/examples/src/phpspa.js'; // --- DEVELOPMENT ---
 
             return [file_get_contents($scriptPath . $path)];
          }
@@ -895,30 +895,29 @@ abstract class AppImpl implements ApplicationContract {
          return $html;
       }
 
-      // Inject global stylesheets in head for proper CSS cascading
-      if (!empty(trim($globalStylesheets))) {
+      // Inject global stylesheets AND global scripts in head for proper loading order
+      // This ensures phpspa.js is available before any inline component scripts execute
+      $headContent = $globalStylesheets . $globalScripts;
+      if (!empty(trim($headContent))) {
          if (preg_match('/<\/head>/i', $html)) {
-            $html = preg_replace('/<\/head>/i', "{$globalStylesheets}</head>", $html, 1);
+            $html = preg_replace('/<\/head>/i', "{$headContent}</head>", $html, 1);
          }
          else {
-            // If no head tag, put stylesheets at the beginning
-            $html = "{$globalStylesheets}{$html}";
+            // If no head tag, put assets at the beginning
+            $html = "{$headContent}{$html}";
          }
       }
 
-      // Combine global scripts and component scripts in proper order
-      $allScripts = $globalScripts . $componentScripts;
-
-      // Inject scripts at end of body (global scripts first, then component scripts)
-      if (!empty(trim($allScripts))) {
+      // Inject component scripts at end of body
+      if (!empty(trim($componentScripts))) {
          if (preg_match('/<\/body>/i', $html))
-            $html = preg_replace('/<\/body>/i', "{$allScripts}</body>", $html, 1);
+            $html = preg_replace('/<\/body>/i', "{$componentScripts}</body>", $html, 1);
          elseif (preg_match('/<\/html>/i', $html))
             // If no body tag, try to inject before closing html tag
-            $html = preg_replace('/<\/html>/i', "{$allScripts}</html>", $html, 1);
+            $html = preg_replace('/<\/html>/i', "{$componentScripts}</html>", $html, 1);
          else
             // If neither body nor html tags exist, append at the end
-            $html .= $allScripts;
+            $html .= $componentScripts;
       }
 
       return $html;

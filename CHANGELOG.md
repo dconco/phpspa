@@ -10,6 +10,32 @@
 composer require dconco/phpspa:v2.0.4.x-dev
 ```
 
+### **Client-Side Hooks** ⚛️
+
+- **`useEffect()`** - Manage side effects and cleanups in your component scripts with dependency tracking
+
+**Example:**
+
+```javascript
+// Inside your component's script tag
+useEffect(() => {
+   const btn = document.getElementById('btn');
+   const handleClick = () => console.log('Clicked!');
+   
+   btn.addEventListener('click', handleClick);
+
+   // Cleanup function runs before next effect or on unmount
+   return () => btn.removeEventListener('click', handleClick);
+}, ['stateKey']); // Re-runs only when 'stateKey' changes
+```
+
+**Documentation:** [references/hooks/clients/use-effect](https://phpspa.readthedocs.io/en/latest/references/hooks/clients/use-effect)
+
+
+### **Core Fixes** 🔧
+
+- **Script Loading Order** - Moved assets scripts to `<head>` to prevent race conditions (Fixes `useEffect` definition timing)
+
 ### **Advanced Component Features** 🎯
 
 - **Component Preloading** - Load multiple components on different target IDs simultaneously for multi-section layouts

@@ -116,6 +116,14 @@
 
     [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/latest/references/preloading-component/)
 
+-   :material-function:{ .lg .middle } **Client-Side useEffect** :material-new-box:
+
+    ---
+
+    Manage side effects in component scripts
+
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/latest/references/hooks/clients/use-effect)
+
 </div>
 
 ---
@@ -128,7 +136,8 @@
     |------|-------------|---------|
     | [`useFetch()`](https://phpspa.readthedocs.io/en/stable/references/hooks/use-fetch/) | Async HTTP client with parallel execution | v2.0.1 |
     | [`useState()`](../hooks/use-state.md) | Reactive state management | v2.0.0 |
-    | [`useEffect()`](../hooks/use-effect.md) | Side effects and lifecycle hooks | v2.0.0 |
+    | [`useEffect() (PHP)`](../hooks/use-effect.md) | Side effects and lifecycle hooks | v2.0.0 |
+    | [`useEffect() (JS)`](https://phpspa.readthedocs.io/en/latest/references/hooks/clients/use-effect) | Client-side side effects | v2.0.4 |
     | [`useFunction()`](../hooks/use-function.md) | Call PHP functions from JavaScript | v1.1.5 |
 
 === "Helpers"

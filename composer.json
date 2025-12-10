@@ -49,7 +49,7 @@
 		"test:async": "php tests/Test.php --async",
 		"start": [
 			"Composer\\Config::disableProcessTimeout",
-			"php -S localhost:8000 -t template"
+			"php -S localhost:8000 -t examples"
 		],
 		"docs:serve": [
 			"Composer\\Config::disableProcessTimeout",
