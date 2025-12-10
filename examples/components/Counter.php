@@ -30,15 +30,15 @@ return (new Component(function (): string
    $counter = useState('counter', 0);
    $message = useState('message', 'Waiting for an update...');
 
-   // useEffect(function () use ($counter, &$message)
-   // {
-   //    $newCounter = $counter() + 1;
-   //    $name = [ 'Dave', 'John', 'Jane' ][array_rand([ 'Dave', 'John', 'Jane' ])];
-   //    $newMsg = "Counter updated to: $counter but the effect changed it to $newCounter by $name";
+    useEffect(function () use ($counter, &$message)
+    {
+       $newCounter = $counter() + 1;
+       $name = [ 'Dave', 'John', 'Jane' ][array_rand([ 'Dave', 'John', 'Jane' ])];
+       $newMsg = "Counter updated to: $counter but the effect changed it to $newCounter by $name";
       
-   //    $message($newMsg);
-   //    $counter($newCounter);
-   // }, [ $counter ]);
+       $message($newMsg);
+       $counter($newCounter);
+    }, [ $counter ]);
 
    // 1. Define all your private components
    $Button = fn ($counter) => <<<HTML
