@@ -107,22 +107,24 @@ interface  IComponent
     /**
      * Sets the script to be executed when the component is mounted.
      *
-     * @param callable $script The script to be executed.
+     * @param callable $content The script to be executed.
      * @param string|null $name Optional name for the script asset.
+     * @param string $type The type of script the content should be treated as
      * @return self Returns the current instance for method chaining.
      * @see https://phpspa.tech/performance/managing-styles-and-scripts/#component-specific-assets
     */
-    public function script(callable $script, ?string $name = null): self;
+    public function script(callable $content, ?string $name = null, string $type = 'text/javascript'): self;
 
     /**
      * Sets the stylesheet to be executed when the component is mounted.
      *
-     * @param callable $style The stylesheet to be executed.
+     * @param callable $content The stylesheet to be executed.
      * @param string|null $name Optional name for the stylesheet.
+     * @param string $type The type of style sheet the content should be treated as
      * @return self Returns the current instance for method chaining.
      * @see https://phpspa.tech/performance/managing-styles-and-scripts/#component-specific-assets
      */
-    public function styleSheet(callable $style, ?string $name = null): self;
+    public function styleSheet(callable $content, ?string $name = null, string $type = 'text/css'): self;
 
     /**
      * This sets the component to be called every particular interval given

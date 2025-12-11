@@ -1804,11 +1804,12 @@
       static runAll() {
          for (const targetID in RuntimeManager.currentRoutes) {
             const element = document.getElementById(targetID);
+            console.log(element);
 
             if (element) {
                this.runInlineScripts(element);
-               this.runInlineStyles(element);
                this.runPhpSpaScripts(element);
+               this.runInlineStyles(element);
             }
          }
       }
@@ -1863,6 +1864,7 @@
 
          scripts.forEach(async (script) => {
             const scriptUrl = script.getAttribute('src');
+            const scriptType = script.getAttribute('type');
             const nonce = document.documentElement.getAttribute('x-phpspa');
 
             // --- Skip if this script has already been executed ---
@@ -1873,7 +1875,7 @@
                if (this.ScriptsCachedContent[scriptUrl]) {
                   const newScript = document.createElement("script");
                   newScript.textContent = this.ScriptsCachedContent[scriptUrl];
-                  newScript.type = 'text/javascript';
+                  newScript.type = scriptType;
                   newScript.nonce = nonce;
 
                   // --- Execute and immediately remove from DOM ---
@@ -1893,7 +1895,7 @@
                   // --- Create new script element ---
                   const newScript = document.createElement("script");
                   newScript.textContent = scriptContent;
-                  newScript.type = 'text/javascript';
+                  newScript.type = scriptType;
                   newScript.nonce = nonce;
 
                   // --- Execute and immediately remove from DOM ---

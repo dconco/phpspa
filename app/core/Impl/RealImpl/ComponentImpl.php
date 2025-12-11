@@ -26,8 +26,8 @@ use PhpSPA\Interfaces\IComponent;
  * @method IComponent targetID(string $targetID) Set the target ID for the component
  * @method IComponent caseSensitive() Enable case sensitivity for the component
  * @method IComponent caseInsensitive() Disable case sensitivity for the component
- * @method IComponent script(callable $script, ?string $name = null) Add scripts to the component
- * @method IComponent styleSheet(callable $style, ?string $name = null) Add stylesheets to the component
+ * @method IComponent script(callable $content, ?string $name = null, string $type = 'text/javascript') Add scripts to the component
+ * @method IComponent styleSheet(callable $content, ?string $name = null, string $type = 'text/css') Add stylesheets to the component
  * @method IComponent reload(int $milliseconds) Set the reload interval for the component
  * @abstract
  */
@@ -98,12 +98,20 @@ abstract class ComponentImpl
    protected ?bool $caseSensitive = null;
 
    /**
-    * @var array<array{0: callable, 1: string|null}>
+    * @var array<array{
+    *    content: callable,
+    *    name: string|null,
+    *    type: string|null
+    * }>
     */
    protected array $scripts = [];
 
    /**
-    * @var array<array{0: callable, 1: string|null}>
+    * @var array<array{
+    *    content: callable,
+    *    name: string|null,
+    *    type: string|null
+    * }>
     */
    protected array $stylesheets = [];
 
@@ -116,10 +124,27 @@ abstract class ComponentImpl
     * @param mixed $method
     * @param mixed $args
     * @throws \BadMethodCallException
+    * @throws \InvalidArgumentException
     * @return IComponent
     */
    public function __call($method, $args): static
    {
+      $addAsset = function(string $property) use ($args) {
+         if ($property !== 'stylesheets' && $property !== 'scripts') throw new \InvalidArgumentException("Invalid property provided", 1);
+
+         $temp = [
+            'content' => fn() => '',
+            'name' => null,
+            'type' => $property === 'stylesheets' ? 'text/css' : 'text/javascript',
+         ];
+
+         if (isset($args[0]) || isset($args['content'])) $temp['content'] = $args[0] ?? $args['content'];
+         if (isset($args[1]) || isset($args['name'])) $temp['name'] = $args[1] ?? $args['name'];
+         if (isset($args[2]) || isset($args['type'])) $temp['type'] = $args[2] ?? $args['type'];
+
+         $this->$property[] = $temp;
+      };
+
       match ($method) {
          'name',
          'title',
@@ -132,8 +157,8 @@ abstract class ComponentImpl
          'caseSensitive' => $this->$method = true,
          'caseInsensitive' => $this->caseSensitive = false,
          'reload' => $this->reloadTime = $args[0],
-         'styleSheet' => $this->stylesheets[] = $args,
-         'script' => $this->scripts[] = $args,
+         'styleSheet' => $addAsset('stylesheets'),
+         'script' => $addAsset('scripts'),
          default => throw new \BadMethodCallException("Method {$method} does not exist in " . __CLASS__),
       };
 

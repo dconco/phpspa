@@ -59,7 +59,7 @@ return (new Component('Login'))
     ->caseInsensitive()
 
     ->styleSheet(
-        fn () => <<<CSS
+        content: fn () => <<<CSS
             #hashID {
                 padding-top: 100vh;
                 padding-bottom: 100vh;
@@ -69,7 +69,7 @@ return (new Component('Login'))
                 font-family: Arial, sans-serif;
             }
         CSS,
-        'login-style'
+        name: 'login-style'
     )
 
     ->script(

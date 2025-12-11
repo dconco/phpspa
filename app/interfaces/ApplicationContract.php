@@ -79,12 +79,13 @@ interface ApplicationContract {
      * Scripts are added to the global scripts array and will be rendered alongside
      * component-specific scripts.
      *
-     * @param callable $script The callable that returns the JavaScript code
+     * @param callable $content The callable that returns the JavaScript code
      * @param string|null $name Optional name for the script asset
+     * @param string $type The type of script the content should be treated as
      * @return self
      * @see https://phpspa.tech/performance/managing-styles-and-scripts
      */
-    public function script (callable $script, ?string $name = null): self;
+    public function script (callable $content, ?string $name = null, string $type = 'text/javascript'): self;
 
 
     /**
@@ -94,12 +95,13 @@ interface ApplicationContract {
      * Stylesheets are added to the global stylesheets array and will be rendered alongside
      * component-specific styles.
      *
-     * @param callable $style The callable that returns the CSS code
+     * @param callable $content The callable that returns the CSS code
      * @param string|null $name Optional name for the stylesheet asset
+     * @param string $type The type of style sheet the content should be treated as
      * @return self
      * @see https://phpspa.tech/performance/managing-styles-and-scripts
      */
-    public function styleSheet (callable $style, ?string $name = null): self;
+    public function styleSheet (callable $content, ?string $name = null, string $type = 'text/css'): self;
 
 
     /**

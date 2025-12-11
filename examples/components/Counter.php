@@ -62,24 +62,31 @@ return (new Component(function (): string
          <LinkComponent />
 
          <script>
-            let currentCounter = {$counter};
-
             useEffect(() => {
-               const btn = document.getElementById('counter-btn');
-
-               const handleClick = async () => {
-                  currentCounter++;
-                  await phpspa.setState('counter', currentCounter);
-               };
-
-               btn.addEventListener('click', handleClick);
-
-               return () => btn.removeEventListener('click', handleClick);
-            }, null);
+               window.currentCounter = {$counter};
+               return () => window.currentCounter = void 0;
+            });
          </script>
       </div>
    HTML;
 }))
+   ->script(fn() => <<<JS
+
+      useEffect(() => {
+         const btn = document.getElementById('counter-btn');
+
+         const handleClick = async () => {
+            currentCounter++;
+            await phpspa.setState('counter', currentCounter);
+         };
+
+         btn.addEventListener('click', handleClick);
+
+         return () => btn.removeEventListener('click', handleClick);
+      }, null);
+
+   JS)
+
   ->name('counter')
   ->targetID('counter')
   ->route([ '/counter', '/template/counter' ])

@@ -95,7 +95,11 @@ abstract class AppImpl implements ApplicationContract {
     * Global scripts to be executed for the application.
     * These scripts will be included on every component render.
     *
-    * @var callable[]
+    * @var array<array{
+    *    content: callable,
+    *    name: string|null,
+    *    type: string|null
+    * }>
     */
    protected array $scripts = [];
 
@@ -103,7 +107,11 @@ abstract class AppImpl implements ApplicationContract {
     * Global stylesheets to be included for the application.
     * These styles will be included on every component render.
     *
-    * @var callable[]
+    * @var array<array{
+    *    content: callable,
+    *    name: string|null,
+    *    type: string|null
+    * }>
     */
    protected array $stylesheets = [];
 
@@ -176,15 +184,23 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
-   public function script (callable $script, ?string $name = null): ApplicationContract
+   public function script (callable $script, ?string $name = null, string $type = 'text/javascript'): ApplicationContract
    {
-      $this->scripts[] = [ $script, $name ];
+      $this->scripts[] = [
+         'content' => $script,
+         'name' => $name,
+         'type' => $type
+      ];
       return $this;
    }
 
-   public function styleSheet (callable $style, ?string $name = null): ApplicationContract
+   public function styleSheet (callable $style, ?string $name = null, string $type = 'text/css'): ApplicationContract
    {
-      $this->stylesheets[] = [ $style, $name ];
+      $this->stylesheets[] = [
+         'content' => $style,
+         'name' => $name,
+         'type' => $type
+      ];
       return $this;
    }
 
@@ -416,7 +432,7 @@ abstract class AppImpl implements ApplicationContract {
 
       if ($request->requestedWith() === 'PHPSPA_REQUEST') {
          // For PHPSPA requests (component updates), include component scripts with the component
-         $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput . $assetLinks['global']['scripts'] . $assetLinks['component']['scripts'];
+         $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput . $assetLinks['component']['scripts'];
 
          /**
           * @var array{
@@ -629,58 +645,66 @@ abstract class AppImpl implements ApplicationContract {
          'global' => [ 'scripts' => '', 'stylesheets' => '' ]
       ];
 
-      // Automatically add phpspa script for SPA functionality
+      // --- Automatically add phpspa script for SPA functionality ---
       if (!$isPhpSpaRequest) {
          $jsLink = AssetLinkManager::generateJsLink("__global__", -1, null);
          $result['global']['scripts'] .= "\n<script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
       }
-      // Get the primary route for mapping purposes
+      // --- Get the primary route for mapping purposes ---
       $primaryRoute = is_array($route) ? $route[0] ?? null : $route;
 
-      // Generate global stylesheet links
+      // --- Generate global stylesheet links ---
       if (!empty($globalStylesheets)) {
          foreach ($globalStylesheets as $index => $stylesheet) {
-            $name = is_array($stylesheet) ? $stylesheet[1] ?? null : null;
-            $stylesheetCallable = is_array($stylesheet) ? $stylesheet[0] ?? null : $stylesheet;
+            $type = $stylesheet['type'];
+            $name = $stylesheet['name'];
+            $stylesheetCallable = $stylesheet['content'];
+
             if (is_callable($stylesheetCallable)) {
                $cssLink = AssetLinkManager::generateCssLink("__global__", $index, $name);
-               $result['global']['stylesheets'] .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$cssLink\" />\n";
+               $result['global']['stylesheets'] .= "<link rel=\"stylesheet\" type=\"$type\" href=\"$cssLink\" />\n";
             }
          }
       }
 
-      // Generate component stylesheet links
+      // --- Generate component stylesheet links ---
       if (!empty($stylesheets)) {
          foreach ($stylesheets as $index => $stylesheet) {
-            $name = is_array($stylesheet) ? $stylesheet[1] ?? null : null;
-            $stylesheetCallable = is_array($stylesheet) ? $stylesheet[0] ?? null : $stylesheet;
+            $type = $stylesheet['type'];
+            $name = $stylesheet['name'];
+            $stylesheetCallable = $stylesheet['content'];
+
             if (is_callable($stylesheetCallable)) {
                $cssLink = AssetLinkManager::generateCssLink($primaryRoute, $index, $name);
-               $result['component']['stylesheets'] .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$cssLink\" />\n";
+               $result['component']['stylesheets'] .= "<link rel=\"stylesheet\" type=\"$type\" href=\"$cssLink\" />\n";
             }
          }
       }
 
-      // Generate global script links
-      if (!empty($globalScripts)) {
+      // --- Generate global script links ---
+      if (!empty($globalScripts) && !$isPhpSpaRequest) {
          foreach ($globalScripts as $index => $script) {
-            $name = is_array($script) ? $script[1] ?? null : null;
-            $scriptCallable = is_array($script) ? $script[0] ?? null : $script;
+            $type = $script['type'];
+            $name = $script['name'];
+            $scriptCallable = $script['content'];
+
             if (is_callable($scriptCallable)) {
                $jsLink = AssetLinkManager::generateJsLink("__global__", $index, $name);
-               $result['global']['scripts'] .= $isPhpSpaRequest ? "\n<script src=\"$jsLink\"></script>\n" : "\n<script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
+               $result['global']['scripts'] .= "\n<script type=\"$type\" src=\"$jsLink\"></script>\n";
             }
          }
       }
 
-      // Generate component script links
+      // --- Generate component script links ---
       if (!empty($scripts)) {
          foreach ($scripts as $index => $script) {
-            $name = is_array($script) ? $script[1] ?? null : null;
-            $scriptCallable = is_array($script) ? $script[0] ?? null : $script;
+            $type = $script['type'];
+            $name = $script['name'];
+            $scriptCallable = $script['content'];
+
             if (is_callable($scriptCallable)) {
                $jsLink = AssetLinkManager::generateJsLink($primaryRoute, $index, $name);
-               $result['component']['scripts'] .= $isPhpSpaRequest ? "\n<script src=\"$jsLink\"></script>\n" : "\n<script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
+               $result['component']['scripts'] .= $isPhpSpaRequest ? "\n<phpspa-script src=\"$jsLink\" type=\"$type\"></phpspa-script>\n" : "\n<script type=\"$type\" src=\"$jsLink\"></script>\n";
             }
          }
       }
@@ -698,12 +722,12 @@ abstract class AppImpl implements ApplicationContract {
    {
       $request = new HttpRequest();
 
-      // Check if this is a global asset
+      // --- Check if this is a global asset ---
       if ($assetInfo['componentRoute'] === '__global__') {
          $content = $this->getGlobalAssetContent($assetInfo);
       }
       else {
-         // Find the component that matches the asset's route
+         // --- Find the component that matches the asset's route ---
          $component = $this->findComponentByRoute($assetInfo['componentRoute']);
 
          if ($component === null) {
@@ -714,10 +738,10 @@ abstract class AppImpl implements ApplicationContract {
          }
 
          if ($assetInfo['assetType'] === 'js')
-            // For JS, we wrap the content in an IIFE to avoid polluting global scope
+            // --- For JS, we wrap the content in an IIFE to avoid polluting global scope ---
             $content = '(()=>{' . $this->getAssetContent($component, $assetInfo) . '})();';
          else
-            // For CSS, we can serve the content directly
+            // --- For CSS, we can serve the content directly ---
             $content = $this->getAssetContent($component, $assetInfo);
       }
 
@@ -728,7 +752,7 @@ abstract class AppImpl implements ApplicationContract {
          return;
       }
 
-      // Determine compression level
+      // --- Determine compression level ---
       $compressionLevel = ($request->requestedWith() === 'PHPSPA_REQUEST')
          ? Compressor::LEVEL_EXTREME
          : Compressor::getLevel();
@@ -736,13 +760,13 @@ abstract class AppImpl implements ApplicationContract {
       if (\is_array($content)) {
          $content = $content[0];
       } else {
-         // Compress the content
+         // --- Compress the content ---
          $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type']);
       }
 
-      // Set appropriate headers
+      // --- Set appropriate headers ---
       $this->setAssetHeaders($assetInfo['type'], $content);
-      // Output the content
+      // --- Output the content ---
       echo $content;
    }
 
@@ -782,7 +806,7 @@ abstract class AppImpl implements ApplicationContract {
       if ($assetInfo['assetType'] === 'css') {
          $stylesheets = CallableInspector::getProperty($component, 'stylesheets');
          $stylesheet = $stylesheets[$assetInfo['assetIndex']] ?? null;
-         $stylesheetCallable = \is_array($stylesheet) ? $stylesheet[0] ?? null : $stylesheet;
+         $stylesheetCallable = $stylesheet['content'] ?? null;
 
          if ($stylesheetCallable && is_callable($stylesheetCallable))
             return \call_user_func($stylesheetCallable);
@@ -790,7 +814,7 @@ abstract class AppImpl implements ApplicationContract {
       elseif ($assetInfo['assetType'] === 'js') {
          $scripts = CallableInspector::getProperty($component, 'scripts');
          $script = $scripts[$assetInfo['assetIndex']] ?? null;
-         $scriptCallable = \is_array($script) ? $script[0] ?? null : $script;
+         $scriptCallable = $script['content'] ?? null;
 
          if ($scriptCallable && is_callable($scriptCallable))
             return \call_user_func($scriptCallable);
@@ -811,23 +835,23 @@ abstract class AppImpl implements ApplicationContract {
 
       if ($assetInfo['assetType'] === 'css') {
          $stylesheet = $this->stylesheets[$assetInfo['assetIndex']] ?? null;
-         $stylesheetCallable = \is_array($stylesheet) ? $stylesheet[0] ?? null : $stylesheet;
+         $stylesheetCallable = $stylesheet['content'] ?? null;
 
          if ($stylesheetCallable && \is_callable($stylesheetCallable))
             return \call_user_func($stylesheetCallable);
       }
       elseif ($assetInfo['assetType'] === 'js') {
          $script = $this->scripts[$assetInfo['assetIndex']] ?? null;
-         $scriptCallable = \is_array($script) ? $script[0] ?? null : $script;
+         $scriptCallable = $script['content'] ?? null;
 
-         if ($scriptCallable && \is_callable($scriptCallable)) {
+         if (\is_callable($scriptCallable)) {
             $content = \call_user_func($scriptCallable);
 
             if ($request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT')
-               // Wrap global JS content in an IIFE to avoid polluting global scope
+               // --- Wrap global JS content in an IIFE to avoid polluting global scope ---
                return '(()=>{' . $content . '})();';
 
-            // For non-PHPSPA requests, return raw JS content
+            // --- For non-PHPSPA requests, return raw JS content ---
             return $content;
          }
 
