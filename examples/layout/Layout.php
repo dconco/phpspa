@@ -9,7 +9,9 @@ return fn () => <<<HTML
       <body>
          <div id="app"></div>
          <div id="counter"></div>
-         <div id="message-section">Default Content</div>
+         <div id="message-section">
+            <h2>Default Content</h2>
+         </div>
       </body>
    </html>
 HTML;

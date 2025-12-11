@@ -114,7 +114,7 @@ $currentTitle = DOM::Title(); // Returns: "User Profile - My App"
 
 
 
-## v2.0.3 (Current)
+## v2.0.3 (Current) (Stable)
 
 ### ✨ New Features
 

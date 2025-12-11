@@ -75,7 +75,7 @@ return (new Component(function (): string
                btn.addEventListener('click', handleClick);
 
                return () => btn.removeEventListener('click', handleClick);
-            }, ['counter']);
+            }, null);
          </script>
       </div>
    HTML;
@@ -83,4 +83,5 @@ return (new Component(function (): string
   ->name('counter')
   ->targetID('counter')
   ->route([ '/counter', '/template/counter' ])
-  ->title('Counter Component');
+  ->title('Counter Component')
+  ->exact();

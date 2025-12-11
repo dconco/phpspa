@@ -135,7 +135,7 @@ trait HtmlCompressor
 
    private static function isNativeCompressorAvailable(int $CONTENT_LENGTH): bool
    {
-      static $THRESHOLD_SIZE = 5120; // 5KB = 5120 bytes
+      static $THRESHOLD_SIZE = 10240; // 5KB = 5120 bytes
 
       $strategy = self::compressionStrategy();
 

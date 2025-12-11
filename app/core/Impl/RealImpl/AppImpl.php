@@ -330,7 +330,7 @@ abstract class AppImpl implements ApplicationContract {
       $componentFunction = CallableInspector::getProperty($component, 'component');
       $title = CallableInspector::getProperty($component, 'title');
       $reloadTime = CallableInspector::getProperty($component, 'reloadTime');
-      $exact = CallableInspector::getProperty($component, 'exact');
+      $exact = CallableInspector::getProperty($component, 'exact') ?? false;
       $preload = CallableInspector::getProperty($component, 'preload');
 
       if (!$componentFunction || !is_callable($componentFunction)) {
@@ -426,19 +426,17 @@ abstract class AppImpl implements ApplicationContract {
           *    reloadTime: int,
           *    exact: bool,
           *    preload: array,
-          * } $info
+          * }
           */
          $info = [
             'content' => Compressor::compressComponent($componentOutput),
             'title' => $title,
             'targetID' => $targetID,
+            'exact' => $exact,
          ];
 
          if (@((int) $reloadTime) > 0)
             $info['reloadTime'] = $reloadTime;
-
-         if ($exact === true)
-            $info['exact'] = true;
 
          // Use compressed JSON output
          print_r(Compressor::compressJson($info));
@@ -468,6 +466,17 @@ abstract class AppImpl implements ApplicationContract {
       $nonce = Nonce::nonce();
 
       // --- Initialize static variable once ---
+      /**
+       * Target information for each components (main & preload)
+       * 
+       * @var array{
+       *    targetIDs: string[],
+       *    currentRoutes: string[],
+       *    defaultContent: string[],
+       *    exact: bool[],
+       * }
+       * @static
+       */
       static $targetInformation = [];
 
       if (!$isPreloadingComponent) {
@@ -534,15 +543,13 @@ abstract class AppImpl implements ApplicationContract {
 
             // --- Set values only on the first component (main component) ---
             if (!$isPreloadingComponent && empty($targetInformation)) {
-               $targetInformation = [
-                  'exact' => $exact,
-                  'defaultContent' => $matches[3],
-               ];
             }
 
             // --- Update on main component and preloading components ---
             $targetInformation['currentRoutes'] = DOM::CurrentRoutes();
+            $targetInformation['exact'][] = $exact;
             $targetInformation['targetIDs'][] = $targetID;
+            $targetInformation['defaultContent'][] = Compressor::compressComponent($matches[3]);
 
             // --- Check if preload component does not exists ---
             // --- If it does not exist then there is no preloading component to attach it to ---

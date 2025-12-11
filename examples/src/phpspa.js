@@ -883,19 +883,19 @@
                 * @type {{
                 *    targetIDs: string[],
                 *    currentRoutes: string[],
-                *    defaultContent: string,
-                *    exact: boolean,
+                *    defaultContent: string[],
+                *    exact: boolean[],
                 * }}
                 */
                const targetDataInfo = JSON.parse(base64ToUtf8(targetData));
 
                targetDataInfo.targetIDs.forEach((value, index) => {
-                  RuntimeManager.currentRoutes[value] = new URL(targetDataInfo.currentRoutes[index], uri);
+                  RuntimeManager.currentRoutes[value] = {
+                     route: new URL(targetDataInfo.currentRoutes[index], uri),
+                     defaultContent: targetDataInfo.defaultContent[index],
+                     exact: targetDataInfo.exact[index]
+                  }
                })
-
-               initialState.exact = targetDataInfo.exact;
-               initialState.exactTargetID = targetElement.id;
-               initialState.defaultContent = targetDataInfo.defaultContent;
             }
 
             // --- Replace current history state with PhpSPA data ---
@@ -952,21 +952,30 @@
             const targetContainer =
                document.getElementById(navigationState.targetID) ?? document.body;
 
-            const currentState = RuntimeManager.currentState;
+            const currentRoutes = RuntimeManager.currentRoutes;
 
-            RuntimeManager.currentRoutes[navigationState.targetID] = navigationState.url;
+            for (const targetID in currentRoutes) {
+               if (!Object.hasOwn(currentRoutes, targetID)) continue;
 
-            // --- Reset current state content before updating new content ---
-            if (currentState?.exact === true && currentState.exactTargetID !== navigationState.targetID) {
-               let currentHTML = document.getElementById(currentState.exactTargetID)
-               if (currentHTML) {
-                  try {
-                     morphdom(currentHTML, '<div>' + currentState.defaultContent + '</div>', {
-                        childrenOnly: true
-                     });
-                  } catch {
-                     currentHTML.innerHTML = currentState.defaultContent
+               const targetInfo = currentRoutes[targetID];
+
+               // --- If route is exact and the route target ID is not equal to the navigated route target ID ---
+               // --- Then the document URL has changed ---
+               // --- That is they are navigating away ---
+               // --- And any route with exact === true must go back to its default content ---
+               if (targetInfo.exact === true && targetID !== navigationState.targetID) {
+                  let currentHTML = document.getElementById(targetID)
+                  if (currentHTML) {
+                     try {
+                        morphdom(currentHTML, '<div>' + targetInfo.defaultContent + '</div>', {
+                           childrenOnly: true
+                        });
+                     } catch {
+                        currentHTML.innerHTML = targetInfo.defaultContent;
+                     }
                   }
+
+                  delete currentRoutes[targetID];
                }
             }
 
@@ -987,11 +996,7 @@
                RuntimeManager.clearExecutedScripts();
 
                // --- Execute any inline scripts and styles in the restored content ---
-               RuntimeManager.runAll(navigationState.root ? document.body : targetContainer);
-
-               if (currentState.defaultContent == document.getElementById(navigationState.exactTargetID)?.innerHTML) {
-                  delete RuntimeManager.currentRoutes[navigationState.exactTargetID];
-               }
+               RuntimeManager.runAll();
 
                // --- Save the current state ---
                RuntimeManager.currentState = navigationState
@@ -1169,10 +1174,7 @@
           */
          function processResponse(responseData) {
             // --- Update document title if provided ---
-            if (
-               typeof responseData?.title === "string" ||
-               typeof responseData?.title === "number"
-            ) {
+            if (String(responseData?.title).length > 0) {
                document.title = responseData.title;
             }
 
@@ -1182,23 +1184,38 @@
                document.getElementById(history.state?.targetID) ??
                document.body;
 
-            // --- Reset current state content before updating new content ---
-            const currentState = RuntimeManager.currentState;
+            if (responseData.targetID) {
+               RuntimeManager.currentRoutes[responseData.targetID] = {
+                  route: url,
+                  exact: responseData.exact,
+                  defaultContent: RuntimeManager.currentRoutes[responseData.targetID]?.defaultContent ?? (document.getElementById(responseData.targetID)?.innerHTML || '')
+               }
+            }
 
-            RuntimeManager.currentRoutes[responseData?.targetID || currentState.targetID] = url;
+            const currentRoutes = RuntimeManager.currentRoutes;
 
-            if (currentState?.exact === true) {
-               if (currentState.exactTargetID !== responseData?.targetID) {
-                  let currentHTML = document.getElementById(currentState.exactTargetID)
+            for (const targetID in currentRoutes) {
+               if (!Object.hasOwn(currentRoutes, targetID)) continue;
+
+               const targetInfo = currentRoutes[targetID];
+
+               // --- If route is exact and the route target ID is not equal to the navigated route target ID ---
+               // --- Then the document URL has changed ---
+               // --- That is they are navigating away ---
+               // --- And any route with exact === true must go back to its default content ---
+               if (targetInfo.exact === true && targetID !== responseData?.targetID) {
+                  let currentHTML = document.getElementById(targetID)
                   if (currentHTML) {
                      try {
-                        morphdom(currentHTML, '<div>' + currentState.defaultContent + '</div>', {
+                        morphdom(currentHTML, '<div>' + targetInfo.defaultContent + '</div>', {
                            childrenOnly: true
                         });
                      } catch {
-                        currentHTML.innerHTML = currentState.defaultContent;
+                        currentHTML.innerHTML = targetInfo.defaultContent;
                      }
                   }
+
+                  delete currentRoutes[targetID];
                }
             }
 
@@ -1219,16 +1236,8 @@
                title: responseData?.title ?? document.title,
                targetID: responseData?.targetID ?? targetElement.id,
                content: responseData?.content ?? responseData,
-               defaultContent: currentState?.defaultContent,
-               exact: currentState?.exact,
-               exactTargetID: currentState?.exactTargetID
-            };
-
-            if (!document.getElementById(stateData.exactTargetID)) {
-               stateData['exact'] = responseData?.exact || false;
-               stateData['exactTargetID'] = responseData?.targetID || targetElement.id;
-               stateData['defaultContent'] = document.getElementById(responseData?.targetID)?.innerHTML || '';
             }
+
 
             // --- Include reload time if specified ---
             if (typeof responseData.reloadTime !== "undefined") {
@@ -1242,10 +1251,6 @@
                   RuntimeManager.pushState(stateData, stateData.title, url);
                } else if (state === "replace") {
                   RuntimeManager.replaceState(stateData, stateData.title, url);
-               }
-
-               if (currentState.defaultContent == document.getElementById(stateData.exactTargetID)?.innerHTML) {
-                  delete RuntimeManager.currentRoutes[stateData.exactTargetID];
                }
 
                // --- Save the current state ---
@@ -1269,8 +1274,7 @@
                RuntimeManager.clearExecutedScripts();
 
                // --- Execute any inline scripts and styles in the new content ---
-               RuntimeManager.runAll(targetElement);
-
+               RuntimeManager.runAll();
 
                // --- Emit successful load event ---
                RuntimeManager.emit("load", {
@@ -1363,16 +1367,16 @@
        */
       static setState(key, value) {
          return new Promise(async (resolve, reject) => {
-            const currentUrls = RuntimeManager.currentRoutes;
+            const currentRoutes = RuntimeManager.currentRoutes;
             const statePayload = JSON.stringify({ state: { key, value } });
             const promises = [];
 
-            for (const id in currentUrls) {
-               if (!Object.hasOwn(currentUrls, id)) continue;
+            for (const targetID in currentRoutes) {
+               if (!Object.hasOwn(currentRoutes, targetID)) continue;
 
-               const url = currentUrls[id];
+               const { route } = currentRoutes[targetID];
 
-               const prom = fetch(url, {
+               const prom = fetch(route, {
                   headers: {
                      "X-Requested-With": "PHPSPA_REQUEST",
                      Authorization: `Bearer ${utf8ToBase64(statePayload)}`,
@@ -1446,10 +1450,7 @@
              */
             function updateContent(responseData) {
                // --- Update title if provided ---
-               if (
-                  typeof responseData?.title === "string" ||
-                  typeof responseData?.title === "number"
-               ) {
+               if (String(responseData.title).length > 0) {
                   document.title = responseData.title;
                }
 
@@ -1586,7 +1587,7 @@
                RuntimeManager.clearExecutedScripts();
 
                // --- Execute any inline scripts and styles in the new content ---
-               RuntimeManager.runAll(targetElement);
+               RuntimeManager.runAll();
 
                // --- Set up next auto-reload if specified ---
                if (typeof responseData.reloadTime !== "undefined") {
@@ -1712,15 +1713,16 @@
        *    title: string,
        *    targetID: string,
        *    content: string,
-       *    defaultContent: string,
-       *    exact: boolean,
-       *    exactTargetID: string
        * }}
        */
       static currentState = {};
 
       /**
-       * @type {Object<string, URL}>
+       * @type {Object<string, {
+       *    route: URL,
+       *    exact: boolean,
+       *    defaultContent: string
+       * }}>
        */
       static currentRoutes = {};
 
@@ -1799,10 +1801,16 @@
          RuntimeManager.effects.clear();
       }
 
-      static runAll(container) {
-         this.runInlineScripts(container);
-         this.runInlineStyles(container);
-         this.runPhpSpaScripts(container);
+      static runAll() {
+         for (const targetID in RuntimeManager.currentRoutes) {
+            const element = document.getElementById(targetID);
+
+            if (element) {
+               this.runInlineScripts(element);
+               this.runInlineStyles(element);
+               this.runPhpSpaScripts(element);
+            }
+         }
       }
 
       /**
@@ -2017,6 +2025,8 @@
          window.useEffect = phpspa.useEffect;
       }
    }
+
+   window.RuntimeManager = RuntimeManager;
 
    /**
     * Export phpspa for UMD pattern
