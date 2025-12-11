@@ -859,7 +859,18 @@
          });
 
          if (targetElement) {
-            // --- Create initial state object with current page data
+            /**
+             *  Create initial state object with current page data
+             *
+             * @type {{
+             *    url: string,
+             *    title: string,
+             *    targetID: string,
+             *    content: string,
+             *    exact: boolean,
+             *    defaultContent: string
+             * }}
+             */
             const initialState = {
                url: uri,
                title: document.title,
@@ -890,10 +901,18 @@
                const targetDataInfo = JSON.parse(base64ToUtf8(targetData));
 
                targetDataInfo.targetIDs.forEach((value, index) => {
+                  const exact = targetDataInfo.exact[index];
+                  const defaultContent = targetDataInfo.defaultContent[index];
+
+                  if (value === targetElement.id) {
+                     initialState['exact'] = exact;
+                     initialState['defaultContent'] = defaultContent;
+                  }
+
                   RuntimeManager.currentRoutes[value] = {
                      route: new URL(targetDataInfo.currentRoutes[index], uri),
-                     defaultContent: targetDataInfo.defaultContent[index],
-                     exact: targetDataInfo.exact[index]
+                     defaultContent,
+                     exact
                   }
                })
             }
@@ -904,8 +923,6 @@
                document.title,
                uri
             );
-
-            RuntimeManager.currentState = initialState;
 
             // --- Set up auto-reload if specified ---
             if (targetElement.hasAttribute("phpspa-reload-time")) {
@@ -936,6 +953,18 @@
        * Restores page content when user navigates through browser history
        */
       window.addEventListener("popstate", (event) => {
+         /**
+          * Get state data for browser history
+          *
+          * @type {{
+          *    url: string,
+          *    title: string,
+          *    targetID: string,
+          *    content: string,
+          *    exact: boolean,
+          *    defaultContent: string
+          * }}
+          */
          const navigationState = event.state;
 
          RuntimeManager.emit('beforeload', { route: location.toString() });
@@ -951,6 +980,14 @@
             // --- Find target container or fallback to body ---
             const targetContainer =
                document.getElementById(navigationState.targetID) ?? document.body;
+
+            if (navigationState.targetID) {
+               RuntimeManager.currentRoutes[navigationState.targetID] = {
+                  route: navigationState.url,
+                  exact: navigationState.exact,
+                  defaultContent: navigationState.defaultContent
+               }
+            }
 
             const currentRoutes = RuntimeManager.currentRoutes;
 
@@ -997,9 +1034,6 @@
 
                // --- Execute any inline scripts and styles in the restored content ---
                RuntimeManager.runAll();
-
-               // --- Save the current state ---
-               RuntimeManager.currentState = navigationState
 
                // --- Restart auto-reload timer if needed ---
                if (typeof navigationState.reloadTime !== "undefined") {
@@ -1230,14 +1264,26 @@
                }
             }
 
-            // --- Prepare state data for browser history ---
+            /**
+             *  Prepare state data for browser history
+             *
+             * @type {{
+             *    url: string,
+             *    title: string,
+             *    targetID: string,
+             *    content: string,
+             *    exact: boolean,
+             *    defaultContent: string
+             * }}
+             */
             const stateData = {
                url: url?.toString() ?? url,
                title: responseData?.title ?? document.title,
                targetID: responseData?.targetID ?? targetElement.id,
                content: responseData?.content ?? responseData,
+               exact: currentRoutes[responseData?.targetID].exact,
+               defaultContent: currentRoutes[responseData?.targetID].defaultContent,
             }
-
 
             // --- Include reload time if specified ---
             if (typeof responseData.reloadTime !== "undefined") {
@@ -1252,9 +1298,6 @@
                } else if (state === "replace") {
                   RuntimeManager.replaceState(stateData, stateData.title, url);
                }
-
-               // --- Save the current state ---
-               RuntimeManager.currentState = history.state
 
                // --- Handle URL fragments (hash navigation) ---
                const hashElement = document.getElementById(url?.hash?.substring(1));
@@ -1706,18 +1749,6 @@
       static ScriptsCachedContent = {};
 
       /**
-       * Current history state
-       *
-       * @type {{
-       *    url: string,
-       *    title: string,
-       *    targetID: string,
-       *    content: string,
-       * }}
-       */
-      static currentState = {};
-
-      /**
        * @type {Object<string, {
        *    route: URL,
        *    exact: boolean,
@@ -1804,7 +1835,6 @@
       static runAll() {
          for (const targetID in RuntimeManager.currentRoutes) {
             const element = document.getElementById(targetID);
-            console.log(element);
 
             if (element) {
                this.runInlineScripts(element);
@@ -2027,8 +2057,6 @@
          window.useEffect = phpspa.useEffect;
       }
    }
-
-   window.RuntimeManager = RuntimeManager;
 
    /**
     * Export phpspa for UMD pattern
