@@ -230,6 +230,16 @@ class Response
       exit();
    }
 
+   /**
+    * Sends a file as the response.
+    *
+    * This method handles serving files, including PHP files which are executed.
+    * It also automatically compresses text-based assets (HTML, CSS, JS).
+    *
+    * @param string $filePath The path to the file to send.
+    * @return self
+    * @throws \InvalidArgumentException If the file does not exist.
+    */
    public function sendFile($filePath): self {
       if (!is_file($filePath)) {
          throw new \InvalidArgumentException("File does not exist: $filePath");

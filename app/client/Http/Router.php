@@ -14,12 +14,12 @@ use PhpSPA\Http\Response;
  * @category HTTP
  * @author Samuel Paschalson <samuelpaschalson@gmail.com>
  * @copyright 2025 Samuel Paschalson
- * @method void get(string|array $route, callable ...$handlers)
- * @method void put(string|array $route, callable ...$handlers)
- * @method void post(string|array $route, callable ...$handlers)
- * @method void head(string|array $route, callable ...$handlers)
- * @method void patch(string|array $route, callable ...$handlers)
- * @method void delete(string|array $route, callable ...$handlers)
+ * @method void get(string|array $route, callable ...$handlers) Register a GET route. Handlers receive (Request $request, Response $response, Closure $next).
+ * @method void put(string|array $route, callable ...$handlers) Register a PUT route. Handlers receive (Request $request, Response $response, Closure $next).
+ * @method void post(string|array $route, callable ...$handlers) Register a POST route. Handlers receive (Request $request, Response $response, Closure $next).
+ * @method void head(string|array $route, callable ...$handlers) Register a HEAD route. Handlers receive (Request $request, Response $response, Closure $next).
+ * @method void patch(string|array $route, callable ...$handlers) Register a PATCH route. Handlers receive (Request $request, Response $response, Closure $next).
+ * @method void delete(string|array $route, callable ...$handlers) Register a DELETE route. Handlers receive (Request $request, Response $response, Closure $next).
  * @see https://phpspa.tech/references/response/#router-quick-examples
  */
 
@@ -45,10 +45,23 @@ class Router
       $this->caseSensitive = $value;
    }
 
+   /**
+    * Adds a middleware to the router group.
+    * 
+    * @param callable $handler The middleware handler.
+    * @return void
+    */
    public function middleware(callable $handler) {
       $this->middlewares[] = $handler;
    }
 
+   /**
+    * Creates a route group with a specific prefix.
+    * 
+    * @param string $path The URL prefix for this group.
+    * @param callable $handler The callback to define routes within this group.
+    * @return void
+    */
    public function prefix(string $path, callable $handler) {
       $prefix = ['path' => rtrim($this->prefix, '/') . '/' . ltrim($path, '/'), 'handler' => $handler];
       $this->handlePrefix($prefix, $this->middlewares);

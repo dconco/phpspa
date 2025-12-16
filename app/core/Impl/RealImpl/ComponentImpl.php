@@ -171,7 +171,12 @@ abstract class ComponentImpl
       return $this;
    }
 
-   
+   /**
+    * Renders a component by executing it and formatting the output.
+    *
+    * @param callable $component The component to render.
+    * @return string The rendered output.
+    */
    public static function Render(callable $component): string
    {
       $output = call_user_func($component, new HttpRequest());

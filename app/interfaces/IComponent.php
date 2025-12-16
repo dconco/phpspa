@@ -134,4 +134,12 @@ interface  IComponent
      * @see https://phpspa.tech/requests/auto-reloading-components
      */
     public function reload(int $milliseconds): self;
+
+    /**
+    * Renders a component by executing it and formatting the output.
+    *
+    * @param callable $component The component to render.
+    * @return string The rendered output.
+    */
+    public static function Render(callable $component): string;
 }

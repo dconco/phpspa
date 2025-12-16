@@ -105,14 +105,22 @@ interface ApplicationContract {
 
 
     /**
-     * 
+     * Registers a static file path to a route.
+     *
+     * @param string $route The route to map.
+     * @param string $staticPath The static file path.
+     * @return ApplicationContract
      */
     public function static(string $route, string $staticPath): self;
 
 
     /**
-     * 
-     */
+    * Group routes under a common prefix.
+    *
+    * @param string $path The prefix path.
+    * @param callable $handler The handler function with Router as the parameter.
+    * @return ApplicationContract
+    */
     public function prefix(string $path, callable $handler): self;
 
     /**
