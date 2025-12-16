@@ -979,7 +979,12 @@
 
             // --- Find target container or fallback to body ---
             const targetContainer =
-               document.getElementById(navigationState.targetID) ?? document.body;
+               document.getElementById(navigationState.targetID);
+
+            if (!targetContainer) {
+               location.reload();
+               return;
+            }
 
             if (navigationState.targetID) {
                RuntimeManager.currentRoutes[navigationState.targetID] = {
@@ -1061,8 +1066,8 @@
             }
 
          } else {
-            // --- No valid state found - navigate to current URL to refresh ---
-            phpspa.navigate(location.toString(), "replace");
+            // --- No valid state found - reload current URL to refresh ---
+            location.reload();
          }
       });
    })();

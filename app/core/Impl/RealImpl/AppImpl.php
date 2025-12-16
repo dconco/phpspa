@@ -234,7 +234,7 @@ abstract class AppImpl implements ApplicationContract {
       $success = false;
 
       foreach ($this->components as $component) {
-         $output = $this->runComponent($component);
+         $output = $this->runComponent($component, false, $this->renderedData);
 
          if ($output === true) {
             $success = true;
@@ -340,7 +340,7 @@ abstract class AppImpl implements ApplicationContract {
    }
 
 
-   private function runComponent(Component|Icomponent $component, bool $compressOutput = true, bool $isPreloadingComponent = false, ?string &$layoutOutput = null) {
+   private function runComponent(Component|Icomponent $component, bool $isPreloadingComponent = false, ?string &$layoutOutput = null) {
       $request = new HttpRequest();
 
       $route = CallableInspector::getProperty($component, 'route');
@@ -368,10 +368,10 @@ abstract class AppImpl implements ApplicationContract {
          $router = new MapRoute($method, $route, $caseSensitive, $pattern)->match();
 
          if (!$router)
-            return; // Skip if no match found
+            return; // --- Skip if no match found ---
 
          $request = new HttpRequest($router['params'] ?? []);
-   
+
          DOM::CurrentRoutes(static::$request_uri);
       }
 
@@ -381,27 +381,40 @@ abstract class AppImpl implements ApplicationContract {
 
       if ($name) DOM::CurrentComponents($name);
 
-      // Clear component scope before each component execution
+      // --- Clear component scope before each component execution ---
       ComponentScope::clearAll();
 
-      $layoutOutput ??= is_callable($this->layout) ? (string) call_user_func($this->layout) : $this->layout;
+      $layoutOutput ??= is_callable($this->layout) ? (string) \call_user_func($this->layout) : (string) $this->layout;
 
       $componentOutput = '';
 
+      // --- Check if a preload component exists ---
+      // --- Then first parse & execute preload components ---
+      if (!$isPreloadingComponent && isset($preload[0]) && isset($this->components[$preload[0]]) && $request->requestedWith() !== 'PHPSPA_REQUEST') {
+         foreach ($preload as $componentKey) {
+            $preloadComponent = $this->components[$componentKey];
+
+            $this->runComponent(
+               component: $preloadComponent,
+               isPreloadingComponent: true,
+               layoutOutput: $layoutOutput
+            );
+         }
+      }
 
       /**
        * Invokes the specified component callback with appropriate parameters based on its signature.
-         *
-         * This logic checks if the component's callable accepts 'path' and/or 'request' parameters
-         * using CallableInspector. It then calls the component with the corresponding arguments:
-         * - If both 'path' and 'request' are accepted, both are passed.
-         * - If only 'path' is accepted, only 'path' is passed.
-         * - If only 'request' is accepted, only 'request' is passed.
-         * - If neither is accepted, the component is called without arguments.
-         *
-         * @param object $component The component object containing the callable to invoke.
-         * @param array $router An associative array containing 'params' and 'request' to be passed as arguments.
-         */
+       *
+       * This logic checks if the component's callable accepts 'path' and/or 'request' parameters
+       * using CallableInspector. It then calls the component with the corresponding arguments:
+       * - If both 'path' and 'request' are accepted, both are passed.
+       * - If only 'path' is accepted, only 'path' is passed.
+       * - If only 'request' is accepted, only 'request' is passed.
+       * - If neither is accepted, the component is called without arguments.
+       *
+       * @param object $component The component object containing the callable to invoke.
+       * @param array $router An associative array containing 'params' and 'request' to be passed as arguments.
+       */
 
       if (CallableInspector::hasParam($componentFunction, 'path') && CallableInspector::hasParam($componentFunction, 'request')) {
          $componentOutput = \call_user_func(
@@ -427,7 +440,7 @@ abstract class AppImpl implements ApplicationContract {
       }
 
 
-      // Create a new scope for this component and execute formatting
+      // --- Create a new scope for this component and execute formatting ---
       $scopeId = ComponentScope::createScope();
       $componentOutput = static::format($componentOutput);
       ComponentScope::removeScope($scopeId);
@@ -437,12 +450,12 @@ abstract class AppImpl implements ApplicationContract {
          DOM::Title($title);
       }
 
-      // Generate session-based links for scripts and stylesheets instead of inline content
+      // --- Generate session-based links for scripts and stylesheets instead of inline content ---
       $assetLinks = $this->generateAssetLinks($route, $scripts, $stylesheets, $this->scripts, $this->stylesheets);
 
       if ($request->requestedWith() === 'PHPSPA_REQUEST') {
-         // For PHPSPA requests (component updates), include component scripts with the component
-         $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput . $assetLinks['component']['scripts'];
+         // --- For PHPSPA requests (component updates), include component scripts with the component ---
+         $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput . $assetLinks['global']['scripts'] . $assetLinks['component']['scripts'];
 
          /**
           * @var array{
@@ -471,7 +484,6 @@ abstract class AppImpl implements ApplicationContract {
       else {
          return $this->MainDOMOutput(
             isPreloadingComponent: $isPreloadingComponent,
-            compressOutput: $compressOutput,
             assetLinks: $assetLinks,
             layoutOutput: $layoutOutput,
             componentOutput: $componentOutput ?? '',
@@ -485,7 +497,7 @@ abstract class AppImpl implements ApplicationContract {
    }
 
 
-   private function MainDOMOutput(bool $isPreloadingComponent, bool $compressOutput, array $assetLinks, string &$layoutOutput, string $componentOutput, string $targetID, $preload, $reloadTime, $title, $exact) {
+   private function MainDOMOutput(bool $isPreloadingComponent, array $assetLinks, string &$layoutOutput, string $componentOutput, string $targetID, $preload, $reloadTime, $title, $exact) {
       // For regular HTML requests, only include component stylesheets with the component content
       // Component scripts will be injected later to ensure proper execution order
       $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput;
@@ -504,6 +516,10 @@ abstract class AppImpl implements ApplicationContract {
        * @static
        */
       static $targetInformation = [];
+
+      static $isFirstComponent = null;
+
+      $isFirstComponent = $isFirstComponent === null ? true : false;
 
       if (!$isPreloadingComponent) {
          if ($title) {
@@ -562,14 +578,11 @@ abstract class AppImpl implements ApplicationContract {
       // --- This render the component to the target ID ---
       $this->renderedData = preg_replace_callback(
          $tag,
-         function ($matches) use (&$targetInformation, &$tt, $componentOutput, $compressOutput, $isPreloadingComponent, $exact, $preload, $targetID) {
+         function ($matches) use (&$targetInformation, &$tt, $componentOutput, $isPreloadingComponent, $exact, $preload, $targetID) {
             // --- $matches[1] contains the tag name, ---
             // --- $matches[2] contains attributes with the target ID, ---
             // --- $matches[3] contains the default content inside the tag ---
 
-            // --- Set values only on the first component (main component) ---
-            if (!$isPreloadingComponent && empty($targetInformation)) {
-            }
 
             // --- Update on main component and preloading components ---
             $targetInformation['currentRoutes'] = DOM::CurrentRoutes();
@@ -577,17 +590,9 @@ abstract class AppImpl implements ApplicationContract {
             $targetInformation['targetIDs'][] = $targetID;
             $targetInformation['defaultContent'][] = Compressor::compressComponent($matches[3]);
 
-            // --- Check if preload component does not exists ---
-            // --- If it does not exist then there is no preloading component to attach it to ---
+            // --- This is the last component which is the main component ---
             // --- Then attach it directly to the component target element ---
-            if (!$isPreloadingComponent && (!isset($this->components[@$preload[0]]))) {
-               $targetInformation = base64_encode(json_encode($targetInformation));
-               $tt .= " phpspa-target-data=\"$targetInformation\"";
-            }
-
-            // --- This is the end of a preloading component ---
-            // --- Now you can attach the info to the target element ---
-            if ($isPreloadingComponent && $compressOutput) {
+            if (!$isPreloadingComponent) {
                $targetInformation = base64_encode(json_encode($targetInformation));
                $tt .= " phpspa-target-data=\"$targetInformation\"";
             }
@@ -599,7 +604,7 @@ abstract class AppImpl implements ApplicationContract {
          $layoutOutput,
       );
 
-      if (!$isPreloadingComponent) {
+      if ($isFirstComponent) {
          // Inject global assets at the end of body tag (or html tag if no body exists)
          // Also inject component scripts after global scripts for proper execution order
          $this->renderedData = $this->injectGlobalAssets($this->renderedData, $assetLinks['global'], $assetLinks['component']['scripts']);
@@ -607,29 +612,7 @@ abstract class AppImpl implements ApplicationContract {
          $this->renderedData = $this->injectGlobalAssets($this->renderedData, $assetLinks['component']['scripts']);
       }
 
-      // --- Check if preload component exists ---
-      if (!$isPreloadingComponent && isset($preload[0]) && isset($this->components[$preload[0]])) {
-         static $lastPreloadKey = array_key_last($preload);
-         
-         foreach ($preload as $preloadKey => $componentKey) {
-            $preloadComponent = $this->components[$componentKey];
-
-            $response = $this->runComponent(
-               component: $preloadComponent,
-               compressOutput: $preloadKey === $lastPreloadKey, // --- compress output if it is the final component ---
-               isPreloadingComponent: true,
-               layoutOutput: $this->renderedData
-            );
-
-            if ($response === true) break;
-         }
-      }
-      
-      // --- This is the end of a preloading component, return true ---
-      if ($isPreloadingComponent && $compressOutput) {
-         return true;
-      }
-      
+      // --- This is the end of component, which is the main component after all preloading component, return true ---
       if (!$isPreloadingComponent) {
          return true;
       }
@@ -695,7 +678,7 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       // --- Generate global script links ---
-      if (!empty($globalScripts) && !$isPhpSpaRequest) {
+      if (!empty($globalScripts)) {
          foreach ($globalScripts as $index => $script) {
             $type = $script['type'];
             $name = $script['name'];
@@ -703,7 +686,7 @@ abstract class AppImpl implements ApplicationContract {
 
             if (is_callable($scriptCallable)) {
                $jsLink = AssetLinkManager::generateJsLink("__global__", $index, $name);
-               $result['global']['scripts'] .= "\n<script type=\"$type\" src=\"$jsLink\"></script>\n";
+               $result['global']['scripts'] .= $isPhpSpaRequest ? "\n<phpspa-script src=\"$jsLink\" type=\"$type\"></phpspa-script>\n" : "\n<script type=\"$type\" src=\"$jsLink\"></script>\n";
             }
          }
       }

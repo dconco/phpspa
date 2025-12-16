@@ -13,6 +13,7 @@ use ReflectionMethod;
  * within HTML markup. It handles the transformation of custom component syntax
  * into executable PHP components within the PhpSPA framework.
  *
+ * @package PhpSPA\Core\Utils\Formatter
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
@@ -100,7 +101,7 @@ trait ComponentTagFormatter
             // Handle different component types
             if ($isVariable) {
                // Variable component
-               return call_user_func_array($callable, $attributes);
+               return \call_user_func_array($callable, $attributes);
             } elseif ($methodName) {
                // Class::method syntax
                if (!class_exists($className)) {
@@ -111,7 +112,7 @@ trait ComponentTagFormatter
                   $reflection = ReflectionMethod::createFromMethodName("$className::$methodName");
 
                   if ($reflection->isStatic()) {
-                     return $className::$methodName(...$attributes);
+                     return \call_user_func_array([$className, $methodName], $attributes);
                   } else {
                      return (new $className)->$methodName(...$attributes);
                   }
@@ -121,7 +122,13 @@ trait ComponentTagFormatter
             } elseif (class_exists($className)) {
                // Class syntax
                if (method_exists($className, '__render')) {
-                  return (new $className)->__render(...$attributes);
+                  $reflection = ReflectionMethod::createFromMethodName("$className::__render");
+
+                  if ($reflection->isStatic()) {
+                     return \call_user_func_array([$className, '__render'], $attributes);
+                  } else {
+                     return (new $className)->__render(...$attributes);
+                  }
                } else {
                   throw new AppException("Class {$className} does not have __render method.");
                }
