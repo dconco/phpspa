@@ -74,7 +74,7 @@ class HttpRequest implements Request
         $parsed = mb_split('&', urldecode($parsed));
 
         $i = 0;
-        while ($i < count($parsed)) {
+        while ($i < \count($parsed)) {
             $p = mb_split('=', $parsed[$i]);
             $key = $p[0];
             $value = $p[1] ? $this->validate($p[1]) : null;

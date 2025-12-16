@@ -69,7 +69,7 @@ class Router
 
    public function __call($method, $args)
    {
-      $routes = !is_array($args[0]) ? [$args[0]] : [$args[0]];
+      $routes = !\is_array($args[0]) ? [$args[0]] : [$args[0]];
       unset($args[0]);
 
       $handlers = [...$this->middlewares, ...$args];
@@ -87,7 +87,7 @@ class Router
    }
    
    private function handleHandler(callable $handler, &$request, $response, Closure $next) {
-      return call_user_func($handler, $request, $response, $next);
+      return \call_user_func($handler, $request, $response, $next);
    }
 
    private function handle(string $method, array $route, callable ...$handlers): void
@@ -95,13 +95,13 @@ class Router
       $response = new Response();
       $iterator = 0;
 
-      $map = (new MapRoute($method, $route, $this->caseSensitive))->match();
+      $map = new MapRoute($method, $route, $this->caseSensitive)->match();
 
       if ($map) {
          $request = new HttpRequest($map['params'] ?? []);
 
          $next = function() use (&$iterator, $handlers, &$request, $response, &$next) {
-            if (++$iterator >= count($handlers)) return;
+            if (++$iterator >= \count($handlers)) return;
             return $this->handleHandler($handlers[$iterator], $request, $response, $next);
          };
 

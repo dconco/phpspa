@@ -8,7 +8,7 @@ class DOM {
    private static ?array $_currentComponents = [];
 
    public static function Title(): ?string {
-      $title = func_get_args()[0] ?? null;
+      $title = \func_get_args()[0] ?? null;
 
       if ($title)
          static::$_title = $title;
@@ -17,7 +17,7 @@ class DOM {
    }
 
    public static function CurrentRoutes(): array {
-      $currentRoute = func_get_args()[0] ?? null;
+      $currentRoute = \func_get_args()[0] ?? null;
 
       if ($currentRoute)
          static::$_currentRoutes[] = $currentRoute;
@@ -26,7 +26,7 @@ class DOM {
    }
 
    public static function CurrentComponents(): array {
-      $currentComponent = func_get_args()[0] ?? null;
+      $currentComponent = \func_get_args()[0] ?? null;
 
       if ($currentComponent)
          static::$_currentComponents[] = $currentComponent;

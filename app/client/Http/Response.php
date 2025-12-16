@@ -506,7 +506,7 @@ class Response
     *
     * @return string
     */
-   public function __toString()
+   public function __toString(): string
    {
       if ($this->data !== null) {
          $contentType = strtolower($this->headers['Content-Type'] ?? $this->headers['content-type'] ?? $this->headers['Content-type'] ?? '');
@@ -516,6 +516,7 @@ class Response
             return $this->data;
          }
       }
+      return '';
    }
 
    /**
@@ -543,7 +544,7 @@ class Response
     */
    public static function sendSuccess($data, string $message = 'Success'): void
    {
-      (new static())->success($data, $message)->send();
+      new static()->success($data, $message)->send();
    }
 
    /**
@@ -556,6 +557,6 @@ class Response
     */
    public static function sendError(string $message, int $code = Response::StatusInternalServerError, $details = null): void
    {
-      (new static())->status($code)->error($message, $details)->send();
+      new static()->status($code)->error($message, $details)->send();
    }
 }

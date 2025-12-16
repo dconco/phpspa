@@ -13,7 +13,6 @@ use ReflectionMethod;
  * within HTML markup. It handles the transformation of custom component syntax
  * into executable PHP components within the PhpSPA framework.
  *
- * @package PhpSPA\Core\Utils\Formatter
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
@@ -26,7 +25,7 @@ trait ComponentTagFormatter
     * Formats the given DOM structure.
     *
     * @param mixed $dom Reference to the DOM object or structure to be formatted.
-    * @return void
+    * @return string
     */
    protected static function format(string $dom): string
    {
@@ -63,7 +62,7 @@ trait ComponentTagFormatter
             } else {
                // Handle namespace.class::method syntax
                if (strpos($component, '::') !== false) {
-                  list($className, $methodName) = explode('::', $component);
+                  [$className, $methodName] = explode('::', $component);
                   if (strpos($className, '.')) {
                      $className = str_replace('.', '\\', $className);
                   }
@@ -109,11 +108,7 @@ trait ComponentTagFormatter
                }
 
                if (method_exists($className, $methodName)) {
-                  if (method_exists(ReflectionMethod::class, 'createFromMethodName')) {
-                     $reflection = ReflectionMethod::createFromMethodName("$className::$methodName");
-                  } else {
-                     $reflection = new ReflectionMethod($className, $methodName);
-                  }
+                  $reflection = ReflectionMethod::createFromMethodName("$className::$methodName");
 
                   if ($reflection->isStatic()) {
                      return $className::$methodName(...$attributes);
@@ -132,7 +127,7 @@ trait ComponentTagFormatter
                }
             } elseif (function_exists($className)) {
                // Function syntax
-               return call_user_func_array($className, $attributes);
+               return \call_user_func_array($className, $attributes);
             } else {
                throw new AppException("Component {$component} does not exist.");
             }
@@ -145,6 +140,6 @@ trait ComponentTagFormatter
          return self::format($updatedDom) ?? '';
       }
 
-      return $updatedDom;
+      return $updatedDom ?? '';
    }
 }

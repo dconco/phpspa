@@ -17,14 +17,11 @@ use PhpSPA\Interfaces\MapInterface;
  *
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
- * @package PhpSPA\Core\Router
  * @license MIT
  * @var string|array $route
  * @var string $request_uri
  * @var array $method
  * @var bool $caseSensitive
- * @package PhpSPA\Core\Router
- * @static
  */
 class MapRoute implements MapInterface
 {
@@ -172,11 +169,11 @@ class MapRoute implements MapInterface
                $parsed_value = static::matchStrictType($param_value, $param_types);
 
                if (!$parsed_value) return false;
-               
+
                // checks if the requested method is of the given route
-               if (!in_array($this->request->method(), $this->method))
+               if (!\in_array($this->request->method(), $this->method))
                   return false;
-               
+
                $req[$param_name] = $parsed_value;
             }
          }
@@ -206,8 +203,8 @@ class MapRoute implements MapInterface
       $uri = [];
       $str_route = '';
 
-      if (is_array($route)) {
-         for ($i = 0; $i < count($route); $i++) {
+      if (\is_array($route)) {
+         for ($i = 0; $i < \count($route); $i++) {
             $each_route = preg_replace("/(^\/)|(\/$)/", '', $route[$i]);
 
             empty($each_route)
@@ -217,8 +214,8 @@ class MapRoute implements MapInterface
       } else
          $str_route = empty($route) ? '/' : $route;
 
-      if (in_array($this->request_uri, $uri) || $this->request_uri === $str_route) {
-         if (!in_array($this->request->method(), $this->method))
+      if (\in_array($this->request_uri, $uri) || $this->request_uri === $str_route) {
+         if (!\in_array($this->request->method(), $this->method))
             return false;
 
          return [
@@ -242,7 +239,7 @@ class MapRoute implements MapInterface
    private function pattern($route): array|bool
    {
       if (fnmatch($route, $this->request_uri)) {
-         if (!in_array($this->request->method(), $this->method)) {
+         if (!\in_array($this->request->method(), $this->method)) {
             return false;
          }
 

@@ -118,9 +118,9 @@ class Session
     {
         Session::start();
 
-        if (is_array($key)) {
+        if (\is_array($key)) {
             foreach ($key as $k) {
-                if (is_string($k)) {
+                if (\is_string($k)) {
                     unset($_SESSION[$k]);
                 }
             }

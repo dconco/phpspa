@@ -56,7 +56,7 @@ abstract class ComponentImpl
 		get => strtoupper($this->method);
 
       set(mixed $m) {
-			if (is_array($m)) {
+			if (\is_array($m)) {
             $m = array_map('trim', $m);
 				$this->method = implode('|', $m);
          } else
@@ -179,7 +179,7 @@ abstract class ComponentImpl
     */
    public static function Render(callable $component): string
    {
-      $output = call_user_func($component, new HttpRequest());
+      $output = \call_user_func($component, new HttpRequest());
       return static::format($output);
    }
 }
