@@ -50,6 +50,14 @@
 
     [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/hooks/use-fetch/)
 
+-   :material-routes:{ .lg .middle } **Router API** :material-new-box:
+
+    ---
+
+    Advanced routing with nested groups, middleware, and prefixing
+
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/latest/references/router/)
+
 </div>
 
 ---
@@ -148,7 +156,7 @@
     | [`fmt()`](https://phpspa.readthedocs.io/en/stable/references/helpers/fmt/) | Type preservation for component props | v2.0.1 |
     | [`import()`](https://phpspa.readthedocs.io/en/stable/references/file-import-utility/) | Secure file imports | v1.1.0 |
     | [`response()`](https://phpspa.readthedocs.io/en/stable/references/response/) | HTTP response builder | v1.1.8 |
-    | [`router()`](https://phpspa.readthedocs.io/en/stable/references/response/#response-api-examples) | Router instance access | v1.1.8 |
+    | [`router()`](https://phpspa.readthedocs.io/en/stable/references/router/) | Router instance access | v2.0.4 |
 
 === "Components"
 

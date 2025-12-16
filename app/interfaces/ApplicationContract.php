@@ -110,6 +110,7 @@ interface ApplicationContract {
      * @param string $route The route to map.
      * @param string $staticPath The static file path.
      * @return ApplicationContract
+     * @see https://phpspa.tech/references/router/#static-files
      */
     public function static(string $route, string $staticPath): self;
 
@@ -120,6 +121,7 @@ interface ApplicationContract {
     * @param string $path The prefix path.
     * @param callable $handler The handler function with Router as the parameter.
     * @return ApplicationContract
+     * @see https://phpspa.tech/references/router/#app-level-prefixing
     */
     public function prefix(string $path, callable $handler): self;
 
