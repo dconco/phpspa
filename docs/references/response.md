@@ -11,14 +11,18 @@ The `Response` class provides a fluent interface for HTTP response management in
 
 ### **Quick JSON Response**
 ```php
+<?php
+
 use PhpSPA\Http\Response;
 
-// Return a standard JSON response
-return Response::sendSuccess(['id' => 1], 'User created');
+// Send an immediate JSON response
+Response::sendSuccess(['id' => 1], 'User created');
 ```
 
 ### **Fluent Chain Construction**
 ```php
+<?php
+
 return (new Response())
     ->status(200)
     ->header('X-Custom-Header', 'AppValue')
@@ -41,6 +45,8 @@ The `Response` class includes dedicated methods for common HTTP scenarios.
 
 **Example:**
 ```php
+<?php
+
 // Standard success
 return $response->success($user, 'User profile retrieved');
 
@@ -62,6 +68,8 @@ return $response->sendFile('/storage/reports/2024.pdf');
 
 **Example:**
 ```php
+<?php
+
 if (!$user) {
     return $response->notFound('User does not exist');
 }
@@ -80,6 +88,8 @@ if ($input->fails()) {
     The `redirect()` method terminates script execution immediately.
 
 ```php
+<?php
+
 // Redirect to another URL
 $response->redirect('/login', 302);
 ```
@@ -88,6 +98,8 @@ $response->redirect('/login', 302);
 Standardized pagination structure.
 
 ```php
+<?php
+
 return $response->paginate(
     items: $users, 
     total: 100, 
@@ -106,18 +118,24 @@ Customize instances using chainable methods.
 ### `status(int $code)`
 Set the HTTP status code.
 ```php
+<?php
+
 $response->status(Response::StatusTeapot); // 418
 ```
 
 ### `header(string $name, string $value)`
 Set a single header.
 ```php
+<?php
+
 $response->header('Cache-Control', 'no-cache');
 ```
 
 ### `contentType(string $type)`
 Set the MIME type.
 ```php
+<?php
+
 $response->contentType('application/xml');
 ```
 
@@ -131,6 +149,8 @@ Helpers to send responses immediately without `return`.
     These methods construct the response, send headers, output content, and **exit** the application.
 
 ```php
+<?php
+
 // Send simple JSON
 Response::sendJson(['foo' => 'bar']);
 
