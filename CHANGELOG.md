@@ -110,6 +110,35 @@ $currentTitle = DOM::Title(); // Returns: "User Profile - My App"
 
 
 
+
+### **Enhanced Routing & Middleware** 🛣️
+
+- **Middleware Support** - Add middleware to routes and groups for authentication, logging, etc.
+- **Route Prefixing** - Group routes under common paths using `App::prefix()` or `Router::prefix()`.
+- **Static File Serving** - Serve static files easily with `App::static()`.
+- **Improved Request/Response** - New methods like `Request::urlParams()` and `Response::sendFile()`.
+- **Component Rendering** - Render components manually using `Component::Render()`.
+
+**Example:**
+
+```php
+$app->static('/', '../public');
+
+$app->prefix('/api', function (Router $router) {
+   // Middleware for this group
+   $router->middleware(function (Request $req, Response $res, Closure $next) {
+      if ($req->urlParams('id') !== 1) {
+         return $res->unauthorized('Unauthorized');
+      }
+      return $next();
+   });
+
+   $router->get('/user/{id: int}', function (Request $req, Response $res) {
+      return $res->success("User ID: " . $req->urlParams('id'));
+   });
+});
+```
+
 ---
 
 
