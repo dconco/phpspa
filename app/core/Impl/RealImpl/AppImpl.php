@@ -153,7 +153,7 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       foreach ($this->cors as $key => $value) {
-         if (is_array($value)) {
+         if (\is_array($value)) {
             $this->cors[$key] = array_unique($value);
          }
       }
@@ -230,7 +230,7 @@ abstract class AppImpl implements ApplicationContract {
       // Clean up expired asset mappings periodically
       AssetLinkManager::cleanupExpiredMappings();
 
-      $returnResult = func_get_args()[0] ?? false;
+      $returnResult = \func_get_args()[0] ?? false;
       $success = false;
 
       foreach ($this->components as $component) {
@@ -261,12 +261,12 @@ abstract class AppImpl implements ApplicationContract {
          foreach ($this->cors as $key => $value) {
             $key =
                'Access-Control-' . str_replace('_', '-', ucwords($key, '_'));
-            $value = is_array($value) ? implode(', ', $value) : $value;
+            $value = \is_array($value) ? implode(', ', $value) : $value;
 
             $header_value =
                $key .
                ': ' .
-               (is_bool($value) ? var_export($value, true) : $value);
+               (\is_bool($value) ? var_export($value, true) : $value);
             header($header_value);
          }
       }
@@ -363,9 +363,9 @@ abstract class AppImpl implements ApplicationContract {
 
       if (!$route && !$isPreloadingComponent) {
          $m = explode('|', $method);
-         if (!in_array($request->method(), $m)) return;
+         if (!\in_array($request->method(), $m)) return;
       } else if (!$isPreloadingComponent) {
-         $router = (new MapRoute($method, $route, $caseSensitive, $pattern))->match();
+         $router = new MapRoute($method, $route, $caseSensitive, $pattern)->match();
 
          if (!$router)
             return; // Skip if no match found
@@ -404,26 +404,26 @@ abstract class AppImpl implements ApplicationContract {
          */
 
       if (CallableInspector::hasParam($componentFunction, 'path') && CallableInspector::hasParam($componentFunction, 'request')) {
-         $componentOutput = call_user_func(
+         $componentOutput = \call_user_func(
             $componentFunction,
             path: $router['params'],
             request: $request,
          );
       }
       elseif (CallableInspector::hasParam($componentFunction, 'path')) {
-         $componentOutput = call_user_func(
+         $componentOutput = \call_user_func(
             $componentFunction,
             path: $router['params'],
          );
       }
       elseif (CallableInspector::hasParam($componentFunction, 'request')) {
-         $componentOutput = call_user_func(
+         $componentOutput = \call_user_func(
             $componentFunction,
             request: $request,
          );
       }
       else {
-         $componentOutput = call_user_func($componentFunction);
+         $componentOutput = \call_user_func($componentFunction);
       }
 
 
@@ -433,8 +433,8 @@ abstract class AppImpl implements ApplicationContract {
       ComponentScope::removeScope($scopeId);
 
       if (!$isPreloadingComponent) {
-         $title = \PhpSPA\DOM::Title() ?? $title;
-         \PhpSPA\DOM::Title($title);
+         $title = DOM::Title() ?? $title;
+         DOM::Title($title);
       }
 
       // Generate session-based links for scripts and stylesheets instead of inline content
@@ -474,7 +474,7 @@ abstract class AppImpl implements ApplicationContract {
             compressOutput: $compressOutput,
             assetLinks: $assetLinks,
             layoutOutput: $layoutOutput,
-            componentOutput: $componentOutput,
+            componentOutput: $componentOutput ?? '',
             targetID: $targetID,
             preload: $preload,
             reloadTime: $reloadTime,
@@ -608,7 +608,7 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       // --- Check if preload component exists ---
-      if (!$isPreloadingComponent && (isset($preload[0]) && isset($this->components[$preload[0]]))) {
+      if (!$isPreloadingComponent && isset($preload[0]) && isset($this->components[$preload[0]])) {
          static $lastPreloadKey = array_key_last($preload);
          
          foreach ($preload as $preloadKey => $componentKey) {
@@ -655,13 +655,8 @@ abstract class AppImpl implements ApplicationContract {
          'global' => [ 'scripts' => '', 'stylesheets' => '' ]
       ];
 
-      // --- Automatically add phpspa script for SPA functionality ---
-      if (!$isPhpSpaRequest) {
-         $jsLink = AssetLinkManager::generateJsLink("__global__", -1, null);
-         $result['global']['scripts'] .= "\n<script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
-      }
       // --- Get the primary route for mapping purposes ---
-      $primaryRoute = is_array($route) ? $route[0] ?? null : $route;
+      $primaryRoute = \is_array($route) ? $route[0] ?? null : $route;
 
       // --- Generate global stylesheet links ---
       if (!empty($globalStylesheets)) {
@@ -689,6 +684,14 @@ abstract class AppImpl implements ApplicationContract {
                $result['component']['stylesheets'] .= "<link rel=\"stylesheet\" type=\"$type\" href=\"$cssLink\" />\n";
             }
          }
+      }
+
+      // --- Automatically add phpspa script for SPA functionality ---
+      // --- Attaching it to the global stylesheet to expicitly... ---
+      // --- add it to the head tag alongside with the styles instead of the body ---
+      if (!$isPhpSpaRequest) {
+         $jsLink = AssetLinkManager::generateJsLink("__global__", -1, null);
+         $result['global']['stylesheets'] .= "\n<script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
       }
 
       // --- Generate global script links ---
@@ -791,8 +794,8 @@ abstract class AppImpl implements ApplicationContract {
       foreach ($this->components as $component) {
          $route = CallableInspector::getProperty($component, 'route');
 
-         if (is_array($route)) {
-            if (in_array($targetRoute, $route)) {
+         if (\is_array($route)) {
+            if (\in_array($targetRoute, $route)) {
                return $component;
             }
          }
@@ -908,7 +911,7 @@ abstract class AppImpl implements ApplicationContract {
          if ($type === 'css') header('Content-Type: text/css; charset=UTF-8');
          elseif ($type === 'js') header('Content-Type: application/javascript; charset=UTF-8');
 
-         header('Content-Length: ' . strlen($content));
+         header('Content-Length: ' . \strlen($content));
          header('Cache-Control: private, max-age=' . (AssetLinkManager::getCacheConfig()['hours'] * 3600));
       }
    }
@@ -923,7 +926,7 @@ abstract class AppImpl implements ApplicationContract {
     */
    private function injectGlobalAssets (string $html, array|string $globalAssets, string $componentScripts = ''): string
    {
-      if (is_string($globalAssets)) {
+      if (\is_string($globalAssets)) {
          $globalScripts = $globalAssets;
          $globalStylesheets = '';
       } else {
@@ -936,29 +939,31 @@ abstract class AppImpl implements ApplicationContract {
          return $html;
       }
 
-      // Inject global stylesheets AND global scripts in head for proper loading order
-      // This ensures phpspa.js is available before any inline component scripts execute
-      $headContent = $globalStylesheets . $globalScripts;
-      if (!empty(trim($headContent))) {
+      
+      // Inject global stylesheets in head for proper CSS cascading
+      if (!empty(trim($globalStylesheets))) {
          if (preg_match('/<\/head>/i', $html)) {
-            $html = preg_replace('/<\/head>/i', "{$headContent}</head>", $html, 1);
+            $html = preg_replace('/<\/head>/i', "{$globalStylesheets}</head>", $html, 1);
          }
          else {
-            // If no head tag, put assets at the beginning
-            $html = "{$headContent}{$html}";
+            // If no head tag, put stylesheets at the beginning
+            $html = "{$globalStylesheets}{$html}";
          }
       }
 
-      // Inject component scripts at end of body
-      if (!empty(trim($componentScripts))) {
+      // Combine global scripts and component scripts in proper order
+      $allScripts = $globalScripts . $componentScripts;
+
+      // Inject scripts at end of body (global scripts first, then component scripts)
+      if (!empty(trim($allScripts))) {
          if (preg_match('/<\/body>/i', $html))
-            $html = preg_replace('/<\/body>/i', "{$componentScripts}</body>", $html, 1);
+            $html = preg_replace('/<\/body>/i', "{$allScripts}</body>", $html, 1);
          elseif (preg_match('/<\/html>/i', $html))
             // If no body tag, try to inject before closing html tag
-            $html = preg_replace('/<\/html>/i', "{$componentScripts}</html>", $html, 1);
+            $html = preg_replace('/<\/html>/i', "{$allScripts}</html>", $html, 1);
          else
             // If neither body nor html tags exist, append at the end
-            $html .= $componentScripts;
+            $html .= $allScripts;
       }
 
       return $html;
