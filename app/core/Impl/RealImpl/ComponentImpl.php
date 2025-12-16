@@ -2,7 +2,11 @@
 
 namespace PhpSPA\Core\Impl\RealImpl;
 
+use BadMethodCallException;
+use InvalidArgumentException;
+use PhpSPA\Core\Http\HttpRequest;
 use PhpSPA\Core\Utils\ArrayFlat;
+use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 use PhpSPA\Interfaces\IComponent;
 
 /**
@@ -33,6 +37,8 @@ use PhpSPA\Interfaces\IComponent;
  */
 abstract class ComponentImpl
 {
+   use ComponentTagFormatter;
+
    /**
     * @var callable
     */
@@ -123,14 +129,14 @@ abstract class ComponentImpl
    /**
     * @param mixed $method
     * @param mixed $args
-    * @throws \BadMethodCallException
-    * @throws \InvalidArgumentException
+    * @throws BadMethodCallException
+    * @throws InvalidArgumentException
     * @return IComponent
     */
    public function __call($method, $args): static
    {
       $addAsset = function(string $property) use ($args) {
-         if ($property !== 'stylesheets' && $property !== 'scripts') throw new \InvalidArgumentException("Invalid property provided", 1);
+         if ($property !== 'stylesheets' && $property !== 'scripts') throw new InvalidArgumentException("Invalid property provided", 1);
 
          $temp = [
             'content' => fn() => '',
@@ -159,9 +165,16 @@ abstract class ComponentImpl
          'reload' => $this->reloadTime = $args[0],
          'styleSheet' => $addAsset('stylesheets'),
          'script' => $addAsset('scripts'),
-         default => throw new \BadMethodCallException("Method {$method} does not exist in " . __CLASS__),
+         default => throw new BadMethodCallException("Method {$method} does not exist in " . __CLASS__),
       };
 
       return $this;
+   }
+
+   
+   public static function Render(callable $component): string
+   {
+      $output = call_user_func($component, new HttpRequest());
+      return static::format($output);
    }
 }

@@ -112,8 +112,7 @@ $app = (new App(require 'layout/Layout.php'))
             <br />
             <Component.Link to="/">Go back to Home Page</Component.Link>
         </div>
-    HTML
-    )->title('App 2 - News Feed')->route('/feed'))
+    HTML)->title('App 2 - News Feed')->route('/feed'))
 
     ->defaultTargetID('root')
     ->run();

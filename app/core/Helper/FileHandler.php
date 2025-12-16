@@ -30,7 +30,7 @@ class FileHandler
      * @return bool|string The MIME type of the file as a string, or `false` if the file doesn't exist.
      * @throws AppException If the `fileinfo` extension is not enabled in PHP.
      */
-    public static function file_type(string $filename): bool|string
+    public static function fileType(string $filename): bool|string
     {
         if (is_file($filename)) {
             if (!extension_loaded('fileinfo')) {
@@ -57,7 +57,7 @@ class FileHandler
                     'csv' => 'text/csv',
                     'htm' => 'text/htm',
                     'html' => 'text/html',
-                    'php' => 'text/html',
+                    'php' => 'text/x-php',
                     'xml' => 'text/xml',
                     'js' => 'application/javascript',
                     'pdf' => 'application/pdf',

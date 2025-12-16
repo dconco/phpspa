@@ -2,11 +2,13 @@
 
 namespace PhpSPA\Core\Impl\RealImpl;
 
+use PhpSPA\DOM;
 use PhpSPA\Component;
 use PhpSPA\Http\Request;
 use PhpSPA\Http\Session;
 use PhpSPA\Http\Security\Nonce;
 use PhpSPA\Core\Router\MapRoute;
+use PhpSPA\Core\Router\PrefixRouter;
 use PhpSPA\Core\Http\HttpRequest;
 use PhpSPA\Compression\Compressor;
 use PhpSPA\Core\Config\CompressionConfig;
@@ -17,7 +19,6 @@ use PhpSPA\Core\Helper\ComponentScope;
 use PhpSPA\Core\Helper\AssetLinkManager;
 use PhpSPA\Core\Helper\PathResolver;
 use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
-use PhpSPA\DOM;
 use PhpSPA\Interfaces\ApplicationContract;
 use PhpSPA\Interfaces\IComponent;
 
@@ -38,6 +39,7 @@ use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  * @abstract
  */
 abstract class AppImpl implements ApplicationContract {
+   use PrefixRouter;
    use ComponentTagFormatter;
    use \PhpSPA\Core\Utils\Validate;
 
@@ -63,21 +65,6 @@ abstract class AppImpl implements ApplicationContract {
     * @var Component|IComponent[]
     */
    private array $components = [];
-
-   /**
-    * Indicates whether the application should treat string comparisons as case sensitive.
-    *
-    * @var bool Defaults to false, meaning string comparisons are case insensitive by default.
-    */
-   private bool $defaultCaseSensitive = false;
-
-   /**
-    * The base URI of the application.
-    * This is used to determine the root path for routing and resource loading.
-    *
-    * @var string
-    */
-   public static string $request_uri;
 
    /**
     * Holds the data that has been rendered.
@@ -114,6 +101,14 @@ abstract class AppImpl implements ApplicationContract {
     * }>
     */
    protected array $stylesheets = [];
+
+   /**
+    * @var array<array{
+    *    path: string,
+    *    handler: callable
+    * }>
+    */
+   protected array $prefix = [];
 
    public function defaultTargetID (string $targetID): ApplicationContract
    {
@@ -204,10 +199,19 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
+   public function static(string $route, string $staticPath): ApplicationContract {
+      $this->static[] = ['route' => $route, 'staticPath' => $staticPath]; return $this;
+   }
+
+   public function prefix(string $path, callable $handler): ApplicationContract {
+      $this->prefix[] = ['path' => $path, 'handler' => $handler]; return $this;
+   }
+
    public function run ()
    {
       $request = new HttpRequest();
 
+      $this->resolveStaticPath();
       $this->resolveCors($request);
       $this->handlePhpSPARequest($request);
 
@@ -217,7 +221,7 @@ abstract class AppImpl implements ApplicationContract {
       // Auto-detect and set base path for proper asset URL resolution
       PathResolver::autoDetectBasePath();
 
-      $assetInfo = AssetLinkManager::resolveAssetRequest(self::$request_uri);
+      $assetInfo = AssetLinkManager::resolveAssetRequest(static::$request_uri);
       if ($assetInfo !== null) {
          $this->serveAsset($assetInfo);
          exit();
@@ -245,6 +249,10 @@ abstract class AppImpl implements ApplicationContract {
 
          print_r($compressedOutput);
          exit(0);
+      }
+
+      foreach ($this->prefix as $prefix) {
+         $this->handlePrefix($prefix);
       }
    }
 
@@ -361,8 +369,10 @@ abstract class AppImpl implements ApplicationContract {
 
          if (!$router)
             return; // Skip if no match found
+
+         $request = new HttpRequest($router['params'] ?? []);
    
-         DOM::CurrentRoutes(self::$request_uri);
+         DOM::CurrentRoutes(static::$request_uri);
       }
 
       if ($isPreloadingComponent && !str_contains($route[0] ?? '', '{')) {

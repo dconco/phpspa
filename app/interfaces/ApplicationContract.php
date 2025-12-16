@@ -105,6 +105,17 @@ interface ApplicationContract {
 
 
     /**
+     * 
+     */
+    public function static(string $route, string $staticPath): self;
+
+
+    /**
+     * 
+     */
+    public function prefix(string $path, callable $handler): self;
+
+    /**
      * Configure CORS (Cross-Origin Resource Sharing) settings for the application.
      *
      * Loads default CORS configuration from the config file and optionally merges

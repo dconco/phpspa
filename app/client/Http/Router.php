@@ -2,9 +2,11 @@
 
 namespace PhpSPA\Http;
 
-use PhpSPA\App;
+use Closure;
 use PhpSPA\Core\Http\HttpRequest;
 use PhpSPA\Core\Router\MapRoute;
+use PhpSPA\Core\Router\PrefixRouter;
+use PhpSPA\Http\Response;
 
 /**
  * Handles routing for the application.
@@ -12,202 +14,94 @@ use PhpSPA\Core\Router\MapRoute;
  * @category HTTP
  * @author Samuel Paschalson <samuelpaschalson@gmail.com>
  * @copyright 2025 Samuel Paschalson
+ * @method void get(string|array $route, callable ...$handlers)
+ * @method void put(string|array $route, callable ...$handlers)
+ * @method void post(string|array $route, callable ...$handlers)
+ * @method void head(string|array $route, callable ...$handlers)
+ * @method void patch(string|array $route, callable ...$handlers)
+ * @method void delete(string|array $route, callable ...$handlers)
  * @see https://phpspa.tech/references/response/#router-quick-examples
  */
 
 class Router
 {
-    /**
-     * @var array Registered routes
-     */
-    private static $routes = [
-        'GET' => [],
-        'POST' => [],
-        'PUT' => [],
-        'DELETE' => [],
-        'PATCH' => [],
-        'OPTIONS' => [],
-        'HEAD' => []
-    ];
+   use PrefixRouter;
 
-    /**
-     * @var string Base path for the router
-     */
-    private static $basePath = '/api';
+   /**
+    * @param bool $caseSensitive Whether routes are case sensitive
+    * @param string $prefix Base path for the router
+    * @param array<callable> $middlewares
+    */
+   public function __construct(readonly private string $prefix, private bool $caseSensitive, private array $middlewares)
+   {
+      static::$request_uri ??= new HttpRequest()->getUri();
+   }
 
-    /**
-     * @var bool Whether the shutdown handler has been registered
-     */
-    private static $shutdownHandlerRegistered = false;
+   /**
+    * Set whether routes are case sensitive.
+    */
+   public function caseSensitive(bool $value): void
+   {
+      $this->caseSensitive = $value;
+   }
 
-    /**
-     * @var bool Whether routes are case sensitive
-     */
-    private static $caseSensitive = false;
+   public function middleware(callable $handler) {
+      $this->middlewares[] = $handler;
+   }
 
-    /**
-     * Set the base path for the router.
-     *
-     * @param string $path The base path.
-     * @return void
-     */
-    public static function setBasePath(string $path): void
-    {
-        self::$basePath = rtrim($path, '/');
-    }
+   public function prefix(string $path, callable $handler) {
+      $prefix = ['path' => rtrim($this->prefix, '/') . '/' . ltrim($path, '/'), 'handler' => $handler];
+      $this->handlePrefix($prefix, $this->middlewares);
+   }
 
-    /**
-     * Set whether routes are case sensitive.
-     *
-     * @param bool $caseSensitive
-     * @return void
-     */
-    public static function setCaseSensitive(bool $caseSensitive): void
-    {
-        self::$caseSensitive = $caseSensitive;
-    }
+   public function __call($method, $args)
+   {
+      $routes = !is_array($args[0]) ? [$args[0]] : [$args[0]];
+      unset($args[0]);
 
-    /**
-     * Register a GET route.
-     *
-     * @param string $uri
-     * @param callable $callback
-     * @return void
-     */
-    public static function get(string $uri, callable $callback, ?Request $request = null)
-    {
-        self::ensureShutdownHandlerRegistered($request);
-        self::$routes['GET'][$uri] = $callback;
-    }
+      $handlers = [...$this->middlewares, ...$args];
+      $routes = array_map(fn($route) => rtrim($this->prefix, '/') . '/' . ltrim($route, '/'), $routes);
 
-    /**
-     * Register a POST route.
-     *
-     * @param string $uri
-     * @param callable $callback
-     * @return void
-     */
-    public static function post(string $uri, callable $callback, ?Request $request = null)
-    {
-        self::ensureShutdownHandlerRegistered($request);
-        self::$routes['POST'][$uri] = $callback;
-    }
+      match ($method) {
+         'get',
+         'put',
+         'post',
+         'head',
+         'patch',
+         'delete' => $this->handle($method, $routes, ...$handlers),
+         default => throw new \BadMethodCallException("Method {$method} does not exist in " . __CLASS__),
+      };
+   }
+   
+   private function handleHandler(callable $handler, &$request, $response, Closure $next) {
+      return call_user_func($handler, $request, $response, $next);
+   }
 
-    /**
-     * Register a PUT route.
-     *
-     * @param string $uri
-     * @param callable $callback
-     * @return void
-     */
-    public static function put(string $uri, callable $callback, ?Request $request = null)
-    {
-        self::ensureShutdownHandlerRegistered($request);
-        self::$routes['PUT'][$uri] = $callback;
-    }
+   private function handle(string $method, array $route, callable ...$handlers): void
+   {
+      $response = new Response();
+      $iterator = 0;
 
-    /**
-     * Register a DELETE route.
-     *
-     * @param string $uri
-     * @param callable $callback
-     * @return void
-     */
-    public static function delete(string $uri, callable $callback, ?Request $request = null)
-    {
-        self::ensureShutdownHandlerRegistered($request);
-        self::$routes['DELETE'][$uri] = $callback;
-    }
+      $map = (new MapRoute($method, $route, $this->caseSensitive))->match();
 
-    /**
-     * Register a PATCH route.
-     *
-     * @param string $uri
-     * @param callable $callback
-     * @return void
-     */
-    public static function patch(string $uri, callable $callback, ?Request $request = null)
-    {
-        self::ensureShutdownHandlerRegistered($request);
-        self::$routes['PATCH'][$uri] = $callback;
-    }
+      if ($map) {
+         $request = new HttpRequest($map['params'] ?? []);
 
-    /**
-     * Register an OPTIONS route.
-     *
-     * @param string $uri
-     * @param callable $callback
-     * @return void
-     */
-    public static function options(string $uri, callable $callback, ?Request $request = null)
-    {
-        self::ensureShutdownHandlerRegistered($request);
-        self::$routes['OPTIONS'][$uri] = $callback;
-    }
+         $next = function() use (&$iterator, $handlers, &$request, $response, &$next) {
+            if (++$iterator >= count($handlers)) return;
+            return $this->handleHandler($handlers[$iterator], $request, $response, $next);
+         };
 
-    /**
-     * Register a HEAD route.
-     *
-     * @param string $uri
-     * @param callable $callback
-     * @return void
-     */
-    public static function head(string $uri, callable $callback, ?Request $request = null)
-    {
-        self::ensureShutdownHandlerRegistered($request);
-        self::$routes['HEAD'][$uri] = $callback;
-    }
+         $output = $this->handleHandler($handlers[$iterator], $request, $response, $next);
 
-    /**
-     * Ensure the shutdown handler is registered once.
-     *
-     * @return void
-     */
-    private static function ensureShutdownHandlerRegistered(?Request $request): void
-    {
-        if (self::$shutdownHandlerRegistered) return;
-        $request = $request ?? new HttpRequest();
-
-        register_shutdown_function([self::class, 'handle'], $request);
-        self::$shutdownHandlerRegistered = true;
-    }
-
-    /**
-     * Handle the incoming request and dispatch to the appropriate route.
-     * This method is intended to be invoked at PHP shutdown via register_shutdown_function.
-     *
-     * @param Request $request
-     * @return void
-     */
-    private static function handle(Request $request): void
-    {
-        $method = $request->method();
-        $uri = $request->getUri();
-
-        // Let MapRoute handle matching (supports patterns, types, and case rules)
-        // Set the application request URI so MapRoute can access it
-        App::$request_uri = $uri;
-
-        $mapper = new MapRoute();
-
-        foreach (self::$routes[$method] as $route => $callback) {
-            $route = rtrim(self::$basePath) . '/' . ltrim($route, '/');
-            $match = $mapper->match($method, $route, self::$caseSensitive);
-            if (!$match) continue;
-
-            // If MapRoute returned parameters, pass them to the callback
-            if (!empty($match['params']) && is_array($match['params'])) {
-                $response = $callback($request, ...array_values($match['params']));
-            } else {
-                $response = $callback($request);
+			if ($output) {
+            if ($output instanceof Response) {
+               $output->send();
             }
 
-            $response->send();
-            return;
-        }
-
-        // Return 404 if no route found
-        $response = response()->error('Not Found', 404);
-        $response->send();
-    }
+				echo $output;
+				exit;
+			}
+      }
+   }
 }

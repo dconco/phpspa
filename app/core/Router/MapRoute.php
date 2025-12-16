@@ -15,7 +15,7 @@ use PhpSPA\Interfaces\MapInterface;
  * This class is responsible for mapping and matching routes against the current request URI and HTTP method.
  * It extends the Controller class and implements the MapInterface interface.
  *
- * @author dconco <info@dconco.dev>
+ * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @package PhpSPA\Core\Router
  * @license MIT
@@ -54,7 +54,7 @@ class MapRoute implements MapInterface
 		readonly private bool $pattern = false
 	) {
 		$this->request = new HttpRequest();
-      $this->method = explode('|', $method);
+      $this->method = explode('|', strtoupper($method));
 
       // --- Replacing first and last forward slashes, $request_uri will be empty if req uri is / ---
       $this->request_uri = preg_replace("/(^\/)|(\/$)/", '', App::$request_uri);
@@ -66,11 +66,12 @@ class MapRoute implements MapInterface
 
 	public function match(): array|bool {
 		foreach ($this->routes as $route) {
-			$route = preg_replace("/(^\/)|(\/$)/", '', $this->caseSensitive ? $route : strtolower($route));
-
+         
+         $route = preg_replace("/(^\/)|(\/$)/", '', $this->caseSensitive ? $route : strtolower($route));
+         
 			$match = $this->pattern
-				? $this->pattern($route)
-				: $this->realMatch($route);
+            ? $this->pattern($route)
+            : $this->realMatch($route);
 
 			if ($match) return $match;
 		}
@@ -94,70 +95,71 @@ class MapRoute implements MapInterface
       if (empty($paramMatches) || empty($paramMatches[0] ?? [])) {
          return $this->matchRouting($route);
       }
-
+      
+      
       // setting parameters names
       foreach ($paramMatches[0] as $key) {
          $paramKey[] = $key;
       }
-
+      
       // exploding route address
       $uri = explode('/', $route);
-
+      
       // will store index number where {?} parameter is required in the $route
       $indexNum = [];
-
+      
       // storing index number, where {?} parameter is required with the help of regex
       foreach ($uri as $index => $param) {
          if (preg_match('/{.*}/', $param)) {
             $indexNum[] = $index;
          }
       }
-
+      
       /**
        *   ----------------------------------------------------------------------------------
        *   |   Exploding request uri string to array to get the exact index number value of parameter from $_REQUEST['uri']
        *   ----------------------------------------------------------------------------------
-       */
+      */
       $reqUri = explode('/', $this->request_uri);
       /**
        *   ----------------------------------------------------------------------------------
        *   |   Running for each loop to set the exact index number with reg expression this will help in matching route
        *   ----------------------------------------------------------------------------------
-       */
+      */
       foreach ($indexNum as $key => $index) {
          /**
           *   --------------------------------------------------------------------------------
-          *   |   In case if req uri with param index is empty then return because URL is not valid for this route
+         *   |   In case if req uri with param index is empty then return because URL is not valid for this route
           *   --------------------------------------------------------------------------------
-          */
-
-         if (empty($reqUri[$index])) {
-            return false;
+         */
+        
+        if (empty($reqUri[$index])) {
+           return false;
          }
-
+         
          if (str_contains($paramKey[$key], ':')) {
             $unvalidate_req[] = [ $paramKey[$key], $reqUri[$index] ];
          }
-
+         
          // setting params with params names
          $key = trim((string) explode(':', $paramKey[$key], 2)[0]);
          $req[$key] = $reqUri[$index];
          $req_value[] = $reqUri[$index];
-
+         
          // this is to create a regex for comparing route address
          $reqUri[$index] = '{.*}';
       }
       // converting array to string
       $reqUri = implode('/', $reqUri);
-
+      
       /**
        *   -----------------------------------
        *   |   replace all / with \/ for reg expression
        *   |   regex to match route is ready!
        *   -----------------------------------
-       */
+      */
       $reqUri = str_replace('/', '\\/', $reqUri);
-
+      
       // now matching route with regex
       if (preg_match("/$reqUri/", $route . '$')) {
          if (!empty($unvalidate_req)) {
@@ -166,15 +168,15 @@ class MapRoute implements MapInterface
                $param_types = trim((string) explode(':', $value[0], 2)[1]);
                $param_types = preg_split('/\|(?![^<]*>)/', $param_types);
                $param_value = $value[1];
-
+               
                $parsed_value = static::matchStrictType($param_value, $param_types);
 
                if (!$parsed_value) return false;
-
+               
                // checks if the requested method is of the given route
                if (!in_array($this->request->method(), $this->method))
                   return false;
-
+               
                $req[$param_name] = $parsed_value;
             }
          }
