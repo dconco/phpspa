@@ -1,138 +1,158 @@
-# PhpSPA v1.1.8 — Router & Response
+# Response API Reference
 
-This document describes how to use the new Router and Response APIs introduced in v1.1.8. It contains full usage examples, API reference, and migration tips.
+The `Response` class provides a fluent interface for HTTP response management in PhpSPA. It combines powerful helper methods with chainable modifiers to make API development robust and expressive.
+
+!!! info "Namespace"
+    `PhpSPA\Http\Response`
 
 ---
 
-## Router — Quick examples
+## **Basic Usage**
 
-### Automatic dispatch (recommended for web apps)
-
-Register routes normally; the router dispatches automatically when the PHP script ends.
-
+### **Quick JSON Response**
 ```php
-<?php
-
-use PhpSPA\Http\Router;
 use PhpSPA\Http\Response;
-use PhpSPA\Http\Request;
 
-// Simple route
-Router::get('/', function(Request $req) {
-    return Response::json(['message' => 'Hello world']);
-});
-
-// Parameterized route (MapRoute typed parameter support)
-Router::get('/user/{id: int}', function(Request $req, int $id) {
-    // $id is validated and typed by MapRoute
-    return Response::json(['user_id' => $id]);
-});
+// Return a standard JSON response
+return Response::sendSuccess(['id' => 1], 'User created');
 ```
 
----
-
-## Response — API & examples
-
-`PhpSPA\Http\Response` is designed for concise, fluent response construction.
-
-### Create responses
-
+### **Fluent Chain Construction**
 ```php
-<?php
-use PhpSPA\Http\Response;
-
-// Basic JSON response (static)
-return Response::json(['status' => 'OK']);
-
-// Fluent construction
 return (new Response())
-    ->data(['result' => 'value'])
     ->status(200)
-    ->header('X-Custom', 'value')
-    ->contentType('application/json');
-
-// Convenience shortcut
-Response::sendJson(['ok' => true]); // builds and sends immediately
-```
-
-### Common helper methods
-
-- `Response::json($data, $status = 200, $headers = [])` — create a JSON response.
-- `Response::make($data, $status = 200, $headers = [])` — create a Response instance.
-- `Response::sendJson(...)`, `Response::sendSuccess(...)`, `Response::sendError(...)` — build & send shortcuts.
-- Instance helpers: `data()`, `status()`, `header()`, `contentType()`, `success()`, `error()`.
-
-### Using the global `response()` helper
-
-The repo provides a global helper function `response()` that returns a `Response` instance. Use it for fluent convenience in route callbacks.
-
-```php
-<?php
-// Example using response() function
-return response(['message' => 'ok'], 200)
-    ->header('X-Hello', 'world')
-    ->contentType('application/json');
-
-// Example using response() function for registering route
-response()->get('/example', function(Request $request) {
-    return response()->json(['example' => true]);
-});
+    ->header('X-Custom-Header', 'AppValue')
+    ->data(['message' => 'Hello World']);
 ```
 
 ---
 
-## Complete example
+## **Response Types**
 
+The `Response` class includes dedicated methods for common HTTP scenarios.
+
+### **Success Responses**
+
+| Method | Status | Description |
+| :--- | :--- | :--- |
+| `success($data, $message)` | `200` | Standard success response |
+| `created($data, $message)` | `201` | Resource successfully created |
+| `sendFile($path)` | `200` | Streams a file with auto-compression |
+
+**Example:**
 ```php
-<?php
-require_once 'path/to/vendor/autoload.php';
+// Standard success
+return $response->success($user, 'User profile retrieved');
 
-use PhpSPA\Http\Response;
-use PhpSPA\Http\Request;
-use function PhpSPA\Http\response;
-
-$request = new Request();
-$response = Response::fromRequest($request)->caseSensitive();
-
-// Define your routes
-$response->get('/user/{id: int}', function (Request $request, int $id) {
-    $user = 2; // example lookup
-    return response(['message' => 'Hello from route with ID: ' . $id, 'data' => $user], 200)
-        ->header('X-Route-Header', 'route_value');
-});
-
-$response->get('/status', function (Request $request) {
-    return response()->json([
-        'status' => 'OK',
-        'message' => 'Server is running.'
-    ]);
-});
-
-$response->get('/data', function (Request $request) {
-    return response()
-        ->json(['data' => 'some data'])
-        ->header('X-Custom-Header', 'Value')
-        ->contentType('application/json');
-});
-
-// Convenience methods
-$response->get('/success', function (Request $request) {
-    return response()->success(['result' => 'data'], 'Operation successful');
-});
-
-$response->get('/error', function (Request $request) {
-    return response()->error('Something went wrong', 500);
-});
+// File download with compression support
+return $response->sendFile('/storage/reports/2024.pdf');
 ```
 
 ---
 
-## MapRoute pattern reference
+### **Error Responses**
 
-MapRoute supports parameter patterns and strict types in route declarations. Examples:
+| Method | Status | Description |
+| :--- | :--- | :--- |
+| `error($msg, $details)` | `---` | Generic error wrapper |
+| `notFound($msg)` | `404` | Resource not found |
+| `unauthorized($msg)` | `401` | Authentication required |
+| `forbidden($msg)` | `403` | Access denied |
+| `validationError($errors)` | `422` | Form validation failure |
 
-- `/user/{id}` — simple parameter
-- `/user/{id: int}` — typed parameter (int)
-- `/search/{q: string}` — string param
+**Example:**
+```php
+if (!$user) {
+    return $response->notFound('User does not exist');
+}
 
-For full details see https://phpspa.tech/routing/advanced-routing.
+if ($input->fails()) {
+    return $response->validationError($input->errors());
+}
+```
+
+---
+
+### **Special Responses**
+
+#### **Redirects**
+!!! warning "Exit Behavior"
+    The `redirect()` method terminates script execution immediately.
+
+```php
+// Redirect to another URL
+$response->redirect('/login', 302);
+```
+
+#### **Pagination**
+Standardized pagination structure.
+
+```php
+return $response->paginate(
+    items: $users, 
+    total: 100, 
+    perPage: 15, 
+    currentPage: 1, 
+    lastPage: 7
+);
+```
+
+---
+
+## **Modifiers**
+
+Customize instances using chainable methods.
+
+### `status(int $code)`
+Set the HTTP status code.
+```php
+$response->status(Response::StatusTeapot); // 418
+```
+
+### `header(string $name, string $value)`
+Set a single header.
+```php
+$response->header('Cache-Control', 'no-cache');
+```
+
+### `contentType(string $type)`
+Set the MIME type.
+```php
+$response->contentType('application/xml');
+```
+
+---
+
+## **Static Helpers**
+
+Helpers to send responses immediately without `return`.
+
+!!! tip "Immediate Execution"
+    These methods construct the response, send headers, output content, and **exit** the application.
+
+```php
+// Send simple JSON
+Response::sendJson(['foo' => 'bar']);
+
+// Send formatted success
+Response::sendSuccess($data, 'Operation complete');
+
+// Send formatted error
+Response::sendError('Database connection failed', 500);
+```
+
+---
+
+## **Status Constants**
+
+Use these constants for readable status codes.
+
+| Constant | Value |
+| :--- | :--- |
+| `Response::StatusOK` | 200 |
+| `Response::StatusCreated` | 201 |
+| `Response::StatusBadRequest` | 400 |
+| `Response::StatusUnauthorized` | 401 |
+| `Response::StatusForbidden` | 403 |
+| `Response::StatusNotFound` | 404 |
+| `Response::StatusInternalServerError` | 500 |

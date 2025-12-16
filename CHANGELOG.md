@@ -136,6 +136,18 @@ $app->prefix('/api', function (Router $router) {
    $router->get('/user/{id: int}', function (Request $req, Response $res) {
       return $res->success("User ID: " . $req->urlParams('id'));
    });
+
+   // Each route can get their own middleware
+   $userMiddleware = function (Request $req, Response $res, Closure $next) {
+      if ($req->urlParams('id') !== 1) {
+         return $res->unauthorized('Unauthorized');
+      }
+      return $next();
+   };
+
+   $router->get('/user/{id: int}', $userMiddleware, function (Request $req, Response $res) {
+      return $res->success("User ID: " . $req->urlParams('id'));
+   });
 });
 ```
 
