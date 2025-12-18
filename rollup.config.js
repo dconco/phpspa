@@ -1,0 +1,52 @@
+import typescript from '@rollup/plugin-typescript';
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+import terser from '@rollup/plugin-terser';
+
+export default {
+   input: 'src/index.ts',
+   output: [
+      // --- UMD build for browsers and CDN ---
+      {
+         file: 'src/script/phpspa.js',
+         format: 'umd',
+         name: 'phpspa',
+         sourcemap: true,
+         exports: 'default'
+      },
+      // --- Minified UMD for production CDN ---
+      {
+         file: 'src/script/phpspa.min.js',
+         format: 'umd',
+         name: 'phpspa',
+         sourcemap: true,
+         exports: 'default',
+         plugins: [terser()]
+      },
+      // --- CommonJS for Node.js ---
+      {
+         file: 'src/script/phpspa.cjs',
+         format: 'cjs',
+         sourcemap: true,
+         exports: 'default'
+      },
+      // --- ES Module for modern bundlers ---
+      {
+         file: 'src/script/phpspa.mjs',
+         format: 'es',
+         sourcemap: true
+      }
+   ],
+   plugins: [
+      resolve({
+         browser: true
+      }),
+      commonjs(),
+      typescript({
+         tsconfig: './tsconfig.json',
+         declaration: true,
+         declarationDir: './src/script/types',
+         rootDir: './src'
+      })
+   ]
+};

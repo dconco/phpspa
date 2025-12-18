@@ -464,7 +464,6 @@ abstract class AppImpl implements ApplicationContract {
           *    targetID: mixed,
           *    reloadTime: int,
           *    exact: bool,
-          *    preload: array,
           * }
           */
          $info = [
@@ -854,7 +853,6 @@ abstract class AppImpl implements ApplicationContract {
          if ($assetInfo['assetIndex'] === -1 && $request->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT' && $request->requestedWith() !== 'PHPSPA_REQUEST') {
             $scriptPath = dirname(__DIR__, 4);
             $path = '/src/script/phpspa.min.js'; // --- PRODUCTION ---
-            //$path = '/examples/src/phpspa.js'; // --- DEVELOPMENT ---
 
             return [file_get_contents($scriptPath . $path)];
          }
