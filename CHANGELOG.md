@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## dev-v2.0.4 (Latest) (Unreleased)
+## v2.0.4 (Current) (Stable)
 
 > [!IMPORTANT]
 > This version requires **PHP 8.4 or higher**
@@ -160,7 +160,7 @@ $app->prefix('/api', function (Router $router) {
 
 
 
-## v2.0.3 (Current) (Stable)
+## v2.0.3
 
 ### ✨ New Features
 
