@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## dev-v2.0.4 (Latest) (Unreleased)
+## v2.0.4 (Current) (Stable)
 
 > [!IMPORTANT]
 > This version requires **PHP 8.4 or higher**
@@ -29,7 +29,7 @@ useEffect(() => {
 }, ['stateKey']); // Re-runs only when 'stateKey' changes
 ```
 
-**Documentation:** [references/hooks/clients/use-effect](https://phpspa.readthedocs.io/en/latest/references/hooks/clients/use-effect)
+**Documentation:** [references/hooks/clients/use-effect](https://phpspa.tech/references/hooks/clients/use-effect)
 
 
 ### **Core Fixes** 🔧
@@ -84,7 +84,7 @@ $form = (new Component(function() {
 }))->method('GET', 'POST');
 ```
 
-**Documentation:** [references/preloading-component](https://phpspa.readthedocs.io/en/latest/references/preloading-component/)
+**Documentation:** [references/preloading-component](https://phpspa.tech/references/preloading-component/)
 
 
 ### **DOM Utilities** 🛠️
@@ -106,7 +106,53 @@ function UserProfile() {
 $currentTitle = DOM::Title(); // Returns: "User Profile - My App"
 ```
 
-**Documentation:** [references/dom-utilities](https://phpspa.readthedocs.io/en/latest/references/dom-utilities/)
+**Documentation:** [references/dom-utilities](https://phpspa.tech/references/dom-utilities/)
+
+
+
+
+### **Enhanced Routing & Middleware** 🛣️
+
+- **Middleware Support** - Add middleware to routes and groups for authentication, logging, etc.
+- **Route Prefixing** - Group routes under common paths using `App::prefix()` or `Router::prefix()`.
+- **Static File Serving** - Serve static files easily with `App::static()`.
+- **Improved Request/Response** - New methods like `Request::urlParams()` and `Response::sendFile()`.
+- **Component Rendering** - Render components manually using `Component::Render()`.
+
+**Example:**
+
+```php
+$app->static('/', '../public');
+
+$app->prefix('/api', function (Router $router) {
+   // Middleware for this group
+   $router->middleware(function (Request $req, Response $res, Closure $next) {
+      if ($req->urlParams('id') !== 1) {
+         return $res->unauthorized('Unauthorized');
+      }
+      return $next();
+   });
+
+   $router->get('/user/{id: int}', function (Request $req, Response $res) {
+      return $res->success("User ID: " . $req->urlParams('id'));
+   });
+
+   // Each route can get their own middleware
+   $userMiddleware = function (Request $req, Response $res, Closure $next) {
+      if ($req->urlParams('id') !== 1) {
+         return $res->unauthorized('Unauthorized');
+      }
+      return $next();
+   };
+
+   $router->get('/user/{id: int}', $userMiddleware, function (Request $req, Response $res) {
+      return $res->success("User ID: " . $req->urlParams('id'));
+   });
+});
+```
+
+**Documentation:** [references/router](https://phpspa.tech/references/router/)
+
 
 
 
@@ -114,7 +160,7 @@ $currentTitle = DOM::Title(); // Returns: "User Profile - My App"
 
 
 
-## v2.0.3 (Current) (Stable)
+## v2.0.3
 
 ### ✨ New Features
 

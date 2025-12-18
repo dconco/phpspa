@@ -25,7 +25,7 @@ function import(string $file): ImportedFile
         throw new AppException("File too large to import: $file");
     }
 
-    $file_type = FileHandler::file_type($file);
+    $file_type = FileHandler::fileType($file);
     $contents = base64_encode(file_get_contents($file));
 
     $data = "data:$file_type;base64,$contents";

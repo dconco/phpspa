@@ -37,11 +37,11 @@ class App extends AppImpl {
      * @see https://phpspa.tech/layout
      * @see https://phpspa.tech/performance/html-compression
      */
-    public function __construct (callable|string $layout, bool $autoInitCompression = true)
+    public function __construct (callable|string $layout = "", bool $autoInitCompression = true)
     {
         Session::start();
         $this->layout = $layout;
-        self::$request_uri = urldecode(
+        static::$request_uri = urldecode(
             parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH),
         );
 
