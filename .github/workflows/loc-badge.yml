@@ -5,6 +5,9 @@ on:
     branches: [master, dev]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   badge:
     runs-on: ubuntu-latest
@@ -22,8 +25,8 @@ jobs:
 
       - name: Commit badge
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
           git add badge/loc.svg
           git diff --quiet && git diff --staged --quiet || git commit -m "Update LoC badge [skip ci]"
           git push
