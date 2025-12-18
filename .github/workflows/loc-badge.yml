@@ -2,7 +2,7 @@ name: Update LoC Badge
 
 on:
   push:
-    branches: [master]
+    branches: [dev]
   workflow_dispatch:
 
 permissions:
