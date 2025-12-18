@@ -47,7 +47,3 @@ src/script/phpspa.mjs export-ignore
 # Exclude Node.js files from Composer distribution
 package.json export-ignore
 pnpm-lock.yaml export-ignore
-
-# Mark only minified bundles as generated (keep phpspa.js for language stats)
-src/script/*.mjs linguist-generated
-src/script/*.cjs linguist-generated
