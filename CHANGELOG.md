@@ -7,7 +7,7 @@
 
 **Installation:**
 ```bash
-composer require dconco/phpspa:v2.0.4.x-dev
+composer require dconco/phpspa:v2.0.4
 ```
 
 ### **Client-Side Hooks** ⚛️
