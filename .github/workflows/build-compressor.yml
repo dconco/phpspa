@@ -6,7 +6,7 @@ permissions:
 on:
   push:
     branches:
-      - dev
+      - master
   release:
     types: [published]
   workflow_dispatch:

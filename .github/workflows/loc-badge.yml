@@ -1,0 +1,29 @@
+name: Update LoC Badge
+
+on:
+  push:
+    branches: [master, dev]
+  workflow_dispatch:
+
+jobs:
+  badge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Make Code Badge
+        uses: shadowmoose/GHA-LoC-Badge@1.0.0
+        with:
+          debug: false
+          directory: ./
+          badge: ./badge/loc.svg
+          patterns: '**/*.php|**/*.ts|**/*.js|**/*.cpp|**/*.h|**/*.hh|**.*/md'
+          ignore: 'node_modules|vendor|tests|build|examples'
+
+      - name: Commit badge
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add badge/loc.svg
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update LoC badge [skip ci]"
+          git push

@@ -280,7 +280,7 @@ abstract class AppImpl implements ApplicationContract {
    }
 
    private function handlePhpSPARequest(Request $request) {
-      if ($request->requestedWith() === 'PHPSPA_REQUEST') {
+      if ($request->requestedWith() === 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
          if ($request->header('X-Phpspa-Target') === 'navigate') {
             Session::remove(STATE_HANDLE);
             Session::remove(CALL_FUNC_HANDLE);

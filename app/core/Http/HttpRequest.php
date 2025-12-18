@@ -271,14 +271,14 @@ class HttpRequest implements Request
         $host = $_SERVER['HTTP_HOST'] ?? '';
         $origin = $_SERVER['HTTP_ORIGIN'] ?? null;
 
-        // Case 1: Browser explicitly sent Origin
+        // Case 1: Browser explicitly sent Origin header
         if ($origin !== null) {
             $parsed = parse_url($origin, PHP_URL_HOST);
             return $parsed === $host;
         }
 
-        // Case 2: No Origin -> assume same-origin if Host matches server
+        // Case 2: No Origin -> verify Host matches server and path is relative
         $serverHost = $_SERVER['SERVER_NAME'] ?? '';
-        return $host === $serverHost;
+        return $host === $serverHost && str_starts_with($this->getUri(), '/');
     }
 }
