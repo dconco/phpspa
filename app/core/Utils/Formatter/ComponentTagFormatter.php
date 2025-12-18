@@ -26,7 +26,7 @@ trait ComponentTagFormatter
     * Formats the given DOM structure.
     *
     * @param mixed $dom Reference to the DOM object or structure to be formatted.
-    * @return void
+    * @return string
     */
    protected static function format(string $dom): string
    {
@@ -63,7 +63,7 @@ trait ComponentTagFormatter
             } else {
                // Handle namespace.class::method syntax
                if (strpos($component, '::') !== false) {
-                  list($className, $methodName) = explode('::', $component);
+                  [$className, $methodName] = explode('::', $component);
                   if (strpos($className, '.')) {
                      $className = str_replace('.', '\\', $className);
                   }
@@ -101,7 +101,7 @@ trait ComponentTagFormatter
             // Handle different component types
             if ($isVariable) {
                // Variable component
-               return call_user_func_array($callable, $attributes);
+               return \call_user_func_array($callable, $attributes);
             } elseif ($methodName) {
                // Class::method syntax
                if (!class_exists($className)) {
@@ -109,14 +109,10 @@ trait ComponentTagFormatter
                }
 
                if (method_exists($className, $methodName)) {
-                  if (method_exists(ReflectionMethod::class, 'createFromMethodName')) {
-                     $reflection = ReflectionMethod::createFromMethodName("$className::$methodName");
-                  } else {
-                     $reflection = new ReflectionMethod($className, $methodName);
-                  }
+                  $reflection = ReflectionMethod::createFromMethodName("$className::$methodName");
 
                   if ($reflection->isStatic()) {
-                     return $className::$methodName(...$attributes);
+                     return \call_user_func_array([$className, $methodName], $attributes);
                   } else {
                      return (new $className)->$methodName(...$attributes);
                   }
@@ -126,13 +122,19 @@ trait ComponentTagFormatter
             } elseif (class_exists($className)) {
                // Class syntax
                if (method_exists($className, '__render')) {
-                  return (new $className)->__render(...$attributes);
+                  $reflection = ReflectionMethod::createFromMethodName("$className::__render");
+
+                  if ($reflection->isStatic()) {
+                     return \call_user_func_array([$className, '__render'], $attributes);
+                  } else {
+                     return (new $className)->__render(...$attributes);
+                  }
                } else {
                   throw new AppException("Class {$className} does not have __render method.");
                }
             } elseif (function_exists($className)) {
                // Function syntax
-               return call_user_func_array($className, $attributes);
+               return \call_user_func_array($className, $attributes);
             } else {
                throw new AppException("Component {$component} does not exist.");
             }
@@ -145,6 +147,6 @@ trait ComponentTagFormatter
          return self::format($updatedDom) ?? '';
       }
 
-      return $updatedDom;
+      return $updatedDom ?? '';
    }
 }

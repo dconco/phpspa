@@ -67,10 +67,7 @@ trait HtmlCompressor
     * @param string $html HTML content to compress
     * @return string Compressed HTML
     */
-   public static function compress(
-      string $html,
-      ?string $contentType = null,
-   ): string {
+   public static function compress(string $html, ?string $contentType = null): string {
       $CONTENT_LENGTH = strlen($html);
 
       if (self::$compressionLevel === Compressor::LEVEL_NONE) {
@@ -95,7 +92,7 @@ trait HtmlCompressor
   • Performance-optimized for production
 
   Original source: Component-based PHP library with natural HTML syntax
-  Learn More: https://phpspa.tech/v1.1.5/1-compression-system
+  Learn More: https://phpspa.tech/performance/html-compression
 -->\n";
 
       // Apply minification based on compression level
@@ -135,7 +132,7 @@ trait HtmlCompressor
 
    private static function isNativeCompressorAvailable(int $CONTENT_LENGTH): bool
    {
-      static $THRESHOLD_SIZE = 5120; // 5KB = 5120 bytes
+      static $THRESHOLD_SIZE = 10240; // 5KB = 5120 bytes
 
       $strategy = self::compressionStrategy();
 
@@ -241,7 +238,7 @@ trait HtmlCompressor
     * @param string $content Content to compress
     * @return string Compressed content
     */
-   private static function gzipCompress(
+   public static function gzipCompress(
       string $content,
       ?string $contentType,
    ): string {

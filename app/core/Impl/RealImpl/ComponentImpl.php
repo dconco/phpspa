@@ -2,6 +2,11 @@
 
 namespace PhpSPA\Core\Impl\RealImpl;
 
+use BadMethodCallException;
+use InvalidArgumentException;
+use PhpSPA\Core\Http\HttpRequest;
+use PhpSPA\Core\Utils\ArrayFlat;
+use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 use PhpSPA\Interfaces\IComponent;
 
 /**
@@ -16,106 +21,165 @@ use PhpSPA\Interfaces\IComponent;
  * @license MIT
  * @since v1.0.0
  * @method IComponent title(string $title) Set the title of the component
- * @method IComponent method(string $method) Set the HTTP method for the component
- * @method IComponent route(array|string $route) Set the route(s) for the component
+ * @method IComponent method(string ...$method) Set the HTTP method for the component, defaults to 'GET|VIEW'
+ * @method IComponent route(string|array ...$route) Set the route(s) for the component
+ * @method IComponent pattern() Shows that the given route value is a pattern in `fnmatch` format
+ * @method IComponent exact() Make the component show only for that specific route
+ * @method IComponent preload(string ...$componentName) This loads the component with the specific name as a layout on the exact URL on this page
+ * @method IComponent name(string $value) This is a unique key for each components to use for preloading
  * @method IComponent targetID(string $targetID) Set the target ID for the component
  * @method IComponent caseSensitive() Enable case sensitivity for the component
  * @method IComponent caseInsensitive() Disable case sensitivity for the component
- * @method IComponent script(callable $script, ?string $name = null) Add scripts to the component
- * @method IComponent styleSheet(callable $style, ?string $name = null) Add stylesheets to the component
+ * @method IComponent script(callable $content, ?string $name = null, string $type = 'text/javascript') Add scripts to the component
+ * @method IComponent styleSheet(callable $content, ?string $name = null, string $type = 'text/css') Add stylesheets to the component
  * @method IComponent reload(int $milliseconds) Set the reload interval for the component
  * @abstract
  */
 abstract class ComponentImpl
 {
-    /**
-     * The callable component that defines the behavior of this component.
-     *
-     * @var callable $component
-     */
-    protected $component;
+   use ComponentTagFormatter;
 
-    /**
-     * The title of the component.
-     * This can be used for display purposes, such as in a header or navigation.
-     *
-     * @var string|null $title The title can be a string or null if not set.
-     */
-    protected ?string $title = null;
+   /**
+    * @var callable
+    */
+   protected $component;
 
-    /**
-     * The HTTP method to be used for the component's request.
-     *
-     * @var string $method Defaults to 'GET|VIEW'.
-     */
-    protected string $method = 'GET|VIEW';
+   /**
+    * @var string|null
+    */
+   protected ?string $title = null;
 
-    /**
-     * The route associated with the component to be rendered.
-     *
-     * @var array|string $route
-     */
-    protected array|string $route;
+   /**
+    * @var string
+    */
+   protected string $method {
+		get => strtoupper($this->method);
 
-    /**
-     * The ID of the target element associated with this component.
-     * This is typically used to specify where the component's content should be rendered in the DOM.
-     *
-     * @var string|null The target element's ID, or null if to use the default target.
-     */
-    protected ?string $targetID = null;
+      set(mixed $m) {
+			if (\is_array($m)) {
+            $m = array_map('trim', $m);
+				$this->method = implode('|', $m);
+         } else
+				$this->method = $m;
+      }
+   }
 
-    /**
-     * Indicates whether the component should treat values as case sensitive.
-     *
-     * @var bool|null If true, case sensitivity is enabled; if false, it is disabled; if null, the default behavior is used.
-     */
-    protected ?bool $caseSensitive = null;
+   /**
+    * @var array
+    */
+   protected array $route {
+		set(array $r) => new ArrayFlat(array: $r)->flat();
+	}
 
-    /**
-     * The scripts to be executed when the component is mounted.
-     * This can be used to add interactivity or dynamic behavior to the component.
-     *
-     * @var array<array{0: callable, 1: string|null}> $scripts
-     */
-    protected array $scripts = [];
+   /**
+    * @var bool
+    */
+   protected bool $pattern = false;
 
-    /**
-     * The styles to be executed when the component is mounted.
-     * This can be used to add interactivity or dynamic behavior to the component.
-     *
-     * @var array<array{0: callable, 1: string|null}> $stylesheets
-     */
-    protected array $stylesheets = [];
+   /**
+    * @var bool
+    */
+   protected bool $exact;
 
-    /**
-     * This registers the route to be called every particular interval provided.
-     *
-     * @var int $reloadTime
-     */
-    protected int $reloadTime = 0;
+   /**
+    * @var array
+    */
+   protected array $preload;
 
-    /**
-     * @param mixed $method
-     * @param mixed $args
-     * @throws \BadMethodCallException
-     * @return IComponent
-     */
-    public function __call($method, $args): static
-    {
-        match ($method) {
-            'title',
-            'method',
-            'route',
-            'targetID' => $this->$method = $args[0],
-            'reload' => $this->reloadTime = $args[0],
-            'caseSensitive' => $this->caseSensitive = true,
-            'caseInsensitive' => $this->caseSensitive = false,
-            'styleSheet' => $this->stylesheets[] = $args,
-            'script' => $this->scripts[] = $args,
-            default => throw new \BadMethodCallException("Method {$method} does not exist in " . __CLASS__),
-        };
+   /**
+    * @var string
+    */
+   protected string $name;
 
-        return $this;
-    }
+   /**
+    * @var string|null
+    */
+   protected ?string $targetID = null;
+
+   /**
+    * Indicates whether the component should treat values as case sensitive.
+    *
+    * @var bool|null If true, case sensitivity is enabled; if false, it is disabled; if null, the default behavior is used.
+    */
+   protected ?bool $caseSensitive = null;
+
+   /**
+    * @var array<array{
+    *    content: callable,
+    *    name: string|null,
+    *    type: string|null
+    * }>
+    */
+   protected array $scripts = [];
+
+   /**
+    * @var array<array{
+    *    content: callable,
+    *    name: string|null,
+    *    type: string|null
+    * }>
+    */
+   protected array $stylesheets = [];
+
+   /**
+    * @var int
+    */
+   protected int $reloadTime = 0;
+
+   /**
+    * @param mixed $method
+    * @param mixed $args
+    * @throws BadMethodCallException
+    * @throws InvalidArgumentException
+    * @return IComponent
+    */
+   public function __call($method, $args): static
+   {
+      $addAsset = function(string $property) use ($args) {
+         if ($property !== 'stylesheets' && $property !== 'scripts') throw new InvalidArgumentException("Invalid property provided", 1);
+
+         $temp = [
+            'content' => fn() => '',
+            'name' => null,
+            'type' => $property === 'stylesheets' ? 'text/css' : 'text/javascript',
+         ];
+
+         if (isset($args[0]) || isset($args['content'])) $temp['content'] = $args[0] ?? $args['content'];
+         if (isset($args[1]) || isset($args['name'])) $temp['name'] = $args[1] ?? $args['name'];
+         if (isset($args[2]) || isset($args['type'])) $temp['type'] = $args[2] ?? $args['type'];
+
+         $this->$property[] = $temp;
+      };
+
+      match ($method) {
+         'name',
+         'title',
+         'targetID' => $this->$method = $args[0],
+         'route',
+         'method',
+         'preload' => $this->$method = $args,
+         'exact',
+         'pattern',
+         'caseSensitive' => $this->$method = true,
+         'caseInsensitive' => $this->caseSensitive = false,
+         'reload' => $this->reloadTime = $args[0],
+         'styleSheet' => $addAsset('stylesheets'),
+         'script' => $addAsset('scripts'),
+         default => throw new BadMethodCallException("Method {$method} does not exist in " . __CLASS__),
+      };
+
+      return $this;
+   }
+
+   /**
+    * Renders a component by executing it and formatting the output.
+    *
+    * @param callable $component The component to render.
+    * @return string The rendered output.
+    */
+   public static function Render(callable $component): string
+   {
+      $output = \call_user_func($component, new HttpRequest());
+      return static::format($output);
+   }
 }

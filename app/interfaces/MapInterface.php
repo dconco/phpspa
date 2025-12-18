@@ -12,7 +12,6 @@ namespace PhpSPA\Interfaces;
  * This interface ensures consistent route matching behavior across
  * different routing strategies.
  *
- * @package PhpSPA\Interfaces
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
@@ -21,10 +20,29 @@ namespace PhpSPA\Interfaces;
 interface MapInterface
 {
     /**
-     * Validating $route methods
+     * Matches the given HTTP method and route against the current request URI.
      *
-     * @param string $method
-     * @param string|array $route
+     * @param string $method The HTTP method(s) to match, separated by '|'.
+     * @param array $routes The route pattern(s) to match.
+     * @param bool $pattern If the route to match is in `fnmatch` pattern format
+     * @param bool $caseSensitive Set if routes match should be case-sensitive
+    */
+    public function __construct(string $method, array $routes, bool $caseSensitive, bool $pattern);
+
+    /**
+     * The function performs the following steps:
+     * - Sets the HTTP method(s) to match.
+     * - Normalizes the request URI by removing leading and trailing slashes and converting to lowercase.
+     * - Normalizes the route pattern(s) by removing leading and trailing slashes and converting to lowercase.
+     * - Checks if the route contains a pattern and resolves it if necessary.
+     * - Extracts parameter names from the route pattern.
+     * - Matches the request URI against the route pattern and extracts parameter values.
+     * - Constructs a regex pattern to match the route.
+     * - Checks if the request method is allowed for the matched route.
+     * - Returns an array with the matched method, route, and parameters if a match is found.
+     * - Returns false if no match is found.
+     * 
+     * @return bool|array Returns false if no match is found, or an array with the matched method, route, and parameters if a match is found.
      */
-    public function match(string $method, string|array $route, bool $caseSensitive): bool|array;
+    public function match(): array|bool;
 }

@@ -37,7 +37,8 @@ function TodoList ()
                   let newId = todosData.length + 1;
                   todosData.push({ id: newId, text: value });
 
-                  setState('todos', todosData);
+                  setState('todos', todosData)
+                      .then(() => alert('Todo Updated'));
                }
             }
          </script>

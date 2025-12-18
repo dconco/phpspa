@@ -44,13 +44,8 @@ final class NativeCompressor
          throw new \RuntimeException('Native compressor returned a null pointer.');
       }
 
-      $length = $outLen->cdata;
-      if ($length === 0) {
-         throw new \RuntimeException("Native compressor returned an empty result.");
-      }
-
       try {
-         return \FFI::string($resultPointer, $length);
+         return \FFI::string($resultPointer, $outLen->cdata);
       } finally {
          self::invoke('phpspa_free_string', $resultPointer);
       }

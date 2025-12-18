@@ -15,7 +15,6 @@ use PhpSPA\Compression\Compressor;
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
- * @see https://phpspa.tech/v1.1.5/1-compression-system/ Compression System Documentation
  */
 class CompressionConfig
 {

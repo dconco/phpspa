@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace PhpSPA\Http;
 
 /**
@@ -42,6 +40,7 @@ class Session
             return false;
         }
 
+        ini_set('session.cookie_samesite', 'Strict');
         return session_start();
     }
 
@@ -60,7 +59,7 @@ class Session
         }
 
         // Unset all session variables
-        $_SESSION = [];
+        unset($_SESSION);
 
         // Delete the session cookie if it exists
         if (ini_get('session.use_cookies')) {
@@ -89,10 +88,7 @@ class Session
      */
     public static function get(string $key, $default = null)
     {
-        if (!self::isActive()) {
-            return $default;
-        }
-
+        Session::start();
         return $_SESSION[$key] ?? $default;
     }
 
@@ -106,9 +102,7 @@ class Session
      */
     public static function set(string $key, $value, bool $raw = false): bool
     {
-        if (!self::isActive()) {
-            return false;
-        }
+        Session::start();
 
         $_SESSION[$key] = $raw ? $value : (new static())->validate($value);
         return true;
@@ -122,13 +116,11 @@ class Session
      */
     public static function remove(string|array $key): bool
     {
-        if (!self::isActive()) {
-            return false;
-        }
+        Session::start();
 
-        if (is_array($key)) {
+        if (\is_array($key)) {
             foreach ($key as $k) {
-                if (is_string($k)) {
+                if (\is_string($k)) {
                     unset($_SESSION[$k]);
                 }
             }
@@ -147,10 +139,7 @@ class Session
      */
     public static function has(string $key): bool
     {
-        if (!self::isActive()) {
-            return false;
-        }
-
+        Session::start();
         return isset($_SESSION[$key]);
     }
 
@@ -162,10 +151,7 @@ class Session
      */
     public static function regenerateId(bool $deleteOldSession = true): bool
     {
-        if (!self::isActive()) {
-            return false;
-        }
-
+        Session::start();
         return session_regenerate_id($deleteOldSession);
     }
 }

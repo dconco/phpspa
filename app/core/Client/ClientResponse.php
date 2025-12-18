@@ -2,6 +2,9 @@
 
 namespace PhpSPA\Core\Client;
 
+use function is_array;
+use function count;
+
 class ClientResponse {
    /**
     * @param string|false $body The raw response body.

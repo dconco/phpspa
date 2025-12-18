@@ -3,7 +3,6 @@
 namespace PhpSPA\Core\Helper;
 
 use Closure;
-use PhpSPA\Http\Session;
 
 use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
 
@@ -26,12 +25,12 @@ class FunctionCaller
 {
     public string $token;
 
-    public function __construct(callable $function)
+    public function __construct(callable $function, bool $use_once)
     {
         $funcName = $this->getCallableName($function);
         $csrf = new CsrfManager($funcName, CALL_FUNC_HANDLE);
 
-        $this->token = base64_encode(json_encode([$funcName, $csrf->getToken()]));
+        $this->token = base64_encode(json_encode([$funcName, $csrf->getToken(), $use_once]));
     }
 
     public function __toString()
@@ -45,7 +44,8 @@ class FunctionCaller
         $args = func_get_args();
 
         foreach ($args as $value) {
-            $arg .= ', ' . "$value";
+            if (is_array($value)) $value = json_encode($value);
+            $arg .= ", $value";
         }
 
         return "phpspa.__call('{$this->token}'{$arg})";

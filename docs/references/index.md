@@ -50,6 +50,14 @@
 
     [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/hooks/use-fetch/)
 
+-   :material-routes:{ .lg .middle } **Router API** :material-new-box:
+
+    ---
+
+    Advanced routing with nested groups, middleware, and prefixing
+
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/latest/references/router/)
+
 </div>
 
 ---
@@ -74,6 +82,14 @@
 
     [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/file-import-utility/)
 
+-   :material-web:{ .lg .middle } **DOM Utilities**
+
+    ---
+
+    Dynamic page title manipulation
+
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/latest/references/dom-utilities/)
+
 </div>
 
 ---
@@ -94,6 +110,32 @@
 
 ---
 
+---
+
+## :material-view-module: Component Features
+
+<div class="grid cards" markdown>
+
+-   :material-layers-triple:{ .lg .middle } **Component Preloading** :material-new-box:
+
+    ---
+
+    Load multiple components on different target IDs for complex layouts
+
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/latest/references/preloading-component/)
+
+-   :material-function:{ .lg .middle } **Client-Side useEffect** :material-new-box:
+
+    ---
+
+    Manage side effects in component scripts
+
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/latest/references/hooks/clients/use-effect)
+
+</div>
+
+---
+
 ## :material-view-grid: Browse by Category
 
 === "Hooks"
@@ -102,22 +144,25 @@
     |------|-------------|---------|
     | [`useFetch()`](https://phpspa.readthedocs.io/en/stable/references/hooks/use-fetch/) | Async HTTP client with parallel execution | v2.0.1 |
     | [`useState()`](../hooks/use-state.md) | Reactive state management | v2.0.0 |
-    | [`useEffect()`](../hooks/use-effect.md) | Side effects and lifecycle hooks | v2.0.0 |
+    | [`useEffect() (PHP)`](../hooks/use-effect.md) | Side effects and lifecycle hooks | v2.0.0 |
+    | [`useEffect() (JS)`](https://phpspa.readthedocs.io/en/latest/references/hooks/clients/use-effect) | Client-side side effects | v2.0.4 |
     | [`useFunction()`](../hooks/use-function.md) | Call PHP functions from JavaScript | v1.1.5 |
 
 === "Helpers"
 
     | Helper | Description | Version |
     |--------|-------------|---------|
+    | [`DOM::Title()`](https://phpspa.readthedocs.io/en/latest/references/dom-utilities/) | Get or set page title dynamically | v2.0.4 |
     | [`fmt()`](https://phpspa.readthedocs.io/en/stable/references/helpers/fmt/) | Type preservation for component props | v2.0.1 |
     | [`import()`](https://phpspa.readthedocs.io/en/stable/references/file-import-utility/) | Secure file imports | v1.1.0 |
     | [`response()`](https://phpspa.readthedocs.io/en/stable/references/response/) | HTTP response builder | v1.1.8 |
-    | [`router()`](https://phpspa.readthedocs.io/en/stable/references/response/#response-api-examples) | Router instance access | v1.1.8 |
+    | [`router()`](https://phpspa.readthedocs.io/en/stable/references/router/) | Router instance access | v2.0.4 |
 
 === "Components"
 
-    | Component | Description | Version |
-    |-----------|-------------|---------|
+    | Feature | Description | Version |
+    |---------|-------------|---------|
+    | [Component Preloading](https://phpspa.readthedocs.io/en/stable/references/preloading-component/) | Multi-section layouts with independent updates | v2.0.4 |
     | [`<Component.Link>`](../navigations/link-component.md) | Client-side navigation | v1.1.0 |
     | [`<Component.Csrf>`](../security/csrf-protection.md) | CSRF token management | v1.1.5 |
     | [`<Component.Navigate>`](../navigations/navigate-component.md) | Programmatic navigation | v1.1.0 |
@@ -127,3 +172,6 @@
     | Feature | Description | Version |
     |---------|-------------|---------|
     | [Native Compression (C++ FFI)](https://phpspa.readthedocs.io/en/stable/references/compression/) | Lightning-fast HTML/CSS/JS minification | v2.0.3 |
+    | [HTML Compression](../performance/html-compression.md) | Enable compression for faster page loads | v1.1.5 |
+    | [Assets Caching](../performance/assets-caching.md) | Configure asset caching duration | v1.1.7 |
+    | [Managing Styles & Scripts](../performance/managing-styles-and-scripts.md) | Global and component-level asset management | v1.1.7 |

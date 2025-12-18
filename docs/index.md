@@ -29,6 +29,11 @@ hide:
 !!! tip "What is PhpSPA?"
     PhpSPA is a **component-based library** that brings the power and syntax of React to your PHP workflow. You build small, reusable components, and the library handles the magic of rendering them and updating the UI when their state changes.
 
+!!! success "⚡ Built for Performance"
+    - **Virtual DOM Diffing** (morphdom) - Only updates what changed
+    - **View Transitions API** - Smooth, native browser animations  
+    - **Native C++ Compression** - Ultra-fast HTML minification via FFI
+    - **Lightweight** - Built for speed from the ground up, zero dependencies
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)](LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-read%20the%20docs-blue.svg?style=for-the-badge)](https://phpspa.tech)
@@ -36,6 +41,7 @@ hide:
 [![PHP Version](https://img.shields.io/packagist/v/dconco/phpspa?style=for-the-badge&color=purple)](https://packagist.org/packages/dconco/phpspa)
 [![Downloads](https://img.shields.io/packagist/dt/dconco/phpspa?style=for-the-badge&color=orange)](https://packagist.org/packages/dconco/phpspa)
 [![PHP Tests](https://github.com/dconco/phpspa/actions/workflows/php-tests.yml/badge.svg)](https://github.com/dconco/phpspa/actions/workflows/php-tests.yml)
+
 
 ---
 
@@ -89,9 +95,9 @@ hide:
     <?php
 
     function Button() {
-       return <<<HTML
-         <button>Click Me</button>
-       HTML;
+		return <<<HTML
+			<button>Click Me</button>
+		HTML;
     }
     ```
 
@@ -102,11 +108,15 @@ hide:
     ```php
     <?php
 
+    use function Component\useState;
+
     $count = useState('count', 0);
 
-    return "<button onclick='setState(\"count\", {$count} + 1)'>
-       Count: {$count}
-    </button>";
+    echo  <<<HTML
+		<button onclick="setState('count', {$count} + 1)">
+			Count: {$count}
+		</button>
+	HTML;
     ```
 
 === "Client-Side Routing"
@@ -124,9 +134,11 @@ hide:
     ```php
     <?php
 
+    use function Component\useFunction;
+
     $greeter = useFunction(fn($name) => "Hello, $name!");
 
-    const greeting = await {$greeter('name')};
+	  const greeting = await {$greeter('name')};
     ```
 
 ---

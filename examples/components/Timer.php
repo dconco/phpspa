@@ -8,4 +8,4 @@ return (new Component(function () {
 }))
 	->route('/timer')
 	->title('Timer')
-	->reload(1000);
+	->reload(800);

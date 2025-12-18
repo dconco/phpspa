@@ -34,14 +34,14 @@ return (new Component(function (): string
       $newCounter = $counter() + 1;
       $name = [ 'Dave', 'John', 'Jane' ][array_rand([ 'Dave', 'John', 'Jane' ])];
       $newMsg = "Counter updated to: $counter but the effect changed it to $newCounter by $name";
-      
+
       $message($newMsg);
       $counter($newCounter);
    }, [ $counter ]);
 
    // 1. Define all your private components
    $Button = fn ($counter) => <<<HTML
-      <button id="btn">
+      <button id="counter-btn">
          Clicks: {$counter}
       </button>
       <br />
@@ -61,16 +61,34 @@ return (new Component(function (): string
          <LinkComponent />
 
          <script>
-            const btn = document.getElementById('btn')
+            window.currentCounter = {$counter};
 
-            btn.onclick = async () => {
-               const res = await {$caller($counter)}
-               setState('counter', $counter + 1)
-               // alert(res.data)
-            }
+            useEffect(() => {
+               return () => window.currentCounter = void 0;
+            });
          </script>
       </div>
    HTML;
 }))
+   ->script(fn() => <<<JS
+
+      useEffect(() => {
+         const btn = document.getElementById('counter-btn');
+
+         const handleClick = async () => {
+            currentCounter++;
+            await phpspa.setState('counter', currentCounter);
+         };
+
+         btn.addEventListener('click', handleClick);
+
+         return () => btn.removeEventListener('click', handleClick);
+      }, null);
+
+   JS)
+
+  ->name('counter')
+  ->targetID('counter')
   ->route([ '/counter', '/template/counter' ])
-  ->title('Counter Component');
+  ->title('Counter Component')
+  ->exact();

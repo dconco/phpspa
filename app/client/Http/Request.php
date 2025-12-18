@@ -60,6 +60,15 @@ interface Request {
     public function urlQuery (?string $name = null);
 
     /**
+     * Parses and returns the extracted url path parameters from the request URL. If a name is specified,
+     * it will return the specific url path parameter value, otherwise it will return the whole arrays.
+     *
+     * @param ?string $name If specified, returns a specific url path parameter by name.
+     * @return mixed parsed url path parameters or a specific parameter value.
+     */
+    public function urlParams (?string $name = null);
+
+    /**
      * Retrieves headers from the request.
      *
      * This method returns the headers sent with the HTTP request. If a specific header name is provided,

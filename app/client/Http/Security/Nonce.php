@@ -42,6 +42,18 @@ class Nonce {
     *   'font-src'   => ["https://fonts.gstatic.com"]
     * ]);
     * ```
+    *
+    * @param array{
+    *    'default-src': array<string>,
+    *    'script-src': array<string>,
+    *    'style-src': array<string>,
+    *    'object-src': array<string>,
+    *    'font-src': array<string>,
+    *    'img-src': array<string>,
+    *    'font-src': array<string>,
+    *    'base-uri': array<string>
+    * } $sources
+    *
     * @see https://phpspa.tech/security/content-security-policy
     */
    public static function enable (array $sources = []): void

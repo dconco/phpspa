@@ -9,7 +9,6 @@ namespace PhpSPA\Interfaces;
  * framework, including methods for component configuration, routing, and
  * rendering behavior. It ensures consistent component structure and behavior.
  *
- * @package PhpSPA\Interfaces
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
@@ -39,20 +38,44 @@ interface  IComponent
     /**
      * Sets the method name for the component.
      *
-     * @param string $method The name of the method to set, default to "GET|POST".
+     * @param string ...$method The name of the method to set, default to "GET|VIEW".
      * @return self Returns the current instance for method chaining.
      * @see https://phpspa.tech/routing/component-configuration/#specifying-http-methods
      */
-    public function method(string $method): self;
+    public function method(string ...$method): self;
 
     /**
      * Sets the current route for the component.
      *
-     * @param array|string $route The route to be set.
+     * @param string|array ...$route The route to be set.
      * @return self Returns the current instance for method chaining.
      * @see https://phpspa.tech/routing/advanced-routing
      */
-    public function route(array|string $route): self;
+    public function route(string|array ...$route): self;
+
+    /**
+     * Shows that the given route value is a pattern in `fnmatch` format
+     */
+    public function pattern(): self;
+
+    /**
+     * Make the component show only for that specific route
+     */
+    public function exact(): self;
+
+    /**
+     * This loads the component with the specific ID as a layout on the exact URL on this page
+     * 
+     * @param string ...$componentName The component with the registered names
+     */
+    public function preload(string ...$componentName): self;
+
+    /**
+     * This is a unique key for each components to use for preloading
+     * 
+     * @param string $value The unique name to give this component
+     */
+    public function name(string $value): self;
 
     /**
      * Sets the target ID for the component.
@@ -84,22 +107,24 @@ interface  IComponent
     /**
      * Sets the script to be executed when the component is mounted.
      *
-     * @param callable $script The script to be executed.
+     * @param callable $content The script to be executed.
      * @param string|null $name Optional name for the script asset.
+     * @param string $type The type of script the content should be treated as
      * @return self Returns the current instance for method chaining.
      * @see https://phpspa.tech/performance/managing-styles-and-scripts/#component-specific-assets
     */
-    public function script(callable $script, ?string $name = null): self;
+    public function script(callable $content, ?string $name = null, string $type = 'text/javascript'): self;
 
     /**
      * Sets the stylesheet to be executed when the component is mounted.
      *
-     * @param callable $style The stylesheet to be executed.
+     * @param callable $content The stylesheet to be executed.
      * @param string|null $name Optional name for the stylesheet.
+     * @param string $type The type of style sheet the content should be treated as
      * @return self Returns the current instance for method chaining.
      * @see https://phpspa.tech/performance/managing-styles-and-scripts/#component-specific-assets
      */
-    public function styleSheet(callable $style, ?string $name = null): self;
+    public function styleSheet(callable $content, ?string $name = null, string $type = 'text/css'): self;
 
     /**
      * This sets the component to be called every particular interval given
@@ -109,4 +134,12 @@ interface  IComponent
      * @see https://phpspa.tech/requests/auto-reloading-components
      */
     public function reload(int $milliseconds): self;
+
+    /**
+    * Renders a component by executing it and formatting the output.
+    *
+    * @param callable $component The component to render.
+    * @return string The rendered output.
+    */
+    public static function Render(callable $component): string;
 }

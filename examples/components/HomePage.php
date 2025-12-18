@@ -21,14 +21,17 @@ return (new Component(function (Request $request): string {
 			<button id=btn>Counter: $counter</button>
 			<Component.Link to="./login#hashID" id="link-elem">GO TO LOGIN</Component.Link>
 			<br />
-			<Component.Link to="./about">GO TO ABOUT US</Component.Link>
 			<br />
-			<button id="navigate-btn">Counter</button> &nbsp;-
+			<Component.Link to="/message/Dave">GO TO DAVE'S PROFILE</Component.Link>
+			<br />
+			<br />
+			<Component.Link to="/message/Elvis">GO TO ELVIS'S PROFILE</Component.Link>
+			<br />
+			<button id="navigate-btn">Counter</button>
 		</div>
 		<!-- Script to handle button clicks -->
 
 		<script $nonce>
-
 			document.getElementById('btn').onclick = function() {
 				setState('counter', $counter + 1);
 			};
@@ -39,7 +42,8 @@ return (new Component(function (Request $request): string {
 	HTML;
 }))
 	->title('Home Page')
-	->route(['/', '/template'])
+	->route('/', '/template')
+	->name('main')
 
    ->styleSheet(
       fn () => <<<CSS

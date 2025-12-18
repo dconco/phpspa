@@ -13,10 +13,11 @@ use PhpSPA\Core\Helper\FunctionCaller;
  *
  * @author dconco <me@dconco.tech>
  * @param callable $function The PHP function to make available for client-side calling.
+ * @param bool $expireAfterUse Decides whether to expire this function instance after use, best for forms.
  * @return FunctionCaller Handler object for secure function invocation.
  * @see https://phpspa.tech/hooks/use-function
  */
-function useFunction (callable $function): FunctionCaller
+function useFunction (callable $function, bool $expireAfterUse = false): FunctionCaller
 {
-    return new FunctionCaller($function);
+    return new FunctionCaller($function, $expireAfterUse);
 }

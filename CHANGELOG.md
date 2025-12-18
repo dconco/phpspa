@@ -1,6 +1,166 @@
 # CHANGELOG
 
-## v2.0.3 (Current)
+## v2.0.4 (Current) (Stable)
+
+> [!IMPORTANT]
+> This version requires **PHP 8.4 or higher**
+
+**Installation:**
+```bash
+composer require dconco/phpspa:v2.0.4.x-dev
+```
+
+### **Client-Side Hooks** ⚛️
+
+- **`useEffect()`** - Manage side effects and cleanups in your component scripts with dependency tracking
+
+**Example:**
+
+```javascript
+// Inside your component's script tag
+useEffect(() => {
+   const btn = document.getElementById('btn');
+   const handleClick = () => console.log('Clicked!');
+   
+   btn.addEventListener('click', handleClick);
+
+   // Cleanup function runs before next effect or on unmount
+   return () => btn.removeEventListener('click', handleClick);
+}, ['stateKey']); // Re-runs only when 'stateKey' changes
+```
+
+**Documentation:** [references/hooks/clients/use-effect](https://phpspa.tech/references/hooks/clients/use-effect)
+
+
+### **Core Fixes** 🔧
+
+- **Script Loading Order** - Moved assets scripts to `<head>` to prevent race conditions (Fixes `useEffect` definition timing)
+
+### **Advanced Component Features** 🎯
+
+- **Component Preloading** - Load multiple components on different target IDs simultaneously for multi-section layouts
+- **Exact Route Matching** - Render components only on exact URL matches with automatic fallback to default content
+- **Pattern-based Routing** - Match routes using fnmatch-style patterns (e.g., `/blog/*`)
+- **Named Components** - Assign unique identifiers to components for easy reference
+- **Multiple Routes & Methods** - Define multiple routes and HTTP methods in a cleaner way
+
+**Perfect for building:**
+- Multi-section layouts (messaging apps, dashboards)
+- Dynamic content with independent sections
+- Complex routing patterns
+
+**Quick Example:**
+
+```php
+use PhpSPA\Component;
+
+// User list sidebar (always visible)
+$userList = (new Component(function() {
+   return "<aside>User List</aside>";
+}))
+   ->route('/')
+   ->targetID('sidebar')
+   ->name('userList');
+
+// Chat view with preloaded sidebar
+$chatView = (new Component(function(array $path) {
+   return "<main>Chat with user {$path['id']}</main>";
+}))
+   ->route('/chat/{id: int}')
+   ->targetID('content')
+   ->preload('userList')  // Sidebar stays visible
+   ->exact();             // Reverts when navigating away
+
+// Pattern matching for blog posts
+$blog = (new Component(function() {
+   return "<article>Blog Content</article>";
+}))
+   ->route('/blog/*', '/articles/*')
+   ->pattern();
+
+// Multiple methods
+$form = (new Component(function() {
+   return "<form>Contact Form</form>";
+}))->method('GET', 'POST');
+```
+
+**Documentation:** [references/preloading-component](https://phpspa.tech/references/preloading-component/)
+
+
+### **DOM Utilities** 🛠️
+
+- **`DOM::Title()`** - Get or set page title dynamically from within components
+
+**Example:**
+
+```php
+use PhpSPA\DOM;
+
+function UserProfile() {
+   DOM::Title('User Profile - My App');
+   
+   return "<h1>User Profile</h1>";
+}
+
+// Get the current title
+$currentTitle = DOM::Title(); // Returns: "User Profile - My App"
+```
+
+**Documentation:** [references/dom-utilities](https://phpspa.tech/references/dom-utilities/)
+
+
+
+
+### **Enhanced Routing & Middleware** 🛣️
+
+- **Middleware Support** - Add middleware to routes and groups for authentication, logging, etc.
+- **Route Prefixing** - Group routes under common paths using `App::prefix()` or `Router::prefix()`.
+- **Static File Serving** - Serve static files easily with `App::static()`.
+- **Improved Request/Response** - New methods like `Request::urlParams()` and `Response::sendFile()`.
+- **Component Rendering** - Render components manually using `Component::Render()`.
+
+**Example:**
+
+```php
+$app->static('/', '../public');
+
+$app->prefix('/api', function (Router $router) {
+   // Middleware for this group
+   $router->middleware(function (Request $req, Response $res, Closure $next) {
+      if ($req->urlParams('id') !== 1) {
+         return $res->unauthorized('Unauthorized');
+      }
+      return $next();
+   });
+
+   $router->get('/user/{id: int}', function (Request $req, Response $res) {
+      return $res->success("User ID: " . $req->urlParams('id'));
+   });
+
+   // Each route can get their own middleware
+   $userMiddleware = function (Request $req, Response $res, Closure $next) {
+      if ($req->urlParams('id') !== 1) {
+         return $res->unauthorized('Unauthorized');
+      }
+      return $next();
+   };
+
+   $router->get('/user/{id: int}', $userMiddleware, function (Request $req, Response $res) {
+      return $res->success("User ID: " . $req->urlParams('id'));
+   });
+});
+```
+
+**Documentation:** [references/router](https://phpspa.tech/references/router/)
+
+
+
+
+---
+
+
+
+## v2.0.3
 
 ### ✨ New Features
 
@@ -27,7 +187,7 @@ $app->compression(Compressor::LEVEL_AGGRESSIVE, true);
 putenv('PHPSPA_COMPRESSION_STRATEGY=native');
 ```
 
-**Documentation:** [Native Compression Guide](https://phpspa.tech/references/compression/)
+**Documentation:** [references/compression](https://phpspa.tech/references/compression/)
 
 
 
@@ -76,7 +236,7 @@ fmt($user);
 return "<UserCard>{$user}</UserCard>";
 ```
 
-**Documentation:** [hooks/use-fetch](https://phpspa.tech/references/helpers/fmt)
+**Documentation:** [references/helpers/fmt](https://phpspa.tech/references/helpers/fmt)
 
 
 

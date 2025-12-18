@@ -3,6 +3,7 @@
 namespace PhpSPA\Core\Http;
 
 use PhpSPA\Http\Request;
+use PhpSPA\Http\Session;
 use stdClass;
 
 class HttpRequest implements Request
@@ -10,16 +11,29 @@ class HttpRequest implements Request
     use \PhpSPA\Core\Utils\Validate;
     use \PhpSPA\Core\Auth\Authentication;
 
+    private array $tempData = [];
+
+    public function __construct(readonly private array $params = [])
+    {
+    }
+
     public function __invoke(string $key, ?string $default = null): mixed
     {
-        // Check if the key exists in the request parameters
         if (isset($_REQUEST[$key])) {
-            // Validate and return the value associated with the key
             return $this->validate($_REQUEST[$key]);
         }
 
-        // If the key does not exist, return the default value
         return $default;
+    }
+
+    public function __set($name, $value)
+    {
+        $this->tempData[$name] = $value;
+    }
+
+    public function __get($name)
+    {
+        return $this->tempData[$name];
     }
 
     public function files(?string $name = null): ?array
@@ -50,14 +64,7 @@ class HttpRequest implements Request
 
     public function urlQuery(?string $name = null)
     {
-        if (php_sapi_name() == 'cli-server') {
-            $parsed = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
-        } else {
-            $parsed = parse_url(
-                $_REQUEST['uri'] ?? $_SERVER['REQUEST_URI'],
-                PHP_URL_QUERY,
-            );
-        }
+        $parsed = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
 
         $cl = new stdClass();
 
@@ -67,7 +74,7 @@ class HttpRequest implements Request
         $parsed = mb_split('&', urldecode($parsed));
 
         $i = 0;
-        while ($i < count($parsed)) {
+        while ($i < \count($parsed)) {
             $p = mb_split('=', $parsed[$i]);
             $key = $p[0];
             $value = $p[1] ? $this->validate($p[1]) : null;
@@ -80,6 +87,14 @@ class HttpRequest implements Request
             return $cl;
         }
         return $cl->$name;
+    }
+
+    public function urlParams(?string $name = null)
+    {
+        if (!$name) {
+            return $this->validate($this->params);
+        }
+        return $this->validate($this->params[$name]);
     }
 
     public function header(?string $name = null)
@@ -151,30 +166,25 @@ class HttpRequest implements Request
     public function cookie(?string $key = null)
     {
         if (!$key) {
-            return (object) $this->validate($_COOKIE);
+            return $this->validate($_COOKIE);
         }
         return isset($_COOKIE[$key]) ? $this->validate($_COOKIE[$key]) : null;
     }
 
     public function session(?string $key = null)
     {
-        // Start the session if it's not already started
-        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            session_start();
-        }
+        Session::start();
 
-        // If no key is provided, return all session data as an object
         if (!$key) {
-            return (object) $this->validate($_SESSION);
+            return $this->validate($_SESSION);
         }
 
-        // If the session key exists, return its value; otherwise, return null
-        return isset($_SESSION[$key]) ? $this->validate($_SESSION[$key]) : null;
+        return $this->validate(Session::get($key));
     }
 
     public function method(): string
     {
-        return $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        return strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
     }
 
     public function ip(): string
@@ -211,7 +221,7 @@ class HttpRequest implements Request
 
     public function isMethod(string $method): bool
     {
-        return strtoupper($this->method()) === strtoupper($method);
+        return $this->method() === strtoupper($method);
     }
 
     public function isHttps(): bool
@@ -252,16 +262,11 @@ class HttpRequest implements Request
 
     public function getUri(): string
     {
-        $uri = $_SERVER['REQUEST_URI'] ?? '/';
-
-        // Strip query string from URI
-        if (strpos($uri, '?') !== false) {
-            $uri = substr($uri, 0, strpos($uri, '?'));
-        }
-
-        return rawurldecode($uri);
+        return urldecode(
+            parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH),
+        );
     }
-    
+
     public function isSameOrigin(): bool {
         $host = $_SERVER['HTTP_HOST'] ?? '';
         $origin = $_SERVER['HTTP_ORIGIN'] ?? null;

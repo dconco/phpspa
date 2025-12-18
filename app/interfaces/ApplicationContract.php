@@ -79,12 +79,13 @@ interface ApplicationContract {
      * Scripts are added to the global scripts array and will be rendered alongside
      * component-specific scripts.
      *
-     * @param callable $script The callable that returns the JavaScript code
+     * @param callable $content The callable that returns the JavaScript code
      * @param string|null $name Optional name for the script asset
+     * @param string $type The type of script the content should be treated as
      * @return self
      * @see https://phpspa.tech/performance/managing-styles-and-scripts
      */
-    public function script (callable $script, ?string $name = null): self;
+    public function script (callable $content, ?string $name = null, string $type = 'text/javascript'): self;
 
 
     /**
@@ -94,13 +95,35 @@ interface ApplicationContract {
      * Stylesheets are added to the global stylesheets array and will be rendered alongside
      * component-specific styles.
      *
-     * @param callable $style The callable that returns the CSS code
+     * @param callable $content The callable that returns the CSS code
      * @param string|null $name Optional name for the stylesheet asset
+     * @param string $type The type of style sheet the content should be treated as
      * @return self
      * @see https://phpspa.tech/performance/managing-styles-and-scripts
      */
-    public function styleSheet (callable $style, ?string $name = null): self;
+    public function styleSheet (callable $content, ?string $name = null, string $type = 'text/css'): self;
 
+
+    /**
+     * Registers a static file path to a route.
+     *
+     * @param string $route The route to map.
+     * @param string $staticPath The static file path.
+     * @return ApplicationContract
+     * @see https://phpspa.tech/references/router/#static-files
+     */
+    public function static(string $route, string $staticPath): self;
+
+
+    /**
+    * Group routes under a common prefix.
+    *
+    * @param string $path The prefix path.
+    * @param callable $handler The handler function with Router as the parameter.
+    * @return ApplicationContract
+     * @see https://phpspa.tech/references/router/#app-level-prefixing
+    */
+    public function prefix(string $path, callable $handler): self;
 
     /**
      * Configure CORS (Cross-Origin Resource Sharing) settings for the application.
@@ -109,20 +132,14 @@ interface ApplicationContract {
      * custom settings provided via the data parameter. Automatically removes
      * duplicate values from array-type configuration options.
      *
-     * @param array $data Optional custom CORS configuration to merge with defaults.
-     *                    Can include keys like:
-     *                    - 'allow_origins': array of allowed origin URLs
-     *                    - 'allow_methods': array of allowed HTTP methods
-     *                    - 'allow_headers': array of allowed request headers
-     *                    - 'allow_credentials': boolean for credential support
-     *                    - 'max_age': integer for preflight cache duration
-     * 
-     * @var array{
-     *   'allow_origins': array<string>,
-     *   'allow_methods': array<string>,
-     *   'allow_headers': array<string>,
-     *   'allow_credentials': bool,
-     *   'max_age': int,
+     * @param array{
+     *   allow_origin: array<string>,
+     *   allow_methods: array<string>,
+     *   allow_headers: array<string>,
+     *   allow_credentials: bool,
+     *   supports_credentials: bool,
+     *   expose_headers: array<string>,
+     *   max_age: int,
      * } $data
      *
      * @return self Returns the current instance for method chaining

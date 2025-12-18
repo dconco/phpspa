@@ -14,13 +14,8 @@ namespace PhpSPA\Core\Helper\Enums;
  * @copyright 2025 Dave Conco
  * @license MIT
  * @since v1.1.0
- * @enum string
- *
- * @case PUSH    Indicates a new entry should be pushed onto the navigation stack.
- * @case REPLACE Indicates the current entry should be replaced in the navigation stack.
  */
-enum NavigateState: string
-{
+enum NavigateState: string {
     /**
      * Represents the 'push' navigation state, typically used to indicate
      * that a new entry should be added to the navigation history stack.

@@ -4,6 +4,7 @@ namespace PhpSPA;
 
 use PhpSPA\Http\Session;
 use PhpSPA\Core\Config\CompressionConfig;
+use PhpSPA\Core\Impl\RealImpl\AppImpl;
 
 /**
  *
@@ -25,7 +26,7 @@ use PhpSPA\Core\Config\CompressionConfig;
  * @see https://phpspa.tech/core-concepts
  * @link https://phpspa.tech
  */
-class App extends \PhpSPA\Core\Impl\RealImpl\AppImpl {
+class App extends AppImpl {
     /**
      * App constructor.
      *
@@ -36,11 +37,11 @@ class App extends \PhpSPA\Core\Impl\RealImpl\AppImpl {
      * @see https://phpspa.tech/layout
      * @see https://phpspa.tech/performance/html-compression
      */
-    public function __construct (callable|string $layout, bool $autoInitCompression = true)
+    public function __construct (callable|string $layout = "", bool $autoInitCompression = true)
     {
         Session::start();
         $this->layout = $layout;
-        self::$request_uri = urldecode(
+        static::$request_uri = urldecode(
             parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH),
         );
 
