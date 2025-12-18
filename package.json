@@ -1,0 +1,22 @@
+{
+  "type": "module",
+  "main": "src/script/phpspa.cjs",
+  "module": "src/script/phpspa.mjs",
+  "browser": "src/script/phpspa.js",
+  "types": "src/script/types/index.d.ts",
+  "scripts": {
+    "build": "rollup -c"
+  },
+  "dependencies": {
+    "morphdom": "^2.7.7"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "rollup": "^4.53.5",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.3"
+  }
+}

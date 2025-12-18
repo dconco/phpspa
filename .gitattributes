@@ -11,6 +11,12 @@ mkdocs.yml export-ignore
 requirements.txt export-ignore
 .readthedocs.yaml export-ignore
 
+# Exclude TypeScript source files from distribution
+src/**/*.ts export-ignore
+src/types/ export-ignore
+src/core/ export-ignore
+src/utils/ export-ignore
+
 # Exclude C++ sources from distribution
 *.cpp export-ignore
 src/*.cpp export-ignore
@@ -25,6 +31,25 @@ TODO.md export-ignore
 .github/ export-ignore
 .gitignore export-ignore
 .gitattributes export-ignore
+tsconfig.json export-ignore
+rollup.config.js export-ignore
 
 # Ignore test directories
 tests/ export-ignore
+
+# Exclude generated type declarations from distribution (keep only min.js)
+src/script/types/ export-ignore
+src/script/*.map export-ignore
+src/script/phpspa.js export-ignore
+src/script/phpspa.cjs export-ignore
+src/script/phpspa.mjs export-ignore
+src/script/*.map export-ignore
+
+# Exclude Node.js files from Composer distribution
+package.json export-ignore
+pnpm-lock.yaml export-ignore
+
+# Mark generated bundles as generated for GitHub
+src/script/phpspa.min.js linguist-generated
+src/script/phpspa.mjs linguist-generated
+src/script/phpspa.cjs linguist-generated

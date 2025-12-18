@@ -37,6 +37,7 @@ access_log
 # Ignore Composer's lock file and binary
 composer.lock
 composer.phar
+pnpm-lock.yaml
 
 # Compiled Object files
 *.o
