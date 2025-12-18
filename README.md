@@ -14,9 +14,9 @@
 [![PHP Version](https://img.shields.io/packagist/v/dconco/phpspa?style=for-the-badge&color=purple)](https://packagist.org/packages/dconco/phpspa)
 [![Downloads](https://img.shields.io/packagist/dt/dconco/phpspa?style=for-the-badge&color=orange)](https://packagist.org/packages/dconco/phpspa)
 [![PHP Tests](https://github.com/dconco/phpspa/actions/workflows/php-tests.yml/badge.svg)](https://github.com/dconco/phpspa/actions/workflows/php-tests.yml)
-[![Code Size](https://img.shields.io/github/languages/code-size/dconco/phpspa?label=Project%20Size](https://github.com/dconco/phpspa)
+[![Code Size](https://img.shields.io/github/languages/code-size/dconco/phpspa?label=Project%20Size)](https://github.com/dconco/phpspa)
+![Lines of Code](https://raw.githubusercontent.com/dconco/phpspa/master/badge/loc.svg)
 ![GitHub Language Count](https://img.shields.io/github/languages/count/dconco/phpspa?label=Total%20Languages%20Used)
-![Lines of Code](https://raw.githubusercontent.com/dconco/phpspa/dev/badge/loc.svg)
 
 <br>
 
