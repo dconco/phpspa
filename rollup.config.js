@@ -4,7 +4,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import terser from '@rollup/plugin-terser';
 
 export default {
-   input: 'src/index.ts',
+   input: 'lib/index.ts',
    output: [
       // --- UMD build for browsers and CDN ---
       {
@@ -46,7 +46,7 @@ export default {
          tsconfig: './tsconfig.json',
          declaration: true,
          declarationDir: './src/script/types',
-         rootDir: './src'
+         rootDir: './lib'
       })
    ]
 };

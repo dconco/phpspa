@@ -3,14 +3,13 @@ import RuntimeManager from "./core/RuntimeManager";
 import { StateObject } from "./types/StateObjectTypes";
 import { base64ToUtf8 } from "./utils/baseConverter";
 import morphdom from "morphdom";
-import phpspa from "./types";
 
 declare global {
    export interface Window {
-      phpspa: typeof phpspa;
-      setState: typeof phpspa.setState;
-      useEffect: typeof phpspa.useEffect;
-      __call: typeof phpspa.__call;
+      phpspa: typeof AppManager;
+      setState: typeof AppManager.setState;
+      useEffect: typeof AppManager.useEffect;
+      __call: typeof AppManager.__call;
    }
 }
 
