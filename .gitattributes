@@ -47,3 +47,8 @@ src/script/phpspa.mjs export-ignore
 # Exclude Node.js files from Composer distribution
 package.json export-ignore
 pnpm-lock.yaml export-ignore
+
+# Mark only minified and type declarations as generated
+src/script/*.map linguist-generated
+src/script/phpspa.min.js linguist-generated
+src/script/phpspa.mjs.js linguist-generated
