@@ -2,12 +2,20 @@
 app/
 template/
 *.php
-*.cpp
 composer.json
 
-# Exclude C++ files
-src/*
-!src/script/
+# Exclude C++ files and folders
+*.cpp
+*.h
+*.hh
+src/bin/
+src/commands/
+src/compression/
+src/global/
+src/helper/*.php
+src/main.cpp
+src/utils/
+CMakeLists.txt
 
 # Exclude documentation
 docs/
