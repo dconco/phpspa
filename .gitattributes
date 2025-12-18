@@ -1,6 +1,3 @@
-# Ignore build directories and documentation
-build/ export-ignore
-dist/ export-ignore
 
 # Ignore template and documentation directories
 template/ export-ignore
@@ -16,11 +13,13 @@ src/**/*.ts export-ignore
 src/types/ export-ignore
 src/core/ export-ignore
 src/utils/ export-ignore
+lib/ export-ignore
 
 # Exclude C++ sources from distribution
 *.cpp export-ignore
 src/*.cpp export-ignore
 src/*.h export-ignore
+src/*.hh export-ignore
 src/**/*.cpp export-ignore
 src/**/*.h export-ignore
 src/**/*.hh export-ignore
@@ -28,7 +27,9 @@ CMakeLists.txt export-ignore
 
 # Ignore development and environment files
 TODO.md export-ignore
+badge/ export-ignore
 .github/ export-ignore
+.vscode/ export-ignore
 .gitignore export-ignore
 .gitattributes export-ignore
 tsconfig.json export-ignore
@@ -48,5 +49,5 @@ package.json export-ignore
 pnpm-lock.yaml export-ignore
 
 # Mark only minified bundles as generated (keep phpspa.js for language stats)
-src/script/phpspa.mjs linguist-generated
-src/script/phpspa.cjs linguist-generated
+src/script/*.mjs linguist-generated
+src/script/*.cjs linguist-generated

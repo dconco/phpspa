@@ -1,0 +1,36 @@
+# Exclude PHP files and folders
+app/
+template/
+*.php
+*.cpp
+composer.json
+
+# Exclude C++ files
+src/*
+!src/script/
+
+# Exclude documentation
+docs/
+*.md
+!README.md
+LICENSE
+
+# Exclude development files
+tests/
+badge/
+examples/
+.vscode/
+.github/
+.gitignore
+.gitattributes
+TODO.md
+mkdocs.yml
+requirements.txt
+.readthedocs.yaml
+
+# Exclude build artifacts
+src/script/*.map
+
+# Keep TypeScript sources for IDE support and debugging
+# Keep built JS bundles (phpspa.js, phpspa.min.js, phpspa.cjs, phpspa.mjs)
+# Keep type declarations (src/script/types/)
