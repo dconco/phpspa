@@ -51,4 +51,4 @@ pnpm-lock.yaml export-ignore
 # Mark only minified and type declarations as generated
 src/script/*.map linguist-generated
 src/script/phpspa.min.js linguist-generated
-src/script/phpspa.mjs.js linguist-generated
+src/script/phpspa.mjs linguist-generated
