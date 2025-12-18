@@ -1,12 +1,41 @@
 {
+  "name": "@dconco/phpspa",
+  "version": "2.0.5",
+  "description": "Client-side JavaScript library for PhpSPA - Component-based PHP framework with SPA-like navigation",
   "type": "module",
   "main": "src/script/phpspa.cjs",
   "module": "src/script/phpspa.mjs",
   "browser": "src/script/phpspa.js",
   "types": "src/script/types/index.d.ts",
+  "files": [
+    "lib/",
+    "src/script/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "rollup -c"
   },
+  "keywords": [
+    "phpspa",
+    "php",
+    "spa",
+    "single-page-application",
+    "component",
+    "state-management",
+    "navigation",
+    "morphdom"
+  ],
+  "author": "Dave Conco <me@dconco.tech> (https://dconco.tech)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dconco/phpspa.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dconco/phpspa/issues"
+  },
+  "homepage": "https://phpspa.tech",
   "dependencies": {
     "morphdom": "^2.7.7"
   },
