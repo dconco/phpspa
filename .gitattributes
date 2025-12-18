@@ -40,16 +40,13 @@ tests/ export-ignore
 # Exclude generated type declarations from distribution (keep only min.js)
 src/script/types/ export-ignore
 src/script/*.map export-ignore
-src/script/phpspa.js export-ignore
 src/script/phpspa.cjs export-ignore
 src/script/phpspa.mjs export-ignore
-src/script/*.map export-ignore
 
 # Exclude Node.js files from Composer distribution
 package.json export-ignore
 pnpm-lock.yaml export-ignore
 
-# Mark generated bundles as generated for GitHub
-src/script/phpspa.min.js linguist-generated
+# Mark only minified bundles as generated (keep phpspa.js for language stats)
 src/script/phpspa.mjs linguist-generated
 src/script/phpspa.cjs linguist-generated
