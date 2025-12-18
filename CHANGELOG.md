@@ -29,7 +29,7 @@ useEffect(() => {
 }, ['stateKey']); // Re-runs only when 'stateKey' changes
 ```
 
-**Documentation:** [references/hooks/clients/use-effect](https://phpspa.readthedocs.io/en/latest/references/hooks/clients/use-effect)
+**Documentation:** [references/hooks/clients/use-effect](https://phpspa.tech/references/hooks/clients/use-effect)
 
 
 ### **Core Fixes** 🔧
@@ -84,7 +84,7 @@ $form = (new Component(function() {
 }))->method('GET', 'POST');
 ```
 
-**Documentation:** [references/preloading-component](https://phpspa.readthedocs.io/en/latest/references/preloading-component/)
+**Documentation:** [references/preloading-component](https://phpspa.tech/references/preloading-component/)
 
 
 ### **DOM Utilities** 🛠️
@@ -106,7 +106,7 @@ function UserProfile() {
 $currentTitle = DOM::Title(); // Returns: "User Profile - My App"
 ```
 
-**Documentation:** [references/dom-utilities](https://phpspa.readthedocs.io/en/latest/references/dom-utilities/)
+**Documentation:** [references/dom-utilities](https://phpspa.tech/references/dom-utilities/)
 
 
 
@@ -150,6 +150,11 @@ $app->prefix('/api', function (Router $router) {
    });
 });
 ```
+
+**Documentation:** [references/router](https://phpspa.tech/references/router/)
+
+
+
 
 ---
 
