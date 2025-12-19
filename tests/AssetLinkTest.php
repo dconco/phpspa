@@ -33,7 +33,7 @@ function testAssetLinkGeneration()
     // Test 2: JS link generation
     $total++;
     echo "\n=== Test: JS Link Generation ===\n";
-    $jsLink = AssetLinkManager::generateJsLink('/test', 1);
+    $jsLink = AssetLinkManager::generateJsLink('/test', 1, null, 'application/js');
     if (preg_match('/\/phpspa\/assets\/[a-f0-9]{32}\.js$/', parse_url($jsLink, PHP_URL_PATH))) {
         echo "PASS\n";
         $passed++;
@@ -113,7 +113,7 @@ function testAssetServing()
     echo "\n=== Test: JS Asset Serving ===\n";
 
     // Generate JS link
-    $jsLink = AssetLinkManager::generateJsLink('/test-asset', 0);
+    $jsLink = AssetLinkManager::generateJsLink('/test-asset', 0, null, 'application/js');
     $jsPath = parse_url($jsLink, PHP_URL_PATH);
 
     // Set up environment
