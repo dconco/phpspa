@@ -1,6 +1,7 @@
 
 # Ignore template and documentation directories
 template/ export-ignore
+vite-example/ export-ignore
 docs/ export-ignore
 
 # Ignore configuration and documentation files
@@ -50,5 +51,5 @@ pnpm-lock.yaml export-ignore
 
 # Mark only minified and type declarations as generated
 src/script/*.map linguist-generated
+src/script/*.mjs linguist-generated
 src/script/phpspa.min.js linguist-generated
-src/script/phpspa.mjs linguist-generated

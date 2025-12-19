@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PhpSPA\Core\Helper;
 
 use PhpSPA\Core\Helper\PathResolver;
+use PhpSPA\Http\Response;
 use PhpSPA\Http\Session;
 
 /**
@@ -67,9 +68,10 @@ class AssetLinkManager
      * @param string $componentRoute The route identifier for the component
      * @param int $scriptIndex The index of the script in the component's scripts array
      * @param string|null $name Optional name for the asset
+     * @param string $type The type of the script
      * @return string The generated JS link
      */
-    public static function generateJsLink(string $componentRoute, int $scriptIndex, ?string $name = null): string
+    public static function generateJsLink(string $componentRoute, int $scriptIndex, ?string $name = null, string $type): string
     {
         $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
 
@@ -79,8 +81,8 @@ class AssetLinkManager
             }
         }
 
-        $hash = self::generateAssetHash($componentRoute, 'js', $scriptIndex, $name);
-        self::storeAssetMapping($hash, $componentRoute, 'js', $scriptIndex, $name);
+        $hash = self::generateAssetHash($componentRoute, 'js', $scriptIndex, $name, $type);
+        self::storeAssetMapping($hash, $componentRoute, 'js', $scriptIndex, $name, $type);
 
         return self::buildAssetUrl($hash, 'js', $name);
     }
@@ -110,7 +112,10 @@ class AssetLinkManager
         $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
         
         if (!isset($mappings[$hash])) {
-            return null;
+            http_response_code(Response::StatusNotFound);
+            header('Content-Type: text/plain');
+            echo "Asset not found";
+            exit;
         }
         
         $mapping = $mappings[$hash];
@@ -119,13 +124,18 @@ class AssetLinkManager
         if (self::isMappingExpired($mapping)) {
             unset($mappings[$hash]);
             Session::set(self::ASSET_MAPPINGS_KEY, $mappings, true);
-            return null;
+
+            http_response_code(Response::StatusGone);
+            header('Content-Type: text/plain');
+            echo "Asset has expired";
+            exit;
         }
 
         return [
             'hash' => $hash,
             'type' => $type,
             'componentRoute' => $mapping['componentRoute'],
+            'scriptType' => $mapping['scriptType'] ?? '',
             'assetType' => $mapping['assetType'],
             'assetIndex' => $mapping['assetIndex']
         ];
@@ -167,10 +177,13 @@ class AssetLinkManager
      * @param string|null $name Optional name for the asset
      * @return string Generated hash
      */
-    private static function generateAssetHash(string $componentRoute, string $assetType, int $assetIndex, ?string $name = null): string
+    private static function generateAssetHash(string $componentRoute, string $assetType, int $assetIndex, ?string $name = null, ?string $type = null): string
     {
         $sessionId = session_id();
         $data = $sessionId . $componentRoute . $assetType . $assetIndex;
+
+        if ($name) $data .= $name;
+        if ($type) $data .= $type;
 
         return md5($data);
     }
@@ -185,7 +198,7 @@ class AssetLinkManager
      * @param string|null $name Optional name for the asset
      * @return void
      */
-    private static function storeAssetMapping(string $hash, string $componentRoute, string $assetType, int $assetIndex, ?string $name = null): void
+    private static function storeAssetMapping(string $hash, string $componentRoute, string $assetType, int $assetIndex, ?string $name = null, ?string $type = null): void
     {
         $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
 
@@ -196,6 +209,8 @@ class AssetLinkManager
             'name' => $name,
             'created' => time()
         ];
+
+        if ($type) $mappings[$hash]['scriptType'] = $type;
 
         Session::set(self::ASSET_MAPPINGS_KEY, $mappings, true);
     }

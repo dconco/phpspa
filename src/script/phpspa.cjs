@@ -1,5 +1,7 @@
 'use strict';
 
+Object.defineProperty(exports, '__esModule', { value: true });
+
 /**
  * UTF-8 safe base64 encoding function
  * Handles Unicode characters that btoa cannot process
@@ -73,6 +75,10 @@ class RuntimeManager {
         beforeload: [],
         load: [],
     };
+    /**
+     * Caches the last payload for each emitted event so late listeners can replay it
+     */
+    static lastEventPayload = {};
     static effects = new Set();
     /**
      * Registers a side effect to be executed when state changes
@@ -251,6 +257,7 @@ class RuntimeManager {
      */
     static emit(eventName, payload) {
         const callbacks = this.events[eventName] || [];
+        this.lastEventPayload[eventName] = payload;
         // --- Execute all registered callbacks for this event ---
         for (const callback of callbacks) {
             if (typeof callback === "function") {
@@ -263,6 +270,12 @@ class RuntimeManager {
                 }
             }
         }
+    }
+    /**
+     * Returns the last cached payload for an event, if available
+     */
+    static getLastEventPayload(eventName) {
+        return this.lastEventPayload[eventName];
     }
     /**
      * Safely pushes a new state to browser history
@@ -1313,6 +1326,15 @@ class AppManager {
             RuntimeManager.events[event] = [];
         }
         RuntimeManager.events[event].push(callback);
+        const lastPayload = RuntimeManager.getLastEventPayload(event);
+        if (lastPayload) {
+            try {
+                callback(lastPayload);
+            }
+            catch (error) {
+                console.error(`Error in ${event} event callback:`, error);
+            }
+        }
     }
     /**
      * Registers a side effect to be executed after component updates.
@@ -1622,10 +1644,37 @@ class AppManager {
 }
 
 /**
- * Initialize PhpSPA when DOM is ready
- * Sets up the initial browser history state with the current page content
+ * Intercepts clicks on Component.Link generated anchors and routes through AppManager
  */
-window.addEventListener("DOMContentLoaded", () => {
+function setupLinkInterception() {
+    document.addEventListener("click", (event) => {
+        if (event.defaultPrevented || event.button !== 0)
+            return;
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+            return;
+        const target = event.target?.closest?.('a[data-type="phpspa-link-tag"]');
+        if (!target)
+            return;
+        if (target.hasAttribute('download'))
+            return;
+        if (target.getAttribute('target') && target.getAttribute('target') !== '_self')
+            return;
+        const href = target.getAttribute('href');
+        if (!href)
+            return;
+        const url = new URL(href, location.toString());
+        if (url.origin !== location.origin)
+            return; // --- external links fallback to default behaviour ---
+        event.preventDefault();
+        AppManager.navigate(url, 'push');
+    });
+}
+
+/**
+ * Bootstraps PhpSPA runtime by caching current route info
+ * and wiring up history/navigation handlers
+ */
+function bootstrapPhpSPA() {
     const targetElement = document.querySelector("[data-phpspa-target]");
     const targetElementInfo = document.querySelector("[phpspa-target-data]");
     const uri = location.toString();
@@ -1674,7 +1723,19 @@ window.addEventListener("DOMContentLoaded", () => {
             setTimeout(AppManager.reloadComponent, initialState.reloadTime);
         }
     }
-});
+    setupLinkInterception();
+}
+
+/**
+ * Ensure bootstrap runs even if script loads after DOMContentLoaded
+ */
+const readyStates = ["interactive", "complete"];
+if (document.readyState === "loading") {
+    window.addEventListener("DOMContentLoaded", bootstrapPhpSPA, { once: true });
+}
+else if (readyStates.includes(document.readyState)) {
+    bootstrapPhpSPA();
+}
 /**
  * Handle browser back/forward button navigation
  * Restores page content when user navigates through browser history
@@ -1772,6 +1833,9 @@ window.addEventListener("popstate", (event) => {
     }
 });
 if (typeof window !== "undefined") {
+    if (typeof window.phpspa !== "object") {
+        window.phpspa = AppManager;
+    }
     if (typeof window.setState !== "function") {
         window.setState = AppManager.setState;
     }
@@ -1782,6 +1846,12 @@ if (typeof window !== "undefined") {
         window.useEffect = AppManager.useEffect;
     }
 }
+const setState = AppManager.setState.bind(AppManager);
+const useEffect = AppManager.useEffect.bind(AppManager);
+const __call = AppManager.__call.bind(AppManager);
 
-module.exports = AppManager;
+exports.__call = __call;
+exports.default = AppManager;
+exports.setState = setState;
+exports.useEffect = useEffect;
 //# sourceMappingURL=phpspa.cjs.map

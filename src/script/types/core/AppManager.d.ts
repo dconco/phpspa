@@ -1,5 +1,5 @@
 import { StateValueType } from "../types/StateObjectTypes";
-import { EventObject } from "../types/RuntimeInterfaces";
+import { EventObject, EventPayload } from "../types/RuntimeInterfaces";
 export default class AppManager {
     /**
      * Navigates to a given URL using PHPSPA's custom navigation logic.
@@ -34,7 +34,7 @@ export default class AppManager {
      * @param event - The name of the event to listen for.
      * @param callback - The function to call when the event is triggered.
      */
-    static on(event: keyof EventObject, callback: () => void): void;
+    static on(event: keyof EventObject, callback: (payload: EventPayload) => void): void;
     /**
      * Registers a side effect to be executed after component updates.
      * Alias for RuntimeManager.registerEffect.

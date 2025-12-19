@@ -25,6 +25,10 @@ export default class RuntimeManager {
      */
     static currentRoutes: CurrentRoutesObject;
     static events: EventObject;
+    /**
+     * Caches the last payload for each emitted event so late listeners can replay it
+     */
+    private static lastEventPayload;
     private static effects;
     /**
      * Registers a side effect to be executed when state changes
@@ -74,6 +78,10 @@ export default class RuntimeManager {
      * @param payload - The data to pass to event listeners
      */
     static emit(eventName: keyof EventObject, payload: EventPayload): void;
+    /**
+     * Returns the last cached payload for an event, if available
+     */
+    static getLastEventPayload(eventName: keyof EventObject): EventPayload | undefined;
     /**
      * Safely pushes a new state to browser history
      * Wraps in try-catch to handle potential browser restrictions

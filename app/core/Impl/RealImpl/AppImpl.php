@@ -19,6 +19,7 @@ use PhpSPA\Core\Helper\ComponentScope;
 use PhpSPA\Core\Helper\AssetLinkManager;
 use PhpSPA\Core\Helper\PathResolver;
 use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
+use PhpSPA\Http\Response;
 use PhpSPA\Interfaces\ApplicationContract;
 use PhpSPA\Interfaces\IComponent;
 
@@ -109,6 +110,8 @@ abstract class AppImpl implements ApplicationContract {
     * }>
     */
    protected array $prefix = [];
+
+   private bool $module = false;
 
    public function defaultTargetID (string $targetID): ApplicationContract
    {
@@ -207,7 +210,12 @@ abstract class AppImpl implements ApplicationContract {
       $this->prefix[] = ['path' => $path, 'handler' => $handler]; return $this;
    }
 
-   public function run ()
+   public function useModule(): ApplicationContract {
+      $this->module = true;
+      return $this;
+   }
+
+   public function run (bool $return = false)
    {
       $request = new HttpRequest();
 
@@ -230,7 +238,6 @@ abstract class AppImpl implements ApplicationContract {
       // Clean up expired asset mappings periodically
       AssetLinkManager::cleanupExpiredMappings();
 
-      $returnResult = \func_get_args()[0] ?? false;
       $success = false;
 
       foreach ($this->components as $component) {
@@ -245,7 +252,7 @@ abstract class AppImpl implements ApplicationContract {
       if ($success === true) {
          $compressedOutput = Compressor::compress($this->renderedData, 'text/html');
 
-         if ($returnResult) return $compressedOutput;
+         if ($return) return $compressedOutput;
 
          print_r($compressedOutput);
          exit(0);
@@ -671,8 +678,8 @@ abstract class AppImpl implements ApplicationContract {
       // --- Automatically add phpspa script for SPA functionality ---
       // --- Attaching it to the global stylesheet to expicitly... ---
       // --- add it to the head tag alongside with the styles instead of the body ---
-      if (!$isPhpSpaRequest) {
-         $jsLink = AssetLinkManager::generateJsLink("__global__", -1, null);
+      if (!$isPhpSpaRequest && !$this->module) {
+         $jsLink = AssetLinkManager::generateJsLink("__global__", -1, null, 'text/javascript');
          $result['global']['stylesheets'] .= "\n<script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
       }
 
@@ -684,7 +691,7 @@ abstract class AppImpl implements ApplicationContract {
             $scriptCallable = $script['content'];
 
             if (is_callable($scriptCallable)) {
-               $jsLink = AssetLinkManager::generateJsLink("__global__", $index, $name);
+               $jsLink = AssetLinkManager::generateJsLink("__global__", $index, $name, $type);
                $result['global']['scripts'] .= $isPhpSpaRequest ? "\n<phpspa-script src=\"$jsLink\" type=\"$type\"></phpspa-script>\n" : "\n<script type=\"$type\" src=\"$jsLink\"></script>\n";
             }
          }
@@ -698,7 +705,7 @@ abstract class AppImpl implements ApplicationContract {
             $scriptCallable = $script['content'];
 
             if (is_callable($scriptCallable)) {
-               $jsLink = AssetLinkManager::generateJsLink($primaryRoute, $index, $name);
+               $jsLink = AssetLinkManager::generateJsLink($primaryRoute, $index, $name, $type);
                $result['component']['scripts'] .= $isPhpSpaRequest ? "\n<phpspa-script src=\"$jsLink\" type=\"$type\"></phpspa-script>\n" : "\n<script type=\"$type\" src=\"$jsLink\"></script>\n";
             }
          }
@@ -726,13 +733,15 @@ abstract class AppImpl implements ApplicationContract {
          $component = $this->findComponentByRoute($assetInfo['componentRoute']);
 
          if ($component === null) {
-            http_response_code(404);
+            http_response_code(Response::StatusNotFound);
             header('Content-Type: text/plain');
             echo "Asset not found";
             return;
          }
 
-         if ($assetInfo['assetType'] === 'js')
+         $isRealJavascript = strtolower($assetInfo['scriptType']) === 'application/javascript' || strtolower($assetInfo['scriptType']) === 'text/javascript';
+
+         if ($assetInfo['assetType'] === 'js' && $isRealJavascript)
             // --- For JS, we wrap the content in an IIFE to avoid polluting global scope ---
             $content = '(()=>{' . $this->getAssetContent($component, $assetInfo) . '})();';
          else
@@ -741,7 +750,7 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       if ($content === null) {
-         http_response_code(404);
+         http_response_code(Response::StatusNotFound);
          header('Content-Type: text/plain');
          echo "Asset content not found";
          return;
@@ -839,10 +848,12 @@ abstract class AppImpl implements ApplicationContract {
          $script = $this->scripts[$assetInfo['assetIndex']] ?? null;
          $scriptCallable = $script['content'] ?? null;
 
+         $isRealJavascript = strtolower($assetInfo['scriptType']) === 'application/javascript' || strtolower($assetInfo['scriptType']) === 'text/javascript';
+
          if (\is_callable($scriptCallable)) {
             $content = \call_user_func($scriptCallable);
 
-            if ($request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT')
+            if ($request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT' && $isRealJavascript)
                // --- Wrap global JS content in an IIFE to avoid polluting global scope ---
                return '(()=>{' . $content . '})();';
 
@@ -915,12 +926,6 @@ abstract class AppImpl implements ApplicationContract {
          $globalScripts = $globalAssets['scripts'];
       }
 
-      // If no global assets and no component scripts, return unchanged
-      if (empty(trim($globalScripts)) && empty(trim($componentScripts))) {
-         return $html;
-      }
-
-      
       // Inject global stylesheets in head for proper CSS cascading
       if (!empty(trim($globalStylesheets))) {
          if (preg_match('/<\/head>/i', $html)) {
@@ -930,6 +935,11 @@ abstract class AppImpl implements ApplicationContract {
             // If no head tag, put stylesheets at the beginning
             $html = "{$globalStylesheets}{$html}";
          }
+      }
+
+      // If no global assets and no component scripts, return unchanged
+      if (empty(trim($globalScripts)) && empty(trim($componentScripts))) {
+         return $html;
       }
 
       // Combine global scripts and component scripts in proper order

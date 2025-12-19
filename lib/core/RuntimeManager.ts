@@ -36,6 +36,11 @@ export default class RuntimeManager {
       load: [],
    };
 
+   /**
+    * Caches the last payload for each emitted event so late listeners can replay it
+    */
+   private static lastEventPayload: Partial<Record<keyof EventObject, EventPayload>> = {};
+
    private static effects: Set<EffectType> = new Set();
 
    /**
@@ -247,6 +252,7 @@ export default class RuntimeManager {
     */
    static emit(eventName: keyof EventObject, payload: EventPayload) {
       const callbacks = this.events[eventName] || [];
+      this.lastEventPayload[eventName] = payload;
 
       // --- Execute all registered callbacks for this event ---
       for (const callback of callbacks) {
@@ -259,6 +265,13 @@ export default class RuntimeManager {
             }
          }
       }
+   }
+
+   /**
+    * Returns the last cached payload for an event, if available
+    */
+   public static getLastEventPayload(eventName: keyof EventObject): EventPayload | undefined {
+      return this.lastEventPayload[eventName];
    }
 
    /**

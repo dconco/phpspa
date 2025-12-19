@@ -116,14 +116,19 @@ interface ApplicationContract {
 
 
     /**
-    * Group routes under a common prefix.
-    *
-    * @param string $path The prefix path.
-    * @param callable $handler The handler function with Router as the parameter.
-    * @return ApplicationContract
+     * Group routes under a common prefix.
+     *
+     * @param string $path The prefix path.
+     * @param callable $handler The handler function with Router as the parameter.
+     * @return ApplicationContract
      * @see https://phpspa.tech/references/router/#app-level-prefixing
     */
     public function prefix(string $path, callable $handler): self;
+
+    /**
+     * If you are using script module with `@dconco/phpspa` js package, enable this function
+     */
+    public function useModule(): self;
 
     /**
      * Configure CORS (Cross-Origin Resource Sharing) settings for the application.

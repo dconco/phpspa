@@ -1,0 +1,5 @@
+{
+    "require": {
+        "dconco/phpspa": "^2.0"
+    }
+}
