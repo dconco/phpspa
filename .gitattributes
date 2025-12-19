@@ -1,13 +1,16 @@
 
 # Ignore template and documentation directories
-template/ export-ignore
-vite-example/ export-ignore
+examples/ export-ignore
+vite-template/ export-ignore
 docs/ export-ignore
 
 # Ignore configuration and documentation files
 mkdocs.yml export-ignore
 requirements.txt export-ignore
 .readthedocs.yaml export-ignore
+
+CONTRIBUTING.md export-ignore
+CODE_OF_CONDUCT.md export-ignore
 
 # Exclude TypeScript source files from distribution
 src/**/*.ts export-ignore

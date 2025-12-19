@@ -5,11 +5,6 @@
 > [!IMPORTANT]
 > This version requires **PHP 8.4 or higher**
 
-**Installation:**
-```bash
-composer require dconco/phpspa:v2.0.4
-```
-
 ### **Client-Side Hooks** ⚛️
 
 - **`useEffect()`** - Manage side effects and cleanups in your component scripts with dependency tracking

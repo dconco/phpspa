@@ -267,6 +267,16 @@ class Response
          $contents = Compressor::gzipCompress($contents, $fileType);
       }
 
+      if ($fileType === 'application/json') {
+         try {
+            $content = json_decode($contents);
+         } catch (\Exception $e) {
+            $content = $contents;
+         }
+      }
+
+      if (isset($content)) $contents = $content;
+
       return $this
          ->status(Response::StatusOK)
          ->contentType($fileType)

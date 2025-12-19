@@ -5,6 +5,7 @@ namespace PhpSPA\Core\Impl\RealImpl;
 use PhpSPA\DOM;
 use PhpSPA\Component;
 use PhpSPA\Http\Request;
+use PhpSPA\Http\Response;
 use PhpSPA\Http\Session;
 use PhpSPA\Http\Security\Nonce;
 use PhpSPA\Core\Router\MapRoute;
@@ -19,7 +20,6 @@ use PhpSPA\Core\Helper\ComponentScope;
 use PhpSPA\Core\Helper\AssetLinkManager;
 use PhpSPA\Core\Helper\PathResolver;
 use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
-use PhpSPA\Http\Response;
 use PhpSPA\Interfaces\ApplicationContract;
 use PhpSPA\Interfaces\IComponent;
 
@@ -358,6 +358,7 @@ abstract class AppImpl implements ApplicationContract {
       $targetID = CallableInspector::getProperty($component, 'targetID') ?? $this->defaultTargetID;
       $scripts = CallableInspector::getProperty($component, 'scripts');
       $stylesheets = CallableInspector::getProperty($component, 'stylesheets');
+      $metaTags = CallableInspector::getProperty($component, 'meta') ?? [];
       $componentFunction = CallableInspector::getProperty($component, 'component');
       $title = CallableInspector::getProperty($component, 'title');
       $reloadTime = CallableInspector::getProperty($component, 'reloadTime');
@@ -455,6 +456,13 @@ abstract class AppImpl implements ApplicationContract {
       if (!$isPreloadingComponent) {
          $title = DOM::Title() ?? $title;
          DOM::Title($title);
+
+         if ($request->requestedWith() !== 'PHPSPA_REQUEST' && !empty($metaTags)) {
+            $metaMarkup = $this->buildMetaTagMarkup($metaTags);
+            if ($metaMarkup !== '') {
+               $layoutOutput = $this->injectMetaTags($layoutOutput, $metaMarkup);
+            }
+         }
       }
 
       // --- Generate session-based links for scripts and stylesheets instead of inline content ---
@@ -622,6 +630,61 @@ abstract class AppImpl implements ApplicationContract {
       if (!$isPreloadingComponent) {
          return true;
       }
+   }
+
+   private function buildMetaTagMarkup(array $metaEntries): string
+   {
+      $lines = [];
+
+      foreach ($metaEntries as $entry) {
+         if (!\is_array($entry)) {
+            continue;
+         }
+
+         $attributes = [];
+
+         foreach ($entry as $attribute => $value) {
+            if ($value === null || $value === '') {
+               continue;
+            }
+
+            $attrName = $this->validate($attribute);
+            $attrValue = $this->validate($value);
+            $attributes[] = "$attrName=\"$attrValue\"";
+         }
+
+         if (empty($attributes)) {
+            continue;
+         }
+
+         $signature = $this->metaSignature($entry);
+         $lines[$signature] = '<meta ' . implode(' ', $attributes) . '>';
+      }
+
+      if (empty($lines)) {
+         return '';
+      }
+
+      return implode("\n      ", array_values($lines));
+   }
+
+   private function injectMetaTags(string $layoutOutput, string $metaMarkup): string
+   {
+      $metaBlock = '      ' . $metaMarkup . "\n";
+
+      $updated = preg_replace('/<head([^>]*)>/', "<head$1>\n$metaBlock", $layoutOutput, 1, $count);
+
+      if ($count > 0 && \is_string($updated)) {
+         return $updated;
+      }
+
+      return $layoutOutput;
+   }
+
+   private function metaSignature(array $entry): string
+   {
+      ksort($entry);
+      return md5(json_encode($entry));
    }
 
    /**
