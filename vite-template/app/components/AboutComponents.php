@@ -140,10 +140,10 @@ class AboutComponents {
                         Back to overview
                         <span aria-hidden>&#10548;</span>
                      </Component.Link>
-                     <a class="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-sky-200 transition hover:border-white/50" href="https://phpspa.tech" target="_blank" rel="noreferrer">
+                     <Component.Link class="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-sky-200 transition hover:border-white/50" to="https://phpspa.tech" target="_blank" rel="noreferrer">
                         Read full docs
                         <span aria-hidden>&#x2197;</span>
-                     </a>
+                     </Component.Link>
                   </div>
                </div>
                <div class="rounded-3xl border border-white/10 bg-slate-950/60 p-6">

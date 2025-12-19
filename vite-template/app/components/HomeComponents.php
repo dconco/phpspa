@@ -16,31 +16,33 @@ class HomeComponents {
                      Craft dynamic PHP-driven interfaces while letting Vite compile your components, Tailwind style them,
                      and PhpSPA orchestrate seamless transitions, state hydration, and CSRF-safe requests.
                   </p>
+
                   <div class="mt-10 flex flex-wrap gap-4">
                      <Component.Link to="/about" class="inline-flex items-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-semibold tracking-wide text-slate-900 transition hover:bg-slate-100">
                         Explore Docs
                         <span aria-hidden>&rarr;</span>
                      </Component.Link>
-                     <a href="https://github.com/dconco/phpspa" target="_blank" rel="noreferrer" class="inline-flex items-center gap-3 rounded-full border border-white/30 px-6 py-3 text-sm font-semibold tracking-wide text-white transition hover:border-white">
+                     <Component.Link to="https://github.com/dconco/phpspa" target="_blank" rel="noreferrer" class="inline-flex items-center gap-3 rounded-full border border-white/30 px-6 py-3 text-sm font-semibold tracking-wide text-white transition hover:border-white">
                         View Source
                         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                            <path d="M5 15L15 5M15 5H6M15 5V14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
                         </svg>
-                     </a>
+                     </Component.Link>
                   </div>
+
                   <dl class="mt-10 grid gap-6 text-sm text-slate-300 sm:grid-cols-3">
-                        <div>
-                           <dt class="uppercase tracking-[0.3em] text-white/60">Instant reload</dt>
-                           <dd class="mt-2 text-2xl font-semibold text-white">Vite dev + PhpSPA</dd>
-                        </div>
-                        <div>
-                           <dt class="uppercase tracking-[0.3em] text-white/60">State sharing</dt>
-                           <dd class="mt-2 text-2xl font-semibold text-white">Stores & Hooks</dd>
-                        </div>
-                        <div>
-                           <dt class="uppercase tracking-[0.3em] text-white/60">Secure forms</dt>
-                           <dd class="mt-2 text-2xl font-semibold text-white">Built-in CSRF</dd>
-                        </div>
+                     <div>
+                        <dt class="uppercase tracking-[0.3em] text-white/60">Instant reload</dt>
+                        <dd class="mt-2 text-2xl font-semibold text-white">Vite dev + PhpSPA</dd>
+                     </div>
+                     <div>
+                        <dt class="uppercase tracking-[0.3em] text-white/60">State sharing</dt>
+                        <dd class="mt-2 text-2xl font-semibold text-white">Stores & Hooks</dd>
+                     </div>
+                     <div>
+                        <dt class="uppercase tracking-[0.3em] text-white/60">Secure forms</dt>
+                        <dd class="mt-2 text-2xl font-semibold text-white">Built-in CSRF</dd>
+                     </div>
                   </dl>
                </div>
                <div class="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl">
@@ -67,7 +69,7 @@ function Profile(Person \$person) {
 
 \$p = new Person('Dave', 'Admin'); fmt(\$p);
 
-echo &lt;&lt;&lt;HTML
+return &lt;&lt;&lt;HTML
    &lt;Profile person="{\$p}" />
 &#8203;HTML;
 </pre>
@@ -186,7 +188,7 @@ HTML;
                      </div>
                      <div>
                         <dt class="text-sm text-white/70">Bundle size</dt>
-                        <dd class="mt-1 text-3xl font-semibold text-white">17 KB</dd>
+                        <dd class="mt-1 text-3xl font-semibold text-white">277kb</dd>
                      </div>
                      <div>
                         <dt class="text-sm text-white/70">Hydration score</dt>

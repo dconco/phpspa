@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## v2.0.5 (unreleased)
+
+### **Component-Level SEO Controls** 🧭
+
+- Added chained `->meta()` API to every component so route-specific descriptions, keywords, Open Graph, or HTTP-EQUIV tags can be declared right where the component is defined.
+- Runtime now injects those tags only during the initial HTML.
+- Layout stays clean; global meta is still available via the layout if needed.
+
+**Example:**
+
+```php
+new Component(...)
+   ->route('/')
+   ->title('PhpSPA Design System')
+   ->meta(name: 'description', content: 'Design-forward PhpSPA starter')
+   ->meta(property: 'og:title', content: 'PhpSPA Design System');
+```
+
+**Documentation:** [references/component-meta](https://phpspa.readthedocs.io/en/latest/references/component-meta)
+
+---
+
 ## v2.0.4 (Current) (Stable)
 
 > [!IMPORTANT]
