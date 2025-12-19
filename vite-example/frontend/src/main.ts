@@ -1,4 +1,4 @@
-import phpspa from '@dconco/phpspa';
+import phpspa from '../../../src/script/phpspa.mjs';
 import { registerDebugHooks } from './helpers';
 import './style.css';
 

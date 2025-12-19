@@ -268,7 +268,7 @@ class HttpRequest implements Request
     }
 
     public function isSameOrigin(): bool {
-        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $host = parse_url($_SERVER['HTTP_HOST'] ?? '', PHP_URL_HOST);
         $origin = $_SERVER['HTTP_ORIGIN'] ?? null;
 
         // Case 1: Browser explicitly sent Origin header

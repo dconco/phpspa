@@ -135,7 +135,7 @@ class AssetLinkManager
             'hash' => $hash,
             'type' => $type,
             'componentRoute' => $mapping['componentRoute'],
-            'scriptType' => $mapping['scriptType'] ?? '',
+            'scriptType' => $mapping['scriptType'],
             'assetType' => $mapping['assetType'],
             'assetIndex' => $mapping['assetIndex']
         ];
@@ -207,10 +207,9 @@ class AssetLinkManager
             'assetType' => $assetType,
             'assetIndex' => $assetIndex,
             'name' => $name,
-            'created' => time()
+            'created' => time(),
+            'scriptType' => $type ?? 'text/javascript'
         ];
-
-        if ($type) $mappings[$hash]['scriptType'] = $type;
 
         Session::set(self::ASSET_MAPPINGS_KEY, $mappings, true);
     }

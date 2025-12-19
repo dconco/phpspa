@@ -12,7 +12,7 @@ $layout = function() {
 
       $manifest = json_decode(file_get_contents('public/assets/.vite/manifest.json'), true);
 
-      $mainEntry = $manifest['src/main.js'];
+      $mainEntry = $manifest['src/main.ts'];
       $cssLinks = '';
 
       // --- Build CSS link tags for all imported stylesheets ---
@@ -23,12 +23,12 @@ $layout = function() {
          }
       }
 
-      // --- Replace dev main.js with production version ---
+      // --- Replace dev main.ts with production version ---
 
       $html = str_replace(
          [
             '<script type="module" src="http://localhost:5173/@vite/client"></script>',
-            '<script type="module" src="http://localhost:5173/src/main.js"></script>'
+            '<script type="module" src="http://localhost:5173/src/main.ts"></script>'
          ],
          [
             $cssLinks,

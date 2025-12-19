@@ -23,7 +23,7 @@ function LinkComponent ()
    return "<@Link />";
 }
 
-return (new Component(function (): string
+return new Component(function (): string
 {
    $caller = useFunction('HelloWorld');
    $counter = useState('counter', 0);
@@ -69,7 +69,7 @@ return (new Component(function (): string
          </script>
       </div>
    HTML;
-}))
+})
    ->script(fn() => <<<JS
 
       useEffect(() => {

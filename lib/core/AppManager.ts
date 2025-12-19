@@ -343,6 +343,7 @@ export default class AppManager {
          responses.forEach(async (response) => {
             try {
                const responseText = await response.text();
+
                let responseData;
 
                // --- Parse response as JSON if possible ---
