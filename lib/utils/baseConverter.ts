@@ -2,7 +2,7 @@
  * UTF-8 safe base64 encoding function
  * Handles Unicode characters that btoa cannot process
  */
-export function utf8ToBase64(str: string): string {
+function utf8ToBase64(str: string): string {
    try {
       // First try the native btoa for performance
       return btoa(str);
@@ -28,7 +28,7 @@ export function utf8ToBase64(str: string): string {
  * UTF-8 safe base64 decoding function
  * Handles Unicode characters that atob cannot process
  */
-export function base64ToUtf8(str: string): string {
+function base64ToUtf8(str: string): string {
    try {
       // Try modern UTF-8 safe decoding first
       const binaryString = atob(str);
@@ -42,3 +42,5 @@ export function base64ToUtf8(str: string): string {
       return atob(str);
    }
 }
+
+export { utf8ToBase64, base64ToUtf8 }

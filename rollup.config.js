@@ -12,7 +12,7 @@ export default {
          format: 'umd',
          name: 'phpspa',
          sourcemap: true,
-         exports: 'default'
+         exports: 'named'
       },
       // --- Minified UMD for production CDN ---
       {
@@ -20,7 +20,7 @@ export default {
          format: 'umd',
          name: 'phpspa',
          sourcemap: true,
-         exports: 'default',
+         exports: 'named',
          plugins: [terser()]
       },
       // --- CommonJS for Node.js ---
@@ -28,7 +28,7 @@ export default {
          file: 'src/script/phpspa.cjs',
          format: 'cjs',
          sourcemap: true,
-         exports: 'default'
+         exports: 'named'
       },
       // --- ES Module for modern bundlers ---
       {

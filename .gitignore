@@ -1,4 +1,6 @@
 # Ignore dependencies
+/vite-example/node_modules
+/vite-example/vendor
 /node_modules
 /vendor
 

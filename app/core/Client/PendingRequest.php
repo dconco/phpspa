@@ -77,7 +77,7 @@ class PendingRequest implements \ArrayAccess {
    public function __construct (string $url)
    {
       $this->url = $url;
-      $this->client = HttpClientFactory::create();
+      $this->client = HttpClientFactory::create($url);
    }
 
    /**

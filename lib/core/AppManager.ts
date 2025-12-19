@@ -1,7 +1,7 @@
 import { ComponentObject, StateObject, StateValueType } from "../types/StateObjectTypes";
-import RuntimeManager from "./RuntimeManager";
-import { EventObject } from "../types/RuntimeInterfaces";
+import { EventObject, EventPayload } from "../types/RuntimeInterfaces";
 import { utf8ToBase64 } from "../utils/baseConverter";
+import RuntimeManager from "./RuntimeManager";
 import morphdom from "morphdom";
 
 export default class AppManager {
@@ -275,11 +275,20 @@ export default class AppManager {
     * @param event - The name of the event to listen for.
     * @param callback - The function to call when the event is triggered.
     */
-   public static on(event: keyof EventObject, callback: () => void) {
+   public static on(event: keyof EventObject, callback: (payload: EventPayload) => void) {
       if (!RuntimeManager.events[event]) {
          RuntimeManager.events[event] = [];
       }
       RuntimeManager.events[event].push(callback);
+
+      const lastPayload = RuntimeManager.getLastEventPayload(event);
+      if (lastPayload) {
+         try {
+            callback(lastPayload);
+         } catch (error) {
+            console.error(`Error in ${event} event callback:`, error);
+         }
+      }
    }
 
    /**
