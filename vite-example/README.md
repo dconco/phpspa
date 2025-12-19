@@ -50,7 +50,7 @@ index.php                # Auto-detects dev/prod mode
 
 ```bash
 cd frontend
-npm install -D typescript
+npm install -D typescript @types/node
 mv src/main.js src/main.ts
 ```
 

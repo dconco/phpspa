@@ -1,7 +1,8 @@
 import AppManager from "./core/AppManager";
 import RuntimeManager from "./core/RuntimeManager";
 import { bootstrapPhpSPA } from "./helpers/bootstrap";
-import { StateObject } from "./types/StateObjectTypes";
+import type { StateObject } from "./types/StateObjectTypes";
+import type { EventObject } from "./types/RuntimeInterfaces";
 import morphdom from "morphdom";
 
 declare global {
@@ -158,5 +159,10 @@ if (typeof window !== "undefined") {
 export const setState = AppManager.setState.bind(AppManager);
 export const useEffect = AppManager.useEffect.bind(AppManager);
 export const __call = AppManager.__call.bind(AppManager);
+
+export type { EventObject, EventPayload } from "./types/RuntimeInterfaces";
+export type { StateObject } from "./types/StateObjectTypes";
+export type EventName = keyof EventObject;
+export type PhpSPAInstance = typeof AppManager;
 
 export default AppManager;

@@ -1,14 +1,17 @@
-import { defineConfig } from 'vite'
-import { resolve } from 'path'
+import { defineConfig } from 'vite';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const projectDir = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   build: {
     outDir: '../public/assets',
     emptyOutDir: true,
-    manifest: true, // Generate manifest.json
+    manifest: true,
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'src/main.js')
+        main: resolve(projectDir, 'src/main.ts')
       },
       output: {
         entryFileNames: '[name]-[hash].js',
@@ -18,9 +21,8 @@ export default defineConfig({
     }
   },
   server: {
-    // Proxy API requests to PHP server during development
     proxy: {
-      '/api': 'http://localhost:8000'
+      '/api': 'http://localhost:2000' // --- Your Server URL ---
     }
   }
-})
+});
