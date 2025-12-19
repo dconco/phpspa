@@ -162,7 +162,7 @@ useEffect(function () use (\$counter) {
                     </div>
                     <div>
                         <dt class="text-sm text-white/70">Bundle size</dt>
-                        <dd class="mt-1 text-3xl font-semibold text-white">21 KB</dd>
+                        <dd class="mt-1 text-3xl font-semibold text-white">17 KB</dd>
                     </div>
                     <div>
                         <dt class="text-sm text-white/70">Hydration score</dt>

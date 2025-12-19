@@ -14,6 +14,7 @@
     overflow-x: auto;
     font-size: 0.85rem;
     line-height: 1.6;
+    font-family: 'Fira Code', 'Space Mono', 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
   }
 }
 
