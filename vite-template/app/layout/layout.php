@@ -2,7 +2,7 @@
 
 $layout = function() {
 
-   $html = file_get_contents('frontend/index.html');
+   $html = file_get_contents('index.html');
 
    // --- Check if Vite dev server is running ---
    $viteRunning = @file_get_contents('http://localhost:5173') !== false;

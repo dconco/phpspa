@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 min-h-screen antialiased;
+  }
+
+  pre code {
+    display: block;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    font-family: 'Fira Code', 'Space Mono', 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  }
+}
+
+@layer components {
+  .nav-link {
+    @apply text-sm font-semibold tracking-wide uppercase text-slate-300 transition-colors hover:text-white;
+  }
+
+  .pill {
+    @apply inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-1 text-xs uppercase tracking-[0.2em] text-slate-300;
+  }
+
+  .card {
+    @apply rounded-3xl border border-white/5 bg-white/5 p-8 shadow-2xl shadow-indigo-950/20 backdrop-blur;
+  }
+
+  .code-chip {
+    @apply rounded-full border border-white/10 bg-white/10 px-2 py-0.5 font-mono text-[0.7rem] uppercase tracking-[0.2em] text-sky-200;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.75);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.9), rgba(14, 165, 233, 0.9));
+  border-radius: 999px;
+  border: 2px solid rgba(15, 23, 42, 0.85);
+  box-shadow: 0 2px 6px rgba(14, 165, 233, 0.4);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(129, 140, 248, 1), rgba(56, 189, 248, 1));
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.8) rgba(15, 23, 42, 0.8);
+}
