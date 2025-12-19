@@ -74,7 +74,7 @@ return new Component(function (): string
 
       useEffect(() => {
          const btn = document.getElementById('counter-btn');
-         
+
          const handleClick = async () => {
             currentCounter++;
             await phpspa.setState('counter', currentCounter);

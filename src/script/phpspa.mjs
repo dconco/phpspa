@@ -1379,7 +1379,6 @@ class AppManager {
             responses.forEach(async (response) => {
                 try {
                     const responseText = await response.text();
-                    console.log('[setState] raw response', responseText); // <-- add this
                     let responseData;
                     // --- Parse response as JSON if possible ---
                     if (responseText && responseText.trim().startsWith("{")) {
