@@ -4,7 +4,7 @@ use PhpSPA\Component;
 
 $homePage = new Component(fn() => <<<HTML
     <div class="page">
-        <h1>Welcome to PhpSPA + Vite</h1>
+        <h1 class="text-blue-400">Welcome to PhpSPA + Vite</h1>
         <p>This is a modern development setup using:</p>
         <ul>
             <li>PhpSPA for backend SPA routing</li>

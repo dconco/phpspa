@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 min-h-screen antialiased;
+  }
+}
+
+@layer components {
+  .nav-link {
+    @apply text-sm font-semibold tracking-wide uppercase text-slate-300 transition-colors hover:text-white;
+  }
+
+  .pill {
+    @apply inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-1 text-xs uppercase tracking-[0.2em] text-slate-300;
+  }
+
+  .card {
+    @apply rounded-3xl border border-white/5 bg-white/5 p-8 shadow-2xl shadow-indigo-950/20 backdrop-blur;
+  }
+}
