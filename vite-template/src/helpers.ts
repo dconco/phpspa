@@ -1,4 +1,4 @@
-import type { EventPayload, PhpSPAInstance } from '../../src/script/phpspa.mjs';
+import type { EventPayload, PhpSPAInstance } from '@dconco/phpspa';
 
 export function registerDebugHooks(instance: PhpSPAInstance | null | undefined): void {
    if (!instance || typeof instance.on !== 'function') {

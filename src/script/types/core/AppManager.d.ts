@@ -42,7 +42,7 @@ export default class AppManager {
      * @param callback - The effect callback
      * @param dependencies - Array of state keys to listen for
      */
-    static useEffect(callback: () => Function | undefined, dependencies?: string[] | null): void;
+    static useEffect(callback: () => void | (() => void), dependencies?: string[] | null): void;
     /**
      * Updates the application state by sending a custom fetch request and updating the DOM accordingly.
      * Preserves the current scroll position during the update.

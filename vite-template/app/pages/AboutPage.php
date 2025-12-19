@@ -37,11 +37,11 @@ $aboutPage = new Component(fn() => <<<HTML
             <article class="rounded-3xl border border-white/10 bg-slate-950/60 p-6">
                 <p class="text-xs uppercase tracking-[0.4em] text-orange-200">Typical flow</p>
                 <ol class="mt-4 space-y-3 text-sm text-slate-300">
-                    <li><span class="font-semibold text-white">1. </span> Author layouts + routes in <code class="code-chip">app/pages/*</code>.</li>
-                    <li><span class="font-semibold text-white">2. </span> Create interactive widgets in <code class="code-chip">src/</code> using Vite.</li>
-                    <li><span class="font-semibold text-white">3. </span> Bind PHP data with <code class="code-chip">useState()</code> + <code class="code-chip">useEffect()</code>.</li>
-                    <li><span class="font-semibold text-white">4. </span> Listen to route events via <code class="code-chip">instance.on()</code>.</li>
-                    <li><span class="font-semibold text-white">5. </span> Deploy with <code class="code-chip">pnpm build</code> → manifest assets.</li>
+                    <li><span class="font-semibold text-white">1.&nbsp; </span> Author layouts + routes in <code class="code-chip">app/pages/*</code>.</li>
+                    <li><span class="font-semibold text-white">2.&nbsp; </span> Create interactive widgets in <code class="code-chip">src/</code> using Vite.</li>
+                    <li><span class="font-semibold text-white">3.&nbsp; </span> Bind PHP data with <code class="code-chip">useState()</code> + <code class="code-chip">useEffect()</code>.</li>
+                    <li><span class="font-semibold text-white">4.&nbsp; </span> Listen to route events via <code class="code-chip">phpspa.on()</code>.</li>
+                    <li><span class="font-semibold text-white">5.&nbsp; </span> Deploy with <code class="code-chip">pnpm build</code> → manifest assets.</li>
                 </ol>
             </article>
             <article class="rounded-3xl border border-white/10 bg-slate-950/60 p-6">
