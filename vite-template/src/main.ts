@@ -1,18 +1,22 @@
-import phpspa from '../../src/script/phpspa.mjs';
+import phpspa from '@dconco/phpspa';
 import hljs from 'highlight.js/lib/core';
 import php from 'highlight.js/lib/languages/php';
 import plaintext from 'highlight.js/lib/languages/plaintext';
 import { registerDebugHooks } from './helpers';
-import './style.css';
 import 'highlight.js/styles/github-dark.css';
+import './style.css';
 
-hljs.registerLanguage('php', php);
-hljs.registerLanguage('plaintext', plaintext);
+phpspa.on('load', () => {
+   hljs.registerLanguage('php', php);
+   hljs.registerLanguage('plaintext', plaintext);
 
-requestAnimationFrame(() => {
-	document
-		.querySelectorAll('pre code')
-		.forEach(block => hljs.highlightElement(block as HTMLElement));
-});
+   requestAnimationFrame(() => {
+      document.querySelectorAll('pre').forEach(pre => {
+         const block = (pre.querySelector('code') ?? pre) as HTMLElement;
+         block.style.background = 'transparent';
+         hljs.highlightElement(block);
+      });
+   });
+})
 
 registerDebugHooks(phpspa);

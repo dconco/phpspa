@@ -1,8 +1,8 @@
 
 export type EffectType = {
-   callback: Function,
+   callback: () => void | (() => void),
    dependencies: Array<string>|null,
-   cleanup: Function|null
+   cleanup: (() => void)|null
 }
 
 export interface EventObject {

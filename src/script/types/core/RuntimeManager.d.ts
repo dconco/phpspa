@@ -37,7 +37,7 @@ export default class RuntimeManager {
      * @param {Function} callback - The effect callback
      * @param {Array<string>} dependencies - Array of state keys to listen for
      */
-    static registerEffect(callback: () => Function | undefined, dependencies?: string[] | null): void;
+    static registerEffect(callback: () => void | (() => void), dependencies?: string[] | null): void;
     /**
      * Triggers effects that depend on the specific state key
      *

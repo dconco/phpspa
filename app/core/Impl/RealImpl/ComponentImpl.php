@@ -50,6 +50,11 @@ abstract class ComponentImpl
    protected ?string $title = null;
 
    /**
+    * @var array<int, array<string, mixed>>
+    */
+   protected array $meta = [];
+
+   /**
     * @var string
     */
    protected string $method {
@@ -167,6 +172,56 @@ abstract class ComponentImpl
          'script' => $addAsset('scripts'),
          default => throw new BadMethodCallException("Method {$method} does not exist in " . __CLASS__),
       };
+
+      return $this;
+   }
+
+   public function meta(
+      ?string $name = null,
+      ?string $content = null,
+      ?string $property = null,
+      ?string $httpEquiv = null,
+      ?string $charset = null,
+      array $attributes = []
+   ): static {
+      $entry = [];
+
+      if ($name !== null) {
+         $entry['name'] = $name;
+      }
+
+      if ($property !== null) {
+         $entry['property'] = $property;
+      }
+
+      if ($httpEquiv !== null) {
+         $entry['http-equiv'] = $httpEquiv;
+      }
+
+      if ($charset !== null) {
+         $entry['charset'] = $charset;
+      }
+
+      if ($content !== null) {
+         $entry['content'] = $content;
+      }
+
+      foreach ($attributes as $attribute => $value) {
+         if (!\is_string($attribute) || $value === null || $value === '') {
+            continue;
+         }
+         $entry[$attribute] = $value;
+      }
+
+      if (empty($entry)) {
+         return $this;
+      }
+
+      if (!isset($entry['content']) && !isset($entry['charset'])) {
+         return $this;
+      }
+
+      $this->meta[] = $entry;
 
       return $this;
    }

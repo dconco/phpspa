@@ -14,6 +14,7 @@ require_once 'app/pages/AboutPage.php';
 $app = new App($layout);
 
 $app->useModule();
+$app->static('/', __DIR__ . '/public/assets');
 
 // --- Attach components to application ---
 

@@ -36,6 +36,26 @@ interface  IComponent
     public function title(string $title): self;
 
     /**
+     * Sets a meta tag for the component's initial HTML response.
+     *
+     * @param string|null $name Standard meta "name" attribute (e.g., description, keywords).
+     * @param string|null $content Content associated with the meta tag.
+     * @param string|null $property Open Graph "property" attribute value.
+     * @param string|null $httpEquiv HTTP-EQUIV attribute value.
+     * @param string|null $charset Charset declaration (for `<meta charset="...">`).
+     * @param array $attributes Optional additional attributes as key => value pairs.
+     * @return self Returns the current instance for method chaining.
+     */
+    public function meta(
+        ?string $name = null,
+        ?string $content = null,
+        ?string $property = null,
+        ?string $httpEquiv = null,
+        ?string $charset = null,
+        array $attributes = []
+    ): self;
+
+    /**
      * Sets the method name for the component.
      *
      * @param string ...$method The name of the method to set, default to "GET|VIEW".
