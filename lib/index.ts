@@ -139,19 +139,17 @@ window.addEventListener("popstate", (event: PopStateEvent) => {
 
 
 if (typeof window !== "undefined") {
-   if (typeof window.phpspa !== "object") {
-      window.phpspa = AppManager;
-   }
+   window.phpspa = AppManager;
 
-   if (typeof window.setState !== "function") {
+   if (window.setState !== AppManager.setState) {
       window.setState = AppManager.setState;
    }
 
-   if (typeof window.__call !== "function") {
+   if (window.__call !== AppManager.__call) {
       window.__call = AppManager.__call;
    }
 
-   if (typeof window.useEffect !== "function") {
+   if (window.useEffect !== AppManager.useEffect) {
       window.useEffect = AppManager.useEffect;
    }
 }

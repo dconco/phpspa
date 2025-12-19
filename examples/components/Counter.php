@@ -23,7 +23,7 @@ function LinkComponent ()
    return "<@Link />";
 }
 
-return (new Component(function (): string
+return new Component(function (): string
 {
    $caller = useFunction('HelloWorld');
    $counter = useState('counter', 0);
@@ -69,12 +69,12 @@ return (new Component(function (): string
          </script>
       </div>
    HTML;
-}))
+})
    ->script(fn() => <<<JS
 
       useEffect(() => {
          const btn = document.getElementById('counter-btn');
-
+         
          const handleClick = async () => {
             currentCounter++;
             await phpspa.setState('counter', currentCounter);

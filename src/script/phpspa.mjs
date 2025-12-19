@@ -1379,6 +1379,7 @@ class AppManager {
             responses.forEach(async (response) => {
                 try {
                     const responseText = await response.text();
+                    console.log('[setState] raw response', responseText); // <-- add this
                     let responseData;
                     // --- Parse response as JSON if possible ---
                     if (responseText && responseText.trim().startsWith("{")) {
@@ -1829,16 +1830,14 @@ window.addEventListener("popstate", (event) => {
     }
 });
 if (typeof window !== "undefined") {
-    if (typeof window.phpspa !== "object") {
-        window.phpspa = AppManager;
-    }
-    if (typeof window.setState !== "function") {
+    window.phpspa = AppManager;
+    if (window.setState !== AppManager.setState) {
         window.setState = AppManager.setState;
     }
-    if (typeof window.__call !== "function") {
+    if (window.__call !== AppManager.__call) {
         window.__call = AppManager.__call;
     }
-    if (typeof window.useEffect !== "function") {
+    if (window.useEffect !== AppManager.useEffect) {
         window.useEffect = AppManager.useEffect;
     }
 }
