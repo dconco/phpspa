@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace PhpSPA\Core\Utils;
 
-use stdClass;
-
 /**
  * Data validation and sanitization utilities
  *
@@ -19,7 +17,7 @@ use stdClass;
  * @license MIT
  * @since v1.0.0
  */
-trait Validate
+class Validate
 {
     /**
      * Validates and sanitizes the provided data.
@@ -33,24 +31,24 @@ trait Validate
      * @return mixed Returns the validated data, maintaining its original type(s).
      * If an array is passed, an array of validated values is returned.
      */
-    protected function validate($data) {
+    public static function validate($data) {
         // If the data is an array, validate each item recursively
-        if (is_array($data)) {
+        if (\is_array($data)) {
             return array_map(function ($item) {
                 // Recursively validate each array element
-                if (is_array($item)) {
-                    return $this->validate($item); // If item is array, call validate on it
+                if (\is_array($item)) {
+                    return static::validate($item); // If item is array, call validate on it
                 }
-                return $this->realValidate($item); // Otherwise, validate the individual item
+                return static::realValidate($item); // Otherwise, validate the individual item
             }, $data);
         }
 
-        if (is_object($data)) {
+        if (\is_object($data) || is_callable($data)) {
             return $data;
         }
 
         // If the data is not an array, validate the value directly
-        return $this->realValidate($data);
+        return static::realValidate($data);
     }
 
     /**
@@ -63,7 +61,7 @@ trait Validate
      *
      * @return mixed The validated and sanitized value, converted back to its original type.
      */
-    private function realValidate($value) {
+    private static function realValidate($value) {
         if ($value === null) return null;
 
         // Convert the value to string for sanitation
@@ -71,13 +69,13 @@ trait Validate
 
         // Sanitize the string to prevent potential HTML injection issues
         $sanitizedValue = htmlspecialchars($validatedValue);
-        $type = gettype($value);
+        $type = \gettype($value);
 
         // Convert the sanitized string back to its original type based on the initial value's type
-        $convertedValue = is_bool($value) || $type === 'boolean'
+        $convertedValue = \is_bool($value) || $type === 'boolean'
             ? (bool) $sanitizedValue
-            : (is_numeric($value) || is_int($value) || $type === 'integer'
-                ? (is_double($value) || is_float($value) || $type === 'double' || strpos((string) $value, '.') !== false
+            : (\is_numeric($value) || \is_int($value) || $type === 'integer'
+                ? (\is_double($value) || \is_float($value) || $type === 'double' || strpos((string) $value, '.') !== false
                     ? (float) $sanitizedValue
                     : (int) $sanitizedValue)
                 : $sanitizedValue);

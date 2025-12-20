@@ -178,7 +178,7 @@
 
     | Feature | Description | Version |
     |---------|-------------|---------|
-    | [Component Meta Tags](component-meta.md) | Route-scoped SEO metadata with `->meta()` | v2.0.5 |
+    | [Component Meta Tags](component-meta.md) | Route/global SEO metadata with `->meta()` | v2.0.5 |
     | [Component Preloading](https://phpspa.readthedocs.io/en/stable/references/preloading-component/) | Multi-section layouts with independent updates | v2.0.4 |
     | [`<Component.Link>`](../navigations/link-component.md) | Client-side navigation | v1.1.0 |
     | [`<Component.Csrf>`](../security/csrf-protection.md) | CSRF token management | v1.1.5 |

@@ -6,7 +6,7 @@ import { StateObject } from "../types/StateObjectTypes";
  * Handles script execution, style injection, event management, and browser history
  * for the PhpSPA framework. Uses an obscure class name to avoid conflicts.
  */
-export default class RuntimeManager {
+export declare class RuntimeManager {
     /**
      * Tracks executed scripts to prevent duplicates
      */
@@ -30,6 +30,7 @@ export default class RuntimeManager {
      */
     private static lastEventPayload;
     private static effects;
+    private static memoizedCallbacks;
     /**
      * Registers a side effect to be executed when state changes
      * similar to React's useEffect but using state keys strings as dependencies
@@ -49,6 +50,8 @@ export default class RuntimeManager {
      * Clears all registered effects and runs their cleanup functions
      */
     static clearEffects(): void;
+    private static depsEqual;
+    static registerCallback<T extends (...args: any[]) => any>(callback: T, dependencies?: unknown[]): T;
     static runAll(): void;
     /**
      * Processes and executes inline scripts within a container

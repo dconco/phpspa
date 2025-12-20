@@ -9,11 +9,9 @@ namespace PhpSPA\Core\Helper;
  * into array format, facilitating component attribute handling and manipulation
  * within the PhpSPA framework.
  *
- * @package PhpSPA\Core\Helper
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
- * @since v1.0.0
  * @var string|array $attributes
  */
 trait ComponentParser

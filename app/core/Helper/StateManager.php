@@ -13,7 +13,6 @@ use const PhpSPA\Core\Impl\Const\STATE_HANDLE;
  * This class is responsible for handling state transitions, storing state data,
  * and providing access to state information throughout the application lifecycle.
  *
- * @package PhpSPA\Core\Helper
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @var string $stateKey

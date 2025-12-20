@@ -6,7 +6,7 @@ const projectDir = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   build: {
-    outDir: '../public/assets',
+    outDir: './public/assets',
     emptyOutDir: true,
     manifest: true,
     rollupOptions: {

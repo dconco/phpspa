@@ -20,8 +20,11 @@ use PhpSPA\Core\Helper\ComponentScope;
 use PhpSPA\Core\Helper\AssetLinkManager;
 use PhpSPA\Core\Helper\PathResolver;
 use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
+use PhpSPA\Core\Utils\Validate;
 use PhpSPA\Interfaces\ApplicationContract;
 use PhpSPA\Interfaces\IComponent;
+
+use function Component\HTMLAttrInArrayToString;
 
 use const PhpSPA\Core\Impl\Const\STATE_HANDLE;
 use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
@@ -36,13 +39,11 @@ use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
- * @since v1.0.0
  * @abstract
  */
 abstract class AppImpl implements ApplicationContract {
    use PrefixRouter;
    use ComponentTagFormatter;
-   use \PhpSPA\Core\Utils\Validate;
 
    /**
     * The layout of the application.
@@ -84,7 +85,7 @@ abstract class AppImpl implements ApplicationContract {
     * These scripts will be included on every component render.
     *
     * @var array<array{
-    *    content: callable,
+    *    content: callable|string,
     *    name: string|null,
     *    type: string|null
     * }>
@@ -96,12 +97,19 @@ abstract class AppImpl implements ApplicationContract {
     * These styles will be included on every component render.
     *
     * @var array<array{
-    *    content: callable,
+    *    content: callable|string,
     *    name: string|null,
     *    type: string|null
     * }>
     */
    protected array $stylesheets = [];
+
+   /**
+    * Global meta tags registered on the application.
+    *
+    * @var array<int, array<string, mixed>>
+    */
+   protected array $metadata = [];
 
    /**
     * @var array<array{
@@ -182,23 +190,102 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
-   public function script (callable $script, ?string $name = null, string $type = 'text/javascript'): ApplicationContract
+   public function script (callable|string $content, ?string $name = null, string $type = 'text/javascript', array $attributes = []): ApplicationContract
    {
       $this->scripts[] = [
-         'content' => $script,
+         'content' => $content,
          'name' => $name,
          'type' => $type
       ];
+
+      $lastIndex = array_key_last($this->scripts);
+      if ($lastIndex !== null) {
+         foreach ($attributes as $attribute => $value) {
+            if (!\is_string($attribute) || $value === null) {
+               continue;
+            }
+            $this->scripts[$lastIndex][$attribute] = $value;
+         }
+      }
+
       return $this;
    }
 
-   public function styleSheet (callable $style, ?string $name = null, string $type = 'text/css'): ApplicationContract
+   public function styleSheet (callable|string $content, ?string $name = null, string $type = 'text/css', string $rel='stylesheet', array $attributes = []): ApplicationContract
+   {
+      $this->link($content, $name, $type, $rel, $attributes);
+      return $this;
+   }
+
+   public function link (callable|string $content, ?string $name = null, string $type = 'text/css', string $rel='stylesheet', array $attributes = []): ApplicationContract
    {
       $this->stylesheets[] = [
-         'content' => $style,
+         'content' => $content,
          'name' => $name,
-         'type' => $type
+         'type' => $type,
+         'rel' => $rel,
       ];
+
+      $lastIndex = array_key_last($this->stylesheets);
+      if ($lastIndex !== null) {
+         foreach ($attributes as $attribute => $value) {
+            if (!\is_string($attribute) || $value === null) {
+               continue;
+            }
+            $this->stylesheets[$lastIndex][$attribute] = $value;
+         }
+      }
+
+      return $this;
+   }
+
+   public function meta(
+      ?string $name = null,
+      ?string $content = null,
+      ?string $property = null,
+      ?string $httpEquiv = null,
+      ?string $charset = null,
+      array $attributes = []
+   ): ApplicationContract {
+      $entry = [];
+
+      if ($name !== null) {
+         $entry['name'] = $name;
+      }
+
+      if ($property !== null) {
+         $entry['property'] = $property;
+      }
+
+      if ($httpEquiv !== null) {
+         $entry['http-equiv'] = $httpEquiv;
+      }
+
+      if ($charset !== null) {
+         $entry['charset'] = $charset;
+      }
+
+      if ($content !== null) {
+         $entry['content'] = $content;
+      }
+
+      foreach ($attributes as $attribute => $value) {
+         if (!\is_string($attribute) || $value === null || $value === '') {
+            continue;
+         }
+         $entry[$attribute] = $value;
+      }
+
+      if (empty($entry)) {
+         return $this;
+      }
+
+      if (!isset($entry['content']) && !isset($entry['charset'])) {
+         return $this;
+      }
+
+      $this->metadata[] = $entry;
+
       return $this;
    }
 
@@ -295,7 +382,7 @@ abstract class AppImpl implements ApplicationContract {
          }
 
          $data = json_decode(base64_decode($request->auth()->bearer ?? ''), true);
-         $data = $this->validate($data);
+         $data = Validate::validate($data);
 
          if (isset($data['state'])) {
             $state = $data['state'];
@@ -358,7 +445,7 @@ abstract class AppImpl implements ApplicationContract {
       $targetID = CallableInspector::getProperty($component, 'targetID') ?? $this->defaultTargetID;
       $scripts = CallableInspector::getProperty($component, 'scripts');
       $stylesheets = CallableInspector::getProperty($component, 'stylesheets');
-      $metaTags = CallableInspector::getProperty($component, 'meta') ?? [];
+      $componentMetaData = CallableInspector::getProperty($component, 'metadata');
       $componentFunction = CallableInspector::getProperty($component, 'component');
       $title = CallableInspector::getProperty($component, 'title');
       $reloadTime = CallableInspector::getProperty($component, 'reloadTime');
@@ -383,6 +470,9 @@ abstract class AppImpl implements ApplicationContract {
          DOM::CurrentRoutes(static::$request_uri);
       }
 
+      // --- Merge component meta data only if this is the correct route ---
+      $metaTags = [...$this->metadata, ...$componentMetaData];
+
       if ($isPreloadingComponent && !str_contains($route[0] ?? '', '{')) {
          DOM::CurrentRoutes($route[0] ?? '');
       }
@@ -392,7 +482,10 @@ abstract class AppImpl implements ApplicationContract {
       // --- Clear component scope before each component execution ---
       ComponentScope::clearAll();
 
-      $layoutOutput ??= is_callable($this->layout) ? (string) \call_user_func($this->layout) : (string) $this->layout;
+      if ($layoutOutput === null) {
+         $layoutOutput = is_callable($this->layout) ? (string) \call_user_func($this->layout) : (string) $this->layout;
+         $layoutOutput = $this->ensureHeadTag($layoutOutput);
+      }
 
       $componentOutput = '';
 
@@ -531,6 +624,7 @@ abstract class AppImpl implements ApplicationContract {
        */
       static $targetInformation = [];
 
+      // --- This remain static for all components ---
       static $isFirstComponent = null;
 
       $isFirstComponent = $isFirstComponent === null ? true : false;
@@ -540,10 +634,9 @@ abstract class AppImpl implements ApplicationContract {
             $count = 0;
             $layoutOutput = preg_replace_callback(
                pattern: '/<title([^>]*)>.*?<\/title>/si',
-               callback: function ($matches) use ($title) {
+               callback: fn ($matches) =>
                   // --- $matches[1] contains any attributes inside the <title> tag ---
-                  return '<title' . ($matches[1] ?? null) . '>' . $title . '</title>';
-               },
+                  "\n      <title" . ($matches[1] ?? null) . '>' . $title . '</title>',
                subject: $layoutOutput,
                limit: -1,
                count: $count,
@@ -553,22 +646,14 @@ abstract class AppImpl implements ApplicationContract {
                // --- If no <title> tag was found, add one inside the <head> section ---
                $layoutOutput = preg_replace(
                   '/<head([^>]*)>/i',
-                  "<head$1><title>$title</title>",
-                  $layoutOutput,
-                  1,
-               );
-            }
-
-            if ($nonce) {
-               $layoutOutput = preg_replace(
-                  '/<html([^>]*)>/i',
-                  "<html$1 x-phpspa=\"$nonce\">",
+                  "<head$1>\n      <title>$title</title>",
                   $layoutOutput,
                   1,
                );
             }
          }
-         elseif ($nonce) {
+
+         if ($nonce) {
             $layoutOutput = preg_replace(
                '/<head([^>]*)>/i',
                "<head$1 x-phpspa=\"$nonce\">",
@@ -641,24 +726,15 @@ abstract class AppImpl implements ApplicationContract {
             continue;
          }
 
-         $attributes = [];
-
-         foreach ($entry as $attribute => $value) {
-            if ($value === null || $value === '') {
-               continue;
-            }
-
-            $attrName = $this->validate($attribute);
-            $attrValue = $this->validate($value);
-            $attributes[] = "$attrName=\"$attrValue\"";
-         }
+         $attributes = Validate::validate($entry);
+         $attributes = HTMLAttrInArrayToString($attributes);
 
          if (empty($attributes)) {
             continue;
          }
 
          $signature = $this->metaSignature($entry);
-         $lines[$signature] = '<meta ' . implode(' ', $attributes) . '>';
+         $lines[$signature] = "<meta $attributes />";
       }
 
       if (empty($lines)) {
@@ -687,6 +763,27 @@ abstract class AppImpl implements ApplicationContract {
       return md5(json_encode($entry));
    }
 
+   private function ensureHeadTag(string $layoutOutput): string
+   {
+      if (stripos($layoutOutput, '<head') !== false) {
+         return $layoutOutput;
+      }
+
+      $headMarkup = "<head></head>\n";
+
+      if (preg_match('/<body[^>]*>/i', $layoutOutput, $matches, PREG_OFFSET_CAPTURE)) {
+         $pos = $matches[0][1];
+         return substr($layoutOutput, 0, $pos) . $headMarkup . substr($layoutOutput, $pos);
+      }
+
+      if (preg_match('/<html[^>]*>/i', $layoutOutput, $matches, PREG_OFFSET_CAPTURE)) {
+         $pos = $matches[0][1] + \strlen($matches[0][0]);
+         return substr($layoutOutput, 0, $pos) . "\n" . $headMarkup . substr($layoutOutput, $pos);
+      }
+
+      return $headMarkup . $layoutOutput;
+   }
+
    /**
     * Generate session-based links for component assets
     *
@@ -713,28 +810,34 @@ abstract class AppImpl implements ApplicationContract {
       // --- Generate global stylesheet links ---
       if (!empty($globalStylesheets)) {
          foreach ($globalStylesheets as $index => $stylesheet) {
-            $type = $stylesheet['type'];
-            $name = $stylesheet['name'];
-            $stylesheetCallable = $stylesheet['content'];
+            $stylesheet = (array) Validate::validate($stylesheet);
 
-            if (is_callable($stylesheetCallable)) {
-               $cssLink = AssetLinkManager::generateCssLink("__global__", $index, $name);
-               $result['global']['stylesheets'] .= "<link rel=\"stylesheet\" type=\"$type\" href=\"$cssLink\" />\n";
-            }
+            if (is_callable($stylesheet['content']))
+               $stylesheet['href'] = AssetLinkManager::generateCssLink("__global__", $index, $stylesheet['name']);
+            else
+               $stylesheet['href'] = $stylesheet['content'];
+
+            unset($stylesheet['name']);
+            unset($stylesheet['content']);
+            $attributes = HTMLAttrInArrayToString($stylesheet);
+            $result['global']['stylesheets'] .= "\n      <link $attributes />";
          }
       }
 
       // --- Generate component stylesheet links ---
       if (!empty($stylesheets)) {
          foreach ($stylesheets as $index => $stylesheet) {
-            $type = $stylesheet['type'];
-            $name = $stylesheet['name'];
-            $stylesheetCallable = $stylesheet['content'];
+            $stylesheet = (array) Validate::validate($stylesheet);
 
-            if (is_callable($stylesheetCallable)) {
-               $cssLink = AssetLinkManager::generateCssLink($primaryRoute, $index, $name);
-               $result['component']['stylesheets'] .= "<link rel=\"stylesheet\" type=\"$type\" href=\"$cssLink\" />\n";
-            }
+            if (is_callable($stylesheet['content']))
+               $stylesheet['href'] = AssetLinkManager::generateCssLink($primaryRoute, $index, $stylesheet['name']);
+            else
+               $stylesheet['href'] = $stylesheet['content'];
+
+            unset($stylesheet['name']);
+            unset($stylesheet['content']);
+            $attributes = HTMLAttrInArrayToString($stylesheet);
+            $result['component']['stylesheets'] .= "\n      <link $attributes />";
          }
       }
 
@@ -743,19 +846,31 @@ abstract class AppImpl implements ApplicationContract {
       // --- add it to the head tag alongside with the styles instead of the body ---
       if (!$isPhpSpaRequest && !$this->module) {
          $jsLink = AssetLinkManager::generateJsLink("__global__", -1, null, 'text/javascript');
-         $result['global']['stylesheets'] .= "\n<script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
+         $result['global']['stylesheets'] .= "\n      <script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
       }
 
       // --- Generate global script links ---
       if (!empty($globalScripts)) {
          foreach ($globalScripts as $index => $script) {
-            $type = $script['type'];
-            $name = $script['name'];
-            $scriptCallable = $script['content'];
+            $script = (array) Validate::validate($script);
+            $isLink = false;
 
-            if (is_callable($scriptCallable)) {
-               $jsLink = AssetLinkManager::generateJsLink("__global__", $index, $name, $type);
-               $result['global']['scripts'] .= $isPhpSpaRequest ? "\n<phpspa-script src=\"$jsLink\" type=\"$type\"></phpspa-script>\n" : "\n<script type=\"$type\" src=\"$jsLink\"></script>\n";
+            if (is_callable($script['content']))
+               $script['src'] = AssetLinkManager::generateJsLink("__global__", $index, $script['name'], $script['type']);
+            else {
+               $script['src'] = $script['content'];
+               $isLink = true;
+            }
+
+            unset($script['name']);
+            unset($script['content']);
+            $attributes = HTMLAttrInArrayToString($script);
+
+            if ($isLink) $result['global']['scripts'] .= "\n      <script $attributes></script>";
+            else {
+               $result['global']['scripts'] .= $isPhpSpaRequest
+                  ? "\n      <phpspa-script $attributes></phpspa-script>"
+                  : "\n      <script data-type=\"phpspa/script\" $attributes></script>";
             }
          }
       }
@@ -763,13 +878,25 @@ abstract class AppImpl implements ApplicationContract {
       // --- Generate component script links ---
       if (!empty($scripts)) {
          foreach ($scripts as $index => $script) {
-            $type = $script['type'];
-            $name = $script['name'];
-            $scriptCallable = $script['content'];
+            $script = (array) Validate::validate($script);
+            $isLink = false;
 
-            if (is_callable($scriptCallable)) {
-               $jsLink = AssetLinkManager::generateJsLink($primaryRoute, $index, $name, $type);
-               $result['component']['scripts'] .= $isPhpSpaRequest ? "\n<phpspa-script src=\"$jsLink\" type=\"$type\"></phpspa-script>\n" : "\n<script type=\"$type\" src=\"$jsLink\"></script>\n";
+            if (is_callable($script['content']))
+               $script['src'] = AssetLinkManager::generateJsLink($primaryRoute, $index, $script['name'], $script['type']);
+            else {
+               $script['src'] = $script['content'];
+               $isLink = true;
+            }
+
+            unset($script['name']);
+            unset($script['content']);
+            $attributes = HTMLAttrInArrayToString($script);
+
+            if ($isLink) $result['component']['scripts'] .= "\n      <script $attributes></script>";
+            else {
+               $result['component']['scripts'] .= $isPhpSpaRequest
+                  ? "\n      <phpspa-script $attributes />"
+                  : "\n      <script data-type=\"phpspa/script\" $attributes />";
             }
          }
       }

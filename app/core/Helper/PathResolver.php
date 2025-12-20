@@ -8,7 +8,6 @@ namespace PhpSPA\Core\Helper;
  * This class helps resolve relative paths between a base path and current path,
  * useful for generating correct URLs in nested routes.
  *
- * @package PhpSPA\Core\Helper
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT

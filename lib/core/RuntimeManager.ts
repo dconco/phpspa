@@ -129,7 +129,7 @@ export class RuntimeManager {
     */
    private static runInlineScripts(container: HTMLElement) {
       const scripts = container.querySelectorAll("script");
-      const nonce = document.documentElement.getAttribute('x-phpspa');
+      const nonce = document.head.getAttribute('x-phpspa');
 
       scripts.forEach((script: HTMLScriptElement) => {
          // --- Use base64 encoded content as unique identifier ---
@@ -168,11 +168,11 @@ export class RuntimeManager {
 
    static runPhpSpaScripts(container: HTMLElement) {
       const scripts = container.querySelectorAll("phpspa-script, script[data-type=\"phpspa/script\"]") as NodeListOf<HTMLScriptElement>;
+      const nonce = document.head.getAttribute('x-phpspa');
 
       scripts.forEach(async (script: HTMLScriptElement): Promise<void> => {
          const scriptUrl = script.getAttribute('src') ?? '';
          const scriptType = script.getAttribute('type') ?? '';
-         const nonce = document.documentElement.getAttribute('x-phpspa');
 
          // --- Skip if this script has already been executed ---
          if (!this.executedScripts.has(scriptUrl)) {
@@ -236,7 +236,7 @@ export class RuntimeManager {
     */
    private static runInlineStyles(container: HTMLElement) {
       const styles = container.querySelectorAll("style");
-      const nonce = document.documentElement.getAttribute('x-phpspa');
+      const nonce = document.head.getAttribute('x-phpspa');
 
       styles.forEach((style: HTMLStyleElement) => {
          // --- Use base64 encoded content as unique identifier ---

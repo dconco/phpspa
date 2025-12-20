@@ -2,9 +2,12 @@
 
 namespace Component;
 
+use PhpSPA\Core\Utils\Validate;
+
 /**
  * Converts HTML attributes array to string.
  *
+ * @package Component
  * @author dconco <me@dconco.tech>
  * @param array $HtmlAttr Array of attribute name-value pairs.
  * @return string HTML attributes string.
@@ -12,10 +15,14 @@ namespace Component;
  */
 function HTMLAttrInArrayToString(array $HtmlAttr): string
 {
-    $attr = '';
+    $attr = [];
+
     foreach ($HtmlAttr as $AttrName => $AttrValue) {
-        $attr .= " $AttrName=\"$AttrValue\"";
+        if (!\is_string($AttrName) || !\is_string($AttrValue)) continue;
+
+        [$AttrName, $AttrValue] = Validate::validate([$AttrName, $AttrValue]);
+
+        $attr[] = empty($AttrValue) ? $AttrName : "$AttrName=\"$AttrValue\"";
     }
-    $attr = trim($attr);
-    return $attr;
+    return implode(' ', $attr);
 }

@@ -11,7 +11,7 @@ use PhpSPA\Http\Response;
 /**
  * Handles routing for the application.
  * 
- * @category HTTP
+ * @package HTTP
  * @author Samuel Paschalson <samuelpaschalson@gmail.com>
  * @copyright 2025 Samuel Paschalson
  * @method void get(string|array $route, callable ...$handlers) Register a GET route. Handlers receive (Request $request, Response $response, Closure $next).

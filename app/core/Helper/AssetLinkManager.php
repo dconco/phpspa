@@ -15,7 +15,6 @@ use PhpSPA\Http\Session;
  * Provides functionality to store function references via component routes and serve
  * compressed content through dynamic links.
  *
- * @package PhpSPA\Core\Helper
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT

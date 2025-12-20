@@ -1,7 +1,6 @@
 <?php
 
-$layout = function() {
-
+$layout = function() use (&$app) {
    $html = file_get_contents('index.html');
 
    // --- Check if Vite dev server is running ---
@@ -15,26 +14,25 @@ $layout = function() {
       $mainEntry = $manifest['src/main.ts'];
       $cssLinks = '';
 
-      // --- Build CSS link tags for all imported stylesheets ---
+      // --- Add CSS link tags for all imported stylesheets to the Application ---
 
       if (!empty($mainEntry['css'])) {
          foreach ($mainEntry['css'] as $cssFile) {
-            $cssLinks .= '<link rel="stylesheet" href="/public/assets/' . $cssFile . '">' . PHP_EOL;
+            $app?->styleSheet("/assets/$cssFile");
          }
       }
 
-      // --- Replace dev main.ts with production version ---
+      // --- Add CSS link tags for all imported stylesheets to the Application ---
+
+      $app?->script('/assets/' . $mainEntry['file'], null, 'module');
+
+      // --- Remove all dev script (eg., main.ts, @vite/client) in production ---
 
       $html = str_replace(
          [
             '<script type="module" src="http://localhost:5173/@vite/client"></script>',
             '<script type="module" src="http://localhost:5173/src/main.ts"></script>'
-         ],
-         [
-            $cssLinks,
-            '<script type="module" src="/public/assets/' . $mainEntry['file'] . '"></script>'
-         ],
-         $html
+         ], '', $html, $count
       );
    }
 

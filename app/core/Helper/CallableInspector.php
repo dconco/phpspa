@@ -11,7 +11,6 @@ use ReflectionFunction;
  * and facilitating dynamic invocation or introspection of functions, methods, or closures.
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
- * @package PhpSPA\Core\Helper
  * @static
  */
 class CallableInspector

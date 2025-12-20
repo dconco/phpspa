@@ -2,6 +2,8 @@
 
 namespace PhpSPA\Http;
 
+use PhpSPA\Core\Utils\Validate;
+
 /**
  * Session utility class for managing PHP sessions
  *
@@ -13,7 +15,6 @@ namespace PhpSPA\Http;
  */
 class Session
 {
-    use \PhpSPA\Core\Utils\Validate;
 
     /**
      * Check if a session is currently active
@@ -104,7 +105,7 @@ class Session
     {
         Session::start();
 
-        $_SESSION[$key] = $raw ? $value : (new static())->validate($value);
+        $_SESSION[$key] = $raw ? $value : Validate::validate($value);
         return true;
     }
 

@@ -11,6 +11,7 @@ use PhpSPA\Core\Helper\FunctionCaller;
  * client-side JavaScript execution within the PhpSPA framework, enabling
  * secure invocation of PHP functions from the frontend with CSRF protection.
  *
+ * @package Component
  * @author dconco <me@dconco.tech>
  * @param callable $function The PHP function to make available for client-side calling.
  * @param bool $expireAfterUse Decides whether to expire this function instance after use, best for forms.

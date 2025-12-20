@@ -9,11 +9,9 @@ namespace PhpSPA\Core\Helper\Enums;
  * within a single-page application to control how the browser history
  * is managed during navigation operations.
  *
- * @package PhpSPA\Core\Helper\Enums
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
- * @since v1.1.0
  */
 enum NavigateState: string {
     /**

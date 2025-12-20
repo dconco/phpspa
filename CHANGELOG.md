@@ -14,6 +14,7 @@ composer require dconco/phpspa:v2.0.5.x-dev
 - Added chained `->meta()` API to every component so route-specific descriptions, keywords, Open Graph, or HTTP-EQUIV tags can be declared right where the component is defined.
 - Runtime now injects those tags only during the initial HTML.
 - Layout stays clean; global meta is still available via the layout if needed.
+- Added `App::meta()` for layout-wide defaults—global entries merge with (and can be overridden by) per-component metadata so you define canonical tags once.
 
 **Example:**
 
@@ -36,6 +37,29 @@ new Component(...)
          // Stable reference no matter how often this runs
       }, []);
    ```
+
+#### **Deterministic Global Script Queue**
+
+- `App::script()` now accepts either a callable (inline script) or a direct string path (e.g., `/src/main.ts`).
+- Scripts render in the order they are registered, so you can emit inline data (tokens, config, feature flags) and then queue your bundler entry or CDN script immediately after.
+
+**Example:**
+
+```php
+$token = Component\useFunction('Toggle')->token;
+
+$app
+   ->script(fn () => "<script>window.token = '{$token}';</script>")
+   ->script('/src/main.ts');
+```
+
+#### **Global Asset API Clean-up**
+
+- Added `App::link()` (and `Component::link()`) for defining `<link>` tags; the older `->styleSheet()` helpers are now deprecated aliases.
+
+- Asset helpers (`script()/link()`) take an `$attributes` array so you can emit `crossorigin`, `referrerpolicy`, `fetchpriority`, etc., without manual string building.
+
+- The layout auto-creates a `<head>` block if it is missing, ensuring all scripts/meta/styles have a deterministic insertion point.
 
 #### **`useModule()`**
 

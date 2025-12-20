@@ -30,8 +30,8 @@ use PhpSPA\Interfaces\IComponent;
  * @method IComponent targetID(string $targetID) Set the target ID for the component
  * @method IComponent caseSensitive() Enable case sensitivity for the component
  * @method IComponent caseInsensitive() Disable case sensitivity for the component
- * @method IComponent script(callable $content, ?string $name = null, string $type = 'text/javascript') Add scripts to the component
- * @method IComponent styleSheet(callable $content, ?string $name = null, string $type = 'text/css') Add stylesheets to the component
+ * @method IComponent script(callable|string $content, ?string $name = null, string $type = 'text/javascript', array $attributes = []) Add scripts to the component
+ * @method IComponent link(callable|string $content, ?string $name = null, string $type = 'text/css', string $rel = 'stylesheet', array $attributes = []) Add links tag to the component
  * @method IComponent reload(int $milliseconds) Set the reload interval for the component
  * @abstract
  */
@@ -50,9 +50,9 @@ abstract class ComponentImpl
    protected ?string $title = null;
 
    /**
-    * @var array<int, array<string, mixed>>
+    * @var array<int, array<string, string>>
     */
-   protected array $meta = [];
+   protected array $metadata = [];
 
    /**
     * @var string
@@ -110,7 +110,7 @@ abstract class ComponentImpl
 
    /**
     * @var array<array{
-    *    content: callable,
+    *    content: callable|string,
     *    name: string|null,
     *    type: string|null
     * }>
@@ -119,9 +119,10 @@ abstract class ComponentImpl
 
    /**
     * @var array<array{
-    *    content: callable,
+    *    content: callable|string,
     *    name: string|null,
-    *    type: string|null
+    *    type: string|null,
+    *    rel: string
     * }>
     */
    protected array $stylesheets = [];
@@ -144,7 +145,7 @@ abstract class ComponentImpl
          if ($property !== 'stylesheets' && $property !== 'scripts') throw new InvalidArgumentException("Invalid property provided", 1);
 
          $temp = [
-            'content' => fn() => '',
+            'content' => '',
             'name' => null,
             'type' => $property === 'stylesheets' ? 'text/css' : 'text/javascript',
          ];
@@ -152,6 +153,26 @@ abstract class ComponentImpl
          if (isset($args[0]) || isset($args['content'])) $temp['content'] = $args[0] ?? $args['content'];
          if (isset($args[1]) || isset($args['name'])) $temp['name'] = $args[1] ?? $args['name'];
          if (isset($args[2]) || isset($args['type'])) $temp['type'] = $args[2] ?? $args['type'];
+
+         $attributes = $args['attributes'] ?? [];
+
+         if ($property === 'stylesheets') {
+            if (isset($args[3]) || isset($args['rel']))
+               $temp['rel'] = $args[2] ?? $args['rel'];
+            else
+               $temp['rel'] = 'stylesheet';
+
+            if (isset($args[4])) $attributes = $args[4];
+         } else {
+            if (isset($args[3])) $attributes = $args[3];
+         }
+
+         foreach ($attributes as $attribute => $value) {
+            if (!\is_string($attribute)) {
+               continue;
+            }
+            $temp[$attribute] = $value;
+         }
 
          $this->$property[] = $temp;
       };
@@ -168,6 +189,7 @@ abstract class ComponentImpl
          'caseSensitive' => $this->$method = true,
          'caseInsensitive' => $this->caseSensitive = false,
          'reload' => $this->reloadTime = $args[0],
+         'link' => $addAsset('stylesheets'),
          'styleSheet' => $addAsset('stylesheets'),
          'script' => $addAsset('scripts'),
          default => throw new BadMethodCallException("Method {$method} does not exist in " . __CLASS__),
@@ -207,7 +229,7 @@ abstract class ComponentImpl
       }
 
       foreach ($attributes as $attribute => $value) {
-         if (!\is_string($attribute) || $value === null || $value === '') {
+         if (!\is_string($attribute)) {
             continue;
          }
          $entry[$attribute] = $value;
@@ -217,11 +239,7 @@ abstract class ComponentImpl
          return $this;
       }
 
-      if (!isset($entry['content']) && !isset($entry['charset'])) {
-         return $this;
-      }
-
-      $this->meta[] = $entry;
+      $this->metadata[] = $entry;
 
       return $this;
    }

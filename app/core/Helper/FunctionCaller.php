@@ -13,11 +13,9 @@ use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  * within the PhpSPA framework. It includes CSRF protection and token-based
  * authentication for safe function execution in client-side contexts.
  *
- * @package PhpSPA\Core\Helper
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
- * @since v1.0.0
  * @see https://phpspa.tech/v1.1.5/2-php-js-integration/ PHP-JS Integration Documentation
  * @var callable $function
  */

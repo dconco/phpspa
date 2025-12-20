@@ -42,7 +42,7 @@ export function bootstrap() {
       if (targetElementInfo) {
          const targetData = targetElementInfo.getAttribute("phpspa-target-data")
 
-         // --- This is the json type coming from the server
+         // --- This is the json data type coming from the server
          type StateDataType = {
             targetIDs: string[],
             currentRoutes: string[],
