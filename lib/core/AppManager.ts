@@ -5,6 +5,9 @@ import { RuntimeManager } from "./RuntimeManager"
 import morphdom from "morphdom"
 
 export class AppManager {
+
+   public static currentStateData: Record<string, StateValueType> = {}
+
    /**
     * Navigates to a given URL using PHPSPA's custom navigation logic.
     * Fetches the content via a custom HTTP method, updates the DOM, manages browser history,
@@ -113,8 +116,10 @@ export class AppManager {
        */
       function processResponse(responseData: ComponentObject|string) {
          const component: ComponentObject = typeof responseData === 'string'
-            ? { content: responseData }
+            ? { content: responseData, stateData: {} }
             : responseData
+
+         RuntimeManager.currentStateData = component.stateData
 
          // --- Update document title if provided ---
          if (component?.title && component.title.length > 0) {
@@ -319,7 +324,11 @@ export class AppManager {
     *   .then(() => console.log('State updated!'))
     *   .catch(err => console.error('Failed to update state:', err))
     */
-   public static setState(key: string, value: StateValueType): Promise<void> {
+   public static setState(key: string, value: StateValueType | ((previous: StateValueType) => StateValueType)): Promise<void> {
+      if (typeof value === 'function') {
+         value = value(RuntimeManager.currentStateData[key])
+      }
+
       return new Promise(async (resolve, reject) => {
          const currentRoutes = RuntimeManager.currentRoutes
          const statePayload = JSON.stringify({ state: { key, value } })
@@ -404,8 +413,10 @@ export class AppManager {
           */
          function updateContent(responseData: ComponentObject|string) {
          const component: ComponentObject = typeof responseData === 'string'
-            ? { content: responseData }
+            ? { content: responseData, stateData: {} }
             : responseData
+
+         RuntimeManager.currentStateData = component.stateData
    
             // --- Update title if provided ---
             if (component?.title && String(component.title).length > 0) {
@@ -514,8 +525,10 @@ export class AppManager {
        */
       function updateComponentContent(responseData: ComponentObject|string) {
          const component: ComponentObject = typeof responseData === 'string'
-            ? { content: responseData }
+            ? { content: responseData, stateData: {} }
             : responseData
+
+         RuntimeManager.currentStateData = component.stateData
 
          // --- Update title if provided ---
          if (component?.title && String(component.title).length > 0) {

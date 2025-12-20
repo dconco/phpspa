@@ -1,5 +1,5 @@
 import { CurrentRoutesObject, EventObject, EventPayload } from "../types/RuntimeInterfaces";
-import { StateObject } from "../types/StateObjectTypes";
+import { StateObject, StateValueType } from "../types/StateObjectTypes";
 /**
  * Runtime Manager for PhpSPA
  *
@@ -25,6 +25,7 @@ export declare class RuntimeManager {
      */
     static currentRoutes: CurrentRoutesObject;
     static events: EventObject;
+    static currentStateData: Record<string, StateValueType>;
     /**
      * Caches the last payload for each emitted event so late listeners can replay it
      */

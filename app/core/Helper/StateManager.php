@@ -4,6 +4,8 @@ namespace PhpSPA\Core\Helper;
 
 use Closure;
 use PhpSPA\Core\Http\HttpRequest;
+use PhpSPA\Core\Utils\Validate;
+
 use const PhpSPA\Core\Impl\Const\STATE_HANDLE;
 
 /**
@@ -22,7 +24,11 @@ class StateManager
 {
 	private string $stateKey;
 
-	private mixed $value;
+	private mixed $value {
+		set(mixed $v) {
+			$this->value = Validate::validate($v);
+		}
+	}
 
 	protected mixed $lastState;
 
@@ -37,17 +43,18 @@ class StateManager
 	public function __construct(string $stateKey, $default)
 	{
 		$sessionData = SessionHandler::get(STATE_HANDLE);
+		$requestedWith = new HttpRequest()->requestedWith();
 
-		if (!isset($sessionData[$stateKey]) && (new HttpRequest())->requestedWith() !== 'PHPSPA_REQUEST' && (new HttpRequest())->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT') {
+		if (!isset($sessionData[$stateKey]) && $requestedWith !== 'PHPSPA_REQUEST' && $requestedWith !== 'PHPSPA_REQUEST_SCRIPT') {
 			self::$firstRender = true;
 		}
 
-		if (!isset($sessionData[$stateKey])) {
-			$sessionData[$stateKey] = $this->lastState = $default;
-		}
-
-		$this->value = $sessionData[$stateKey];
 		$this->stateKey = $stateKey;
+		
+		if (!isset($sessionData[$stateKey])) {
+			$this->value = $default;
+			$sessionData[$stateKey] = $this->lastState = $this->value;
+		}
 
 		SessionHandler::set(STATE_HANDLE, $sessionData);
 	}
@@ -68,9 +75,9 @@ class StateManager
 			return $sessionData[$this->stateKey] ?? $this->value;
 		}
 
-		$this->lastState = $this->value;
+		$this->lastState = $this->value ?? Validate::validate($value);
 		$this->value = $value;
-		$sessionData[$this->stateKey] = $value;
+		$sessionData[$this->stateKey] = $this->value;
 		SessionHandler::set(STATE_HANDLE, $sessionData);
 
 		return $this->value;
@@ -86,7 +93,7 @@ class StateManager
 		$sessionData = SessionHandler::get(STATE_HANDLE);
 
 		$value = $sessionData[$this->stateKey] ?? $this->value;
-		return is_array($value) ? json_encode($value) : $value;
+		return \is_array($value) ? json_encode($value) : $value;
 	}
 
 	/**
@@ -100,7 +107,7 @@ class StateManager
 		$sessionData = SessionHandler::get(STATE_HANDLE);
 		$value = $sessionData[$this->stateKey] ?? $this->value;
 
-		if (is_array($value)) {
+		if (\is_array($value)) {
 			$newValue = '';
 
 			foreach ($value as $key => $item) {
