@@ -126,7 +126,7 @@ HTML;
 
    public function State(): string
    {
-      return <<<HTML
+      return <<<'HTML'
          <section class="space-y-8">
             <div class="grid gap-8 lg:grid-cols-2">
                <article class="card">
@@ -156,8 +156,11 @@ useEffect(() => {
                </article>
             </div>
             <div class="grid gap-8 lg:grid-cols-2">
-               {$this->StableCallbacks()}
-               {$this->TypescriptHelpers()}
+
+               <DocsComponents::StableCallbacks />
+               
+               <DocsComponents::TypescriptHelpers />
+
             </div>
          </section>
 HTML;
@@ -181,7 +184,7 @@ HTML;
 <pre class="text-xs text-slate-200">import { __call } from '@dconco/phpspa';
 
 async function toggle(id: string) {
-   const result = await __call(tokens.toggleTodo, id);
+   const result = await __call(window.token, id);
    if (result?.error) throw new Error(result.error);
 }
 
@@ -220,7 +223,6 @@ HTML;
             <article class="card">
                <p class="text-xs uppercase tracking-[0.4em] text-amber-200">Debug tips</p>
                <ul class="mt-4 space-y-3 text-sm text-slate-200">
-                  <li>Call <code class="code-chip">phpspa.currentRoutes</code> from the console to inspect active targets and <code class="code-chip">exact</code> flags.</li>
                   <li>Pair <code class="code-chip">beforeload</code>/<code class="code-chip">load</code> with analytics to measure swap latency.</li>
                   <li>Use <code class="code-chip">setState(...).then()</code> to wait for DOM updates before reading measurements.</li>
                </ul>
@@ -257,22 +259,16 @@ HTML;
       return <<<'HTML'
          <article class="card">
             <p class="text-xs uppercase tracking-[0.4em] text-purple-200">TypeScript helpers</p>
-            <p class="mt-4 text-slate-300">Reach for <code class="code-chip">StateValueType</code> when shaping values you pass through <code class="code-chip">setState</code> or shared stores.</p>
-            <pre class="mt-4 rounded-2xl border border-white/10 bg-slate-950/60 p-5 text-xs text-slate-200 overflow-x-auto">import { setState } from '@dconco/phpspa';
-import type { EventPayload, StateValueType, PhpSPAInstance } from '@dconco/phpspa';
+            <p class="mt-4 text-slate-300">Import runtime types whenever you need strongly typed payloads, caches, or instance helpers.</p>
+            <pre class="mt-4 rounded-2xl border border-white/10 bg-slate-950/60 p-5 text-xs text-slate-200 overflow-x-auto">import type { EventPayload, EventName, StateValueType, PhpSPAInstance } from '@dconco/phpspa';
 
 declare const phpspaInstance: PhpSPAInstance;
+const cache: Record&lt;string, StateValueType> = {};
 
-const snapshots: Record<string, StateValueType> = {};
-
-phpspaInstance.on('load', ({ route, data }: EventPayload) => {
-   snapshots[route] = {
-      route,
-      payload: data ?? null,
-      viewedAt: Date.now(),
-   } as StateValueType;
-
-   setState('pageSnapshot', snapshots[route]);
+phpspaInstance.on('load', ({ route, success }: EventPayload) => {
+   const eventName: EventName = 'load';
+   cache[eventName] = { route, success } satisfies StateValueType;
+   console.log(`[${eventName}] ${route}`, success);
 });
 </pre>
       </article>

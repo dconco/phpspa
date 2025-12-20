@@ -48,6 +48,6 @@ export const useCallback = phpspa.useCallback.bind(phpspa)
 export const __call = phpspa.__call.bind(phpspa)
 
 export type { EventObject, EventPayload } from "./types/RuntimeInterfaces"
-export type { StateValueType } from "./types/StateObjectTypes"
+export type { StateObject } from "./types/StateObjectTypes"
 export type EventName = keyof EventObject
 export type PhpSPAInstance = typeof phpspa
