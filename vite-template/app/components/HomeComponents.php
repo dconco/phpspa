@@ -18,8 +18,8 @@ class HomeComponents {
                   </p>
 
                   <div class="mt-10 flex flex-wrap gap-4">
-                     <Component.Link to="/about" class="inline-flex items-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-semibold tracking-wide text-slate-900 transition hover:bg-slate-100">
-                        Explore Docs
+                     <Component.Link to="/client-runtime" class="inline-flex items-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-semibold tracking-wide text-slate-900 transition hover:bg-slate-100">
+                        Client API Docs
                         <span aria-hidden>&rarr;</span>
                      </Component.Link>
                      <Component.Link to="https://github.com/dconco/phpspa" target="_blank" rel="noreferrer" class="inline-flex items-center gap-3 rounded-full border border-white/30 px-6 py-3 text-sm font-semibold tracking-wide text-white transition hover:border-white">
@@ -74,7 +74,7 @@ return &lt;&lt;&lt;HTML
 &#8203;HTML;
 </pre>
                         </div>
-                        <div class="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+                        <div class="rounded-2xl border border-white/10 bg-slate-950/60 p-4 overflow-x-auto">
                            <p class="text-xs uppercase tracking-[0.4em] text-emerald-300">PHP state hooks</p>
                            <pre class="mt-4 text-xs text-slate-200">&lt;?php
 use function Component\useState;
@@ -187,7 +187,7 @@ HTML;
                         <dd class="mt-1 text-3xl font-semibold text-white">68 ms</dd>
                      </div>
                      <div>
-                        <dt class="text-sm text-white/70">Bundle size</dt>
+                        <dt class="text-sm text-white/70">Library size</dt>
                         <dd class="mt-1 text-3xl font-semibold text-white">277kb</dd>
                      </div>
                      <div>
@@ -231,6 +231,30 @@ HTML;
                      </a>
                </div>
             </div>
+         </section>
+      HTML;
+   }
+
+
+
+   public function HiddenSeoSummary(): string
+   {
+      return <<<HTML
+         <section class="sr-only" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">
+            The PhpSPA starter template showcases how a PHP controller-driven site can feel like a modern SPA. The hero section explains
+            the full-stack flow—design in Tailwind, compile with Vite, hydrate via PhpSPA, keep CSRF-safe requests, and navigate through
+            Component.Link while state is synchronized with typed hooks. Feature decks describe the component router for nested layouts,
+            state and event bridges, and HTTP helpers that compress payloads and enforce auth guards.
+
+            Workflow panels walk through blueprinting layouts, binding stores, navigating instantly, and shipping confidently with Vite
+            builds plus PhpSPA response optimizations. Insights highlight telemetry stats such as 68 ms swaps, 277 KB bundles, and a 99%
+            hydration score, paired with testimonials underscoring how runtime events and request helpers eliminate glue code. The call
+            to action reiterates that teams can scaffold routes, integrate Laravel or Symfony controllers, and install @dconco/phpspa
+            from npm while keeping the entire stack in PHP.
+
+            Together these sections summarize every capability promoted on the homepage—hero value proposition, component router
+            features, store/Event hooks, HTTP bridge, workflow timeline, observability metrics, client quotes, and onboarding CTA—so
+            crawlers and accessibility tools understand the full PhpSPA design system story even when visual components are hidden.
          </section>
       HTML;
    }

@@ -1,166 +1,53 @@
-import AppManager from "./core/AppManager";
-import RuntimeManager from "./core/RuntimeManager";
-import { bootstrapPhpSPA } from "./helpers/bootstrap";
-import type { StateObject } from "./types/StateObjectTypes";
-import type { EventObject } from "./types/RuntimeInterfaces";
-import morphdom from "morphdom";
+import { AppManager } from "./core/AppManager"
+import { bootstrap } from "./helpers/bootstrap"
+import type { EventObject } from "./types/RuntimeInterfaces"
+import { navigateHistory } from "./helpers/navigateHistrory"
+
+export default class phpspa extends AppManager {}
 
 declare global {
    export interface Window {
-      phpspa: typeof AppManager;
-      setState: typeof AppManager.setState;
-      useEffect: typeof AppManager.useEffect;
-      __call: typeof AppManager.__call;
+      phpspa: typeof phpspa
+      setState: typeof phpspa.setState
+      useEffect: typeof phpspa.useEffect
+      useCallback: typeof phpspa.useCallback
+      __call: typeof phpspa.__call
    }
 }
 
-/**
- * Ensure bootstrap runs even if script loads after DOMContentLoaded
- */
-const readyStates = ["interactive", "complete"];
+// --- Ensure bootstrap runs even if script loads after DOMContentLoaded ---
+const readyStates = ["interactive", "complete"]
 
 if (document.readyState === "loading") {
-   window.addEventListener("DOMContentLoaded", bootstrapPhpSPA, { once: true });
+   window.addEventListener("DOMContentLoaded", bootstrap, { once: true })
 } else if (readyStates.includes(document.readyState)) {
-   bootstrapPhpSPA();
+   bootstrap()
 }
 
 
-/**
- * Handle browser back/forward button navigation
- * Restores page content when user navigates through browser history
- */
-window.addEventListener("popstate", (event: PopStateEvent) => {
-   const navigationState: StateObject = event.state;
-
-   RuntimeManager.emit('beforeload', { route: location.toString() });
-
-   // --- Enable automatic scroll restoration ---
-   history.scrollRestoration = "auto";
-
-   // --- Check if we have valid PhpSPA state data ---
-   if (navigationState && navigationState.content) {
-      // --- Restore page title ---
-      document.title = navigationState.title ?? document.title;
-
-      // --- Find target container or fallback to body ---
-      const targetContainer =
-         document.getElementById(navigationState.targetID);
-
-      if (!targetContainer) {
-         location.reload();
-         return;
-      }
-
-      if (navigationState.targetID) {
-         RuntimeManager.currentRoutes[navigationState.targetID] = {
-            route: new URL(navigationState.url),
-            exact: navigationState.exact ?? false,
-            defaultContent: navigationState.defaultContent || ''
-         }
-      }
-
-      const currentRoutes = RuntimeManager.currentRoutes;
-
-      for (const targetID in currentRoutes) {
-         if (!Object.hasOwn(currentRoutes, targetID)) continue;
-
-         const targetInfo = currentRoutes[targetID];
-
-         // --- If route is exact and the route target ID is not equal to the navigated route target ID ---
-         // --- Then the document URL has changed ---
-         // --- That is they are navigating away ---
-         // --- And any route with exact === true must go back to its default content ---
-         if (targetInfo.exact === true && targetID !== navigationState.targetID) {
-            let currentHTML = document.getElementById(targetID)
-            if (currentHTML) {
-               try {
-                  morphdom(currentHTML, '<div>' + targetInfo.defaultContent + '</div>', {
-                     childrenOnly: true
-                  });
-               } catch {
-                  currentHTML.innerHTML = targetInfo.defaultContent;
-               }
-            }
-
-            delete currentRoutes[targetID];
-         }
-      }
-
-      // --- Decode and restore HTML content ---
-      const updateDOM = () => {
-         try {
-            morphdom(targetContainer, '<div>' + navigationState.content + '</div>', {
-               childrenOnly: true
-            });
-         } catch {
-            targetContainer.innerHTML = navigationState.content;
-         }
-      }
-
-      const completedDOMUpdate = () => {
-         // --- Clear old executed scripts cache ---
-         RuntimeManager.clearEffects();
-         RuntimeManager.clearExecutedScripts();
-
-         // --- Execute any inline scripts and styles in the restored content ---
-         RuntimeManager.runAll();
-
-         // --- Restart auto-reload timer if needed ---
-         if (navigationState?.reloadTime) {
-            setTimeout(AppManager.reloadComponent, navigationState.reloadTime);
-         }
-
-         RuntimeManager.emit('load', {
-            route: navigationState.url,
-            success: true,
-            error: false
-         });
-      }
-
-      if (document.startViewTransition) {
-         document.startViewTransition(updateDOM).finished.then(completedDOMUpdate).catch((reason) => {
-            RuntimeManager.emit('load', {
-               route: location.href,
-               success: false,
-               error: reason || 'Unknown error during view transition',
-            });
-         });
-      } else {
-         updateDOM();
-         completedDOMUpdate();
-      }
-
-   } else {
-      // --- No valid state found - reload current URL to refresh ---
-      location.reload();
-   }
-});
+// --- Handle browser back/forward button navigation ---
+// --- Restores page content when user navigates through browser history ---
+window.addEventListener("popstate", navigateHistory)
 
 
 if (typeof window !== "undefined") {
-   window.phpspa = AppManager;
+   window.phpspa = phpspa
 
-   if (window.setState !== AppManager.setState) {
-      window.setState = AppManager.setState;
-   }
+   if (window.setState !== phpspa.setState) window.setState = phpspa.setState
 
-   if (window.__call !== AppManager.__call) {
-      window.__call = AppManager.__call;
-   }
+   if (window.__call !== phpspa.__call) window.__call = phpspa.__call
 
-   if (window.useEffect !== AppManager.useEffect) {
-      window.useEffect = AppManager.useEffect;
-   }
+   if (window.useEffect !== phpspa.useEffect) window.useEffect = phpspa.useEffect
+
+   if (window.useCallback !== phpspa.useCallback) window.useCallback = phpspa.useCallback
 }
 
-export const setState = AppManager.setState.bind(AppManager);
-export const useEffect = AppManager.useEffect.bind(AppManager);
-export const __call = AppManager.__call.bind(AppManager);
+export const setState = phpspa.setState.bind(phpspa)
+export const useEffect = phpspa.useEffect.bind(phpspa)
+export const useCallback = phpspa.useCallback.bind(phpspa)
+export const __call = phpspa.__call.bind(phpspa)
 
-export type { EventObject, EventPayload } from "./types/RuntimeInterfaces";
-export type { StateObject } from "./types/StateObjectTypes";
-export type EventName = keyof EventObject;
-export type PhpSPAInstance = typeof AppManager;
-
-export default AppManager;
+export type { EventObject, EventPayload } from "./types/RuntimeInterfaces"
+export type { StateValueType } from "./types/StateObjectTypes"
+export type EventName = keyof EventObject
+export type PhpSPAInstance = typeof phpspa

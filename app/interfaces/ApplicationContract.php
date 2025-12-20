@@ -112,7 +112,7 @@ interface ApplicationContract {
      * @return ApplicationContract
      * @see https://phpspa.tech/references/router/#static-files
      */
-    public function static(string $route, string $staticPath): self;
+    public function useStatic(string $route, string $staticPath): self;
 
 
     /**

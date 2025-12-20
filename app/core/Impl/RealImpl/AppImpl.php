@@ -202,7 +202,7 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
-   public function static(string $route, string $staticPath): ApplicationContract {
+   public function useStatic(string $route, string $staticPath): ApplicationContract {
       $this->static[] = ['route' => $route, 'staticPath' => $staticPath]; return $this;
    }
 
@@ -512,8 +512,8 @@ abstract class AppImpl implements ApplicationContract {
 
 
    private function MainDOMOutput(bool $isPreloadingComponent, array $assetLinks, string &$layoutOutput, string $componentOutput, string $targetID, $preload, $reloadTime, $title, $exact) {
-      // For regular HTML requests, only include component stylesheets with the component content
-      // Component scripts will be injected later to ensure proper execution order
+      // --- For regular HTML requests, only include component stylesheets with the component content ---
+      // --- Component scripts will be injected later to ensure proper execution order ---
       $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput;
       $nonce = Nonce::nonce();
 
@@ -541,7 +541,7 @@ abstract class AppImpl implements ApplicationContract {
             $layoutOutput = preg_replace_callback(
                pattern: '/<title([^>]*)>.*?<\/title>/si',
                callback: function ($matches) use ($title) {
-                  // $matches[1] contains any attributes inside the <title> tag
+                  // --- $matches[1] contains any attributes inside the <title> tag ---
                   return '<title' . ($matches[1] ?? null) . '>' . $title . '</title>';
                },
                subject: $layoutOutput,
@@ -550,7 +550,7 @@ abstract class AppImpl implements ApplicationContract {
             );
 
             if ($count === 0) {
-               // If no <title> tag was found, add one inside the <head> section
+               // --- If no <title> tag was found, add one inside the <head> section ---
                $layoutOutput = preg_replace(
                   '/<head([^>]*)>/i',
                   "<head$1><title>$title</title>",
@@ -619,8 +619,8 @@ abstract class AppImpl implements ApplicationContract {
       );
 
       if ($isFirstComponent) {
-         // Inject global assets at the end of body tag (or html tag if no body exists)
-         // Also inject component scripts after global scripts for proper execution order
+         // --- Inject global assets at the end of body tag (or html tag if no body exists) ---
+         // --- Also inject component scripts after global scripts for proper execution order ---
          $this->renderedData = $this->injectGlobalAssets($this->renderedData, $assetLinks['global'], $assetLinks['component']['scripts']);
       } else {
          $this->renderedData = $this->injectGlobalAssets($this->renderedData, $assetLinks['component']['scripts']);
@@ -989,34 +989,34 @@ abstract class AppImpl implements ApplicationContract {
          $globalScripts = $globalAssets['scripts'];
       }
 
-      // Inject global stylesheets in head for proper CSS cascading
+      // --- Inject global stylesheets in head for proper CSS cascading ---
       if (!empty(trim($globalStylesheets))) {
          if (preg_match('/<\/head>/i', $html)) {
             $html = preg_replace('/<\/head>/i', "{$globalStylesheets}</head>", $html, 1);
          }
          else {
-            // If no head tag, put stylesheets at the beginning
+            // --- If no head tag, put stylesheets at the beginning ---
             $html = "{$globalStylesheets}{$html}";
          }
       }
 
-      // If no global assets and no component scripts, return unchanged
+      // --- If no global assets and no component scripts, return unchanged ---
       if (empty(trim($globalScripts)) && empty(trim($componentScripts))) {
          return $html;
       }
 
-      // Combine global scripts and component scripts in proper order
+      // --- Combine global scripts and component scripts in proper order ---
       $allScripts = $globalScripts . $componentScripts;
 
-      // Inject scripts at end of body (global scripts first, then component scripts)
+      // --- Inject scripts at end of body (global scripts first, then component scripts) ---
       if (!empty(trim($allScripts))) {
          if (preg_match('/<\/body>/i', $html))
             $html = preg_replace('/<\/body>/i', "{$allScripts}</body>", $html, 1);
          elseif (preg_match('/<\/html>/i', $html))
-            // If no body tag, try to inject before closing html tag
+            // --- If no body tag, try to inject before closing html tag ---
             $html = preg_replace('/<\/html>/i', "{$allScripts}</html>", $html, 1);
          else
-            // If neither body nor html tags exist, append at the end
+            // --- If neither body nor html tags exist, append at the end ---
             $html .= $allScripts;
       }
 

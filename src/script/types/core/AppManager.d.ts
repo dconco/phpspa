@@ -44,6 +44,14 @@ export default class AppManager {
      */
     static useEffect(callback: () => void | (() => void), dependencies?: string[] | null): void;
     /**
+     * Memoizes a callback so its reference stays stable across repeated registrations.
+     * Useful when wiring DOM listeners that need deterministic add/remove behavior.
+     *
+     * @param callback - The function you want to memoize.
+     * @param dependencies - Values that invalidate the memoized reference when changed.
+     */
+    static useCallback<T extends (...args: any[]) => any>(callback: T, dependencies?: unknown[]): T;
+    /**
      * Updates the application state by sending a custom fetch request and updating the DOM accordingly.
      * Preserves the current scroll position during the update.
      *

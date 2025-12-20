@@ -20,7 +20,7 @@
 
 @layer components {
   .nav-link {
-    @apply text-sm font-semibold tracking-wide uppercase text-slate-300 transition-colors hover:text-white;
+    @apply block w-full text-left text-sm font-semibold tracking-wide uppercase text-slate-300 transition-colors hover:text-white md:inline-flex md:w-auto md:text-center md:items-center md:justify-center;
   }
 
   .pill {
@@ -32,7 +32,7 @@
   }
 
   .code-chip {
-    @apply rounded-full border border-white/10 bg-white/10 px-2 py-0.5 font-mono text-[0.7rem] uppercase tracking-[0.2em] text-sky-200;
+    @apply rounded-full border border-white/10 bg-white/10 px-2 py-0.5 font-mono text-[0.7rem] tracking-[0.2em] text-sky-200;
   }
 }
 

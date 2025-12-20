@@ -30,6 +30,22 @@
 
 ---
 
+## :material-devices: Client Runtime
+
+<div class="grid cards" markdown>
+
+-   :material-cellphone-link:{ .lg .middle } **Vite + TypeScript Runtime** :material-new-box:
+
+    ---
+
+    Learn how the `@dconco/phpspa` package bootstraps navigation, state sync, and client helpers.
+
+    [:octicons-arrow-right-24: Open guide](client-runtime.md)
+
+</div>
+
+---
+
 ## :material-webhook: HTTP & Networking
 
 <div class="grid cards" markdown>

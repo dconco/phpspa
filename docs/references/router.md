@@ -122,18 +122,18 @@ $router->get('/users/{id}', $checkRole, function ($req, $res) {
 
 ## **Static Files**
 
-Serve static files directly without manual route definitions using `App::static`.
+Serve static files directly without manual route definitions using `App::useStatic`.
 
 ```php
 <?php
 
 // Maps http://example.com/assets -> /var/www/public/assets
-$app->static('/assets', __DIR__ . '/../public/assets');
+$app->useStatic('/assets', __DIR__ . '/../public/assets');
 ```
 
 | Method | Description |
 | :--- | :--- |
-| `static(string $route, string $path)` | Maps a URL route to a filesystem directory or file. |
+| `useStatic(string $route, string $path)` | Maps a URL route to a filesystem directory or file. |
 
 ---
 

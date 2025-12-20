@@ -2,7 +2,14 @@
 
 ## v2.0.5 (unreleased)
 
-### **Component-Level SEO Controls** 🧭
+**Installation:**
+```bash
+composer require dconco/phpspa:v2.0.5.x-dev
+```
+
+### What's Added
+
+#### **Component-Level SEO Controls** 🧭
 
 - Added chained `->meta()` API to every component so route-specific descriptions, keywords, Open Graph, or HTTP-EQUIV tags can be declared right where the component is defined.
 - Runtime now injects those tags only during the initial HTML.
@@ -20,7 +27,28 @@ new Component(...)
 
 **Documentation:** [references/component-meta](https://phpspa.readthedocs.io/en/latest/references/component-meta)
 
+
+#### **`useCallback()`**
+
+- Added `useCallback()` to client side.
+   ```javascript
+      const toggleNav = useCallback((event: MouseEvent) => {
+         // Stable reference no matter how often this runs
+      }, []);
+   ```
+
+#### **`useModule()`**
+
+- Added `App::useModule()` to specify if this application is used with node, like serving with vite. This is going to stop adding phpspa asset links, and you would have to install the `@dconco/phpspa` npm package, `npm install @dconco/phpspa` to use the `phpspa` client features.
+
+
+### What's Changed
+- Changed `App::static()` to `App::useStatic()`.
+
+
 ---
+
+
 
 ## v2.0.4 (Current) (Stable)
 
