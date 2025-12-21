@@ -39,7 +39,7 @@ export declare class RuntimeManager {
      * @param {Function} callback - The effect callback
      * @param {Array<string>} dependencies - Array of state keys to listen for
      */
-    static registerEffect(callback: () => void | (() => void), dependencies?: string[] | null): void;
+    static registerEffect(callback: () => void | (() => void), dependencies?: unknown[] | null): void;
     /**
      * Triggers effects that depend on the specific state key
      *
@@ -53,6 +53,9 @@ export declare class RuntimeManager {
     static clearEffects(): void;
     private static depsEqual;
     static registerCallback<T extends (...args: any[]) => any>(callback: T, dependencies?: unknown[]): T;
+    private static resolveDependencies;
+    private static resolveDependency;
+    private static invokeEffect;
     static runAll(): void;
     /**
      * Processes and executes inline scripts within a container

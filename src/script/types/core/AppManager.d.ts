@@ -43,7 +43,7 @@ export declare class AppManager {
      * @param callback - The effect callback
      * @param dependencies - Array of state keys to listen for
      */
-    static useEffect(callback: () => void | (() => void), dependencies?: string[] | null): void;
+    static useEffect(callback: () => void | (() => void), dependencies?: unknown[] | null): void;
     static useCallback<T extends (...args: any[]) => any>(callback: T, dependencies?: unknown[]): T;
     /**
      * Updates the application state by sending a custom fetch request and updating the DOM accordingly.

@@ -96,7 +96,8 @@ class RuntimeManager {
         const effect = {
             callback,
             dependencies,
-            cleanup: typeof cleanup === 'function' ? cleanup : null
+            cleanup: typeof cleanup === 'function' ? cleanup : null,
+            lastDeps: dependencies ? RuntimeManager.resolveDependencies(dependencies) : null
         };
         RuntimeManager.effects.add(effect);
     }
@@ -108,13 +109,13 @@ class RuntimeManager {
      */
     static triggerEffects(key, value) {
         RuntimeManager.effects.forEach(effect => {
-            if (!effect.dependencies || effect.dependencies.includes(key)) {
-                // --- Run cleanup if exists ---
-                if (effect.cleanup)
-                    effect.cleanup();
-                // --- Re-run callback ---
-                const cleanup = effect.callback();
-                effect.cleanup = typeof cleanup === 'function' ? cleanup : null;
+            if (!effect.dependencies || effect.dependencies.length === 0) {
+                RuntimeManager.invokeEffect(effect, effect.dependencies);
+                return;
+            }
+            const nextDeps = RuntimeManager.resolveDependencies(effect.dependencies);
+            if (!effect.lastDeps || !RuntimeManager.depsEqual(effect.lastDeps, nextDeps)) {
+                RuntimeManager.invokeEffect(effect, nextDeps);
             }
         });
     }
@@ -129,18 +130,53 @@ class RuntimeManager {
         RuntimeManager.effects.clear();
     }
     static depsEqual(a, b) {
+        if (a === b)
+            return true;
+        if (!a || !b)
+            return false;
         if (a.length !== b.length)
             return false;
         return a.every((dep, index) => Object.is(dep, b[index]));
     }
     static registerCallback(callback, dependencies = []) {
-        const existing = RuntimeManager.memoizedCallbacks.find(entry => RuntimeManager.depsEqual(entry.deps, dependencies));
+        const resolvedDeps = RuntimeManager.resolveDependencies(dependencies);
+        const existing = RuntimeManager.memoizedCallbacks.find(entry => entry.deps.length === dependencies.length && RuntimeManager.depsEqual(entry.resolvedDeps, resolvedDeps));
         if (existing) {
             return existing.callback;
         }
         const memoized = callback.bind(undefined);
-        RuntimeManager.memoizedCallbacks.push({ deps: dependencies.slice(), callback: memoized });
+        RuntimeManager.memoizedCallbacks.push({ deps: dependencies.slice(), resolvedDeps, callback: memoized });
         return memoized;
+    }
+    static resolveDependencies(dependencies) {
+        return dependencies.map(dep => RuntimeManager.resolveDependency(dep));
+    }
+    static resolveDependency(dependency) {
+        if (typeof dependency === 'string' &&
+            RuntimeManager.currentStateData &&
+            Object.prototype.hasOwnProperty.call(RuntimeManager.currentStateData, dependency)) {
+            return RuntimeManager.currentStateData[dependency];
+        }
+        return dependency;
+    }
+    static invokeEffect(effect, nextDeps) {
+        if (effect.cleanup) {
+            try {
+                effect.cleanup();
+            }
+            catch (error) {
+                console.error('Error in effect cleanup:', error);
+            }
+        }
+        try {
+            const cleanup = effect.callback();
+            effect.cleanup = typeof cleanup === 'function' ? cleanup : null;
+        }
+        catch (error) {
+            console.error('Error in effect callback:', error);
+            effect.cleanup = null;
+        }
+        effect.lastDeps = nextDeps ? nextDeps.slice() : nextDeps;
     }
     static runAll() {
         for (const targetID in RuntimeManager.currentRoutes) {

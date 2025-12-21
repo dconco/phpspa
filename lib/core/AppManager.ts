@@ -303,7 +303,7 @@ export class AppManager {
     * @param callback - The effect callback
     * @param dependencies - Array of state keys to listen for
     */
-   public static useEffect(callback: () => void | (() => void), dependencies: string[]|null = null) {
+   public static useEffect(callback: () => void | (() => void), dependencies: unknown[]|null = null) {
       RuntimeManager.registerEffect(callback, dependencies)
    }
 
@@ -320,7 +320,7 @@ export class AppManager {
     * @returns A promise that resolves when the state is updated successfully.
     *
     * @example
-    * AppManager.setState('user', { name: 'Alice' })
+    * setState('user', { name: 'Alice' })
     *   .then(() => console.log('State updated!'))
     *   .catch(err => console.error('Failed to update state:', err))
     */

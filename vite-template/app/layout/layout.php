@@ -12,11 +12,10 @@ $layout = function() use (&$app) {
       $manifest = json_decode(file_get_contents('public/assets/.vite/manifest.json'), true);
 
       $mainEntry = $manifest['src/main.ts'];
-      $cssLinks = '';
 
       // --- Add CSS link tags for all imported stylesheets to the Application ---
 
-      if (!empty($mainEntry['css'])) {
+      if (isset($mainEntry['css'])) {
          foreach ($mainEntry['css'] as $cssFile) {
             $app?->styleSheet("/assets/$cssFile");
          }

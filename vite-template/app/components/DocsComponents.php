@@ -64,8 +64,8 @@ HTML;
    public function Lifecycle(): string
    {
       return <<<HTML
-         <section class="grid gap-8 lg:grid-cols-2">
-            <article class="card">
+         <section class="grid gap-8 lg:grid-cols-2 max-w-full">
+            <article class="card overflow-x-auto">
                <p class="text-xs uppercase tracking-[0.4em] text-amber-200">Events</p>
                <h3 class="mt-4 text-2xl font-semibold text-white">Hook into navigation.</h3>
                <p class="mt-3 text-slate-300">Both events replay the last payload for late listeners.</p>
@@ -76,7 +76,7 @@ HTML;
             </article>
             <article class="card">
                <p class="text-xs uppercase tracking-[0.4em] text-emerald-200">Typical handler</p>
-               <pre class="mt-4 rounded-2xl border border-white/10 bg-slate-950/60 p-5 text-xs text-slate-200">const spinner = document.querySelector('#loader');
+               <pre class="mt-4 rounded-2xl border border-white/10 bg-slate-950/60 p-5 text-xs text-slate-200 overflow-x-auto">const spinner = document.querySelector('#loader');
 
 phpspa.on('beforeload', ({ route }) => {
    spinner?.classList.remove('hidden');
@@ -129,10 +129,10 @@ HTML;
       return <<<'HTML'
          <section class="space-y-8">
             <div class="grid gap-8 lg:grid-cols-2">
-               <article class="card">
+               <article class="card max-w-lg">
                   <p class="text-xs uppercase tracking-[0.4em] text-cyan-200">State bridge</p>
                   <p class="mt-4 text-slate-300">Named imports expose the same helpers as the global runtime.</p>
-                  <pre class="mt-6 rounded-2xl border border-white/10 bg-slate-950/60 p-5 text-xs text-slate-200">import { setState, useEffect } from '@dconco/phpspa';
+                  <pre class="mt-6 rounded-2xl border border-white/10 bg-slate-950/60 p-5 text-xs text-slate-200 overflow-x-auto">import { setState, useEffect } from '@dconco/phpspa';
 
 setState('counter', (prev: number) => prev + 1)
    .then(() => console.log('DOM updated!'));
@@ -235,9 +235,9 @@ HTML;
 
    public function StableCallbacks(): string {
       return <<<HTML
-         <article class="card">
+         <article class="card overflow-x-auto w-full max-w-full">
             <p class="text-xs uppercase tracking-[0.4em] text-emerald-200">Stable callbacks</p>
-            <p class="mt-4 text-slate-300"><code class="code-chip">useCallback</code> keeps listener references identical so you can add or remove them safely across navigations.</p>
+            <p class="mt-4 text-slate-300"><code class="code-chip">useCallback(fn, deps)</code> returns a memoized version of fn whose identity stays stable across renders until any dependency changes. Use it when attaching event listeners, passing callbacks to child components, or anytime a stable reference prevents duplicate effects</p>
             <pre class="mt-4 rounded-2xl border border-white/10 bg-slate-950/60 p-5 text-xs text-slate-200 overflow-x-auto">import phpspa, { useCallback } from '@dconco/phpspa';
 
 const handleToggle = useCallback((event: MouseEvent) => {
@@ -263,10 +263,12 @@ HTML;
             <pre class="mt-4 rounded-2xl border border-white/10 bg-slate-950/60 p-5 text-xs text-slate-200 overflow-x-auto">import type { EventPayload, EventName, StateValueType, PhpSPAInstance } from '@dconco/phpspa';
 
 declare const phpspaInstance: PhpSPAInstance;
+
 const cache: Record&lt;string, StateValueType> = {};
 
 phpspaInstance.on('load', ({ route, success }: EventPayload) => {
    const eventName: EventName = 'load';
+
    cache[eventName] = { route, success } satisfies StateValueType;
    console.log(`[${eventName}] ${route}`, success);
 });

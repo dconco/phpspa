@@ -45,7 +45,7 @@ export class RuntimeManager {
 
    private static effects: Set<EffectType> = new Set()
 
-   private static memoizedCallbacks: Array<{ deps: unknown[]; callback: (...args: unknown[]) => unknown }> = []
+   private static memoizedCallbacks: Array<{ deps: unknown[]; resolvedDeps: unknown[]; callback: (...args: unknown[]) => unknown }> = []
 
    /**
     * Registers a side effect to be executed when state changes
@@ -54,14 +54,15 @@ export class RuntimeManager {
     * @param {Function} callback - The effect callback
     * @param {Array<string>} dependencies - Array of state keys to listen for
     */
-   public static registerEffect(callback: () => void | (() => void), dependencies: string[]|null = null): void {
+   public static registerEffect(callback: () => void | (() => void), dependencies: unknown[]|null = null): void {
       // --- Run immediately (mount) ---
       const cleanup = callback()
 
       const effect: EffectType = {
          callback,
          dependencies,
-         cleanup: typeof cleanup === 'function' ? cleanup : null
+         cleanup: typeof cleanup === 'function' ? cleanup : null,
+         lastDeps: dependencies ? RuntimeManager.resolveDependencies(dependencies) : null
       }
 
       RuntimeManager.effects.add(effect)
@@ -75,13 +76,14 @@ export class RuntimeManager {
     */
    public static triggerEffects(key: string, value: any): void {
       RuntimeManager.effects.forEach(effect => {
-         if (!effect.dependencies || effect.dependencies.includes(key)) {
-            // --- Run cleanup if exists ---
-            if (effect.cleanup) effect.cleanup()
+         if (!effect.dependencies || effect.dependencies.length === 0) {
+            RuntimeManager.invokeEffect(effect, effect.dependencies)
+            return
+         }
 
-            // --- Re-run callback ---
-            const cleanup = effect.callback()
-            effect.cleanup = typeof cleanup === 'function' ? cleanup : null
+         const nextDeps = RuntimeManager.resolveDependencies(effect.dependencies)
+         if (!effect.lastDeps || !RuntimeManager.depsEqual(effect.lastDeps, nextDeps)) {
+            RuntimeManager.invokeEffect(effect, nextDeps)
          }
       })
    }
@@ -96,21 +98,51 @@ export class RuntimeManager {
       RuntimeManager.effects.clear()
    }
 
-   private static depsEqual(a: unknown[], b: unknown[]): boolean {
+   private static depsEqual(a: unknown[]|null, b: unknown[]|null): boolean {
+      if (a === b) return true
+      if (!a || !b) return false
       if (a.length !== b.length) return false
       return a.every((dep, index) => Object.is(dep, b[index]))
    }
 
    public static registerCallback<T extends (...args: any[]) => any>(callback: T, dependencies: unknown[] = []): T {
-      const existing = RuntimeManager.memoizedCallbacks.find(entry => RuntimeManager.depsEqual(entry.deps, dependencies))
+      const resolvedDeps = RuntimeManager.resolveDependencies(dependencies)
+      const existing = RuntimeManager.memoizedCallbacks.find(entry =>
+         entry.deps.length === dependencies.length && RuntimeManager.depsEqual(entry.resolvedDeps, resolvedDeps)
+      )
 
       if (existing) {
          return existing.callback as T
       }
 
       const memoized = callback.bind(undefined) as T
-      RuntimeManager.memoizedCallbacks.push({ deps: dependencies.slice(), callback: memoized })
+      RuntimeManager.memoizedCallbacks.push({ deps: dependencies.slice(), resolvedDeps, callback: memoized })
       return memoized
+   }
+
+   private static resolveDependencies(dependencies: unknown[]): unknown[] {
+      return dependencies.map(dep => RuntimeManager.resolveDependency(dep))
+   }
+
+   private static resolveDependency(dependency: unknown): unknown {
+      if (
+         typeof dependency === 'string' &&
+         RuntimeManager.currentStateData &&
+         Object.prototype.hasOwnProperty.call(RuntimeManager.currentStateData, dependency)
+      ) {
+         return RuntimeManager.currentStateData[dependency]
+      }
+
+      return dependency
+   }
+
+   private static invokeEffect(effect: EffectType, nextDeps: unknown[]|null): void {
+      if (effect.cleanup) effect.cleanup()
+
+      const cleanup = effect.callback()
+      effect.cleanup = typeof cleanup === 'function' ? cleanup : null
+
+      effect.lastDeps = nextDeps ? nextDeps.slice() : nextDeps
    }
 
    public static runAll(): void {
