@@ -9,12 +9,11 @@ namespace PhpSPA\Compression;
  * to reduce payload sizes and improve performance. This class implements
  * various compression levels and environment-specific optimizations.
  *
- * @package PhpSPA\Compression
+ * @package Compression
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
- * @since v1.0.0
- * @see https://phpspa.tech/v1.1.5/1-compression-system/ Compression System Documentation
+ * @see https://phpspa.tech/performance/html-compression/ Compression System Documentation
  */
 class Compressor
 {

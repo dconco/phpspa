@@ -1,3 +1,8 @@
+/*!
+ * PhpSPA Client Runtime v2.0.7
+ * Docs: https://phpspa.tech | Package: @dconco/phpspa
+ * License: MIT
+ */
 'use strict';
 
 Object.defineProperty(exports, '__esModule', { value: true });
@@ -80,6 +85,7 @@ class RuntimeManager {
      */
     static lastEventPayload = {};
     static effects = new Set();
+    static memoizedCallbacks = [];
     /**
      * Registers a side effect to be executed when state changes
      * similar to React's useEffect but using state keys strings as dependencies
@@ -125,6 +131,20 @@ class RuntimeManager {
         });
         RuntimeManager.effects.clear();
     }
+    static depsEqual(a, b) {
+        if (a.length !== b.length)
+            return false;
+        return a.every((dep, index) => Object.is(dep, b[index]));
+    }
+    static registerCallback(callback, dependencies = []) {
+        const existing = RuntimeManager.memoizedCallbacks.find(entry => RuntimeManager.depsEqual(entry.deps, dependencies));
+        if (existing) {
+            return existing.callback;
+        }
+        const memoized = callback.bind(undefined);
+        RuntimeManager.memoizedCallbacks.push({ deps: dependencies.slice(), callback: memoized });
+        return memoized;
+    }
     static runAll() {
         for (const targetID in RuntimeManager.currentRoutes) {
             const element = document.getElementById(targetID);
@@ -141,7 +161,7 @@ class RuntimeManager {
      */
     static runInlineScripts(container) {
         const scripts = container.querySelectorAll("script");
-        const nonce = document.documentElement.getAttribute('x-phpspa');
+        const nonce = document.head.getAttribute('x-phpspa');
         scripts.forEach((script) => {
             // --- Use base64 encoded content as unique identifier ---
             const contentHash = utf8ToBase64(script.textContent.trim());
@@ -171,10 +191,10 @@ class RuntimeManager {
     }
     static runPhpSpaScripts(container) {
         const scripts = container.querySelectorAll("phpspa-script, script[data-type=\"phpspa/script\"]");
+        const nonce = document.head.getAttribute('x-phpspa');
         scripts.forEach(async (script) => {
             const scriptUrl = script.getAttribute('src') ?? '';
             const scriptType = script.getAttribute('type') ?? '';
-            const nonce = document.documentElement.getAttribute('x-phpspa');
             // --- Skip if this script has already been executed ---
             if (!this.executedScripts.has(scriptUrl)) {
                 this.executedScripts.add(scriptUrl);
@@ -228,7 +248,7 @@ class RuntimeManager {
      */
     static runInlineStyles(container) {
         const styles = container.querySelectorAll("style");
-        const nonce = document.documentElement.getAttribute('x-phpspa');
+        const nonce = document.head.getAttribute('x-phpspa');
         styles.forEach((style) => {
             // --- Use base64 encoded content as unique identifier ---
             const contentHash = utf8ToBase64(style.textContent.trim());
@@ -1346,6 +1366,9 @@ class AppManager {
     static useEffect(callback, dependencies = null) {
         RuntimeManager.registerEffect(callback, dependencies);
     }
+    static useCallback(callback, dependencies = []) {
+        return RuntimeManager.registerCallback(callback, dependencies);
+    }
     /**
      * Updates the application state by sending a custom fetch request and updating the DOM accordingly.
      * Preserves the current scroll position during the update.
@@ -1357,7 +1380,7 @@ class AppManager {
      * @example
      * AppManager.setState('user', { name: 'Alice' })
      *   .then(() => console.log('State updated!'))
-     *   .catch(err => console.error('Failed to update state:', err));
+     *   .catch(err => console.error('Failed to update state:', err))
      */
     static setState(key, value) {
         return new Promise(async (resolve, reject) => {
@@ -1674,7 +1697,7 @@ function setupLinkInterception() {
  * Bootstraps PhpSPA runtime by caching current route info
  * and wiring up history/navigation handlers
  */
-function bootstrapPhpSPA() {
+function bootstrap() {
     const targetElement = document.querySelector("[data-phpspa-target]");
     const targetElementInfo = document.querySelector("[phpspa-target-data]");
     const uri = location.toString();
@@ -1726,21 +1749,7 @@ function bootstrapPhpSPA() {
     setupLinkInterception();
 }
 
-/**
- * Ensure bootstrap runs even if script loads after DOMContentLoaded
- */
-const readyStates = ["interactive", "complete"];
-if (document.readyState === "loading") {
-    window.addEventListener("DOMContentLoaded", bootstrapPhpSPA, { once: true });
-}
-else if (readyStates.includes(document.readyState)) {
-    bootstrapPhpSPA();
-}
-/**
- * Handle browser back/forward button navigation
- * Restores page content when user navigates through browser history
- */
-window.addEventListener("popstate", (event) => {
+const navigateHistory = (event) => {
     const navigationState = event.state;
     RuntimeManager.emit('beforeload', { route: location.toString() });
     // --- Enable automatic scroll restoration ---
@@ -1831,25 +1840,39 @@ window.addEventListener("popstate", (event) => {
         // --- No valid state found - reload current URL to refresh ---
         location.reload();
     }
-});
-if (typeof window !== "undefined") {
-    window.phpspa = AppManager;
-    if (window.setState !== AppManager.setState) {
-        window.setState = AppManager.setState;
-    }
-    if (window.__call !== AppManager.__call) {
-        window.__call = AppManager.__call;
-    }
-    if (window.useEffect !== AppManager.useEffect) {
-        window.useEffect = AppManager.useEffect;
-    }
+};
+
+class phpspa extends AppManager {
 }
-const setState = AppManager.setState.bind(AppManager);
-const useEffect = AppManager.useEffect.bind(AppManager);
-const __call = AppManager.__call.bind(AppManager);
+// --- Ensure bootstrap runs even if script loads after DOMContentLoaded ---
+const readyStates = ["interactive", "complete"];
+if (document.readyState === "loading") {
+    window.addEventListener("DOMContentLoaded", bootstrap, { once: true });
+}
+else if (readyStates.includes(document.readyState)) {
+    bootstrap();
+}
+// --- Handle browser back/forward button navigation ---
+// --- Restores page content when user navigates through browser history ---
+window.addEventListener("popstate", navigateHistory);
+if (typeof window !== "undefined") {
+    window.phpspa = phpspa;
+    if (window.setState !== phpspa.setState)
+        window.setState = phpspa.setState;
+    if (window.__call !== phpspa.__call)
+        window.__call = phpspa.__call;
+    if (window.useEffect !== phpspa.useEffect)
+        window.useEffect = phpspa.useEffect;
+    if (window.useCallback !== phpspa.useCallback)
+        window.useCallback = phpspa.useCallback;
+}
+const setState = phpspa.setState.bind(phpspa);
+const useEffect = phpspa.useEffect.bind(phpspa);
+const useCallback = phpspa.useCallback.bind(phpspa);
+const __call = phpspa.__call.bind(phpspa);
 
 exports.__call = __call;
-exports.default = AppManager;
+exports.default = phpspa;
 exports.setState = setState;
+exports.useCallback = useCallback;
 exports.useEffect = useEffect;
-//# sourceMappingURL=phpspa.cjs.map

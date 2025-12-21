@@ -9,6 +9,7 @@ use PhpSPA\Exceptions\AppException;
 /**
  * Imports file as base64 data URI with MIME type detection.
  *
+ * @package Component
  * @author dconco <me@dconco.tech>
  * @param string $file File path to import
  * @return ImportedFile Data URI with MIME type and base64 content

@@ -9,11 +9,9 @@ namespace phpspa\Core\Auth;
  * authentication credentials from HTTP requests, including Basic Auth, Bearer tokens,
  * and other authentication schemes within the PhpSPA framework.
  *
- * @package PhpSPA\Core\Auth
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
- * @since v1.0.0
  */
 trait Authentication
 {

@@ -68,3 +68,20 @@ Resulting markup:
 ```html
 <meta name="twitter:image" content="https://cdn.example.com/cover.png" data-theme="dark" media="(prefers-color-scheme: dark)">
 ```
+
+---
+
+## Global Defaults with `App::meta()`
+
+Need baseline tags (site name, theme color, analytics hints) before any component runs? Register them once on the application:
+
+```php
+<?php
+
+$app = (new App(require 'layout.php'))
+   ->meta(name: 'application-name', content: 'PhpSPA Starter')
+   ->meta(property: 'og:site_name', content: 'PhpSPA Starter')
+   ->meta(name: 'theme-color', content: '#050A1F');
+```
+
+Global entries merge with each component's own metadata. Duplicates are deduplicated automatically, and component-defined tags take precedence when the same signature appears.

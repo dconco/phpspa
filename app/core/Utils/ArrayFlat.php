@@ -2,31 +2,43 @@
 
 namespace PhpSPA\Core\Utils;
 
-CLASS ArrayFlat {
-   PUBLIC FUNCTION __construct(PRIVATE ARRAY$array) {}
+class ArrayFlat {
 
-   PUBLIC FUNCTION flat(): ARRAY {
+   public function __construct(private array $array) {}
+
+   /**
+    * Flattens a multi-dimensional array into a single-dimensional array.
+    *
+    * @return array The flattened array.
+    */
+   public function flat(): array {
       $arr = [];
 
       foreach ($this->array as $val) {
-         if (is_array($val))
-            $arr = array_merge($arr, array_values($val));
+         if (\is_array($val))
+            $arr = [...$arr, ...array_values($val)];
          else
             $arr[] = $val;
       }
       return $arr;
    }
 
-   PUBLIC FUNCTION flatRecursive(): ARRAY {
+   /**
+    * Recursively flattens a multi-dimensional array into a single-dimensional array.
+    *
+    * @return array The flattened array.
+    */
+   public function flatRecursive(): array {
       $arr = [];
 
       foreach ($this->array as $val) {
-         if (is_array($val)) {
+         if (\is_array($val)) {
             $res = new ArrayFlat($val)->flatRecursive();
-            $arr = array_merge($arr, array_values($res));
+            $arr = [...$arr, ...array_values($res)];
          } else
             $arr[] = $val;
       }
       return $arr;
    }
+
 }

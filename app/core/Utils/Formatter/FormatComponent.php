@@ -6,10 +6,9 @@ use ArrayAccess;
 use PhpSPA\Core\Utils\Validate;
 
 class FormatComponent implements ArrayAccess {
-   use Validate;
 
    public function __construct(private $data) {
-      $this->data = $this->validate($data);
+      $this->data = Validate::validate($data);
    }
    
    public function __toString(): string {

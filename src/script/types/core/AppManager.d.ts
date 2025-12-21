@@ -1,6 +1,6 @@
 import { StateValueType } from "../types/StateObjectTypes";
 import { EventObject, EventPayload } from "../types/RuntimeInterfaces";
-export default class AppManager {
+export declare class AppManager {
     /**
      * Navigates to a given URL using PHPSPA's custom navigation logic.
      * Fetches the content via a custom HTTP method, updates the DOM, manages browser history,
@@ -43,6 +43,7 @@ export default class AppManager {
      * @param dependencies - Array of state keys to listen for
      */
     static useEffect(callback: () => void | (() => void), dependencies?: string[] | null): void;
+    static useCallback<T extends (...args: any[]) => any>(callback: T, dependencies?: unknown[]): T;
     /**
      * Updates the application state by sending a custom fetch request and updating the DOM accordingly.
      * Preserves the current scroll position during the update.
@@ -54,7 +55,7 @@ export default class AppManager {
      * @example
      * AppManager.setState('user', { name: 'Alice' })
      *   .then(() => console.log('State updated!'))
-     *   .catch(err => console.error('Failed to update state:', err));
+     *   .catch(err => console.error('Failed to update state:', err))
      */
     static setState(key: string, value: StateValueType): Promise<void>;
     /**

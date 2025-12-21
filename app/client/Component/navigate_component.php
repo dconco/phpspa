@@ -8,6 +8,7 @@ use PhpSPA\Http\Security\Nonce;
 /**
  * Generates client-side navigation script.
  *
+ * @package Component
  * @param string $path Target path
  * @param string|NavigateState $state Navigation state (push/replace)
  * @return string Navigation script tag

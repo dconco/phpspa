@@ -5,6 +5,7 @@ namespace PhpSPA;
 use PhpSPA\Http\Session;
 use PhpSPA\Core\Config\CompressionConfig;
 use PhpSPA\Core\Impl\RealImpl\AppImpl;
+use PhpSPA\Interfaces\ApplicationContract;
 
 /**
  *
@@ -18,7 +19,6 @@ use PhpSPA\Core\Impl\RealImpl\AppImpl;
  * - HTML compression and minification
  * - Environment-based compression settings
  *
- * @package PhpSPA
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
@@ -26,7 +26,7 @@ use PhpSPA\Core\Impl\RealImpl\AppImpl;
  * @see https://phpspa.tech/core-concepts
  * @link https://phpspa.tech
  */
-class App extends AppImpl {
+class App extends AppImpl implements ApplicationContract {
     /**
      * App constructor.
      *

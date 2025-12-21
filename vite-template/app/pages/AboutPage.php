@@ -9,12 +9,14 @@ $aboutPage = new Component(fn() => <<<HTML
       <AboutComponents::Intro />
       <AboutComponents::Triptych />
 
-      <section class="grid gap-8 lg:grid-cols-2">
+      <section class="grid gap-8 lg:grid-cols-3">
          <AboutComponents::Seo />
          <AboutComponents::Preloading />
+         <AboutComponents::NativePerformance />
       </section>
 
       <AboutComponents::FinalCta />
+      <AboutComponents::HiddenSeoSummary />
    </div>
 HTML);
 

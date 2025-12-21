@@ -25,7 +25,6 @@ use PhpSPA\Interfaces\MapInterface;
  */
 class MapRoute implements MapInterface
 {
-   use \PhpSPA\Core\Utils\Validate;
    use \PhpSPA\Core\Utils\Routes\StrictTypes;
 
 

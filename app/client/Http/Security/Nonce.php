@@ -10,10 +10,8 @@ namespace PhpSPA\Http\Security;
  * web applications. Nonces are typically used in forms, AJAX requests, and
  * other security-sensitive operations.
  *
- * @package PhpSPA\Http\Security
- * @category Security
+ * @package Security
  * @author dconco <me@dconco.tech>
- * @version 1.0.0
  * @see https://phpspa.tech/security/content-security-policy
  */
 class Nonce {

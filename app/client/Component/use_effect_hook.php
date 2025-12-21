@@ -14,6 +14,7 @@ use PhpSPA\Core\Helper\StateManager;
  * dependencies and runs the provided callback only once per render cycle
  * if any of the dependency values have changed since the previous render.
  *
+ * @package Component
  * @author dconco <me@dconco.tech>
  * @param Closure        $callback     The function to execute when a change is detected.
  * @param StateManager[] $dependencies An array of state objects to watch for changes.

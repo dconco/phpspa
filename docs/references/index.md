@@ -30,6 +30,22 @@
 
 ---
 
+## :material-devices: Client Runtime
+
+<div class="grid cards" markdown>
+
+-   :material-cellphone-link:{ .lg .middle } **Vite + TypeScript Runtime** :material-new-box:
+
+    ---
+
+    Learn how the `@dconco/phpspa` package bootstraps navigation, state sync, and client helpers.
+
+    [:octicons-arrow-right-24: Open guide](client-runtime.md)
+
+</div>
+
+---
+
 ## :material-webhook: HTTP & Networking
 
 <div class="grid cards" markdown>
@@ -162,7 +178,7 @@
 
     | Feature | Description | Version |
     |---------|-------------|---------|
-    | [Component Meta Tags](component-meta.md) | Route-scoped SEO metadata with `->meta()` | v2.0.5 |
+    | [Component Meta Tags](component-meta.md) | Route/global SEO metadata with `->meta()` | v2.0.5 |
     | [Component Preloading](https://phpspa.readthedocs.io/en/stable/references/preloading-component/) | Multi-section layouts with independent updates | v2.0.4 |
     | [`<Component.Link>`](../navigations/link-component.md) | Client-side navigation | v1.1.0 |
     | [`<Component.Csrf>`](../security/csrf-protection.md) | CSRF token management | v1.1.5 |

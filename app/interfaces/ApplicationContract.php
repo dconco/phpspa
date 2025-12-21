@@ -79,13 +79,14 @@ interface ApplicationContract {
      * Scripts are added to the global scripts array and will be rendered alongside
      * component-specific scripts.
      *
-     * @param callable $content The callable that returns the JavaScript code
+     * @param callable|string $content The callable that returns the JavaScript code
      * @param string|null $name Optional name for the script asset
      * @param string $type The type of script the content should be treated as
+     * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self
      * @see https://phpspa.tech/performance/managing-styles-and-scripts
      */
-    public function script (callable $content, ?string $name = null, string $type = 'text/javascript'): self;
+    public function script (callable|string $content, ?string $name = null, string $type = 'text/javascript', array $attributes = []): self;
 
 
     /**
@@ -95,13 +96,57 @@ interface ApplicationContract {
      * Stylesheets are added to the global stylesheets array and will be rendered alongside
      * component-specific styles.
      *
-     * @param callable $content The callable that returns the CSS code
+     * @deprecated Use `App::link()` instead
+     * @param callable|string $content The callable that returns the CSS code
      * @param string|null $name Optional name for the stylesheet asset
      * @param string $type The type of style sheet the content should be treated as
+     * @param string $rel The relationship attribute applied to the generated <link> tag (e.g., "stylesheet", "preload")
+     * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self
      * @see https://phpspa.tech/performance/managing-styles-and-scripts
      */
-    public function styleSheet (callable $content, ?string $name = null, string $type = 'text/css'): self;
+    public function styleSheet (callable|string $content, ?string $name = null, string $type = 'text/css', string $rel = 'text/css', array $attributes = []): self;
+
+
+    /**
+     * Add a global link tag to the application
+     *
+     * This stylesheet will be included on every component render throughout the application.
+     * Stylesheets are added to the global stylesheets array and will be rendered alongside
+     * component-specific styles.
+     *
+     * @param callable|string $content The callable that returns the CSS code
+     * @param string|null $name Optional name for the stylesheet asset
+     * @param string $type The type of style sheet the content should be treated as
+     * @param string $rel The relationship attribute applied to the generated <link> tag (e.g., "stylesheet", "preload")
+     * @param array $attributes Optional additional attributes as key => value pairs.
+     * @return self
+     * @see https://phpspa.tech/performance/managing-styles-and-scripts
+     */
+    public function link (callable|string $content, ?string $name = null, string $type = 'text/css', string $rel = 'text/css', array $attributes = []): self;
+
+    /**
+     * Register global meta tags that render with every initial HTML response.
+     *
+     * Entries follow the same API as component-level metadata and merge with
+     * per-component tags (component tags win when duplicates exist).
+     *
+     * @param string|null $name Standard meta "name" attribute.
+     * @param string|null $content Content associated with the meta tag.
+     * @param string|null $property Open Graph "property" attribute value.
+     * @param string|null $httpEquiv HTTP-EQUIV attribute value.
+     * @param string|null $charset Charset declaration (mutually exclusive with content).
+     * @param array $attributes Optional additional attributes as key => value pairs.
+     * @return self
+     */
+    public function meta(
+        ?string $name = null,
+        ?string $content = null,
+        ?string $property = null,
+        ?string $httpEquiv = null,
+        ?string $charset = null,
+        array $attributes = []
+    ): self;
 
 
     /**
@@ -112,7 +157,7 @@ interface ApplicationContract {
      * @return ApplicationContract
      * @see https://phpspa.tech/references/router/#static-files
      */
-    public function static(string $route, string $staticPath): self;
+    public function useStatic(string $route, string $staticPath): self;
 
 
     /**

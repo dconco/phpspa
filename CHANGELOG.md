@@ -2,11 +2,19 @@
 
 ## v2.0.5 (unreleased)
 
-### **Component-Level SEO Controls** 🧭
+**Installation:**
+```bash
+composer require dconco/phpspa:v2.0.5.x-dev
+```
+
+### What's Added
+
+#### **Component-Level SEO Controls** 🧭
 
 - Added chained `->meta()` API to every component so route-specific descriptions, keywords, Open Graph, or HTTP-EQUIV tags can be declared right where the component is defined.
 - Runtime now injects those tags only during the initial HTML.
 - Layout stays clean; global meta is still available via the layout if needed.
+- Added `App::meta()` for layout-wide defaults—global entries merge with (and can be overridden by) per-component metadata so you define canonical tags once.
 
 **Example:**
 
@@ -20,7 +28,51 @@ new Component(...)
 
 **Documentation:** [references/component-meta](https://phpspa.readthedocs.io/en/latest/references/component-meta)
 
+
+#### **`useCallback()`**
+
+- Added `useCallback()` to client side.
+   ```javascript
+      const toggleNav = useCallback((event: MouseEvent) => {
+         // Stable reference no matter how often this runs
+      }, []);
+   ```
+
+#### **Deterministic Global Script Queue**
+
+- `App::script()` now accepts either a callable (inline script) or a direct string path (e.g., `/src/main.ts`).
+- Scripts render in the order they are registered, so you can emit inline data (tokens, config, feature flags) and then queue your bundler entry or CDN script immediately after.
+
+**Example:**
+
+```php
+$token = Component\useFunction('Toggle')->token;
+
+$app
+   ->script(fn () => "<script>window.token = '{$token}';</script>")
+   ->script('/src/main.ts');
+```
+
+#### **Global Asset API Clean-up**
+
+- Added `App::link()` (and `Component::link()`) for defining `<link>` tags; the older `->styleSheet()` helpers are now deprecated aliases.
+
+- Asset helpers (`script()/link()`) take an `$attributes` array so you can emit `crossorigin`, `referrerpolicy`, `fetchpriority`, etc., without manual string building.
+
+- The layout auto-creates a `<head>` block if it is missing, ensuring all scripts/meta/styles have a deterministic insertion point.
+
+#### **`useModule()`**
+
+- Added `App::useModule()` to specify if this application is used with node, like serving with vite. This is going to stop adding phpspa asset links, and you would have to install the `@dconco/phpspa` npm package, `npm install @dconco/phpspa` to use the `phpspa` client features.
+
+
+### What's Changed
+- Changed `App::static()` to `App::useStatic()`.
+
+
 ---
+
+
 
 ## v2.0.4 (Current) (Stable)
 

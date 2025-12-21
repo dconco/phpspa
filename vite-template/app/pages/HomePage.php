@@ -11,6 +11,7 @@ $homePage = new Component(fn() => <<<HTML
       <HomeComponents::Workflow />
       <HomeComponents::Insights />
       <HomeComponents::Cta />
+      <HomeComponents::HiddenSeoSummary />
    </div>
 HTML);
 

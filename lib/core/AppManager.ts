@@ -1,10 +1,10 @@
-import { ComponentObject, StateObject, StateValueType } from "../types/StateObjectTypes";
-import { EventObject, EventPayload } from "../types/RuntimeInterfaces";
-import { utf8ToBase64 } from "../utils/baseConverter";
-import RuntimeManager from "./RuntimeManager";
-import morphdom from "morphdom";
+import { ComponentObject, StateObject, StateValueType } from "../types/StateObjectTypes"
+import { EventObject, EventPayload } from "../types/RuntimeInterfaces"
+import { utf8ToBase64 } from "../utils/baseConverter"
+import { RuntimeManager } from "./RuntimeManager"
+import morphdom from "morphdom"
 
-export default class AppManager {
+export class AppManager {
    /**
     * Navigates to a given URL using PHPSPA's custom navigation logic.
     * Fetches the content via a custom HTTP method, updates the DOM, manages browser history,
@@ -17,10 +17,10 @@ export default class AppManager {
     * @fires AppManager#load - Emitted after attempting to load the new route, with success or error status.
     */
    public static navigate(url: URL|string, state: 'push' | 'replace' = "push") {
-      const newUrl = url instanceof URL ? url : new URL(url, location.toString());
+      const newUrl = url instanceof URL ? url : new URL(url, location.toString())
 
       // --- Emit beforeload event for loading indicators ---
-      RuntimeManager.emit("beforeload", { route: newUrl.toString() });
+      RuntimeManager.emit("beforeload", { route: newUrl.toString() })
 
       // --- Fetch content from the server with PhpSPA headers ---
       fetch(newUrl, {
@@ -36,24 +36,24 @@ export default class AppManager {
             response
                .text()
                .then((responseText) => {
-                  let responseData;
+                  let responseData
 
                   // --- Try to parse JSON response, fallback to raw text ---
                   if (responseText && responseText.trim().startsWith("{")) {
                      try {
-                        responseData = JSON.parse(responseText);
+                        responseData = JSON.parse(responseText)
                      } catch (parseError) {
-                        responseData = responseText;
+                        responseData = responseText
                      }
                   } else {
-                     responseData = responseText || ""; // --- Handle empty responses ---
+                     responseData = responseText || "" // --- Handle empty responses ---
                   }
 
-                  processResponse(responseData);
+                  processResponse(responseData)
                })
-               .catch((error) => handleError(error));
+               .catch((error) => handleError(error))
          })
-         .catch((error) => handleError(error));
+         .catch((error) => handleError(error))
 
       /**
        * Handles errors that occur during navigation requests
@@ -65,46 +65,46 @@ export default class AppManager {
             error.response
                .text()
                .then((fallbackResponse: any) => {
-                  let errorData;
+                  let errorData
 
                   try {
                      // --- Attempt to parse error response as JSON ---
                      errorData = fallbackResponse?.trim().startsWith("{")
                         ? JSON.parse(fallbackResponse)
-                        : fallbackResponse;
+                        : fallbackResponse
                   } catch (parseError) {
                      // --- If parsing fails, use raw text ---
-                     errorData = fallbackResponse;
+                     errorData = fallbackResponse
                   }
 
-                  processResponse(errorData || "");
+                  processResponse(errorData || "")
 
                   RuntimeManager.emit("load", {
                      route: newUrl.toString(),
                      success: false,
                      error: error.message || "Server returned an error",
                      data: errorData,
-                  });
+                  })
                })
                .catch(() => {
-                  processResponse("");
+                  processResponse("")
 
                   // --- Failed to read error response body ---
                   RuntimeManager.emit("load", {
                      route: newUrl.toString(),
                      success: false,
                      error: error.message || "Failed to read error response",
-                  });
-               });
+                  })
+               })
          } else {
-            processResponse("");
+            processResponse("")
 
             // --- Network error, same-origin issue, or other connection problems ---
             RuntimeManager.emit("load", {
                route: newUrl.toString(),
                success: false,
                error: error.message || "No connection to server",
-            });
+            })
          }
       }
 
@@ -114,18 +114,18 @@ export default class AppManager {
       function processResponse(responseData: ComponentObject|string) {
          const component: ComponentObject = typeof responseData === 'string'
             ? { content: responseData }
-            : responseData;
+            : responseData
 
          // --- Update document title if provided ---
          if (component?.title && component.title.length > 0) {
-            document.title = component.title;
+            document.title = component.title
          }
 
          // --- Find target element for content replacement ---
          const targetElement =
             document.getElementById(component?.targetID) ??
             document.getElementById(history.state?.targetID) ??
-            document.body;
+            document.body
 
          if (component?.targetID) {
             RuntimeManager.currentRoutes[component.targetID] = {
@@ -135,12 +135,12 @@ export default class AppManager {
             }
          }
 
-         const currentRoutes = RuntimeManager.currentRoutes;
+         const currentRoutes = RuntimeManager.currentRoutes
 
          for (const targetID in currentRoutes) {
-            if (!Object.hasOwn(currentRoutes, targetID)) continue;
+            if (!Object.hasOwn(currentRoutes, targetID)) continue
 
-            const targetInfo = currentRoutes[targetID];
+            const targetInfo = currentRoutes[targetID]
 
             // --- If route is exact and the route target ID is not equal to the navigated route target ID ---
             // --- Then the document URL has changed ---
@@ -152,13 +152,13 @@ export default class AppManager {
                   try {
                      morphdom(currentHTML, '<div>' + targetInfo.defaultContent + '</div>', {
                         childrenOnly: true
-                     });
+                     })
                   } catch {
-                     currentHTML.innerHTML = targetInfo.defaultContent;
+                     currentHTML.innerHTML = targetInfo.defaultContent
                   }
                }
 
-               delete currentRoutes[targetID];
+               delete currentRoutes[targetID]
             }
          }
 
@@ -167,9 +167,9 @@ export default class AppManager {
             try {
                morphdom(targetElement, '<div>' + component.content + '</div>', {
                   childrenOnly: true
-               });
+               })
             } catch {
-               targetElement.innerHTML = component.content;
+               targetElement.innerHTML = component.content
             }
          }
 
@@ -185,48 +185,48 @@ export default class AppManager {
 
          // --- Include reload time if specified ---
          if (component?.reloadTime) {
-            stateData.reloadTime = component.reloadTime;
+            stateData.reloadTime = component.reloadTime
          }
 
          const completedDOMUpdate = () => {
 
             // --- Update browser history ---
             if (state === "push") {
-               RuntimeManager.pushState(stateData, stateData.title, newUrl);
+               RuntimeManager.pushState(stateData, stateData.title, newUrl)
             } else if (state === "replace") {
-               RuntimeManager.replaceState(stateData, stateData.title, newUrl);
+               RuntimeManager.replaceState(stateData, stateData.title, newUrl)
             }
 
             // --- Handle URL fragments (hash navigation) ---
-            const hashElement = document.getElementById(newUrl.hash.substring(1));
+            const hashElement = document.getElementById(newUrl.hash.substring(1))
 
             if (hashElement) {
                scroll({
                   top: hashElement.offsetTop,
                   left: hashElement.offsetLeft,
-               });
+               })
             } else {
-               scroll(0, 0); // --- Scroll to top if no hash or element not found ---
+               scroll(0, 0) // --- Scroll to top if no hash or element not found ---
             }
 
 
             // --- Clear old executed scripts cache ---
-            RuntimeManager.clearEffects();
-            RuntimeManager.clearExecutedScripts();
+            RuntimeManager.clearEffects()
+            RuntimeManager.clearExecutedScripts()
 
             // --- Execute any inline scripts and styles in the new content ---
-            RuntimeManager.runAll();
+            RuntimeManager.runAll()
 
             // --- Emit successful load event ---
             RuntimeManager.emit("load", {
                route: newUrl.toString(),
                success: true,
                error: false,
-            });
+            })
 
             // --- Set up auto-reload if specified ---
             if (component?.reloadTime) {
-               setTimeout(AppManager.reloadComponent, component.reloadTime);
+               setTimeout(AppManager.reloadComponent, component.reloadTime)
             }
          }
 
@@ -236,11 +236,11 @@ export default class AppManager {
                   route: newUrl.toString(),
                   success: false,
                   error: reason || 'Unknown error during view transition',
-               });
-            });
+               })
+            })
          } else {
-            updateDOM();
-            completedDOMUpdate();
+            updateDOM()
+            completedDOMUpdate()
          }
       }
    }
@@ -250,7 +250,7 @@ export default class AppManager {
     * Uses the native browser history API.
     */
    public static back() {
-      history.back();
+      history.back()
    }
 
    /**
@@ -258,7 +258,7 @@ export default class AppManager {
     * Uses the native browser history API.
     */
    public static forward() {
-      history.forward();
+      history.forward()
    }
 
    /**
@@ -266,7 +266,7 @@ export default class AppManager {
     * This does not add a new entry to the browser's history stack.
     */
    public static reload() {
-      AppManager.navigate(location.toString(), "replace");
+      AppManager.navigate(location.toString(), "replace")
    }
 
    /**
@@ -277,16 +277,16 @@ export default class AppManager {
     */
    public static on(event: keyof EventObject, callback: (payload: EventPayload) => void) {
       if (!RuntimeManager.events[event]) {
-         RuntimeManager.events[event] = [];
+         RuntimeManager.events[event] = []
       }
-      RuntimeManager.events[event].push(callback);
+      RuntimeManager.events[event].push(callback)
 
-      const lastPayload = RuntimeManager.getLastEventPayload(event);
+      const lastPayload = RuntimeManager.getLastEventPayload(event)
       if (lastPayload) {
          try {
-            callback(lastPayload);
+            callback(lastPayload)
          } catch (error) {
-            console.error(`Error in ${event} event callback:`, error);
+            console.error(`Error in ${event} event callback:`, error)
          }
       }
    }
@@ -299,7 +299,11 @@ export default class AppManager {
     * @param dependencies - Array of state keys to listen for
     */
    public static useEffect(callback: () => void | (() => void), dependencies: string[]|null = null) {
-      RuntimeManager.registerEffect(callback, dependencies);
+      RuntimeManager.registerEffect(callback, dependencies)
+   }
+
+   public static useCallback<T extends (...args: any[]) => any>(callback: T, dependencies: unknown[] = []): T {
+      return RuntimeManager.registerCallback(callback, dependencies)
    }
 
    /**
@@ -313,18 +317,18 @@ export default class AppManager {
     * @example
     * AppManager.setState('user', { name: 'Alice' })
     *   .then(() => console.log('State updated!'))
-    *   .catch(err => console.error('Failed to update state:', err));
+    *   .catch(err => console.error('Failed to update state:', err))
     */
    public static setState(key: string, value: StateValueType): Promise<void> {
       return new Promise(async (resolve, reject) => {
-         const currentRoutes = RuntimeManager.currentRoutes;
-         const statePayload = JSON.stringify({ state: { key, value } });
-         const promises = [];
+         const currentRoutes = RuntimeManager.currentRoutes
+         const statePayload = JSON.stringify({ state: { key, value } })
+         const promises = []
 
          for (const targetID in currentRoutes) {
-            if (!Object.hasOwn(currentRoutes, targetID)) continue;
+            if (!Object.hasOwn(currentRoutes, targetID)) continue
 
-            const { route } = currentRoutes[targetID];
+            const { route } = currentRoutes[targetID]
 
             const prom = fetch(route, {
                headers: {
@@ -334,36 +338,36 @@ export default class AppManager {
                mode: "same-origin",
                redirect: "follow",
                keepalive: true,
-            });
-            promises.push(prom);
+            })
+            promises.push(prom)
          }
 
-         const responses = await Promise.all(promises);
+         const responses = await Promise.all(promises)
 
          responses.forEach(async (response) => {
             try {
-               const responseText = await response.text();
+               const responseText = await response.text()
 
-               let responseData;
+               let responseData
 
                // --- Parse response as JSON if possible ---
                if (responseText && responseText.trim().startsWith("{")) {
                   try {
-                     responseData = JSON.parse(responseText);
+                     responseData = JSON.parse(responseText)
                   } catch (parseError) {
-                     responseData = responseText;
+                     responseData = responseText
                   }
                } else {
-                  responseData = responseText || "";
+                  responseData = responseText || ""
                }
 
-               resolve();
-               updateContent(responseData);
+               resolve()
+               updateContent(responseData)
             } catch (error) {
-               reject(error);
-               handleStateError(error);
+               reject(error)
+               handleStateError(error)
             }
-         });
+         })
 
 
          /**
@@ -374,23 +378,23 @@ export default class AppManager {
                error.response
                   .text()
                   .then((fallbackResponse: any) => {
-                     let errorData;
+                     let errorData
 
                      try {
                         errorData = fallbackResponse?.trim().startsWith("{")
                            ? JSON.parse(fallbackResponse)
-                           : fallbackResponse;
+                           : fallbackResponse
                      } catch (parseError) {
-                        errorData = fallbackResponse;
+                        errorData = fallbackResponse
                      }
 
-                     updateContent(errorData || "");
+                     updateContent(errorData || "")
                   })
                   .catch(() => {
-                     updateContent("");
-                  });
+                     updateContent("")
+                  })
             } else {
-               updateContent("");
+               updateContent("")
             }
          }
 
@@ -401,38 +405,38 @@ export default class AppManager {
          function updateContent(responseData: ComponentObject|string) {
          const component: ComponentObject = typeof responseData === 'string'
             ? { content: responseData }
-            : responseData;
+            : responseData
    
             // --- Update title if provided ---
             if (component?.title && String(component.title).length > 0) {
-               document.title = component.title;
+               document.title = component.title
             }
 
             // --- Find target element and update content ---
             const targetElement =
                document.getElementById(component?.targetID) ??
                document.getElementById(history.state?.targetID) ??
-               document.body;
+               document.body
 
             const updateDOM = () => {
                try {
                   morphdom(targetElement, '<div>' + component.content + '</div>', {
                      childrenOnly: true
-                  });
+                  })
                } catch {
-                  targetElement.innerHTML = component.content;
+                  targetElement.innerHTML = component.content
                }
-            };
+            }
 
             const completedDOMUpdate = () => {
                // --- Trigger effects for the changed key ---
-               RuntimeManager.triggerEffects(key, value);
-            };
+               RuntimeManager.triggerEffects(key, value)
+            }
 
-            updateDOM();
-            completedDOMUpdate();
+            updateDOM()
+            completedDOMUpdate()
          }
-      });
+      })
    }
 
    /**
@@ -454,28 +458,28 @@ export default class AppManager {
             response
                .text()
                .then((responseText) => {
-                  let responseData;
+                  let responseData
 
                   // --- Parse response ---
                   if (responseText && responseText.trim().startsWith("{")) {
                      try {
-                        responseData = JSON.parse(responseText);
+                        responseData = JSON.parse(responseText)
                      } catch (parseError) {
-                        responseData = responseText;
+                        responseData = responseText
                      }
                   } else {
-                     responseData = responseText || "";
+                     responseData = responseText || ""
                   }
 
-                  updateComponentContent(responseData);
+                  updateComponentContent(responseData)
                })
                .catch((error) => {
-                  handleComponentError(error);
-               });
+                  handleComponentError(error)
+               })
          })
          .catch((error) => {
-            handleComponentError(error);
-         });
+            handleComponentError(error)
+         })
 
       /**
        * Handles errors during component reload
@@ -485,23 +489,23 @@ export default class AppManager {
             error.response
                .text()
                .then((fallbackResponse: string) => {
-                  let errorData;
+                  let errorData
 
                   try {
                      errorData = fallbackResponse?.trim().startsWith("{")
                         ? JSON.parse(fallbackResponse)
-                        : fallbackResponse;
+                        : fallbackResponse
                   } catch (parseError) {
-                     errorData = fallbackResponse;
+                     errorData = fallbackResponse
                   }
 
-                  updateComponentContent(errorData || "");
+                  updateComponentContent(errorData || "")
                })
                .catch(() => {
-                  updateComponentContent("");
-               });
+                  updateComponentContent("")
+               })
          } else {
-            updateComponentContent("");
+            updateComponentContent("")
          }
       }
 
@@ -511,45 +515,45 @@ export default class AppManager {
       function updateComponentContent(responseData: ComponentObject|string) {
          const component: ComponentObject = typeof responseData === 'string'
             ? { content: responseData }
-            : responseData;
+            : responseData
 
          // --- Update title if provided ---
          if (component?.title && String(component.title).length > 0) {
-            document.title = component.title;
+            document.title = component.title
          }
 
          // --- Find target and update content ---
          const targetElement =
             document.getElementById(component?.targetID) ??
             document.getElementById(history.state?.targetID) ??
-            document.body;
+            document.body
 
          const updateDOM = () => {
             try {
                morphdom(targetElement, '<div>' + component.content + '</div>', {
                   childrenOnly: true
-               });
+               })
             } catch {
-               targetElement.innerHTML = component.content;
-            }
-         };
-
-         const completedDOMUpdate = () => {
-            // --- Clear old executed scripts cache ---
-            RuntimeManager.clearEffects();
-            RuntimeManager.clearExecutedScripts();
-
-            // --- Execute any inline scripts and styles in the new content ---
-            RuntimeManager.runAll();
-
-            // --- Set up next auto-reload if specified ---
-            if (component?.reloadTime) {
-               setTimeout(AppManager.reloadComponent, component.reloadTime);
+               targetElement.innerHTML = component.content
             }
          }
 
-         updateDOM();
-         completedDOMUpdate();
+         const completedDOMUpdate = () => {
+            // --- Clear old executed scripts cache ---
+            RuntimeManager.clearEffects()
+            RuntimeManager.clearExecutedScripts()
+
+            // --- Execute any inline scripts and styles in the new content ---
+            RuntimeManager.runAll()
+
+            // --- Set up next auto-reload if specified ---
+            if (component?.reloadTime) {
+               setTimeout(AppManager.reloadComponent, component.reloadTime)
+            }
+         }
+
+         updateDOM()
+         completedDOMUpdate()
       }
    }
 
@@ -562,7 +566,7 @@ export default class AppManager {
     * @returns The decoded response from the server
     */
    public static async __call(token: string, ...args: any[]): Promise<StateValueType> {
-      const callPayload = JSON.stringify({ __call: { token, args } });
+      const callPayload = JSON.stringify({ __call: { token, args } })
 
       try {
          const response = await fetch(location.pathname, {
@@ -573,52 +577,52 @@ export default class AppManager {
             mode: "same-origin",
             redirect: "follow",
             keepalive: true,
-         });
+         })
 
-         const responseText = await response.text();
-         let responseData;
+         const responseText = await response.text()
+         let responseData
 
          // --- Parse and decode response ---
          if (responseText && responseText.trim().startsWith("{")) {
             try {
-               responseData = JSON.parse(responseText);
+               responseData = JSON.parse(responseText)
                responseData = responseData?.response
                   ? JSON.parse(responseData.response)
-                  : responseData;
+                  : responseData
             } catch (parseError) {
-               responseData = responseText;
+               responseData = responseText
             }
          } else {
-            responseData = responseText || "";
+            responseData = responseText || ""
          }
 
-         return responseData;
+         return responseData
       } catch (error: any) {
          // --- Handle errors with response bodies ---
          if (error?.response) {
             try {
-               const fallbackResponse = await error.response.text();
-               let errorData;
+               const fallbackResponse = await error.response.text()
+               let errorData
 
                try {
                   errorData = fallbackResponse?.trim().startsWith("{")
                      ? JSON.parse(fallbackResponse)
-                     : fallbackResponse;
+                     : fallbackResponse
 
                   errorData = errorData?.response
                      ? JSON.parse(errorData.response)
-                     : errorData;
+                     : errorData
                } catch (parseError) {
-                  errorData = fallbackResponse;
+                  errorData = fallbackResponse
                }
 
-               return errorData;
+               return errorData
             } catch {
-               return "";
+               return ""
             }
          } else {
             // --- Network errors or other issues ---
-            return "";
+            return ""
          }
       }
    }

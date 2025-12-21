@@ -1,7 +1,15 @@
+import { readFileSync } from 'node:fs';
+
 import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import terser from '@rollup/plugin-terser';
+
+const pkg = JSON.parse(
+   readFileSync(new URL('./package.json', import.meta.url), 'utf-8')
+);
+
+const banner = `/*!\n * PhpSPA Client Runtime v${pkg.version}\n * Docs: ${pkg.homepage} | Package: ${pkg.name}\n * License: ${pkg.license}\n */`;
 
 export default {
    input: 'lib/index.ts',
@@ -11,30 +19,30 @@ export default {
          file: 'src/script/phpspa.js',
          format: 'umd',
          name: 'phpspa',
-         sourcemap: true,
-         exports: 'named'
+         exports: 'named',
+         banner
       },
       // --- Minified UMD for production CDN ---
       {
          file: 'src/script/phpspa.min.js',
          format: 'umd',
          name: 'phpspa',
-         sourcemap: true,
          exports: 'named',
-         plugins: [terser()]
+         plugins: [terser()],
+         banner
       },
       // --- CommonJS for Node.js ---
       {
          file: 'src/script/phpspa.cjs',
          format: 'cjs',
-         sourcemap: true,
-         exports: 'named'
+         exports: 'named',
+         banner
       },
       // --- ES Module for modern bundlers ---
       {
          file: 'src/script/phpspa.mjs',
          format: 'es',
-         sourcemap: true
+         banner
       }
    ],
    plugins: [

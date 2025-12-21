@@ -5,6 +5,7 @@ namespace Component;
 /**
  * Renders SPA navigation link component.
  *
+ * @package Component
  * @author dconco <me@dconco.tech>
  * @param string $children Link content
  * @param string $to Target URL/route

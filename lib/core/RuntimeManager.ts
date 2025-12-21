@@ -9,7 +9,7 @@ import { utf8ToBase64 } from "../utils/baseConverter";
  * Handles script execution, style injection, event management, and browser history
  * for the PhpSPA framework. Uses an obscure class name to avoid conflicts.
  */
-export default class RuntimeManager {
+export class RuntimeManager {
    /**
     * Tracks executed scripts to prevent duplicates
     */
@@ -42,6 +42,8 @@ export default class RuntimeManager {
    private static lastEventPayload: Partial<Record<keyof EventObject, EventPayload>> = {};
 
    private static effects: Set<EffectType> = new Set();
+
+   private static memoizedCallbacks: Array<{ deps: unknown[]; callback: (...args: unknown[]) => unknown }> = [];
 
    /**
     * Registers a side effect to be executed when state changes
@@ -92,6 +94,23 @@ export default class RuntimeManager {
       RuntimeManager.effects.clear();
    }
 
+   private static depsEqual(a: unknown[], b: unknown[]): boolean {
+      if (a.length !== b.length) return false;
+      return a.every((dep, index) => Object.is(dep, b[index]));
+   }
+
+   public static registerCallback<T extends (...args: any[]) => any>(callback: T, dependencies: unknown[] = []): T {
+      const existing = RuntimeManager.memoizedCallbacks.find(entry => RuntimeManager.depsEqual(entry.deps, dependencies));
+
+      if (existing) {
+         return existing.callback as T;
+      }
+
+      const memoized = callback.bind(undefined) as T;
+      RuntimeManager.memoizedCallbacks.push({ deps: dependencies.slice(), callback: memoized });
+      return memoized;
+   }
+
    public static runAll(): void {
       for (const targetID in RuntimeManager.currentRoutes) {
          const element = document.getElementById(targetID);
@@ -110,7 +129,7 @@ export default class RuntimeManager {
     */
    private static runInlineScripts(container: HTMLElement) {
       const scripts = container.querySelectorAll("script");
-      const nonce = document.documentElement.getAttribute('x-phpspa');
+      const nonce = document.head.getAttribute('x-phpspa');
 
       scripts.forEach((script: HTMLScriptElement) => {
          // --- Use base64 encoded content as unique identifier ---
@@ -149,11 +168,11 @@ export default class RuntimeManager {
 
    static runPhpSpaScripts(container: HTMLElement) {
       const scripts = container.querySelectorAll("phpspa-script, script[data-type=\"phpspa/script\"]") as NodeListOf<HTMLScriptElement>;
+      const nonce = document.head.getAttribute('x-phpspa');
 
       scripts.forEach(async (script: HTMLScriptElement): Promise<void> => {
          const scriptUrl = script.getAttribute('src') ?? '';
          const scriptType = script.getAttribute('type') ?? '';
-         const nonce = document.documentElement.getAttribute('x-phpspa');
 
          // --- Skip if this script has already been executed ---
          if (!this.executedScripts.has(scriptUrl)) {
@@ -217,7 +236,7 @@ export default class RuntimeManager {
     */
    private static runInlineStyles(container: HTMLElement) {
       const styles = container.querySelectorAll("style");
-      const nonce = document.documentElement.getAttribute('x-phpspa');
+      const nonce = document.head.getAttribute('x-phpspa');
 
       styles.forEach((style: HTMLStyleElement) => {
          // --- Use base64 encoded content as unique identifier ---

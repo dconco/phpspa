@@ -1,35 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <link rel="preconnect" href="https://fonts.googleapis.com">
-   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+   <body class="relative">
 
-   <!-- Development: Vite dev server with HMR -->
-   <script type="module" src="http://localhost:5173/@vite/client"></script>
-</head>
-<body class="relative">
-   <div class="absolute inset-0 -z-10">
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.35),transparent_55%)]"></div>
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(14,165,233,0.25),transparent_60%)] mix-blend-screen opacity-80"></div>
-   </div>
+      <div class="absolute inset-0 -z-10">
+         <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.35),transparent_55%)]"></div>
+         <div class="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(14,165,233,0.25),transparent_60%)] mix-blend-screen opacity-80"></div>
+      </div>
 
-   <div class="relative z-10 px-6 py-6 sm:px-10">
-      <nav class="flex items-center justify-between rounded-3xl border border-white/5 bg-white/5 px-6 py-4 backdrop-blur">
-         <span class="pill">PhpSPA + Vite</span>
-         <div class="flex items-center gap-6">
-            <Component.Link class="nav-link" to="/">Overview</Component.Link>
-            <Component.Link class="nav-link" to="/about">About</Component.Link>
-            <Component.Link class="nav-link" to="https://phpspa.tech" target="_blank" rel="noreferrer">Docs</Component.Link>
-            <Component.Link class="nav-link" to="https://github.com/dconco/phpspa" target="_blank" rel="noreferrer">GitHub</Component.Link>
-         </div>
-      </nav>
+      <div class="relative z-10 px-6 py-6 sm:px-10">
+         <nav class="rounded-3xl border border-white/5 bg-white/5 px-6 py-4 backdrop-blur">
+            <div class="flex items-center justify-between gap-4">
+               <span class="pill">PhpSPA + Vite</span>
 
-      <main id="app" class="relative z-10 mt-10"></main>
-   </div>
+               <button data-nav-toggle class="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 text-white transition-colors hover:border-white/40 md:hidden" aria-label="Toggle navigation">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h16" />
+                  </svg>
+               </button>
+            </div>
 
-   <script type="module" src="http://localhost:5173/src/main.ts"></script>
-</body>
+            <div data-nav-links class="mt-4 hidden flex-col gap-4 border-t border-white/10 pt-4 md:mt-0 md:flex md:flex-row md:items-center md:gap-6 md:border-0 md:pt-0">
+               <Component.Link class="nav-link" to="/">Overview</Component.Link>
+               <Component.Link class="nav-link" to="/about">About</Component.Link>
+               <Component.Link class="nav-link" to="/client-runtime">Client API</Component.Link>
+               <Component.Link class="nav-link" to="https://phpspa.tech" target="_blank" rel="noreferrer">Docs</Component.Link>
+               <Component.Link class="nav-link" to="https://github.com/dconco/phpspa" target="_blank" rel="noreferrer">GitHub</Component.Link>
+            </div>
+         </nav>
+
+         <main id="app" class="relative z-10 mt-10"></main>
+      </div>
+
+      <!-- Development: Vite dev server with HMR -->
+      <script type="module" src="http://localhost:5173/@vite/client"></script>
+      <script type="module" src="http://localhost:5173/src/main.ts"></script>
+
+   </body>
 </html>

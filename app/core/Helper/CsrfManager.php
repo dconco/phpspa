@@ -3,13 +3,13 @@
 namespace PhpSPA\Core\Helper;
 
 use PhpSPA\Http\Session;
+use PhpSPA\Core\Utils\Validate;
 use PhpSPA\Core\Http\HttpRequest;
 use PhpSPA\Core\Helper\SessionHandler;
 use PhpSPA\Core\Interfaces\CsrfManagerInterface;
 
 class CsrfManager implements CsrfManagerInterface
 {
-    use \PhpSPA\Core\Utils\Validate;
 
     /** @var string Unique identifier for the form/action */
     protected string $name;
@@ -118,8 +118,8 @@ class CsrfManager implements CsrfManagerInterface
 
         return sprintf(
             '<input type="hidden" name="%s" value="%s">',
-            $this->validate($this->name),
-            $this->validate($token),
+            Validate::validate($this->name),
+            Validate::validate($token),
         );
     }
 

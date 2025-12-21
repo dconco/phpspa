@@ -9,7 +9,7 @@ use PhpSPA\Core\Helper\FileHandler;
  * Handles HTTP responses for API calls in a PHP application.
  * Provides methods to set response data, status codes, headers, and output JSON.
  *
- * @category HTTP
+ * @package HTTP
  * @author Samuel Paschalson <samuelpaschalson@gmail.com>
  * @copyright 2025 Samuel Paschalson
  * @see https://phpspa.tech/references/response/#response-api-examples
