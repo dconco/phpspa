@@ -61,7 +61,7 @@
 ## 📦 Installation
 
 ```bash
-composer create-project phpspa/vite-template my-project
+composer create-project phpspa/client my-project
 cd my-project
 pnpm install
 ```

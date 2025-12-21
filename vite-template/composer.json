@@ -1,5 +1,5 @@
 {
-   "name": "phpspa/vite-template",
+   "name": "phpspa/client",
    "description": "PhpSPA + Vite + Tailwind starter project that mixes PHP-first pages with hydrated client navigation.",
    "type": "project",
    "license": "MIT",
@@ -12,7 +12,7 @@
    ],
    "authors": [
       {
-         "name": "Dconco",
+         "name": "Dave Conco",
          "homepage": "https://phpspa.tech"
       }
    ],
