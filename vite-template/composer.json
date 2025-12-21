@@ -1,6 +1,6 @@
 {
    "name": "phpspa/client",
-   "description": "PhpSPA + Vite + Tailwind starter project that mixes PHP-first pages with hydrated client navigation.",
+   "description": "PhpSPA + Vite + Tailwind starter project that mixes PhpSPA pages with hydrated client navigation.",
    "type": "project",
    "license": "MIT",
    "keywords": [

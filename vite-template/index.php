@@ -5,8 +5,6 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use PhpSPA\App;
 use PhpSPA\Compression\Compressor;
 
-putenv('PHPSPA_COMPRESSION_STRATEGY=fallback');
-
 // --- Load components ---
 require_once 'app/layout/layout.php';
 require_once 'app/pages/HomePage.php';
@@ -33,7 +31,8 @@ $app->meta(charset: 'UTF-8')
     ->link(rel: 'stylesheet', content: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 // --- For Production ---
-$app->compression(Compressor::LEVEL_EXTREME);
+if (getenv('APP_ENV') === 'production')
+    $app->compression(Compressor::LEVEL_EXTREME);
 
 // --- Run the application ---
 $app->run();

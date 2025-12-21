@@ -2,7 +2,7 @@
 
 # 🚀 PhpSPA + Vite Starter
 
-**PHP-first routing meets instant Vite hydration**
+**A PhpSPA boilerplate that serves PhpSPA pages first, then hydrates navigation with Vite + TypeScript + Tailwind.**
 
 [![PHP Version](https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white)](https://www.php.net/)
 [![Node Version](https://img.shields.io/badge/Node-18%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
