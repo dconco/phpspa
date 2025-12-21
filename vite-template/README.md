@@ -63,7 +63,6 @@
 ```bash
 composer create-project phpspa/client my-project
 cd my-project
-pnpm install
 ```
 
 ---
