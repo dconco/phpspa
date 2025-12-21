@@ -1,6 +1,7 @@
 <?php
 
 require_once 'app/components/svgs/MenuIcon.php';
+require_once 'app/components/HeaderComponent.php';
 
 $layout = function() use (&$app) {
 
