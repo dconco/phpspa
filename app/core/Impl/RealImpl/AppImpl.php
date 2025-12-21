@@ -634,7 +634,7 @@ abstract class AppImpl implements ApplicationContract {
          if ($title) {
             $count = 0;
             $layoutOutput = preg_replace_callback(
-               pattern: '/<title([^>]*)>.*?<\/title>/si',
+               pattern: '/<title\b([^>]*)>.*?<\/title>/si',
                callback: fn ($matches) =>
                   // --- $matches[1] contains any attributes inside the <title> tag ---
                   "\n      <title" . ($matches[1] ?? null) . '>' . $title . '</title>',
@@ -646,7 +646,7 @@ abstract class AppImpl implements ApplicationContract {
             if ($count === 0) {
                // --- If no <title> tag was found, add one inside the <head> section ---
                $layoutOutput = preg_replace(
-                  '/<head([^>]*)>/i',
+                  '/<head\b([^>]*)>/i',
                   "<head$1>\n      <title>$title</title>",
                   $layoutOutput,
                   1,
@@ -656,7 +656,7 @@ abstract class AppImpl implements ApplicationContract {
 
          if ($nonce) {
             $layoutOutput = preg_replace(
-               '/<head([^>]*)>/i',
+               '/<head\b([^>]*)>/i',
                "<head$1 x-phpspa=\"$nonce\">",
                $layoutOutput,
                1,
@@ -751,7 +751,7 @@ abstract class AppImpl implements ApplicationContract {
    {
       $metaBlock = '      ' . $metaMarkup . "\n";
 
-      $updated = preg_replace('/<head([^>]*)>/', "<head$1>\n$metaBlock", $layoutOutput, 1, $count);
+      $updated = preg_replace('/<head\b([^>]*)>/', "<head$1>\n$metaBlock", $layoutOutput, 1, $count);
 
       if ($count > 0 && \is_string($updated)) {
          return $updated;
@@ -768,18 +768,18 @@ abstract class AppImpl implements ApplicationContract {
 
    private function ensureHeadTag(string $layoutOutput): string
    {
-      if (stripos($layoutOutput, '<head') !== false) {
+      if (preg_match('/<head\b[^>]*>/i', $layoutOutput)) {
          return $layoutOutput;
       }
 
       $headMarkup = "<head></head>\n";
 
-      if (preg_match('/<body[^>]*>/i', $layoutOutput, $matches, PREG_OFFSET_CAPTURE)) {
+      if (preg_match('/<body\b[^>]*>/i', $layoutOutput, $matches, PREG_OFFSET_CAPTURE)) {
          $pos = $matches[0][1];
          return substr($layoutOutput, 0, $pos) . $headMarkup . substr($layoutOutput, $pos);
       }
 
-      if (preg_match('/<html[^>]*>/i', $layoutOutput, $matches, PREG_OFFSET_CAPTURE)) {
+      if (preg_match('/<html\b[^>]*>/i', $layoutOutput, $matches, PREG_OFFSET_CAPTURE)) {
          $pos = $matches[0][1] + \strlen($matches[0][0]);
          return substr($layoutOutput, 0, $pos) . "\n" . $headMarkup . substr($layoutOutput, $pos);
       }
@@ -1115,13 +1115,7 @@ abstract class AppImpl implements ApplicationContract {
 
       // --- Inject global stylesheets in head for proper CSS cascading ---
       if (!empty(trim($globalStylesheets))) {
-         if (preg_match('/<\/head>/i', $html)) {
-            $html = preg_replace('/<\/head>/i', "{$globalStylesheets}</head>", $html, 1);
-         }
-         else {
-            // --- If no head tag, put stylesheets at the beginning ---
-            $html = "{$globalStylesheets}{$html}";
-         }
+         $html = preg_replace('/<\/head>/i', "{$globalStylesheets}</head>", $html, 1);
       }
 
       // --- If no global assets and no component scripts, return unchanged ---
