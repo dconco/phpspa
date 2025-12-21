@@ -10,7 +10,7 @@ use PhpSPA\Http\Router;
 
 $app = new App();
 
-$app->static('/', '../public');
+$app->useStatic('/', '../public');
 
 $app->compression(Compressor::LEVEL_AUTO);
 

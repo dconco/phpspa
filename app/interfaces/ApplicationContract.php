@@ -222,7 +222,7 @@ interface ApplicationContract {
      * This method is responsible for executing the main logic of the application,
      * including routing, rendering components, and managing the application lifecycle.
      *
-     * @param bool $returnResult If true, returns the rendered output as a string instead of printing it.
+     * @param bool $return If true, returns the rendered output as a string instead of printing it.
      */
-    public function run ();
+    public function run (bool $return = false);
 }

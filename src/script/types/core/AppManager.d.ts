@@ -1,6 +1,7 @@
 import { StateValueType } from "../types/StateObjectTypes";
 import { EventObject, EventPayload } from "../types/RuntimeInterfaces";
 export declare class AppManager {
+    static currentStateData: Record<string, StateValueType>;
     /**
      * Navigates to a given URL using PHPSPA's custom navigation logic.
      * Fetches the content via a custom HTTP method, updates the DOM, manages browser history,
@@ -42,7 +43,7 @@ export declare class AppManager {
      * @param callback - The effect callback
      * @param dependencies - Array of state keys to listen for
      */
-    static useEffect(callback: () => void | (() => void), dependencies?: string[] | null): void;
+    static useEffect(callback: () => void | (() => void), dependencies?: unknown[] | null): void;
     static useCallback<T extends (...args: any[]) => any>(callback: T, dependencies?: unknown[]): T;
     /**
      * Updates the application state by sending a custom fetch request and updating the DOM accordingly.
@@ -57,7 +58,7 @@ export declare class AppManager {
      *   .then(() => console.log('State updated!'))
      *   .catch(err => console.error('Failed to update state:', err))
      */
-    static setState(key: string, value: StateValueType): Promise<void>;
+    static setState(key: string, value: StateValueType | ((previous: StateValueType) => StateValueType)): Promise<void>;
     /**
      * Reloads the current component content while preserving scroll position.
      * Useful for refreshing dynamic content without full page navigation.

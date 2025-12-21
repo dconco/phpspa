@@ -1,5 +1,5 @@
 import { CurrentRoutesObject, EventObject, EventPayload } from "../types/RuntimeInterfaces";
-import { StateObject } from "../types/StateObjectTypes";
+import { StateObject, StateValueType } from "../types/StateObjectTypes";
 /**
  * Runtime Manager for PhpSPA
  *
@@ -25,6 +25,7 @@ export declare class RuntimeManager {
      */
     static currentRoutes: CurrentRoutesObject;
     static events: EventObject;
+    static currentStateData: Record<string, StateValueType>;
     /**
      * Caches the last payload for each emitted event so late listeners can replay it
      */
@@ -38,7 +39,7 @@ export declare class RuntimeManager {
      * @param {Function} callback - The effect callback
      * @param {Array<string>} dependencies - Array of state keys to listen for
      */
-    static registerEffect(callback: () => void | (() => void), dependencies?: string[] | null): void;
+    static registerEffect(callback: () => void | (() => void), dependencies?: unknown[] | null): void;
     /**
      * Triggers effects that depend on the specific state key
      *
@@ -52,6 +53,9 @@ export declare class RuntimeManager {
     static clearEffects(): void;
     private static depsEqual;
     static registerCallback<T extends (...args: any[]) => any>(callback: T, dependencies?: unknown[]): T;
+    private static resolveDependencies;
+    private static resolveDependency;
+    private static invokeEffect;
     static runAll(): void;
     /**
      * Processes and executes inline scripts within a container

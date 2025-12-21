@@ -407,7 +407,7 @@ abstract class AppImpl implements ApplicationContract {
                $csrf = new CsrfManager($functionName, CALL_FUNC_HANDLE);
 
                if ($csrf->verifyToken($token, $use_once)) {
-                  $res = call_user_func_array(
+                  $res = \call_user_func_array(
                      $functionName,
                      $data['__call']['args'],
                   );
@@ -568,6 +568,7 @@ abstract class AppImpl implements ApplicationContract {
          /**
           * @var array{
           *    content: string,
+          *    stateData: array,
           *    title: string,
           *    targetID: mixed,
           *    reloadTime: int,
@@ -576,6 +577,7 @@ abstract class AppImpl implements ApplicationContract {
           */
          $info = [
             'content' => Compressor::compressComponent($componentOutput),
+            'stateData' => SessionHandler::get(STATE_HANDLE),
             'title' => $title,
             'targetID' => $targetID,
             'exact' => $exact,
@@ -595,7 +597,6 @@ abstract class AppImpl implements ApplicationContract {
             layoutOutput: $layoutOutput,
             componentOutput: $componentOutput ?? '',
             targetID: $targetID,
-            preload: $preload,
             reloadTime: $reloadTime,
             title: $title,
             exact: $exact
@@ -604,7 +605,7 @@ abstract class AppImpl implements ApplicationContract {
    }
 
 
-   private function MainDOMOutput(bool $isPreloadingComponent, array $assetLinks, string &$layoutOutput, string $componentOutput, string $targetID, $preload, $reloadTime, $title, $exact) {
+   private function MainDOMOutput(bool $isPreloadingComponent, array $assetLinks, string &$layoutOutput, string $componentOutput, string $targetID, $reloadTime, $title, $exact) {
       // --- For regular HTML requests, only include component stylesheets with the component content ---
       // --- Component scripts will be injected later to ensure proper execution order ---
       $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput;
@@ -664,10 +665,6 @@ abstract class AppImpl implements ApplicationContract {
 
          $tt = ' data-phpspa-target';
          $layoutOutput = static::format($layoutOutput) ?? '';
-         
-         if ($reloadTime > 0) {
-            $tt .= " phpspa-reload-time=\"$reloadTime\"";
-         }
       }
          
       $tag = '/<(\w+)([^>]*id\s*=\s*["\']?' . preg_quote($targetID, '/') . '["\']?[^>]*)>(.*?)<\/\1>/si';
@@ -677,7 +674,7 @@ abstract class AppImpl implements ApplicationContract {
       // --- This render the component to the target ID ---
       $this->renderedData = preg_replace_callback(
          $tag,
-         function ($matches) use (&$targetInformation, &$tt, $componentOutput, $isPreloadingComponent, $exact, $preload, $targetID) {
+         function ($matches) use (&$targetInformation, &$tt, $componentOutput, $isPreloadingComponent, $exact, $reloadTime, $targetID) {
             // --- $matches[1] contains the tag name, ---
             // --- $matches[2] contains attributes with the target ID, ---
             // --- $matches[3] contains the default content inside the tag ---
@@ -692,6 +689,12 @@ abstract class AppImpl implements ApplicationContract {
             // --- This is the last component which is the main component ---
             // --- Then attach it directly to the component target element ---
             if (!$isPreloadingComponent) {
+               $targetInformation['stateData'] = SessionHandler::get(STATE_HANDLE);
+
+               if ($reloadTime > 0) {
+                  $targetInformation['reloadTime'] = $reloadTime;
+               }
+
                $targetInformation = base64_encode(json_encode($targetInformation));
                $tt .= " phpspa-target-data=\"$targetInformation\"";
             }
@@ -866,12 +869,9 @@ abstract class AppImpl implements ApplicationContract {
             unset($script['content']);
             $attributes = HTMLAttrInArrayToString($script);
 
-            if ($isLink) $result['global']['scripts'] .= "\n      <script $attributes></script>";
-            else {
-               $result['global']['scripts'] .= $isPhpSpaRequest
-                  ? "\n      <phpspa-script $attributes></phpspa-script>"
-                  : "\n      <script data-type=\"phpspa/script\" $attributes></script>";
-            }
+            $result['global']['scripts'] .= $isPhpSpaRequest && !$isLink
+               ? "\n      <phpspa-script $attributes></phpspa-script>"
+               : "\n      <script $attributes></script>";
          }
       }
 
@@ -892,12 +892,9 @@ abstract class AppImpl implements ApplicationContract {
             unset($script['content']);
             $attributes = HTMLAttrInArrayToString($script);
 
-            if ($isLink) $result['component']['scripts'] .= "\n      <script $attributes></script>";
-            else {
-               $result['component']['scripts'] .= $isPhpSpaRequest
-                  ? "\n      <phpspa-script $attributes />"
-                  : "\n      <script data-type=\"phpspa/script\" $attributes />";
-            }
+            $result['component']['scripts'] .= $isPhpSpaRequest && !$isLink
+               ? "\n      <phpspa-script $attributes></phpspa-script>"
+               : "\n      <script $attributes></script>";
          }
       }
 
