@@ -55,11 +55,11 @@ class PendingRequest implements \ArrayAccess {
 
    private ?string $data = null;
 
-   private array $headers = ['Accept' => 'application/json'];
+   private array $headers = ['Accept' => ['application/json', 'text/html', 'application/xml']];
 
    private ?ClientResponse $response = null;
 
-   private ?array $responseData = null;
+   private array|ClientResponse|null $responseData = null;
 
    private HttpClient $client;
 
@@ -89,7 +89,9 @@ class PendingRequest implements \ArrayAccess {
     */
    public function headers (array $headers): PendingRequest
    {
-      $this->headers = array_merge($this->headers, $headers);
+      foreach ($headers as $key => $value) {
+         $this->headers[$key] = $value;
+      }
       return $this;
    }
 
@@ -127,7 +129,9 @@ class PendingRequest implements \ArrayAccess {
     */
    public function withOptions(array $options): PendingRequest
    {
-      $this->options = array_merge($this->options, $options);
+      foreach ($options as $key => $value) {
+         $this->options[$key] = $value;
+      }
       return $this;
    }
 
@@ -223,7 +227,7 @@ class PendingRequest implements \ArrayAccess {
          // POST, PUT, and PATCH use a data body
          RequestMethod::POST,
          RequestMethod::PUT,
-         RequestMethod::PATCH => $this->data = is_array($args[0]) ? json_encode($args[0]) : ($args[0] ?? null),
+         RequestMethod::PATCH => $this->data = \is_array($args[0]) ? json_encode($args[0]) : ($args[0] ?? null),
          default => throw new BadMethodCallException("Method $method does not exist.")
       };
 
@@ -239,19 +243,19 @@ class PendingRequest implements \ArrayAccess {
    {
       // If no method has been called yet, execute a default GET
       if ($this->response === null) {
-         $this->get(); 
+         $this->response = $this->get(); 
       }
-
+      
       // If we don't have parsed JSON data yet, parse it
       if ($this->responseData === null) {
-         $this->responseData = $this->response->json();
+         $this->responseData = $this->response?->json() ?? $this->response;
       }
    }
 
    public function __toString(): string
    {
       $this->fetchDataIfNeeded();
-      return $this->response->text() ?: '';
+      return $this->response?->text() ?? false;
    }
 
    public function offsetExists($offset): bool
@@ -344,12 +348,12 @@ class PendingRequest implements \ArrayAccess {
    private function buildQueryParams (array $args): void
    {
       // --- 1. Handle Array ---
-      if (is_array($args[0] ?? null)) {
+      if (\is_array($args[0] ?? null)) {
          $queryArray = $args[0];
-
+         
       }
       // --- 2. Handle String ---
-      else if (is_string($args[0] ?? null)) {
+      else if (\is_string($args[0] ?? null)) {
          $queryArray = [];
          parse_str(ltrim($args[0], '/?&'), $queryArray);
 
@@ -378,13 +382,6 @@ class PendingRequest implements \ArrayAccess {
     */
    private function buildOptions (string $httpMethod): ClientResponse|AsyncResponse
    {
-      if ($this->data !== null) {
-         $this->headers = array_merge($this->headers, [
-            'Content-Type' => 'application/json',
-            'Content-Length' => strlen($this->data),
-         ]);
-      }
-
       return $this->execute($httpMethod);
    }
 }

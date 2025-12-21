@@ -1,5 +1,5 @@
 /*!
- * PhpSPA Client Runtime v2.0.7
+ * PhpSPA Client Runtime v2.0.8
  * Docs: https://phpspa.tech | Package: @dconco/phpspa
  * License: MIT
  */
@@ -82,6 +82,7 @@
             beforeload: [],
             load: [],
         };
+        static currentStateData;
         /**
          * Caches the last payload for each emitted event so late listeners can replay it
          */
@@ -101,7 +102,8 @@
             const effect = {
                 callback,
                 dependencies,
-                cleanup: typeof cleanup === 'function' ? cleanup : null
+                cleanup: typeof cleanup === 'function' ? cleanup : null,
+                lastDeps: dependencies ? RuntimeManager.resolveDependencies(dependencies) : null
             };
             RuntimeManager.effects.add(effect);
         }
@@ -113,13 +115,13 @@
          */
         static triggerEffects(key, value) {
             RuntimeManager.effects.forEach(effect => {
-                if (effect.dependencies === null || effect.dependencies.includes(key)) {
-                    // --- Run cleanup if exists ---
-                    if (effect.cleanup)
-                        effect.cleanup();
-                    // --- Re-run callback ---
-                    const cleanup = effect.callback();
-                    effect.cleanup = typeof cleanup === 'function' ? cleanup : null;
+                if (!effect.dependencies || effect.dependencies.length === 0) {
+                    RuntimeManager.invokeEffect(effect, effect.dependencies);
+                    return;
+                }
+                const nextDeps = RuntimeManager.resolveDependencies(effect.dependencies);
+                if (!effect.lastDeps || !RuntimeManager.depsEqual(effect.lastDeps, nextDeps)) {
+                    RuntimeManager.invokeEffect(effect, nextDeps);
                 }
             });
         }
@@ -134,18 +136,53 @@
             RuntimeManager.effects.clear();
         }
         static depsEqual(a, b) {
+            if (a === b)
+                return true;
+            if (!a || !b)
+                return false;
             if (a.length !== b.length)
                 return false;
             return a.every((dep, index) => Object.is(dep, b[index]));
         }
         static registerCallback(callback, dependencies = []) {
-            const existing = RuntimeManager.memoizedCallbacks.find(entry => RuntimeManager.depsEqual(entry.deps, dependencies));
+            const resolvedDeps = RuntimeManager.resolveDependencies(dependencies);
+            const existing = RuntimeManager.memoizedCallbacks.find(entry => entry.deps.length === dependencies.length && RuntimeManager.depsEqual(entry.resolvedDeps, resolvedDeps));
             if (existing) {
                 return existing.callback;
             }
             const memoized = callback.bind(undefined);
-            RuntimeManager.memoizedCallbacks.push({ deps: dependencies.slice(), callback: memoized });
+            RuntimeManager.memoizedCallbacks.push({ deps: dependencies.slice(), resolvedDeps, callback: memoized });
             return memoized;
+        }
+        static resolveDependencies(dependencies) {
+            return dependencies.map(dep => RuntimeManager.resolveDependency(dep));
+        }
+        static resolveDependency(dependency) {
+            if (typeof dependency === 'string' &&
+                RuntimeManager.currentStateData &&
+                Object.prototype.hasOwnProperty.call(RuntimeManager.currentStateData, dependency)) {
+                return RuntimeManager.currentStateData[dependency];
+            }
+            return dependency;
+        }
+        static invokeEffect(effect, nextDeps) {
+            if (effect.cleanup) {
+                try {
+                    effect.cleanup();
+                }
+                catch (error) {
+                    console.error('Error in effect cleanup:', error);
+                }
+            }
+            try {
+                const cleanup = effect.callback();
+                effect.cleanup = typeof cleanup === 'function' ? cleanup : null;
+            }
+            catch (error) {
+                console.error('Error in effect callback:', error);
+                effect.cleanup = null;
+            }
+            effect.lastDeps = nextDeps ? nextDeps.slice() : nextDeps;
         }
         static runAll() {
             for (const targetID in RuntimeManager.currentRoutes) {
@@ -181,10 +218,10 @@
                     const isAsync = script.hasAttribute("async");
                     // --- Wrap in IIFE to create isolated scope ---
                     if (isAsync) {
-                        newScript.textContent = `(async function() {\n${script.textContent}\n})();`;
+                        newScript.textContent = `(async function() {\n${script.textContent}\n})()`;
                     }
                     else {
-                        newScript.textContent = `(function() {\n${script.textContent}\n})();`;
+                        newScript.textContent = `(function() {\n${script.textContent}\n})()`;
                     }
                     // --- Execute and immediately remove from DOM ---
                     document.head.appendChild(newScript).remove();
@@ -1101,6 +1138,7 @@
     var morphdom = morphdomFactory(morphAttrs);
 
     class AppManager {
+        static currentStateData = {};
         /**
          * Navigates to a given URL using PHPSPA's custom navigation logic.
          * Fetches the content via a custom HTTP method, updates the DOM, manages browser history,
@@ -1202,8 +1240,9 @@
              */
             function processResponse(responseData) {
                 const component = typeof responseData === 'string'
-                    ? { content: responseData }
+                    ? { content: responseData, stateData: {} }
                     : responseData;
+                RuntimeManager.currentStateData = component.stateData;
                 // --- Update document title if provided ---
                 if (component?.title && component.title.length > 0) {
                     document.title = component.title;
@@ -1385,6 +1424,9 @@
          *   .catch(err => console.error('Failed to update state:', err))
          */
         static setState(key, value) {
+            if (typeof value === 'function') {
+                value = value(RuntimeManager.currentStateData[key]);
+            }
             return new Promise(async (resolve, reject) => {
                 const currentRoutes = RuntimeManager.currentRoutes;
                 const statePayload = JSON.stringify({ state: { key, value } });
@@ -1462,8 +1504,9 @@
                  */
                 function updateContent(responseData) {
                     const component = typeof responseData === 'string'
-                        ? { content: responseData }
+                        ? { content: responseData, stateData: {} }
                         : responseData;
+                    RuntimeManager.currentStateData = component.stateData;
                     // --- Update title if provided ---
                     if (component?.title && String(component.title).length > 0) {
                         document.title = component.title;
@@ -1563,8 +1606,9 @@
              */
             function updateComponentContent(responseData) {
                 const component = typeof responseData === 'string'
-                    ? { content: responseData }
+                    ? { content: responseData, stateData: {} }
                     : responseData;
+                RuntimeManager.currentStateData = component.stateData;
                 // --- Update title if provided ---
                 if (component?.title && String(component.title).length > 0) {
                     document.title = component.title;
@@ -1719,20 +1763,20 @@
                 content: targetElement.innerHTML,
                 root: true,
             };
-            // --- Check if component has auto-reload functionality ---
-            if (targetElement.hasAttribute("phpspa-reload-time")) {
-                initialState.reloadTime = Number(targetElement.getAttribute("phpspa-reload-time"));
-            }
             // --- Check if component has target info ---
             if (targetElementInfo) {
                 const targetData = targetElementInfo.getAttribute("phpspa-target-data");
                 const targetDataInfo = JSON.parse(base64ToUtf8(targetData ?? ''));
+                // --- Check if component has auto-reload functionality ---
+                if (targetDataInfo.reloadTime)
+                    initialState.reloadTime = targetDataInfo.reloadTime;
+                RuntimeManager.currentStateData = targetDataInfo.stateData;
                 targetDataInfo.targetIDs.forEach((targetID, index) => {
                     const exact = targetDataInfo.exact[index];
                     const defaultContent = targetDataInfo.defaultContent[index];
                     if (targetID === targetElement.id) {
-                        initialState['exact'] = exact;
-                        initialState['defaultContent'] = defaultContent;
+                        initialState.exact = exact;
+                        initialState.defaultContent = defaultContent;
                     }
                     RuntimeManager.currentRoutes[targetID] = {
                         route: new URL(targetDataInfo.currentRoutes[index], uri),

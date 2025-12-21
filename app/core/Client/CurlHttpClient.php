@@ -57,6 +57,8 @@ class CurlHttpClient implements HttpClient {
       // Build headers array for cURL
       $curlHeaders = [];
       foreach ($headers as $key => $value) {
+         if (\is_array($value)) $value = implode(', ', $value);
+
          $curlHeaders[] = "$key: $value";
       }
       curl_setopt($ch, CURLOPT_HTTPHEADER, $curlHeaders);
@@ -139,6 +141,8 @@ class CurlHttpClient implements HttpClient {
       // Build headers array for cURL
       $curlHeaders = [];
       foreach ($headers as $key => $value) {
+         if (\is_array($value)) $value = implode(', ', $value);
+
          $curlHeaders[] = "$key: $value";
       }
       curl_setopt($ch, CURLOPT_HTTPHEADER, $curlHeaders);

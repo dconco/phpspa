@@ -1,6 +1,6 @@
 {
   "name": "@dconco/phpspa",
-  "version": "2.0.7",
+  "version": "2.0.9",
   "description": "Client-side JavaScript library for PhpSPA - Component-based PHP framework with SPA-like navigation",
   "type": "module",
   "main": "src/script/phpspa.cjs",

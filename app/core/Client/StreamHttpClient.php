@@ -28,11 +28,7 @@ class StreamHttpClient implements HttpClient {
       }
 
       if ($body !== null) {
-         $headers['Content-Type'] = $headers['Content-Type'] ?? 'application/json';
-         $headers['Content-Length'] = strlen($body);
-         
          $httpOptions['content'] = $body;
-         $httpOptions['header'] = $this->buildHeaderString($headers);
       }
 
       $contextOptions = ['http' => $httpOptions];
@@ -45,12 +41,13 @@ class StreamHttpClient implements HttpClient {
       }
 
       if (isset($options['cert_path'])) {
-         $contextOptions['ssl'] = $contextOptions['ssl'] ?? [];
+         $contextOptions['ssl'] ??= [];
          $contextOptions['ssl']['cafile'] = $options['cert_path'];
       }
 
       $context = stream_context_create($contextOptions);
       $responseBody = @file_get_contents($url, false, $context);
+
 
       if (function_exists('http_get_last_response_headers')) {
          $http_response_header = http_get_last_response_headers();
@@ -61,7 +58,7 @@ class StreamHttpClient implements HttpClient {
       $error = null;
 
       if (isset($responseHeaders[0])) {
-         @list( , $statusCode, ) = explode(' ', $responseHeaders[0], 3);
+         @[ , $statusCode, ] = explode(' ', $responseHeaders[0], 3);
       }
 
       if ($responseBody === false) {
@@ -89,6 +86,8 @@ class StreamHttpClient implements HttpClient {
    {
       $lines = [];
       foreach ($headers as $key => $value) {
+         if (\is_array($value)) $value = implode(', ', $value);
+
          $lines[] = "$key: $value";
       }
       return implode("\r\n", $lines);

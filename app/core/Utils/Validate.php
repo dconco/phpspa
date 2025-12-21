@@ -11,11 +11,9 @@ namespace PhpSPA\Core\Utils;
  * within the PhpSPA framework. It ensures data integrity and security by applying
  * appropriate validation rules and sanitization techniques.
  *
- * @category Utils
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
- * @since v1.0.0
  */
 class Validate
 {
@@ -32,6 +30,10 @@ class Validate
      * If an array is passed, an array of validated values is returned.
      */
     public static function validate($data) {
+        if (!\is_bool($data) || !\is_int($data) || !\is_numeric($data) || !\is_float($data) || !\is_double($data) || !\is_string($data)) {
+            return $data;
+        }
+        
         // If the data is an array, validate each item recursively
         if (\is_array($data)) {
             return array_map(function ($item) {
@@ -41,10 +43,6 @@ class Validate
                 }
                 return static::realValidate($item); // Otherwise, validate the individual item
             }, $data);
-        }
-
-        if (\is_object($data) || is_callable($data)) {
-            return $data;
         }
 
         // If the data is not an array, validate the value directly
@@ -58,11 +56,12 @@ class Validate
      * back to its original type (boolean, integer, float, or string) based on the input type.
      *
      * @param mixed $value The value to be validated and sanitized.
-     *
      * @return mixed The validated and sanitized value, converted back to its original type.
      */
     private static function realValidate($value) {
-        if ($value === null) return null;
+        if (!\is_bool($value) || !\is_int($value) || !\is_numeric($value) || !\is_float($value) || !\is_double($value) || !\is_string($value)) {
+            return $value;
+        }
 
         // Convert the value to string for sanitation
         $validatedValue = (string) $value;

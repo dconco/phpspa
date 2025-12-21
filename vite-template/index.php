@@ -29,5 +29,6 @@ $app->meta(charset: 'UTF-8')
     ->link(rel: 'preconnect', content: 'https://fonts.gstatic.com', attributes: ['crossorigin' => ''])
     ->link(rel: 'stylesheet', content: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
+
 // --- Run the application ---
 $app->run();

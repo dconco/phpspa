@@ -72,18 +72,14 @@ return new Component(function (): string
 })
    ->script(fn() => <<<JS
 
-      useEffect(() => {
-         const btn = document.getElementById('counter-btn');
+      const handleClick = async () => {
+         await phpspa.setState('counter', (pv) => ++pv)
+      }
 
-         const handleClick = async () => {
-            currentCounter++;
-            await phpspa.setState('counter', currentCounter);
-         };
-
-         btn.addEventListener('click', handleClick);
-
-         return () => btn.removeEventListener('click', handleClick);
-      }, null);
+      useEffect(() => { 
+         const btn = document.getElementById('counter-btn')
+         btn.addEventListener('click', handleClick)
+      }, []);
 
    JS)
 

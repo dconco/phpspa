@@ -148,6 +148,14 @@
 
     [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/latest/references/hooks/clients/use-effect)
 
+-   :material-repeat:{ .lg .middle } **Client-Side useCallback** :material-new-box:
+
+    ---
+
+    Memoize DOM/event handlers with state-aware dependencies
+
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/latest/references/hooks/clients/use-callback)
+
 </div>
 
 ---
@@ -162,6 +170,7 @@
     | [`useState()`](../hooks/use-state.md) | Reactive state management | v2.0.0 |
     | [`useEffect() (PHP)`](../hooks/use-effect.md) | Side effects and lifecycle hooks | v2.0.0 |
     | [`useEffect() (JS)`](https://phpspa.readthedocs.io/en/latest/references/hooks/clients/use-effect) | Client-side side effects | v2.0.4 |
+    | [`useCallback() (JS)`](https://phpspa.readthedocs.io/en/latest/references/hooks/clients/use-callback) | Stable callbacks with dependency tracking | v2.0.8 |
     | [`useFunction()`](../hooks/use-function.md) | Call PHP functions from JavaScript | v1.1.5 |
 
 === "Helpers"

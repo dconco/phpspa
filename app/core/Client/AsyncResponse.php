@@ -107,7 +107,7 @@ class AsyncResponse {
       } while ($running > 0);
 
       // Collect responses
-      $responses = array_fill(0, count($promises), null);
+      $responses = array_fill(0, \count($promises), null);
 
       foreach ($promises as $index => $promise) {
          $handle = $promise->getHandle();

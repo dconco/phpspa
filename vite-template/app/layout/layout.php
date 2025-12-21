@@ -1,10 +1,15 @@
 <?php
 
+require_once 'app/components/svgs/MenuIcon.php';
+
 $layout = function() use (&$app) {
+
    $html = file_get_contents('index.html');
 
    // --- Check if Vite dev server is running ---
-   $viteRunning = @file_get_contents('http://localhost:5173') !== false;
+   // $viteRunning = useFetch('http://localhost:5173')->timeout(1)->get()->text();
+
+   $viteRunning = strpos($html, '@vite/client') !== false;
 
    if (!$viteRunning) {
       // --- Production: Load assets from manifest ---
@@ -12,28 +17,18 @@ $layout = function() use (&$app) {
       $manifest = json_decode(file_get_contents('public/assets/.vite/manifest.json'), true);
 
       $mainEntry = $manifest['src/main.ts'];
-      $cssLinks = '';
 
       // --- Add CSS link tags for all imported stylesheets to the Application ---
 
-      if (!empty($mainEntry['css'])) {
+      if (isset($mainEntry['css'])) {
          foreach ($mainEntry['css'] as $cssFile) {
             $app?->styleSheet("/assets/$cssFile");
          }
       }
 
-      // --- Add CSS link tags for all imported stylesheets to the Application ---
+      // --- Add Production Javascript tags for the main Application script ---
 
       $app?->script('/assets/' . $mainEntry['file'], null, 'module');
-
-      // --- Remove all dev script (eg., main.ts, @vite/client) in production ---
-
-      $html = str_replace(
-         [
-            '<script type="module" src="http://localhost:5173/@vite/client"></script>',
-            '<script type="module" src="http://localhost:5173/src/main.ts"></script>'
-         ], '', $html, $count
-      );
    }
 
    return $html;

@@ -1,6 +1,6 @@
 import { AppManager } from "../core/AppManager"
 import { RuntimeManager } from "../core/RuntimeManager"
-import { StateObject } from "../types/StateObjectTypes"
+import { StateObject, TargetInformation } from "../types/StateObjectTypes"
 import { base64ToUtf8 } from "../utils/baseConverter"
 import { setupLinkInterception } from "../utils/setupLinkInterception"
 
@@ -31,34 +31,24 @@ export function bootstrap() {
          root: true,
       }
 
-      // --- Check if component has auto-reload functionality ---
-      if (targetElement.hasAttribute("phpspa-reload-time")) {
-         initialState.reloadTime = Number(
-            targetElement.getAttribute("phpspa-reload-time")
-         )
-      }
-
       // --- Check if component has target info ---
       if (targetElementInfo) {
          const targetData = targetElementInfo.getAttribute("phpspa-target-data")
 
-         // --- This is the json data type coming from the server
-         type StateDataType = {
-            targetIDs: string[],
-            currentRoutes: string[],
-            defaultContent: string[],
-            exact: boolean[],
-         }
+         const targetDataInfo: TargetInformation = JSON.parse(base64ToUtf8(targetData ?? ''))
 
-         const targetDataInfo: StateDataType = JSON.parse(base64ToUtf8(targetData ?? ''))
+         // --- Check if component has auto-reload functionality ---
+         if (targetDataInfo.reloadTime) initialState.reloadTime = targetDataInfo.reloadTime
+
+         RuntimeManager.currentStateData = targetDataInfo.stateData;
 
          targetDataInfo.targetIDs.forEach((targetID: string, index: number) => {
             const exact = targetDataInfo.exact[index]
             const defaultContent = targetDataInfo.defaultContent[index]
 
             if (targetID === targetElement.id) {
-               initialState['exact'] = exact
-               initialState['defaultContent'] = defaultContent
+               initialState.exact = exact
+               initialState.defaultContent = defaultContent
             }
 
             RuntimeManager.currentRoutes[targetID] = {

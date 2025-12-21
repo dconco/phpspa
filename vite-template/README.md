@@ -9,7 +9,7 @@ rendering without rebuilding your routing layer.
 - Vite 5 + Tailwind v4 handle the asset pipeline with instant HMR and production manifest output.
 - `Component::meta()` already wires OpenGraph + description tags for Home and About pages.
 - Highlight.js and debug hooks demonstrate how to add client helpers inside `src/main.ts`.
-- `app/layout/layout.php` swaps Vite dev URLs for manifest assets automatically—no manual toggles.
+- `app/layout/layout.php` adds manifest assets automatically—no manual toggles.
 
 ## Requirements
 
@@ -24,16 +24,16 @@ cd vite-template
 composer install        # Installs PhpSPA runtime
 pnpm install            # Installs Vite + frontend deps
 
-# Terminal 1 – Vite + HMR
+# Terminal 1 – Vite dev server
 pnpm dev
 
 # Terminal 2 – PHP server
 php -S localhost:8000 index.php
 ```
 
-Open http://localhost:8000. The layout helper pings http://localhost:5173 to detect HMR mode and injects the correct scripts.
-
 ## Production Build
+
+Run a production build, then remove the dev-only script tags from `index.html` so only the manifest assets load:
 
 ```bash
 pnpm build                          # emits public/assets/.vite/manifest.json
@@ -50,20 +50,6 @@ When the Vite server is not running, `app/layout/layout.php` uses the manifest t
 | `pnpm build`   | Production build to `public/assets/`. |
 | `pnpm preview` | Preview the prod build served by Vite. |
 | `pnpm watch`   | Continuous build (useful for backend-only servers). |
-
-## Project Layout
-
-```
-app/
-	components/          # Shared view fragments (HomeComponents, AboutComponents)
-	layout/layout.php    # Detects dev vs prod assets
-	pages/               # Each Component registered with PhpSPA
-index.php              # Boots PhpSPA App, attaches pages, serves static assets
-index.html             # Base template consumed by layout.php
-public/assets/         # Build artifacts from Vite
-src/                   # Frontend runtime (main.ts, helpers, styles)
-vite.config.ts         # Tailwind + PhpSPA-friendly Vite config
-```
 
 ## How It Fits Together
 
