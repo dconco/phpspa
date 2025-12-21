@@ -2,7 +2,7 @@
 
 use function Component\import;
 
-function HeaderComponent($children) {
+function HeaderComponent() {
    $logo = import('public/assets/logo.svg');
 
    return <<<HTML
