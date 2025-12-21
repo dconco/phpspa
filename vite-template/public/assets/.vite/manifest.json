@@ -1,0 +1,11 @@
+{
+  "src/main.ts": {
+    "file": "main-BcJBgPwu.js",
+    "name": "main",
+    "src": "src/main.ts",
+    "isEntry": true,
+    "css": [
+      "main-D481d8oG.css"
+    ]
+  }
+}

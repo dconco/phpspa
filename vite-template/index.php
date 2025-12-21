@@ -1,8 +1,9 @@
 <?php
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/vendor/autoload.php';
 
 use PhpSPA\App;
+use PhpSPA\Compression\Compressor;
 
 // --- Load components ---
 require_once 'app/layout/layout.php';
@@ -29,6 +30,8 @@ $app->meta(charset: 'UTF-8')
     ->link(rel: 'preconnect', content: 'https://fonts.gstatic.com', attributes: ['crossorigin' => ''])
     ->link(rel: 'stylesheet', content: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
+// --- For Production ---
+$app->compression(Compressor::LEVEL_EXTREME);
 
 // --- Run the application ---
 $app->run();
