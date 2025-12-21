@@ -32,7 +32,7 @@ $app->meta(charset: 'UTF-8')
     ->meta(name: 'viewport', content: 'width=device-width, initial-scale=1.0')
     ->link(rel: 'preconnect', content: 'https://fonts.googleapis.com')
     ->link(rel: 'preconnect', content: 'https://fonts.gstatic.com', attributes: ['crossorigin' => ''])
-    ->link(rel: 'stylesheet', content: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap')
+    ->link(rel: 'stylesheet', content: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap', type: 'text/css')
 
     ->link(rel: 'shortcut icon', content: '/assets/logo.svg', type: 'image/xml+svg')
     ->link(rel: 'apple-touch-icon', content: '/assets/logo.svg', type: 'image/xml+svg');

@@ -22,13 +22,13 @@ $layout = function() use (&$app) {
 
       if (isset($mainEntry['css'])) {
          foreach ($mainEntry['css'] as $cssFile) {
-            $app?->styleSheet("/assets/$cssFile");
+            $app?->styleSheet(content: "/assets/$cssFile", type: 'text/css');
          }
       }
 
       // --- Add Production Javascript tags for the main Application script ---
 
-      $app?->script('/assets/' . $mainEntry['file'], null, 'module');
+      $app?->script(content: '/assets/' . $mainEntry['file'], type: 'module');
    }
 
    return $html;
