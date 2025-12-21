@@ -1,9 +1,11 @@
 <?php
 
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 use PhpSPA\App;
 use PhpSPA\Compression\Compressor;
+
+putenv('PHPSPA_COMPRESSION_STRATEGY=fallback');
 
 // --- Load components ---
 require_once 'app/layout/layout.php';

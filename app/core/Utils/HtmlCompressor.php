@@ -119,15 +119,64 @@ trait HtmlCompressor
    {
       if (!$CONTENT_LENGTH) $CONTENT_LENGTH = strlen($content);
 
+      $preservedBlocks = null;
+      if ($type === 'HTML') {
+         [$content, $preservedBlocks] = self::protectPreformattedBlocks($content);
+         $CONTENT_LENGTH = strlen($content);
+      }
+
       if ($level === Compressor::LEVEL_AUTO) {
          $level = self::detectOptimalLevel($content, $CONTENT_LENGTH);
       }
 
-      if (self::isNativeCompressorAvailable($CONTENT_LENGTH))
-         return self::compressWithNative($content, $level, $type);
+      if (self::isNativeCompressorAvailable($CONTENT_LENGTH)) {
+         $result = self::compressWithNative($content, $level, $type);
+      } else {
+         // Fallback to PHP implementation
+         $result = self::compressWithFallback($content, $level, $type);
+      }
 
-      // Fallback to PHP implementation
-      return self::compressWithFallback($content, $level, $type);
+      if ($type === 'HTML' && \is_array($preservedBlocks) && $preservedBlocks !== []) {
+         $result = self::restorePreformattedBlocks($result, $preservedBlocks);
+      }
+
+      return $result;
+   }
+
+   /**
+    * Protect preformatted blocks so minifiers don't alter whitespace/newlines.
+    *
+    * This prevents regex-based minification from collapsing whitespace inside tags
+    * where whitespace is semantically important.
+    *
+    * @return array{0:string,1:array<string,string>} [htmlWithPlaceholders, placeholderMap]
+    */
+   private static function protectPreformattedBlocks(string $html): array
+   {
+      $placeholderMap = [];
+      $index = 0;
+      $pattern = '~<(pre|textarea|code|xmp)(?:\s[^>]*)?>.*?</\\1>~is';
+
+      $protected = preg_replace_callback(
+         $pattern,
+         static function (array $matches) use (&$placeholderMap, &$index): string {
+            $key = '__PHPSPA_PRESERVE_BLOCK_' . $index . '__';
+            $placeholderMap[$key] = $matches[0];
+            $index++;
+            return $key;
+         },
+         $html,
+      );
+
+      return [is_string($protected) ? $protected : $html, $placeholderMap];
+   }
+
+   /**
+    * Restore blocks previously protected by protectPreformattedBlocks().
+    */
+   private static function restorePreformattedBlocks(string $html, array $placeholderMap): string
+   {
+      return $placeholderMap === [] ? $html : strtr($html, $placeholderMap);
    }
 
    private static function isNativeCompressorAvailable(int $CONTENT_LENGTH): bool
