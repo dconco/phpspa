@@ -10,6 +10,7 @@
       "spa",
       "php"
    ],
+   "homepage": "https://phpspa-client.up.railway.app",
    "authors": [
       {
          "name": "Dave Conco",
