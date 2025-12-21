@@ -30,8 +30,8 @@ use PhpSPA\Interfaces\IComponent;
  * @method IComponent targetID(string $targetID) Set the target ID for the component
  * @method IComponent caseSensitive() Enable case sensitivity for the component
  * @method IComponent caseInsensitive() Disable case sensitivity for the component
- * @method IComponent script(callable|string $content, ?string $name = null, string $type = 'text/javascript', array $attributes = []) Add scripts to the component
- * @method IComponent link(callable|string $content, ?string $name = null, string $type = 'text/css', string $rel = 'stylesheet', array $attributes = []) Add links tag to the component
+ * @method IComponent script(callable|string $content, ?string $name = null, ?string $type = 'text/javascript', array $attributes = []) Add scripts to the component
+ * @method IComponent link(callable|string $content, ?string $name = null, ?string $type = null, ?string $rel = 'stylesheet', array $attributes = []) Add links tag to the component
  * @method IComponent reload(int $milliseconds) Set the reload interval for the component
  * @abstract
  */
@@ -144,11 +144,7 @@ abstract class ComponentImpl
       $addAsset = function(string $property) use ($args) {
          if ($property !== 'stylesheets' && $property !== 'scripts') throw new InvalidArgumentException("Invalid property provided", 1);
 
-         $temp = [
-            'content' => '',
-            'name' => null,
-            'type' => $property === 'stylesheets' ? 'text/css' : 'text/javascript',
-         ];
+         $temp = [];
 
          if (isset($args[0]) || isset($args['content'])) $temp['content'] = $args[0] ?? $args['content'];
          if (isset($args[1]) || isset($args['name'])) $temp['name'] = $args[1] ?? $args['name'];
@@ -168,7 +164,7 @@ abstract class ComponentImpl
          }
 
          foreach ($attributes as $attribute => $value) {
-            if (!\is_string($attribute)) {
+            if (!\is_string($attribute) || !\is_string($value)) {
                continue;
             }
             $temp[$attribute] = $value;

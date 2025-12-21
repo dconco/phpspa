@@ -190,7 +190,7 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
-   public function script (callable|string $content, ?string $name = null, string $type = 'text/javascript', array $attributes = []): ApplicationContract
+   public function script (callable|string $content, ?string $name = null, ?string $type = 'text/javascript', array $attributes = []): ApplicationContract
    {
       $this->scripts[] = [
          'content' => $content,
@@ -201,7 +201,7 @@ abstract class AppImpl implements ApplicationContract {
       $lastIndex = array_key_last($this->scripts);
       if ($lastIndex !== null) {
          foreach ($attributes as $attribute => $value) {
-            if (!\is_string($attribute) || $value === null) {
+            if (!\is_string($attribute) || !\is_string($value)) {
                continue;
             }
             $this->scripts[$lastIndex][$attribute] = $value;
@@ -211,13 +211,13 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
-   public function styleSheet (callable|string $content, ?string $name = null, string $type = 'text/css', string $rel='stylesheet', array $attributes = []): ApplicationContract
+   public function styleSheet (callable|string $content, ?string $name = null, ?string $type = null, ?string $rel='stylesheet', array $attributes = []): ApplicationContract
    {
       $this->link($content, $name, $type, $rel, $attributes);
       return $this;
    }
 
-   public function link (callable|string $content, ?string $name = null, string $type = 'text/css', string $rel='stylesheet', array $attributes = []): ApplicationContract
+   public function link (callable|string $content, ?string $name = null, ?string $type = null, ?string $rel = 'stylesheet', array $attributes = []): ApplicationContract
    {
       $this->stylesheets[] = [
          'content' => $content,
@@ -229,7 +229,7 @@ abstract class AppImpl implements ApplicationContract {
       $lastIndex = array_key_last($this->stylesheets);
       if ($lastIndex !== null) {
          foreach ($attributes as $attribute => $value) {
-            if (!\is_string($attribute) || $value === null) {
+            if (!\is_string($attribute) || !\is_string($value)) {
                continue;
             }
             $this->stylesheets[$lastIndex][$attribute] = $value;
