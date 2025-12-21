@@ -223,9 +223,9 @@ HTML;
             <article class="card">
                <p class="text-xs uppercase tracking-[0.4em] text-amber-200">Debug tips</p>
                <ul class="mt-4 space-y-3 text-sm text-slate-200">
-                  <li>Pair <code class="code-chip">beforeload</code>/<code class="code-chip">load</code> with analytics to measure swap latency.</li>
-                  <li>Use <code class="code-chip">setState(...).then()</code> to wait for DOM updates before reading measurements.</li>
-                  <li>Log <code class="code-chip">beforeload</code>/<code class="code-chip">load</code> payloads directly from the event bus to inspect routes without exposing globals.</li>
+                  <li>Pair&nbsp;<code class="code-chip">beforeload</code>/<code class="code-chip">load</code> with analytics to measure swap latency.</li>
+                  <li>Use &nbsp;code class="code-chip">setState(...).then()</code> to wait for DOM updates before reading measurements.</li>
+                  <li>Log&nbsp;<code class="code-chip">beforeload</code>/<code class="code-chip">load</code> payloads directly from the event bus to inspect routes without exposing globals.</li>
                </ul>
             </article>
          </section>
