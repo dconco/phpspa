@@ -154,7 +154,24 @@ nav:
       - HTML Compression: performance/html-compression.md
       - Managing Styles & Scripts: performance/managing-styles-and-scripts.md
       - Assets Caching: performance/assets-caching.md
-   - API References: references/index.md
+   - API References:
+      - Overview: references/index.md
+      - HTTP & Networking:
+         - Response API: references/response.md
+         - Router API: references/router.md
+         - useFetch Hook: references/hooks/use-fetch.md
+      - Helpers & Utilities:
+         - fmt() Helper: references/helpers/fmt.md
+         - File Import Utility: references/file-import-utility.md
+         - DOM Utilities: references/dom-utilities.md
+      - Performance:
+         - Compression: references/compression.md
+      - Components:
+         - Component Meta Tags: references/component-meta.md
+         - Component Preloading: references/preloading-component.md
+      - Client Hooks:
+         - Client useEffect (JS): references/hooks/clients/use-effect.md
+         - Client useCallback (JS): references/hooks/clients/use-callback.md
 
 # Enhanced plugins
 plugins:
