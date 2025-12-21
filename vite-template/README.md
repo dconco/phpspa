@@ -2,14 +2,14 @@
 
 # 🚀 PhpSPA + Vite Starter
 
-**PHP-first routing meets instant Vite hydration**
+**A PhpSPA boilerplate that serves PhpSPA pages first, then hydrates navigation with Vite + TypeScript + Tailwind.**
 
 [![PHP Version](https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white)](https://www.php.net/)
 [![Node Version](https://img.shields.io/badge/Node-18%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.0-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-[**🌐 Live Preview**](https://phpspa-client.vercel.app) • [Documentation](https://phpspa.tech)
+[**🌐 Live Preview**](https://phpspa-client.up.railway.app) • [Documentation](https://phpspa.tech)
 
 </div>
 
@@ -63,7 +63,6 @@
 ```bash
 composer create-project phpspa/client my-project
 cd my-project
-pnpm install
 ```
 
 ---

@@ -81,12 +81,12 @@ interface ApplicationContract {
      *
      * @param callable|string $content The callable that returns the JavaScript code
      * @param string|null $name Optional name for the script asset
-     * @param string $type The type of script the content should be treated as
+     * @param string|null $type The type of script the content should be treated as
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self
      * @see https://phpspa.tech/performance/managing-styles-and-scripts
      */
-    public function script (callable|string $content, ?string $name = null, string $type = 'text/javascript', array $attributes = []): self;
+    public function script (callable|string $content, ?string $name = null, ?string $type = 'text/javascript', array $attributes = []): self;
 
 
     /**
@@ -99,13 +99,13 @@ interface ApplicationContract {
      * @deprecated Use `App::link()` instead
      * @param callable|string $content The callable that returns the CSS code
      * @param string|null $name Optional name for the stylesheet asset
-     * @param string $type The type of style sheet the content should be treated as
-     * @param string $rel The relationship attribute applied to the generated <link> tag (e.g., "stylesheet", "preload")
+     * @param string|null $type The type of style sheet the content should be treated as
+     * @param string|null $rel The relationship attribute applied to the generated <link> tag (e.g., "stylesheet", "preload")
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self
      * @see https://phpspa.tech/performance/managing-styles-and-scripts
      */
-    public function styleSheet (callable|string $content, ?string $name = null, string $type = 'text/css', string $rel = 'text/css', array $attributes = []): self;
+    public function styleSheet (callable|string $content, ?string $name = null, ?string $type = null, ?string $rel = 'stylesheet', array $attributes = []): self;
 
 
     /**
@@ -117,13 +117,13 @@ interface ApplicationContract {
      *
      * @param callable|string $content The callable that returns the CSS code
      * @param string|null $name Optional name for the stylesheet asset
-     * @param string $type The type of style sheet the content should be treated as
-     * @param string $rel The relationship attribute applied to the generated <link> tag (e.g., "stylesheet", "preload")
+     * @param string|null $type The type of style sheet the content should be treated as
+     * @param string|null $rel The relationship attribute applied to the generated <link> tag (e.g., "stylesheet", "preload")
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self
      * @see https://phpspa.tech/performance/managing-styles-and-scripts
      */
-    public function link (callable|string $content, ?string $name = null, string $type = 'text/css', string $rel = 'text/css', array $attributes = []): self;
+    public function link (callable|string $content, ?string $name = null, ?string $type = null, ?string $rel = 'stylesheet', array $attributes = []): self;
 
     /**
      * Register global meta tags that render with every initial HTML response.

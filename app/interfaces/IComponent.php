@@ -129,12 +129,12 @@ interface  IComponent
      *
      * @param callable|string $content The script to be executed.
      * @param string|null $name Optional name for the script asset.
-     * @param string $type The type of script the content should be treated as
+     * @param string|null $type The type of script the content should be treated as
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self Returns the current instance for method chaining.
      * @see https://phpspa.tech/performance/managing-styles-and-scripts/#component-specific-assets
     */
-    public function script(callable|string $content, ?string $name = null, string $type = 'text/javascript', array $attributes = []): self;
+    public function script(callable|string $content, ?string $name = null, ?string $type = 'text/javascript', array $attributes = []): self;
 
     /**
      * Sets the stylesheet to be executed when the component is mounted.
@@ -142,26 +142,26 @@ interface  IComponent
      * @deprecated Use `Component::link()` instead
      * @param callable|string $content The stylesheet to be executed.
      * @param string|null $name Optional name for the stylesheet.
-     * @param string $type The type of style sheet the content should be treated as
-     * @param string $rel The relationship attribute applied to the generated <link> tag (e.g., "stylesheet", "preload")
+     * @param string|null $type The type of style sheet the content should be treated as
+     * @param string|null $rel The relationship attribute applied to the generated <link> tag (e.g., "stylesheet", "preload")
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self Returns the current instance for method chaining.
      * @see https://phpspa.tech/performance/managing-styles-and-scripts/#component-specific-assets
      */
-    public function styleSheet(callable|string $content, ?string $name = null, string $type = 'text/css', string $rel = 'stylesheet', array $attributes = []): self;
+    public function styleSheet(callable|string $content, ?string $name = null, ?string $type = null, ?string $rel = 'stylesheet', array $attributes = []): self;
 
     /**
      * Sets the link tag to be executed when the component is mounted.
      *
      * @param callable|string $content The stylesheet to be executed.
      * @param string|null $name Optional name for the stylesheet.
-     * @param string $type The type of style sheet the content should be treated as
-     * @param string $rel The relationship attribute applied to the generated <link> tag (e.g., "stylesheet", "preload")
+     * @param string|null $type The type of style sheet the content should be treated as
+     * @param string|null $rel The relationship attribute applied to the generated <link> tag (e.g., "stylesheet", "preload")
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self Returns the current instance for method chaining.
      * @see https://phpspa.tech/performance/managing-styles-and-scripts/#component-specific-assets
      */
-    public function link(callable|string $content, ?string $name = null, string $type = 'text/css', string $rel = 'stylesheet', array $attributes = []): self;
+    public function link(callable|string $content, ?string $name = null, ?string $type = null, ?string $rel = 'stylesheet', array $attributes = []): self;
 
     /**
      * This sets the component to be called every particular interval given
