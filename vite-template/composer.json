@@ -1,5 +1,25 @@
 {
-    "require": {
-        "dconco/phpspa": "^2.0"
-    }
+   "name": "phpspa/vite-template",
+   "description": "PhpSPA + Vite + Tailwind starter project that mixes PHP-first pages with hydrated client navigation.",
+   "type": "project",
+   "license": "MIT",
+   "keywords": [
+      "phpspa",
+      "vite",
+      "starter",
+      "spa",
+      "php"
+   ],
+   "authors": [
+      {
+         "name": "Dconco",
+         "homepage": "https://phpspa.tech"
+      }
+   ],
+   "require": {
+      "dconco/phpspa": "v2.0.5.x-dev"
+   },
+   "post-create-project-cmd": [
+      "command -v pnpm && (pnpm install && pnpm build) || (npm install && npm run build)"
+   ]
 }

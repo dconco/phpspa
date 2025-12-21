@@ -1,68 +1,208 @@
-# PhpSPA + Vite Starter
+<div align="center">
 
-Opinionated PhpSPA starter that shows how to compose PHP-first layouts, hydrate them with Vite + Tailwind, and keep SEO-friendly
-rendering without rebuilding your routing layer.
+# 🚀 PhpSPA + Vite Starter
 
-## Highlights
+**PHP-first routing meets instant Vite hydration**
 
-- PHP renders every first request, PhpSPA hydrates subsequent navigations with scroll/state preservation.
-- Vite 5 + Tailwind v4 handle the asset pipeline with instant HMR and production manifest output.
-- `Component::meta()` already wires OpenGraph + description tags for Home and About pages.
-- Highlight.js and debug hooks demonstrate how to add client helpers inside `src/main.ts`.
-- `app/layout/layout.php` adds manifest assets automatically—no manual toggles.
+[![PHP Version](https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white)](https://www.php.net/)
+[![Node Version](https://img.shields.io/badge/Node-18%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Vite](https://img.shields.io/badge/Vite-5.0-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-## Requirements
+[**🌐 Live Preview**](https://phpspa-client.vercel.app) • [Documentation](https://phpspa.tech)
 
-- PHP 8.4+
-- Composer 2+
-- Node 18+ with [pnpm](https://pnpm.io/) (or npm/yarn if you update the scripts)
+</div>
 
-## Quick Start (Development)
+---
+
+## ✨ What You Get
+
+<table>
+<tr>
+<td width="50%">
+
+**🎯 Zero Config**
+- PHP renders first request
+- PhpSPA handles client nav
+- Auto asset switching
+
+</td>
+<td width="50%">
+
+**⚡ Lightning Fast**
+- Vite HMR < 50ms
+- Instant page transitions
+- Production optimized
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**🎨 Modern Stack**
+- Tailwind v4 utilities
+- TypeScript ready
+- SEO-friendly meta tags
+
+</td>
+<td width="50%">
+
+**📦 Everything Included**
+- Component system
+- State management
+- Syntax highlighting
+
+</td>
+</tr>
+</table>
+
+---
+
+## 📦 Installation
 
 ```bash
-cd vite-template
-composer install        # Installs PhpSPA runtime
-pnpm install            # Installs Vite + frontend deps
+composer create-project phpspa/vite-template my-project
+cd my-project
+pnpm install
+```
 
-# Terminal 1 – Vite dev server
+---
+
+## 🎯 Quick Start
+
+### Step 1: Start Development Servers
+
+```bash
+# Terminal 1 – Vite dev server with HMR
 pnpm dev
 
-# Terminal 2 – PHP server
+# Terminal 2 – PHP built-in server
 php -S localhost:8000 index.php
 ```
 
-## Production Build
+Open **http://localhost:8000** in your browser.
 
-Run a production build, then remove the dev-only script tags from `index.html` so only the manifest assets load:
+---
 
-```bash
-pnpm build                          # emits public/assets/.vite/manifest.json
-php -S localhost:8000 index.php     # or deploy under Apache/Nginx
+### ⚠️ IMPORTANT: Development Script Tags
+
+<table>
+<tr>
+<td>
+
+> **🔴 CRITICAL STEP** – This template ships **without** dev scripts to keep production clean.
+
+**You MUST add these two lines to `index.html` before `</body>` during development:**
+
+```html
+<script type="module" src="http://localhost:5173/@vite/client"></script>
+<script type="module" src="http://localhost:5173/src/main.ts"></script>
 ```
 
-When the Vite server is not running, `app/layout/layout.php` uses the manifest to link hashed JS/CSS files automatically.
+</td>
+</tr>
+</table>
 
-## Available Scripts
+#### What each script does:
 
-| Command        | Description |
-| -------------- | ----------- |
-| `pnpm dev`     | Run Vite in dev mode with HMR on port 5173. |
-| `pnpm build`   | Production build to `public/assets/`. |
-| `pnpm preview` | Preview the prod build served by Vite. |
-| `pnpm watch`   | Continuous build (useful for backend-only servers). |
+| Script | Purpose |
+|--------|---------|
+| `@vite/client` | 🔥 Connects browser to Vite HMR server (port 5173) for instant hot module updates |
+| `src/main.ts` | 🎬 Your app entry point: imports styles, registers hooks, boots `@dconco/phpspa` runtime |
 
-## How It Fits Together
+> 💡 **Pro tip:** Leave these in during dev, remove them before deploying to production.
 
-1. `index.php` boots `PhpSPA\App`, attaches the Home/About components, and exposes `/public/assets` for built files.
-2. `app/layout/layout.php` reads `index.html`, checks if the dev server is live, and swaps the correct scripts/styles.
-3. `app/pages/*.php` define each route with `->route()`, titles, and meta tags. They render server-side before hydration.
-4. `src/main.ts` registers Highlight.js, wires debug hooks (`registerDebugHooks`), and boots `@dconco/phpspa` on the client.
+---
 
-## Extending the Starter
+## 🏗️ Production Build
 
-- Add new pages by creating a component in `app/pages`, then `require_once` it in `index.php` and call `$app->attach(...)`.
-- Share data or listen to navigation events via `useState`, `useEffect`, and `phpspa.on('beforeload'|'load')`.
-- Drop Tailwind utilities directly into the PHP components; Vite handles tree-shaking during `pnpm build`.
-- Customize SEO metadata with the fluent `->meta()` API already used on the Home and About pages.
+### Step 1: Build Assets
 
-Happy building! Let PhpSPA handle routing, hydration, and compression while Vite keeps the frontend fast.
+```bash
+pnpm build
+```
+
+This generates optimized, hashed assets in `public/assets/` and creates the Vite manifest.
+
+### Step 2: Remove Dev Scripts
+
+**Delete the two `<script>` tags from `index.html`:**
+
+```diff
+- <script type="module" src="http://localhost:5173/@vite/client"></script>
+- <script type="module" src="http://localhost:5173/src/main.ts"></script>
+```
+
+### Step 3: Deploy
+
+```bash
+php -S localhost:8000 index.php
+# Or deploy to Apache/Nginx
+```
+
+When dev scripts are missing, `app/layout/layout.php` automatically loads manifest assets.
+
+---
+
+## 📜 Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | 🔧 Start Vite dev server with HMR on port 5173 |
+| `pnpm build` | 📦 Production build to `public/assets/` |
+| `pnpm preview` | 👀 Preview production build served by Vite |
+| `pnpm watch` | 👁️ Continuous build mode for backend-only servers |
+
+---
+
+## 🎨 How to Extend
+
+<table>
+<tr>
+<td>
+
+**Add New Pages**
+```php
+// app/pages/contact.php
+return new Component(fn () => '<h1>Contact</h1>')
+    ->route('/contact')
+    ->title('Contact Us')
+```
+
+Then attach in `index.php`:
+```php
+$app->attach(require 'app/pages/contact.php');
+```
+
+</td>
+<td>
+
+**Add Client Hooks**
+```typescript
+// src/main.ts
+import { useEffect, setState } from '@dconco/phpspa';
+
+useEffect(() => {
+    console.log('Page loaded!');
+}, []);
+```
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🤝 Contributing
+
+Issues and PRs welcome! Visit [phpspa.tech](https://phpspa.tech) for full documentation.
+
+---
+
+<div align="center">
+
+**Built with ❤️ using PhpSPA + Vite**
+
+[Documentation](https://phpspa.tech) • [GitHub](https://github.com/dconco/phpspa) • [NPM Package](https://www.npmjs.com/package/@dconco/phpspa)
+
+</div>

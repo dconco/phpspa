@@ -261,9 +261,9 @@ class Response
 
       if ($fileType === 'text/html') {
          $contents = Compressor::compress($contents);
-      } elseif ($fileType === 'text/css' || $fileType === 'text/javascript' || $fileType === 'application/javascript') {
+      } elseif ($fileType === 'text/css') {
          $level = Compressor::getLevel();
-         $contents = Compressor::compressWithLevel($contents, $level, $fileType === 'text/css' ? 'CSS' : 'JS');
+         $contents = Compressor::compressWithLevel($contents, $level, $fileType);
          $contents = Compressor::gzipCompress($contents, $fileType);
       }
 
