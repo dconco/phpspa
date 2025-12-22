@@ -9,12 +9,11 @@ namespace PhpSPA\Core\Impl\Const;
  * for state management, function calling, and other internal operations.
  * These constants ensure consistent naming and behavior across the framework.
  *
- * @package PhpSPA\Core\Impl\Const
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
- * @since v1.0.0
  */
 
 const STATE_HANDLE = '__phpspa_state_';
 const CALL_FUNC_HANDLE = '__phpspa_call_func_';
+const UNDEFINED_STATE_VARIABLE = '__phpspa_state_variable_undefined__';
