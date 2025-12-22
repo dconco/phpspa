@@ -18,8 +18,6 @@ use PhpSPA\Interfaces\IComponent;
  *
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
- * @license MIT
- * @since v1.0.0
  * @method IComponent title(string $title) Set the title of the component
  * @method IComponent method(string ...$method) Set the HTTP method for the component, defaults to 'GET|VIEW'
  * @method IComponent route(string|array ...$route) Set the route(s) for the component
@@ -33,6 +31,7 @@ use PhpSPA\Interfaces\IComponent;
  * @method IComponent script(callable|string $content, ?string $name = null, ?string $type = 'text/javascript', array $attributes = []) Add scripts to the component
  * @method IComponent link(callable|string $content, ?string $name = null, ?string $type = null, ?string $rel = 'stylesheet', array $attributes = []) Add links tag to the component
  * @method IComponent reload(int $milliseconds) Set the reload interval for the component
+ * @license MIT
  * @abstract
  */
 abstract class ComponentImpl
@@ -148,7 +147,9 @@ abstract class ComponentImpl
 
          if (isset($args[0]) || isset($args['content'])) $temp['content'] = $args[0] ?? $args['content'];
          if (isset($args[1]) || isset($args['name'])) $temp['name'] = $args[1] ?? $args['name'];
+
          if (isset($args[2]) || isset($args['type'])) $temp['type'] = $args[2] ?? $args['type'];
+         else if ($property === 'scripts') $temp['type'] = 'text/javascript';
 
          $attributes = $args['attributes'] ?? [];
 
