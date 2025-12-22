@@ -386,13 +386,13 @@ abstract class AppImpl implements ApplicationContract {
 
          if (isset($data['state'])) {
             $state = $data['state'];
-            
-            if (!empty($state['key']) && !empty($state['value'])) {
+
+            if (!empty($state['key'])) {
                $sessionData = SessionHandler::get(STATE_HANDLE);
-               $sessionData[$state['key']] = $state['value'];
+               $sessionData[$state['key']] = @$state['value'];
                SessionHandler::set(STATE_HANDLE, $sessionData);
             }
-            
+
             return;
          }
 

@@ -50,7 +50,7 @@ class StateManager
 		}
 
 		$this->stateKey = $stateKey;
-		
+
 		if (!isset($sessionData[$stateKey])) {
 			$this->value = $default;
 			$sessionData[$stateKey] = $this->lastState = $this->value;
@@ -67,11 +67,11 @@ class StateManager
 	 * @param mixed $value Optional value to be processed when the object is invoked.
 	 * @return mixed The result of the invocation, depending on the implementation.
 	 */
-	public function __invoke($value = null)
+	public function __invoke($value = U_UNDEFINED_VARIABLE)
 	{
 		$sessionData = SessionHandler::get(STATE_HANDLE);
 
-		if (!$value) {
+		if ($value === U_UNDEFINED_VARIABLE) {
 			return $sessionData[$this->stateKey] ?? $this->value;
 		}
 
@@ -93,7 +93,7 @@ class StateManager
 		$sessionData = SessionHandler::get(STATE_HANDLE);
 
 		$value = $sessionData[$this->stateKey] ?? $this->value;
-		return \is_array($value) ? json_encode($value) : $value;
+		return \is_array($value) ? json_encode($value) : ($value === null ? '' : $value);
 	}
 
 	/**

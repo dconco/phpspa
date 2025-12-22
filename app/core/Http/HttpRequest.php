@@ -226,7 +226,7 @@ class HttpRequest implements Request
 
     public function isHttps(): bool
     {
-        return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
+        return !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ||
             $_SERVER['SERVER_PORT'] == 443;
     }
 
