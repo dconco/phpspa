@@ -1,5 +1,7 @@
 <?php
 
+use function Component\useFetch;
+
 require_once 'app/components/svgs/MenuIcon.php';
 require_once 'app/components/HeaderComponent.php';
 
@@ -8,9 +10,10 @@ $layout = function() use (&$app) {
    $html = file_get_contents('index.html');
 
    // --- Check if Vite dev server is running ---
-   // $viteRunning = useFetch('http://localhost:5173')->timeout(1)->get()->text();
+   $viteRunning = useFetch('http://localhost:5173')->timeout(10)->get()->text();
+   var_dump($viteRunning);
 
-   $viteRunning = strpos($html, '@vite/client') !== false;
+   $viteRunning = strpos($html, 'http://localhost:5173/@vite/client') !== false;
 
    if (!$viteRunning) {
       // --- Production: Load assets from manifest ---

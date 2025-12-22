@@ -21,20 +21,13 @@ class HttpClientFactory {
     *
     * @return HttpClient
     */
-   public static function create(string $url): HttpClient
+   public static function create(): HttpClient
    {
       if (self::$instance !== null) {
          return self::$instance;
       }
 
-      if (!self::isLocalhost($url) && CurlHttpClient::isAvailable()) {
-         self::$instance = new CurlHttpClient();
-      } else {
-         self::$instance = new StreamHttpClient();
-      }
-
-
-      return self::$instance;
+      return self::$instance = CurlHttpClient::isAvailable() ? new CurlHttpClient() : new StreamHttpClient();
    }
 
    /**
