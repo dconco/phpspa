@@ -77,7 +77,7 @@ class PendingRequest implements \ArrayAccess {
    public function __construct (string $url)
    {
       $this->url = $url;
-      $this->client = HttpClientFactory::create($url);
+      $this->client = HttpClientFactory::create();
    }
 
    /**
@@ -144,6 +144,25 @@ class PendingRequest implements \ArrayAccess {
    public function verifySSL(bool $verify = true): PendingRequest
    {
       $this->options['verify_ssl'] = $verify;
+      return $this;
+   }
+
+   /**
+    * Sets the IP resolution strategy for this pending request.
+    *
+    * @param string $ip The IP version to resolve: 'v4' or 'v6'.
+    *
+    * @return PendingRequest Returns the current instance for fluent chaining.
+    *
+    * @throws \InvalidArgumentException If $ip is not 'v4' or 'v6'.
+    */
+   public function resolveIP(string $ip): PendingRequest
+   {
+      if ($ip !== 'v4' && $ip !== 'v6') {
+         throw new \InvalidArgumentException("IP must either be v4 or v6", 1);
+      }
+
+      $this->options['ip_resolve'] = $ip;
       return $this;
    }
 

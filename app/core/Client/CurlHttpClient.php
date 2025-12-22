@@ -29,7 +29,14 @@ class CurlHttpClient implements HttpClient {
       curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
       curl_setopt($ch, CURLOPT_FOLLOWLOCATION, $options['follow_redirects'] ?? true);
       curl_setopt($ch, CURLOPT_MAXREDIRS, $options['max_redirects'] ?? 10);
-      curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4); // Force IPv4 for localhost issues
+      if (isset($options['ip_resolve'])) {
+         $ipResolve = $options['ip_resolve'];
+         if ($ipResolve === 'v4') {
+            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+         } elseif ($ipResolve === 'v6') {
+            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
+         }
+      }
       
       // Handle timeout - support both seconds (int/float) and milliseconds
       $timeout = $options['timeout'] ?? 30;
@@ -58,7 +65,7 @@ class CurlHttpClient implements HttpClient {
       $curlHeaders = [];
       foreach ($headers as $key => $value) {
          if (\is_array($value)) $value = implode(', ', $value);
-
+         
          $curlHeaders[] = "$key: $value";
       }
       curl_setopt($ch, CURLOPT_HTTPHEADER, $curlHeaders);
@@ -67,16 +74,21 @@ class CurlHttpClient implements HttpClient {
       if ($body !== null) {
          curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
       }
-      
+
       $response = curl_exec($ch);
+      $errorNo = curl_errno($ch);
       $error = curl_error($ch);
       $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
       $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-      curl_close($ch);
+      unset($ch);
 
-      if ($response === false || $error) {
-         return new ClientResponse(false, 0, [], $error ?: 'Request failed');
+      if ($response === false || $errorNo !== 0) {
+         $message = $error ?: 'Request failed';
+         if ($errorNo !== 0) {
+            $message = "cURL error ($errorNo): $message";
+         }
+         return new ClientResponse(false, 0, [], $message);
       }
 
       $headerString = substr($response, 0, $headerSize);
@@ -113,7 +125,14 @@ class CurlHttpClient implements HttpClient {
       curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
       curl_setopt($ch, CURLOPT_FOLLOWLOCATION, $options['follow_redirects'] ?? true);
       curl_setopt($ch, CURLOPT_MAXREDIRS, $options['max_redirects'] ?? 10);
-      curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4); // Force IPv4 for localhost issues
+      if (isset($options['ip_resolve'])) {
+         $ipResolve = $options['ip_resolve'];
+         if ($ipResolve === 'v4') {
+            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+         } elseif ($ipResolve === 'v6') {
+            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
+         }
+      }
       
       // Handle timeout - support both seconds (int/float) and milliseconds
       $timeout = $options['timeout'] ?? 30;
