@@ -89,9 +89,9 @@ Open **http://localhost:8000** in your browser.
 <tr>
 <td>
 
-> **🔴 CRITICAL STEP** – This template ships **without** dev scripts to keep production clean.
+> **🔴 CRITICAL STEP** – This starter supports a Vite-dev workflow by loading Vite’s HTML when the dev server is running.
 
-**You MUST add these two lines to `index.html` before `</body>` during development:**
+**To enable Vite HMR during development, add these two lines to `index.html` before `</body>`:**
 
 ```html
 <script type="module" src="http://localhost:5173/@vite/client"></script>
@@ -111,6 +111,19 @@ Open **http://localhost:8000** in your browser.
 
 > 💡 **Pro tip:** Leave these in during dev, remove them before deploying to production.
 
+#### How the layout decides what to serve
+
+- In [app/layout/layout.php](app/layout/layout.php) we first try to fetch the Vite dev server (default `http://localhost:5173`).
+- If the dev server is **reachable**, we use its HTML (HMR works).
+- If it’s **not reachable**, we fall back to `index.html` and load the production assets from `public/assets/.vite/manifest.json`.
+
+#### Changing the Vite dev server URL
+
+If your Vite server is not `http://localhost:5173` (different host/port), you must update **both**:
+
+- `index.html` (the two `<script type="module">` URLs)
+- [app/layout/layout.php](app/layout/layout.php) (`$viteDevOrigin`)
+
 ---
 
 ## 🏗️ Production Build
@@ -123,16 +136,7 @@ pnpm build
 
 This generates optimized, hashed assets in `public/assets/` and creates the Vite manifest.
 
-### Step 2: Remove Dev Scripts
-
-**Delete the two `<script>` tags from `index.html`:**
-
-```diff
-- <script type="module" src="http://localhost:5173/@vite/client"></script>
-- <script type="module" src="http://localhost:5173/src/main.ts"></script>
-```
-
-### Step 3: Deploy
+### Step 2: Deploy
 
 ```bash
 php -S localhost:8000 index.php
@@ -140,6 +144,13 @@ php -S localhost:8000 index.php
 ```
 
 When dev scripts are missing, `app/layout/layout.php` automatically loads manifest assets.
+
+### Production recommendation
+
+Set `APP_ENV=production` in your environment.
+
+- This disables the dev-server probe entirely (no extra network call in production).
+- The layout always loads the manifest assets.
 
 ---
 
