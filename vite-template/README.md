@@ -203,6 +203,46 @@ useEffect(() => {
 
 ---
 
+## 🔎 SEO (Simple + Strong)
+
+PhpSPA is **PHP-first**: every route returns real HTML on the first request (not an empty JS shell). That makes SEO straightforward:
+
+- **Search bots see content immediately** (server-rendered HTML response).
+- **Dynamic SEO per route**: set `title`, `description`, OpenGraph, etc. right on the route component.
+- **Global defaults**: set shared meta tags once in `index.php`.
+
+### Dynamic SEO per route (recommended)
+
+Every route can define its own metadata:
+
+```php
+// app/pages/HomePage.php
+new Component($HomePage)
+   ->route('/')
+   ->title('PhpSPA Design System — Vite + Tailwind + PhpSPA')
+   ->meta(name: 'description', content: 'Design-forward PhpSPA starter pairing PHP controllers with Vite, Tailwind, and typed state helpers for seamless SPA navigation.')
+   ->meta(property: 'og:title', content: 'PhpSPA Design System — Vite + Tailwind + PhpSPA')
+   ->meta(property: 'og:description', content: 'Explore PhpSPA component-driven PHP workflow, instant navigation, and production-ready Vite tooling.');
+```
+
+> You can do the same for every page (see `app/pages/AboutPage.php` and `app/pages/DocsPage.php`).
+
+### Global SEO defaults
+
+Set shared defaults once in `index.php`:
+
+```php
+new App()
+    ->meta(charset: 'UTF-8')
+    ->meta(name: 'viewport', content: 'width=device-width, initial-scale=1.0');
+```
+
+### Canonical URLs (production)
+
+In production you should output a canonical link per request. This template includes a production-only canonical example in `index.php`.
+
+---
+
 ## 🤝 Contributing
 
 Issues and PRs welcome! Visit [phpspa.tech](https://phpspa.tech) for full documentation.
