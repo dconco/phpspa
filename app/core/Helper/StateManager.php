@@ -7,6 +7,7 @@ use PhpSPA\Core\Http\HttpRequest;
 use PhpSPA\Core\Utils\Validate;
 
 use const PhpSPA\Core\Impl\Const\STATE_HANDLE;
+use const PhpSPA\Core\Impl\Const\UNDEFINED_STATE_VARIABLE;
 
 /**
  * Class StateManager
@@ -67,11 +68,11 @@ class StateManager
 	 * @param mixed $value Optional value to be processed when the object is invoked.
 	 * @return mixed The result of the invocation, depending on the implementation.
 	 */
-	public function __invoke($value = U_UNDEFINED_VARIABLE)
+	public function __invoke($value = UNDEFINED_STATE_VARIABLE)
 	{
 		$sessionData = SessionHandler::get(STATE_HANDLE);
 
-		if ($value === U_UNDEFINED_VARIABLE) {
+		if ($value === UNDEFINED_STATE_VARIABLE) {
 			return $sessionData[$this->stateKey] ?? $this->value;
 		}
 
