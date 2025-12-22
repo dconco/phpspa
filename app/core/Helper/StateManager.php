@@ -50,7 +50,7 @@ class StateManager
 		}
 
 		$this->stateKey = $stateKey;
-		
+
 		if (!isset($sessionData[$stateKey])) {
 			$this->value = $default;
 			$sessionData[$stateKey] = $this->lastState = $this->value;
@@ -71,7 +71,7 @@ class StateManager
 	{
 		$sessionData = SessionHandler::get(STATE_HANDLE);
 
-		if (!$value) {
+		if ($value === null) {
 			return $sessionData[$this->stateKey] ?? $this->value;
 		}
 
@@ -93,7 +93,7 @@ class StateManager
 		$sessionData = SessionHandler::get(STATE_HANDLE);
 
 		$value = $sessionData[$this->stateKey] ?? $this->value;
-		return \is_array($value) ? json_encode($value) : $value;
+		return \is_array($value) ? json_encode($value) : ($value === null ? '' : $value);
 	}
 
 	/**
