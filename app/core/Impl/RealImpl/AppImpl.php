@@ -215,7 +215,7 @@ abstract class AppImpl implements ApplicationContract {
 
    public function link (callable|string $content, ?string $name = null, ?string $type = null, ?string $rel = 'stylesheet', array $attributes = []): ApplicationContract
    {
-      $stylesheets[] = [
+      $stylesheets = [
          'content' => $content,
          'name' => $name,
          'type' => $type,
@@ -807,9 +807,10 @@ abstract class AppImpl implements ApplicationContract {
          foreach ($globalStylesheets as $index => $stylesheet) {
             $stylesheet = (array) Validate::validate($stylesheet);
 
-            if (is_callable($stylesheet['content']))
+            if (is_callable($stylesheet['content'])) {
+               $stylesheet['type'] = 'text/css';
                $stylesheet['href'] = AssetLinkManager::generateCssLink("__global__", $index, $stylesheet['name']);
-            else
+            } else
                $stylesheet['href'] = $stylesheet['content'];
 
             unset($stylesheet['name']);
