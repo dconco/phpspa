@@ -171,7 +171,7 @@ abstract class ComponentImpl
          }
 
          foreach ($attributes as $attribute => $value) {
-            if (!\is_string($attribute) || !\is_string($value)) {
+            if ((!\is_string($attribute) || !\is_string($value)) && $value !== true) {
                continue;
             }
             $temp[$attribute] = $value;

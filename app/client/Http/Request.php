@@ -20,6 +20,31 @@ interface Request {
     public function __invoke (string $key, ?string $default = null): mixed;
 
     /**
+     * Magic setter.
+     *
+     * Allows assigning values to dynamic/virtual properties on the request instance.
+     *
+     * @param string $name  The property name being set.
+     * @param mixed  $value The value to assign.
+     *
+     * @return void
+     */
+    public function __set($name, $value);
+
+    /**
+     * Magic getter that provides read-only, dynamic access to request data.
+     *
+     * Implementations typically resolve the requested property name against
+     * underlying request sources (e.g., query parameters, POST body, headers,
+     * cookies, server parameters, or attributes), depending on the library's
+     * conventions.
+     *
+     * @param string $name The name of the property to retrieve.
+     * @return mixed The resolved value for the given name, or null if not found.
+     */
+    public function __get($name);
+
+    /**
      * Retrieves file data from the request by name.
      *
      * This method retrieves file data from the request. If a name is provided, it returns the file data for that specific
@@ -236,11 +261,43 @@ interface Request {
     public function requestedWith ();
 
     /**
-     * Retrieves the request URI.
+     * Retrieves the request URI. Alias of `Request::path()`
      *
+     * @since v2.0.4
      * @return string The request URI.
      */
     public function getUri (): string;
+
+    /**
+     * Retrieves the request URI. Alias of `Request::getUri()`
+     *
+     * @since v2.0.5
+     * @return string The request URI.
+     */
+    public function path (): string;
+
+    /**
+     * Gets the request origin.
+     *
+     * Returns a string representing the origin of the current HTTP request (typically
+     * derived from headers such as `Origin` or `Referer`, or inferred from the host),
+     * suitable for origin checks (e.g., CORS) and request validation.
+     *
+     * @since v2.0.5
+     * @return string The request origin.
+     */
+    public function origin (): string;
+
+    /**
+     * Get the current site's base URL.
+     *
+     * Intended to return the canonical origin/base URL for the active request context
+     * (e.g., scheme + host, optionally including the application's base path).
+     *
+     * @since v2.0.5
+     * @return string The site's base URL.
+     */
+    public function siteURL (): string;
 
     /**
      * Determines if the current HTTP request originates from the same origin as the server.

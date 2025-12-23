@@ -166,12 +166,26 @@ interface ApplicationContract {
      *
      * Middleware functions receive two parameters:
      *
-     * - $req: The current HttpRequest instance.
+     * - $req: The current Request instance.
      * - $next: A callable that represents the next middleware or the component itself.
      *          When called, it returns the HTML string output of the component/next middleware.
      *
-     * Signature: `callable(HttpRequest $req, callable $next): mixed`
+     * Signature: `callable(Request $req, Closure $next): mixed`
      *
+     * Example:
+     * 
+     * ```php
+     * <?php
+     * new App()->middleware(function (Request $req, Closure $next) {
+     *    if ($req->auth()->bearer) {
+     *        return $next();
+     *    }
+     * 
+     *    http_response_code(403);
+     *    return "<h2>Unauthorized</h2>";
+     * });
+     * ```
+     * 
      * @param callable $middleware The middleware function.
      * @return self
      * @since v2.0.5

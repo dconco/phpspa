@@ -137,7 +137,20 @@ interface  IComponent
      * - $next: the next middleware/handler to call
      *
      * Signature: `callable(Request $req, Closure $next): mixed`
-     *
+     * 
+     * Example:
+     * ```php
+     * <?php
+     * new Component(...)->middleware(function (Request $req, Closure $next) {
+     *    if ($req->auth()->bearer) {
+     *        return $next();
+     *    }
+     * 
+     *    http_response_code(403);
+     *    return "<h2>Unauthorized</h2>";
+     * });
+     * ```
+     * 
      * @param callable $middleware
      * @return self Returns the current instance for method chaining.
      * @since v2.0.5

@@ -210,7 +210,7 @@ abstract class AppImpl implements ApplicationContract {
       ];
 
       foreach ($attributes as $attribute => $value) {
-         if (!\is_string($attribute) || !\is_string($value)) continue;
+         if ((!\is_string($attribute) || !\is_string($value)) && $value !== true) continue;
          $scripts[$attribute] = $value;
       }
 
@@ -234,7 +234,7 @@ abstract class AppImpl implements ApplicationContract {
       ];
 
       foreach ($attributes as $attribute => $value) {
-         if (!\is_string($attribute) || !\is_string($value)) continue;
+         if ((!\is_string($attribute) || !\is_string($value)) && $value !== true) continue;
          $stylesheets[$attribute] = $value;
       }
 
@@ -485,12 +485,12 @@ abstract class AppImpl implements ApplicationContract {
       $middlewares = [...$this->middlewares, ...$componentMiddlewares];
 
       // --- Define the final handler that executes the component function ---
-      $finalHandler = function (HttpRequest $req) use ($componentFunction, $router) {
+      $finalHandler = function () use ($componentFunction, $router, &$request) {
          // --- Clear component scope before each component execution ---
          ComponentScope::clearAll();
 
          // --- Execute the component function and format its output ---
-         $componentOutput = $this->executeComponentFunction($req, $componentFunction, $router['params'] ?? []);
+         $componentOutput = $this->executeComponentFunction($request, $componentFunction, $router['params'] ?? []);
 
          $scopeId = ComponentScope::createScope();
          $componentOutput = static::format($componentOutput);
@@ -503,8 +503,8 @@ abstract class AppImpl implements ApplicationContract {
       // --- Reverse middlewares so the first middleware in the array is executed first ---
       $pipeline = array_reduce(
          array_reverse($middlewares),
-         function (callable $next, callable $middleware) {
-            return fn (Request $req) => $middleware($req, $next);
+         function (callable $next, callable $middleware) use (&$request) {
+            return fn () => $middleware($request, $next);
          },
          $finalHandler
       );
