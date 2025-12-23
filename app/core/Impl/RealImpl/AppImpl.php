@@ -192,22 +192,18 @@ abstract class AppImpl implements ApplicationContract {
 
    public function script (callable|string $content, ?string $name = null, ?string $type = 'text/javascript', array $attributes = []): ApplicationContract
    {
-      $this->scripts[] = [
+      $scripts = [
          'content' => $content,
          'name' => $name,
          'type' => $type
       ];
 
-      $lastIndex = array_key_last($this->scripts);
-      if ($lastIndex !== null) {
-         foreach ($attributes as $attribute => $value) {
-            if (!\is_string($attribute) || !\is_string($value)) {
-               continue;
-            }
-            $this->scripts[$lastIndex][$attribute] = $value;
-         }
+      foreach ($attributes as $attribute => $value) {
+         if (!\is_string($attribute) || !\is_string($value)) continue;
+         $scripts[$attribute] = $value;
       }
 
+      $this->scripts[] = $scripts;
       return $this;
    }
 
@@ -219,23 +215,19 @@ abstract class AppImpl implements ApplicationContract {
 
    public function link (callable|string $content, ?string $name = null, ?string $type = null, ?string $rel = 'stylesheet', array $attributes = []): ApplicationContract
    {
-      $this->stylesheets[] = [
+      $stylesheets = [
          'content' => $content,
          'name' => $name,
          'type' => $type,
          'rel' => $rel,
       ];
 
-      $lastIndex = array_key_last($this->stylesheets);
-      if ($lastIndex !== null) {
-         foreach ($attributes as $attribute => $value) {
-            if (!\is_string($attribute) || !\is_string($value)) {
-               continue;
-            }
-            $this->stylesheets[$lastIndex][$attribute] = $value;
-         }
+      foreach ($attributes as $attribute => $value) {
+         if (!\is_string($attribute) || !\is_string($value)) continue;
+         $stylesheets[$attribute] = $value;
       }
 
+      $this->stylesheets[] = $stylesheets;
       return $this;
    }
 
@@ -815,9 +807,10 @@ abstract class AppImpl implements ApplicationContract {
          foreach ($globalStylesheets as $index => $stylesheet) {
             $stylesheet = (array) Validate::validate($stylesheet);
 
-            if (is_callable($stylesheet['content']))
+            if (is_callable($stylesheet['content'])) {
+               $stylesheet['type'] = 'text/css';
                $stylesheet['href'] = AssetLinkManager::generateCssLink("__global__", $index, $stylesheet['name']);
-            else
+            } else
                $stylesheet['href'] = $stylesheet['content'];
 
             unset($stylesheet['name']);
