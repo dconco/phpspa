@@ -12,7 +12,6 @@ namespace PhpSPA\Interfaces;
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
- * @since v1.0.0
  */
 interface  IComponent
 {
@@ -45,6 +44,7 @@ interface  IComponent
      * @param string|null $charset Charset declaration (for `<meta charset="...">`).
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self Returns the current instance for method chaining.
+     * @since v2.0.5
      */
     public function meta(
         ?string $name = null,
@@ -75,11 +75,13 @@ interface  IComponent
 
     /**
      * Shows that the given route value is a pattern in `fnmatch` format
+     * @since v2.0.4
      */
     public function pattern(): self;
 
     /**
      * Make the component show only for that specific route
+     * @since v2.0.4
      */
     public function exact(): self;
 
@@ -87,6 +89,7 @@ interface  IComponent
      * This loads the component with the specific ID as a layout on the exact URL on this page
      * 
      * @param string ...$componentName The component with the registered names
+     * @since v2.0.4
      */
     public function preload(string ...$componentName): self;
 
@@ -94,6 +97,7 @@ interface  IComponent
      * This is a unique key for each components to use for preloading
      * 
      * @param string $value The unique name to give this component
+     * @since v2.0.4
      */
     public function name(string $value): self;
 
@@ -123,6 +127,22 @@ interface  IComponent
      * @see https://phpspa.tech/routing/component-configuration/#__tabbed_1_2
      */
     public function caseInsensitive(): self;
+
+    /**
+     * Register a component middleware/guard (work-in-progress).
+     *
+     * Middleware behaves like a normal component function, and receives two parameters:
+     *
+     * - $req: the current request
+     * - $next: the next middleware/handler to call
+     *
+     * Signature: `callable(Request $req, Closure $next): mixed`
+     *
+     * @param callable $middleware
+     * @return self Returns the current instance for method chaining.
+     * @since v2.0.5
+     */
+    public function middleware(callable $middleware): self;
 
     /**
      * Sets the script to be executed when the component is mounted.
@@ -160,6 +180,7 @@ interface  IComponent
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self Returns the current instance for method chaining.
      * @see https://phpspa.tech/performance/managing-styles-and-scripts/#component-specific-assets
+     * @since v2.0.5
      */
     public function link(callable|string $content, ?string $name = null, ?string $type = null, ?string $rel = 'stylesheet', array $attributes = []): self;
 

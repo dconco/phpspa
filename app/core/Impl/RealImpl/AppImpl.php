@@ -69,6 +69,11 @@ abstract class AppImpl implements ApplicationContract {
    private array $components = [];
 
    /**
+    * @var callable[]
+    */
+   private array $middlewares = [];
+
+   /**
     * Holds the data that has been rendered.
     *
     * This property is used to store data that has already been processed or rendered
@@ -152,6 +157,12 @@ abstract class AppImpl implements ApplicationContract {
       if ($key !== false) {
          unset($this->components[$key]);
       }
+      return $this;
+   }
+
+   public function middleware (callable $component): ApplicationContract
+   {
+      $this->middlewares[] = $component;
       return $this;
    }
 
@@ -427,7 +438,7 @@ abstract class AppImpl implements ApplicationContract {
 
 
    private function runComponent(Component|Icomponent $component, bool $isPreloadingComponent = false, ?string &$layoutOutput = null) {
-      $request = new HttpRequest();
+      static $request = new HttpRequest();
 
       $route = CallableInspector::getProperty($component, 'route');
       $name = CallableInspector::getProperty($component, 'name');
@@ -443,6 +454,7 @@ abstract class AppImpl implements ApplicationContract {
       $reloadTime = CallableInspector::getProperty($component, 'reloadTime');
       $exact = CallableInspector::getProperty($component, 'exact') ?? false;
       $preload = CallableInspector::getProperty($component, 'preload');
+      $componentMiddlewares = CallableInspector::getProperty($component, 'middlewares');
 
       if (!$componentFunction || !is_callable($componentFunction)) {
          return;
@@ -461,25 +473,49 @@ abstract class AppImpl implements ApplicationContract {
 
          DOM::CurrentRoutes(static::$request_uri);
       }
-
-      // --- Merge component meta data only if this is the correct route ---
-      $metaTags = [...$this->metadata, ...$componentMetaData];
-
+      
       if ($isPreloadingComponent && !str_contains($route[0] ?? '', '{')) {
          DOM::CurrentRoutes($route[0] ?? '');
       }
 
       if ($name) DOM::CurrentComponents($name);
 
-      // --- Clear component scope before each component execution ---
-      ComponentScope::clearAll();
+      // --- Merge component meta data only if this is the correct route ---
+      $metaTags = [...$this->metadata, ...$componentMetaData];
+      $middlewares = [...$this->middlewares, ...$componentMiddlewares];
+
+      // --- Define the final handler that executes the component function ---
+      $finalHandler = function (HttpRequest $req) use ($componentFunction, $router) {
+         // --- Clear component scope before each component execution ---
+         ComponentScope::clearAll();
+
+         // --- Execute the component function and format its output ---
+         $componentOutput = $this->executeComponentFunction($req, $componentFunction, $router['params'] ?? []);
+
+         $scopeId = ComponentScope::createScope();
+         $componentOutput = static::format($componentOutput);
+         ComponentScope::removeScope($scopeId);
+
+         return $componentOutput;
+      };
+
+      // --- Build the middleware pipeline ---
+      // --- Reverse middlewares so the first middleware in the array is executed first ---
+      $pipeline = array_reduce(
+         array_reverse($middlewares),
+         function (callable $next, callable $middleware) {
+            return fn (Request $req) => $middleware($req, $next);
+         },
+         $finalHandler
+      );
+
+      // --- Execute the pipeline ---
+      $componentOutput = $pipeline($request);
 
       if ($layoutOutput === null) {
-         $layoutOutput = is_callable($this->layout) ? (string) \call_user_func($this->layout) : (string) $this->layout;
+         $layoutOutput = is_callable($this->layout) ? (string) \call_user_func($this->layout, $request) : (string) $this->layout;
          $layoutOutput = $this->ensureHeadTag($layoutOutput);
       }
-
-      $componentOutput = '';
 
       // --- Check if a preload component exists ---
       // --- Then first parse & execute preload components ---
@@ -494,49 +530,6 @@ abstract class AppImpl implements ApplicationContract {
             );
          }
       }
-
-      /**
-       * Invokes the specified component callback with appropriate parameters based on its signature.
-       *
-       * This logic checks if the component's callable accepts 'path' and/or 'request' parameters
-       * using CallableInspector. It then calls the component with the corresponding arguments:
-       * - If both 'path' and 'request' are accepted, both are passed.
-       * - If only 'path' is accepted, only 'path' is passed.
-       * - If only 'request' is accepted, only 'request' is passed.
-       * - If neither is accepted, the component is called without arguments.
-       *
-       * @param object $component The component object containing the callable to invoke.
-       * @param array $router An associative array containing 'params' and 'request' to be passed as arguments.
-       */
-
-      if (CallableInspector::hasParam($componentFunction, 'path') && CallableInspector::hasParam($componentFunction, 'request')) {
-         $componentOutput = \call_user_func(
-            $componentFunction,
-            path: $router['params'],
-            request: $request,
-         );
-      }
-      elseif (CallableInspector::hasParam($componentFunction, 'path')) {
-         $componentOutput = \call_user_func(
-            $componentFunction,
-            path: $router['params'],
-         );
-      }
-      elseif (CallableInspector::hasParam($componentFunction, 'request')) {
-         $componentOutput = \call_user_func(
-            $componentFunction,
-            request: $request,
-         );
-      }
-      else {
-         $componentOutput = \call_user_func($componentFunction);
-      }
-
-
-      // --- Create a new scope for this component and execute formatting ---
-      $scopeId = ComponentScope::createScope();
-      $componentOutput = static::format($componentOutput);
-      ComponentScope::removeScope($scopeId);
 
       if (!$isPreloadingComponent) {
          $title = DOM::Title() ?? $title;
@@ -808,7 +801,7 @@ abstract class AppImpl implements ApplicationContract {
             $stylesheet = (array) Validate::validate($stylesheet);
 
             if (is_callable($stylesheet['content'])) {
-               $stylesheet['type'] = 'text/css';
+               $stylesheet['type'] ??= 'text/css';
                $stylesheet['href'] = AssetLinkManager::generateCssLink("__global__", $index, $stylesheet['name']);
             } else
                $stylesheet['href'] = $stylesheet['content'];
@@ -825,9 +818,10 @@ abstract class AppImpl implements ApplicationContract {
          foreach ($stylesheets as $index => $stylesheet) {
             $stylesheet = (array) Validate::validate($stylesheet);
 
-            if (is_callable($stylesheet['content']))
+            if (is_callable($stylesheet['content'])) {
+               $stylesheet['type'] ??= 'text/css';
                $stylesheet['href'] = AssetLinkManager::generateCssLink($primaryRoute, $index, $stylesheet['name']);
-            else
+            } else
                $stylesheet['href'] = $stylesheet['content'];
 
             unset($stylesheet['name']);
@@ -1132,5 +1126,36 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       return $html;
+   }
+
+   /**
+    * Executes the component function based on its parameter signature.
+    *
+    * @param Request $request The current HTTP request.
+    * @param callable $componentFunction The component's callable function.
+    * @param array $routerParams An associative array of route parameters.
+    * @return string The output of the component function.
+    */
+   private function executeComponentFunction(Request $request, callable $componentFunction, array $routerParams = []): string
+   {
+      if (CallableInspector::hasParam($componentFunction, 'path') && CallableInspector::hasParam($componentFunction, 'request')) {
+         return (string) \call_user_func(
+            $componentFunction,
+            path: $routerParams,
+            request: $request,
+         );
+      } elseif (CallableInspector::hasParam($componentFunction, 'path')) {
+         return (string) \call_user_func(
+            $componentFunction,
+            path: $routerParams,
+         );
+      } elseif (CallableInspector::hasParam($componentFunction, 'request')) {
+         return (string) \call_user_func(
+            $componentFunction,
+            request: $request,
+         );
+      } else {
+         return (string) \call_user_func($componentFunction, $request, $routerParams);
+      }
    }
 }

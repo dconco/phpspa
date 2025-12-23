@@ -14,7 +14,6 @@ use PhpSPA\Component;
  * @author dconco <me@dconco.tech>
  * @copyright 2025 Dave Conco
  * @license MIT
- * @since v1.0.0
  * @see https://phpspa.tech/core-concepts
  */
 interface ApplicationContract {
@@ -122,6 +121,7 @@ interface ApplicationContract {
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self
      * @see https://phpspa.tech/performance/managing-styles-and-scripts
+     * @since v2.0.5
      */
     public function link (callable|string $content, ?string $name = null, ?string $type = null, ?string $rel = 'stylesheet', array $attributes = []): self;
 
@@ -138,6 +138,7 @@ interface ApplicationContract {
      * @param string|null $charset Charset declaration (mutually exclusive with content).
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self
+     * @since v2.0.5
      */
     public function meta(
         ?string $name = null,
@@ -156,22 +157,42 @@ interface ApplicationContract {
      * @param string $staticPath The static file path.
      * @return ApplicationContract
      * @see https://phpspa.tech/references/router/#static-files
+     * @since v2.0.5
      */
     public function useStatic(string $route, string $staticPath): self;
 
+    /**
+     * Register a global middleware that applies to all components.
+     *
+     * Middleware functions receive two parameters:
+     *
+     * - $req: The current HttpRequest instance.
+     * - $next: A callable that represents the next middleware or the component itself.
+     *          When called, it returns the HTML string output of the component/next middleware.
+     *
+     * Signature: `callable(HttpRequest $req, callable $next): mixed`
+     *
+     * @param callable $middleware The middleware function.
+     * @return self
+     * @since v2.0.5
+     */
+    public function middleware(callable $component): self;
 
     /**
      * Group routes under a common prefix.
      *
      * @param string $path The prefix path.
      * @param callable $handler The handler function with Router as the parameter.
-     * @return ApplicationContract
+     * @return self
+     * @since v2.0.4
      * @see https://phpspa.tech/references/router/#app-level-prefixing
     */
     public function prefix(string $path, callable $handler): self;
 
     /**
      * If you are using script module with `@dconco/phpspa` js package, enable this function
+     * 
+     * @since v2.0.5
      */
     public function useModule(): self;
 

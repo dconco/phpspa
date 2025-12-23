@@ -26,6 +26,7 @@ use PhpSPA\Interfaces\IComponent;
  * @method IComponent preload(string ...$componentName) This loads the component with the specific name as a layout on the exact URL on this page
  * @method IComponent name(string $value) This is a unique key for each components to use for preloading
  * @method IComponent targetID(string $targetID) Set the target ID for the component
+ * @method IComponent middleware(callable $middleware) Register a component middleware/guard for this route (WIP). Signature: `fn(Request $req, Closure $next): mixed`.
  * @method IComponent caseSensitive() Enable case sensitivity for the component
  * @method IComponent caseInsensitive() Disable case sensitivity for the component
  * @method IComponent script(callable|string $content, ?string $name = null, ?string $type = 'text/javascript', array $attributes = []) Add scripts to the component
@@ -127,6 +128,11 @@ abstract class ComponentImpl
    protected array $stylesheets = [];
 
    /**
+    * @var callable[]
+    */
+   protected array $middlewares = [];
+
+   /**
     * @var int
     */
    protected int $reloadTime = 0;
@@ -185,6 +191,7 @@ abstract class ComponentImpl
          'pattern',
          'caseSensitive' => $this->$method = true,
          'caseInsensitive' => $this->caseSensitive = false,
+         'middleware' => $this->middlewares[] = $args[0],
          'reload' => $this->reloadTime = $args[0],
          'link' => $addAsset('stylesheets'),
          'styleSheet' => $addAsset('stylesheets'),
@@ -195,6 +202,18 @@ abstract class ComponentImpl
       return $this;
    }
 
+    /**
+     * Sets a meta tag for the component's initial HTML response.
+     *
+     * @param string|null $name Standard meta "name" attribute (e.g., description, keywords).
+     * @param string|null $content Content associated with the meta tag.
+     * @param string|null $property Open Graph "property" attribute value.
+     * @param string|null $httpEquiv HTTP-EQUIV attribute value.
+     * @param string|null $charset Charset declaration (for `<meta charset="...">`).
+     * @param array $attributes Optional additional attributes as key => value pairs.
+     * @return self Returns the current instance for method chaining.
+     * @since v2.0.5
+     */
    public function meta(
       ?string $name = null,
       ?string $content = null,
