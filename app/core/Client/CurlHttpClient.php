@@ -54,7 +54,7 @@ class CurlHttpClient implements HttpClient {
       curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, ($options['verify_ssl'] ?? false) ? 2 : 0);
 
       // --- Handle Unix Socket ---
-      if (isset($options['unix_socket_path']) {
+      if (isset($options['unix_socket_path'])) {
          curl_setopt($ch, CURLOPT_UNIX_SOCKET_PATH, $options['unix_socket_path']);
       }
 
@@ -155,7 +155,7 @@ class CurlHttpClient implements HttpClient {
       curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, ($options['verify_ssl'] ?? false) ? 2 : 0);
 
       // --- Handle Unix Socket ---
-      if (isset($options['unix_socket_path']) {
+      if (isset($options['unix_socket_path'])) {
          curl_setopt($ch, CURLOPT_UNIX_SOCKET_PATH, $options['unix_socket_path']);
       }
 
