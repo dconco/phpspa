@@ -121,6 +121,12 @@ class PendingRequest implements \ArrayAccess {
       return $this;
    }
 
+   public function unixSocketPath(string $path): PendingRequest
+   {
+      $this->options['unix_socket_path'] = $path;
+      return $this;
+   }
+
    /**
     * Set custom options for the request.
     *
