@@ -70,7 +70,7 @@ class AssetLinkManager
      * @param string $type The type of the script
      * @return string The generated JS link
      */
-    public static function generateJsLink(string $componentRoute, int $scriptIndex, ?string $name = null, string $type): string
+    public static function generateJsLink(string $componentRoute, int $scriptIndex, ?string $name = null, string $type = 'text/javascript'): string
     {
         $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
 
