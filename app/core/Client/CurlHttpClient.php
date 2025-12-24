@@ -52,7 +52,12 @@ class CurlHttpClient implements HttpClient {
       curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, (int) $connectTimeout);
       curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $options['verify_ssl'] ?? false);
       curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, ($options['verify_ssl'] ?? false) ? 2 : 0);
-      
+
+      // --- Handle Unix Socket ---
+      if (isset($options['unix_socket_path']) {
+         curl_setopt($ch, CURLOPT_UNIX_SOCKET_PATH, $options['unix_socket_path']);
+      }
+
       if (isset($options['cert_path'])) {
          curl_setopt($ch, CURLOPT_CAINFO, $options['cert_path']);
       }
@@ -148,7 +153,12 @@ class CurlHttpClient implements HttpClient {
       curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, (int) $connectTimeout);
       curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $options['verify_ssl'] ?? false);
       curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, ($options['verify_ssl'] ?? false) ? 2 : 0);
-      
+
+      // --- Handle Unix Socket ---
+      if (isset($options['unix_socket_path']) {
+         curl_setopt($ch, CURLOPT_UNIX_SOCKET_PATH, $options['unix_socket_path']);
+      }
+
       if (isset($options['cert_path'])) {
          curl_setopt($ch, CURLOPT_CAINFO, $options['cert_path']);
       }
