@@ -11,6 +11,45 @@ namespace PhpSPA\Core\Client;
  */
 class CurlHttpClient implements HttpClient {
    /**
+    * Extract raw cURL options from the mixed PhpSPA options array.
+    *
+    * Supports:
+    * - $options['curl'] or $options['curl_options'] as array<int,mixed>
+    * - top-level int keys (CURLOPT_* constants)
+    * - top-level string keys like 'CURLOPT_PROXY'
+    *
+    * @param array $options
+    * @return array<int, mixed>
+    */
+   private function extractCurlOptions(array $options): array
+   {
+      $curlOptions = [];
+
+      foreach ($options as $key => $value) {
+         if (\is_int($key)) {
+            $curlOptions[$key] = $value;
+         }
+         else if (\is_string($key) && str_starts_with($key, 'CURLOPT_') && \defined($key)) {
+            $curlOptions[\constant($key)] = $value;
+         }
+      }
+
+      $nested = $options['curl'] ?? ($options['curl_options'] ?? null);
+      if (\is_array($nested)) {
+         foreach ($nested as $key => $value) {
+            if (\is_string($key) && str_starts_with($key, 'CURLOPT_') && \defined($key)) {
+               $key = \constant($key);
+            }
+            if (\is_int($key)) {
+               $curlOptions[$key] = $value;
+            }
+         }
+      }
+
+      return $curlOptions;
+   }
+
+   /**
     * {@inheritdoc}
     */
    public function request(string $url, string $method, array $headers, ?string $body = null, array $options = []): ClientResponse
@@ -78,6 +117,12 @@ class CurlHttpClient implements HttpClient {
       // Add body for POST, PUT, PATCH
       if ($body !== null) {
          curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+      }
+
+      // Apply any user-provided raw cURL options (advanced)
+      $curlOptions = $this->extractCurlOptions($options);
+      if (!empty($curlOptions)) {
+         @curl_setopt_array($ch, $curlOptions);
       }
 
       $response = curl_exec($ch);
@@ -179,6 +224,12 @@ class CurlHttpClient implements HttpClient {
       // Add body for POST, PUT, PATCH
       if ($body !== null) {
          curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+      }
+
+      // Apply any user-provided raw cURL options (advanced)
+      $curlOptions = $this->extractCurlOptions($options);
+      if (!empty($curlOptions)) {
+         @curl_setopt_array($ch, $curlOptions);
       }
       
       // Return the prepared handle without executing

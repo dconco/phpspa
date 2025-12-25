@@ -121,7 +121,17 @@ class PendingRequest implements \ArrayAccess {
       return $this;
    }
 
-   public function unixSocketPath(string $path): PendingRequest
+   /**
+    * Set the Unix domain socket path to be used for this pending request.
+    *
+    * This configures the underlying HTTP client/transport to connect via a Unix socket
+    * instead of a TCP host:port. The provided path should point to an existing socket
+    * file (e.g. "/var/run/service.sock").
+    *
+    * @param string $path Absolute or relative filesystem path to the Unix socket file.
+    * @return PendingRequest Returns the current instance for fluent chaining.
+    */
+   public function unixSocket(string $path): PendingRequest
    {
       $this->options['unix_socket_path'] = $path;
       return $this;
@@ -130,12 +140,52 @@ class PendingRequest implements \ArrayAccess {
    /**
     * Set custom options for the request.
     *
+    * Supports both PhpSPA-defined options (like `timeout`, `user_agent`, etc.)
+    * and raw cURL options for advanced usage.
+    *
+    * Raw cURL options can be provided in any of these forms:
+    *
+    * - `withOptions([CURLOPT_PROXY => 'http://...', CURLOPT_TIMEOUT => 5])`
+    * - `withOptions(['CURLOPT_PROXY' => 'http://...'])` (constant name string)
+    * - `withOptions(['curl' => [CURLOPT_PROXY => 'http://...']])`
+    *
+    * When cURL is not available, raw cURL options are ignored by the stream fallback client.
+    *
     * @param array $options Custom options array
     * @return PendingRequest
     */
    public function withOptions(array $options): PendingRequest
    {
       foreach ($options as $key => $value) {
+         // Allow nesting: ['curl' => [CURLOPT_* => ...]]
+         if (($key === 'curl' || $key === 'curl_options') && \is_array($value)) {
+            $this->options['curl'] ??= [];
+            foreach ($value as $curlKey => $curlValue) {
+               if (\is_string($curlKey) && str_starts_with($curlKey, 'CURLOPT_') && \defined($curlKey)) {
+                  $curlKey = \constant($curlKey);
+               }
+               if (\is_int($curlKey)) {
+                  $this->options['curl'][$curlKey] = $curlValue;
+               }
+            }
+            continue;
+         }
+
+         // Allow passing CURLOPT_* directly at top-level
+         if (\is_int($key)) {
+            $this->options['curl'] ??= [];
+            $this->options['curl'][$key] = $value;
+            continue;
+         }
+
+         // Allow passing CURLOPT_* by constant name string at top-level
+         if (\is_string($key) && str_starts_with($key, 'CURLOPT_') && \defined($key)) {
+            $this->options['curl'] ??= [];
+            $this->options['curl'][\constant($key)] = $value;
+            continue;
+         }
+
+         // Default: treat as PhpSPA option
          $this->options[$key] = $value;
       }
       return $this;
