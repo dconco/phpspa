@@ -5,7 +5,6 @@ require_once __DIR__ . '/vendor/autoload.php';
 use PhpSPA\App;
 use PhpSPA\Compression\Compressor;
 use PhpSPA\Core\Http\HttpRequest;
-use PhpSPA\Http\Request;
 use PhpSPA\Http\Response;
 
 chdir(__DIR__); // --- Change the current working directory to the project root dir ---

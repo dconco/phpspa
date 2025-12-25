@@ -139,6 +139,7 @@ interface ApplicationContract {
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self
      * @since v2.0.5
+     * @see https://phpspa.tech/references/component-meta
      */
     public function meta(
         ?string $name = null,
@@ -189,6 +190,7 @@ interface ApplicationContract {
      * @param callable $middleware The middleware function.
      * @return self
      * @since v2.0.5
+     * @see https://phpspa.tech/references/middleware/#app-middleware
      */
     public function middleware(callable $component): self;
 

@@ -45,6 +45,7 @@ interface  IComponent
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self Returns the current instance for method chaining.
      * @since v2.0.5
+     * @see https://phpspa.tech/references/component-meta
      */
     public function meta(
         ?string $name = null,
@@ -151,9 +152,10 @@ interface  IComponent
      * });
      * ```
      * 
+     * @since v2.0.5
      * @param callable $middleware
      * @return self Returns the current instance for method chaining.
-     * @since v2.0.5
+     * @see https://phpspa.tech/references/middleware/#component-middleware
      */
     public function middleware(callable $middleware): self;
 

@@ -59,6 +59,11 @@ $app->prefix('/api', function (Router $router) {
 
 Middleware provide a convenient mechanism for inspecting and filtering HTTP requests entering your application.
 
+!!! note "Looking for Component/App middleware?"
+    This page documents **Router middleware** which receives `(Request, Response, Closure $next)`.
+
+    For `App->middleware()` / `Component->middleware()` (which receives `(Request, Closure $next)`), see: [App & Component Middleware](middleware.md).
+
 ### **Middleware Signature**
 
 Middleware closures receive three arguments:
