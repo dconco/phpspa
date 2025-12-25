@@ -7,7 +7,7 @@ use PhpSPA\Compression\Compressor;
 use PhpSPA\Core\Http\HttpRequest;
 use PhpSPA\Http\Response;
 
-chdir(__DIR__);
+chdir(__DIR__); // --- Change the current working directory to the project root dir ---
 
 // --- Load components ---
 require_once 'app/layout/layout.php';
@@ -33,7 +33,7 @@ $app->attach($docsPage);
 $app->meta(charset: 'UTF-8')
     ->meta(name: 'viewport', content: 'width=device-width, initial-scale=1.0')
     ->link(rel: 'preconnect', content: 'https://fonts.googleapis.com')
-    ->link(rel: 'preconnect', content: 'https://fonts.gstatic.com', attributes: ['crossorigin' => ''])
+    ->link(rel: 'preconnect', content: 'https://fonts.gstatic.com', attributes: ['crossorigin' => true])
     ->link(rel: 'stylesheet', content: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap', type: 'text/css')
 
     ->link(rel: 'shortcut icon', content: '/logo.svg', type: 'image/xml+svg')
@@ -47,15 +47,9 @@ if (getenv('APP_ENV') === 'production') {
 
     // --- Apply Canonical Link ---
     $req = new HttpRequest();
-    $path = $req->getUri();
-    $scheme = $req->isHttps() ? 'https' : 'http';
+    $siteURL = getenv('APP_URL') ?: $req->siteURL();
 
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $baseUrl = rtrim(getenv('APP_URL') ?: "$scheme://$host", '/');
-
-    $canonicalUrl = $baseUrl . $path;
-
-    $app->link(rel: 'canonical', content: $canonicalUrl);
+    $app->link(rel: 'canonical', content: $siteURL);
 }
 
 // --- Run the application ---

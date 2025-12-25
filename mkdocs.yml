@@ -159,6 +159,7 @@ nav:
       - HTTP & Networking:
          - Response API: references/response.md
          - Router API: references/router.md
+         - App & Component Middleware: references/middleware.md
          - useFetch Hook: references/hooks/use-fetch.md
       - Helpers & Utilities:
          - fmt() Helper: references/helpers/fmt.md

@@ -50,6 +50,7 @@ class Router
     * 
     * @param callable $handler The middleware handler.
     * @return void
+    * @since v2.0.4
     * @see https://phpspa.tech/references/router/#middleware
     */
    public function middleware(callable $handler) {
@@ -62,6 +63,7 @@ class Router
     * @param string $path The URL prefix for this group.
     * @param callable $handler The callback to define routes within this group.
     * @return void
+    * @since v2.0.4
     * @see https://phpspa.tech/references/router/#nested-prefixes
     */
    public function prefix(string $path, callable $handler) {
