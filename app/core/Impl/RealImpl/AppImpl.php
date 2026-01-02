@@ -37,7 +37,7 @@ use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  * routing, and rendering logic that powers the single-page application experience.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
  * @abstract
  */

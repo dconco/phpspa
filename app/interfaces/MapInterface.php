@@ -13,7 +13,7 @@ namespace PhpSPA\Interfaces;
  * different routing strategies.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
  * @since v1.0.0
  */

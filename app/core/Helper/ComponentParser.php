@@ -10,7 +10,7 @@ namespace PhpSPA\Core\Helper;
  * within the PhpSPA framework.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
  * @var string|array $attributes
  */

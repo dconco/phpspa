@@ -12,7 +12,7 @@ namespace PhpSPA\Core\Utils;
  * appropriate validation rules and sanitization techniques.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
  */
 class Validate

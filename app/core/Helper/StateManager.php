@@ -17,7 +17,7 @@ use const PhpSPA\Core\Impl\Const\UNDEFINED_STATE_VARIABLE;
  * and providing access to state information throughout the application lifecycle.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @var string $stateKey
  * @var string $value
  */

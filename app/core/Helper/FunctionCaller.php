@@ -14,7 +14,7 @@ use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  * authentication for safe function execution in client-side contexts.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
  * @see https://phpspa.tech/v1.1.5/2-php-js-integration/ PHP-JS Integration Documentation
  * @var callable $function

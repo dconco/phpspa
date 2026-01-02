@@ -10,7 +10,7 @@ namespace PhpSPA\Interfaces;
  * rendering behavior. It ensures consistent component structure and behavior.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
  */
 interface  IComponent
