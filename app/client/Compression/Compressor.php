@@ -11,7 +11,7 @@ namespace PhpSPA\Compression;
  *
  * @package Compression
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
  * @see https://phpspa.tech/performance/html-compression/ Compression System Documentation
  */

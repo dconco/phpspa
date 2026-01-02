@@ -15,7 +15,7 @@ use ReflectionMethod;
  *
  * @package PhpSPA\Core\Utils\Formatter
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
  */
 trait ComponentTagFormatter

@@ -16,7 +16,7 @@ use PhpSPA\Http\Session;
  * compressed content through dynamic links.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
  * @since v1.1.6
  */

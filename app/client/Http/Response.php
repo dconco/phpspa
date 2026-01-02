@@ -11,7 +11,7 @@ use PhpSPA\Core\Helper\FileHandler;
  *
  * @package HTTP
  * @author Samuel Paschalson <samuelpaschalson@gmail.com>
- * @copyright 2025 Samuel Paschalson
+ * @copyright 2026 Samuel Paschalson
  * @see https://phpspa.tech/references/response/#response-api-examples
  */
 class Response

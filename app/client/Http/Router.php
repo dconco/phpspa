@@ -13,7 +13,7 @@ use PhpSPA\Http\Response;
  * 
  * @package HTTP
  * @author Samuel Paschalson <samuelpaschalson@gmail.com>
- * @copyright 2025 Samuel Paschalson
+ * @copyright 2026 Samuel Paschalson
  * @method void get(string|array $route, callable ...$handlers) Register a GET route. Handlers receive (Request $request, Response $response, Closure $next).
  * @method void put(string|array $route, callable ...$handlers) Register a PUT route. Handlers receive (Request $request, Response $response, Closure $next).
  * @method void post(string|array $route, callable ...$handlers) Register a POST route. Handlers receive (Request $request, Response $response, Closure $next).

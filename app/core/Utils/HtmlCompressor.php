@@ -15,7 +15,7 @@ use PhpSPA\Core\Compression\NativeCompressor;
  * to reduce payload sizes and improve performance.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
  */
 trait HtmlCompressor

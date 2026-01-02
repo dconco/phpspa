@@ -17,7 +17,7 @@ use PhpSPA\Interfaces\IComponent;
  * methods, titles, target IDs, and associated scripts and stylesheets.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @method IComponent title(string $title) Set the title of the component
  * @method IComponent method(string ...$method) Set the HTTP method for the component, defaults to 'GET|VIEW'
  * @method IComponent route(string|array ...$route) Set the route(s) for the component

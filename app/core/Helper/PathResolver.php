@@ -9,7 +9,7 @@ namespace PhpSPA\Core\Helper;
  * useful for generating correct URLs in nested routes.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
  */
 class PathResolver

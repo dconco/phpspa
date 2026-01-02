@@ -10,7 +10,7 @@ namespace PhpSPA\Core\Utils;
  * avoiding autoload overhead when binaries are present.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
  */
 class FallbackCompressor

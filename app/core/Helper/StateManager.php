@@ -17,7 +17,7 @@ use const PhpSPA\Core\Impl\Const\UNDEFINED_STATE_VARIABLE;
  * and providing access to state information throughout the application lifecycle.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @var string $stateKey
  * @var string $value
  */
@@ -68,13 +68,16 @@ class StateManager
 	 * @param mixed $value Optional value to be processed when the object is invoked.
 	 * @return mixed The result of the invocation, depending on the implementation.
 	 */
-	public function __invoke($value = UNDEFINED_STATE_VARIABLE)
+	public function __invoke()
 	{
 		$sessionData = SessionHandler::get(STATE_HANDLE);
 
-		if ($value === UNDEFINED_STATE_VARIABLE) {
+		// If no argument was passed, return the current state value.
+		if (\func_num_args() === 0) {
 			return $sessionData[$this->stateKey] ?? $this->value;
 		}
+		// An argument was explicitly provided (even if it is falsy); treat it as the new state value.
+		$value = func_get_arg(0);
 
 		$this->lastState = $this->value ?? Validate::validate($value);
 		$this->value = $value;
