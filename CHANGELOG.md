@@ -1,10 +1,10 @@
 # CHANGELOG
 
-## v2.0.5 (unreleased)
+## v2.0.5 (Current) (Stable)
 
 **Installation:**
 ```bash
-composer require dconco/phpspa:v2.0.5.x-dev
+composer require dconco/phpspa:v2.0.5
 ```
 
 ### What's Added
@@ -54,7 +54,7 @@ new Component(...)
    ->meta(property: 'og:title', content: 'PhpSPA Design System');
 ```
 
-**Documentation:** [references/component-meta](https://phpspa.readthedocs.io/en/latest/references/component-meta)
+**Documentation:** [references/component-meta](https://phpspa.tech/references/component-meta)
 
 
 #### **`useCallback()`**
@@ -102,10 +102,15 @@ $app
 
 
 
-## v2.0.4 (Current) (Stable)
+## v2.0.4
 
 > [!IMPORTANT]
 > This version requires **PHP 8.4 or higher**
+
+**Installation:**
+```bash
+composer require dconco/phpspa:v2.0.4
+```
 
 ### **Client-Side Hooks** ⚛️
 
@@ -258,6 +263,11 @@ $app->prefix('/api', function (Router $router) {
 
 
 ## v2.0.3
+
+**Installation:**
+```bash
+composer require dconco/phpspa:v2.0.3
+```
 
 ### ✨ New Features
 
