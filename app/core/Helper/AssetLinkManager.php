@@ -16,7 +16,7 @@ use PhpSPA\Http\Session;
  * compressed content through dynamic links.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
  * @since v1.1.6
  */
@@ -70,7 +70,7 @@ class AssetLinkManager
      * @param string $type The type of the script
      * @return string The generated JS link
      */
-    public static function generateJsLink(string $componentRoute, int $scriptIndex, ?string $name = null, string $type): string
+    public static function generateJsLink(string $componentRoute, int $scriptIndex, ?string $name = null, string $type = 'text/javascript'): string
     {
         $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
 

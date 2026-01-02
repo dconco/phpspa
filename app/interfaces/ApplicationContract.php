@@ -12,9 +12,8 @@ use PhpSPA\Component;
  * routing, and rendering logic that powers the single-page application experience.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
- * @since v1.0.0
  * @see https://phpspa.tech/core-concepts
  */
 interface ApplicationContract {
@@ -81,12 +80,12 @@ interface ApplicationContract {
      *
      * @param callable|string $content The callable that returns the JavaScript code
      * @param string|null $name Optional name for the script asset
-     * @param string $type The type of script the content should be treated as
+     * @param string|null $type The type of script the content should be treated as
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self
      * @see https://phpspa.tech/performance/managing-styles-and-scripts
      */
-    public function script (callable|string $content, ?string $name = null, string $type = 'text/javascript', array $attributes = []): self;
+    public function script (callable|string $content, ?string $name = null, ?string $type = 'text/javascript', array $attributes = []): self;
 
 
     /**
@@ -99,13 +98,13 @@ interface ApplicationContract {
      * @deprecated Use `App::link()` instead
      * @param callable|string $content The callable that returns the CSS code
      * @param string|null $name Optional name for the stylesheet asset
-     * @param string $type The type of style sheet the content should be treated as
-     * @param string $rel The relationship attribute applied to the generated <link> tag (e.g., "stylesheet", "preload")
+     * @param string|null $type The type of style sheet the content should be treated as
+     * @param string|null $rel The relationship attribute applied to the generated <link> tag (e.g., "stylesheet", "preload")
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self
      * @see https://phpspa.tech/performance/managing-styles-and-scripts
      */
-    public function styleSheet (callable|string $content, ?string $name = null, string $type = 'text/css', string $rel = 'text/css', array $attributes = []): self;
+    public function styleSheet (callable|string $content, ?string $name = null, ?string $type = null, ?string $rel = 'stylesheet', array $attributes = []): self;
 
 
     /**
@@ -117,13 +116,14 @@ interface ApplicationContract {
      *
      * @param callable|string $content The callable that returns the CSS code
      * @param string|null $name Optional name for the stylesheet asset
-     * @param string $type The type of style sheet the content should be treated as
-     * @param string $rel The relationship attribute applied to the generated <link> tag (e.g., "stylesheet", "preload")
+     * @param string|null $type The type of style sheet the content should be treated as
+     * @param string|null $rel The relationship attribute applied to the generated <link> tag (e.g., "stylesheet", "preload")
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self
      * @see https://phpspa.tech/performance/managing-styles-and-scripts
+     * @since v2.0.5
      */
-    public function link (callable|string $content, ?string $name = null, string $type = 'text/css', string $rel = 'text/css', array $attributes = []): self;
+    public function link (callable|string $content, ?string $name = null, ?string $type = null, ?string $rel = 'stylesheet', array $attributes = []): self;
 
     /**
      * Register global meta tags that render with every initial HTML response.
@@ -138,6 +138,8 @@ interface ApplicationContract {
      * @param string|null $charset Charset declaration (mutually exclusive with content).
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self
+     * @since v2.0.5
+     * @see https://phpspa.tech/references/component-meta
      */
     public function meta(
         ?string $name = null,
@@ -156,22 +158,57 @@ interface ApplicationContract {
      * @param string $staticPath The static file path.
      * @return ApplicationContract
      * @see https://phpspa.tech/references/router/#static-files
+     * @since v2.0.5
      */
     public function useStatic(string $route, string $staticPath): self;
 
+    /**
+     * Register a global middleware that applies to all components.
+     *
+     * Middleware functions receive two parameters:
+     *
+     * - $req: The current Request instance.
+     * - $next: A callable that represents the next middleware or the component itself.
+     *          When called, it returns the HTML string output of the component/next middleware.
+     *
+     * Signature: `callable(Request $req, Closure $next): mixed`
+     *
+     * Example:
+     * 
+     * ```php
+     * <?php
+     * new App()->middleware(function (Request $req, Closure $next) {
+     *    if ($req->auth()->bearer) {
+     *        return $next();
+     *    }
+     * 
+     *    http_response_code(403);
+     *    return "<h2>Unauthorized</h2>";
+     * });
+     * ```
+     * 
+     * @param callable $middleware The middleware function.
+     * @return self
+     * @since v2.0.5
+     * @see https://phpspa.tech/references/middleware/#app-middleware
+     */
+    public function middleware(callable $component): self;
 
     /**
      * Group routes under a common prefix.
      *
      * @param string $path The prefix path.
      * @param callable $handler The handler function with Router as the parameter.
-     * @return ApplicationContract
+     * @return self
+     * @since v2.0.4
      * @see https://phpspa.tech/references/router/#app-level-prefixing
     */
     public function prefix(string $path, callable $handler): self;
 
     /**
      * If you are using script module with `@dconco/phpspa` js package, enable this function
+     * 
+     * @since v2.0.5
      */
     public function useModule(): self;
 

@@ -7,6 +7,7 @@ use PhpSPA\Core\Http\HttpRequest;
 use PhpSPA\Core\Utils\Validate;
 
 use const PhpSPA\Core\Impl\Const\STATE_HANDLE;
+use const PhpSPA\Core\Impl\Const\UNDEFINED_STATE_VARIABLE;
 
 /**
  * Class StateManager
@@ -16,7 +17,7 @@ use const PhpSPA\Core\Impl\Const\STATE_HANDLE;
  * and providing access to state information throughout the application lifecycle.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @var string $stateKey
  * @var string $value
  */
@@ -50,7 +51,7 @@ class StateManager
 		}
 
 		$this->stateKey = $stateKey;
-		
+
 		if (!isset($sessionData[$stateKey])) {
 			$this->value = $default;
 			$sessionData[$stateKey] = $this->lastState = $this->value;
@@ -67,11 +68,11 @@ class StateManager
 	 * @param mixed $value Optional value to be processed when the object is invoked.
 	 * @return mixed The result of the invocation, depending on the implementation.
 	 */
-	public function __invoke($value = null)
+	public function __invoke($value = UNDEFINED_STATE_VARIABLE)
 	{
 		$sessionData = SessionHandler::get(STATE_HANDLE);
 
-		if (!$value) {
+		if ($value === UNDEFINED_STATE_VARIABLE) {
 			return $sessionData[$this->stateKey] ?? $this->value;
 		}
 
@@ -93,7 +94,7 @@ class StateManager
 		$sessionData = SessionHandler::get(STATE_HANDLE);
 
 		$value = $sessionData[$this->stateKey] ?? $this->value;
-		return \is_array($value) ? json_encode($value) : $value;
+		return \is_array($value) ? json_encode($value) : ($value === null ? '' : $value);
 	}
 
 	/**

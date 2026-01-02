@@ -13,20 +13,16 @@ CONTRIBUTING.md export-ignore
 CODE_OF_CONDUCT.md export-ignore
 
 # Exclude TypeScript source files from distribution
-src/**/*.ts export-ignore
-src/types/ export-ignore
-src/core/ export-ignore
-src/utils/ export-ignore
 lib/ export-ignore
 
 # Exclude C++ sources from distribution
 *.cpp export-ignore
-src/*.cpp export-ignore
-src/*.h export-ignore
-src/*.hh export-ignore
-src/**/*.cpp export-ignore
-src/**/*.h export-ignore
-src/**/*.hh export-ignore
+src/commands/ export-ignore
+src/compression/ export-ignore
+src/helper/*.h export-ignore
+src/helper/*.cpp export-ignore
+src/script/*.cpp export-ignore
+src/utils/ export-ignore
 CMakeLists.txt export-ignore
 
 # Ignore development and environment files
@@ -36,6 +32,7 @@ badge/ export-ignore
 .vscode/ export-ignore
 .gitignore export-ignore
 .gitattributes export-ignore
+.npmignore export-ignore
 tsconfig.json export-ignore
 rollup.config.js export-ignore
 
@@ -44,7 +41,7 @@ tests/ export-ignore
 
 # Exclude generated type declarations from distribution (keep only min.js)
 src/script/types/ export-ignore
-src/script/*.map export-ignore
+src/script/phpspa.js export-ignore
 src/script/phpspa.cjs export-ignore
 src/script/phpspa.mjs export-ignore
 
@@ -53,6 +50,5 @@ package.json export-ignore
 pnpm-lock.yaml export-ignore
 
 # Mark only minified and type declarations as generated
-src/script/*.map linguist-generated
 src/script/*.mjs linguist-generated
 src/script/phpspa.min.js linguist-generated

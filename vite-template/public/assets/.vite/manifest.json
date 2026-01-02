@@ -1,0 +1,11 @@
+{
+  "src/main.ts": {
+    "file": "main-9XgGgAAU.js",
+    "name": "main",
+    "src": "src/main.ts",
+    "isEntry": true,
+    "css": [
+      "main-Wi0jWMzU.css"
+    ]
+  }
+}

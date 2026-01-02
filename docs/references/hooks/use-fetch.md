@@ -113,6 +113,7 @@ $response = useFetch('https://api.example.com/users')
     ->withCertificate('/path/to/cacert.pem') // (5)
     ->followRedirects(true, 5) // (6)
     ->withUserAgent('MyApp/1.0') // (7)
+    ->unixSocket('/var/run/service.sock') // (8)
     ->get();
 ```
 
@@ -125,6 +126,36 @@ $response = useFetch('https://api.example.com/users')
 5.  :material-certificate: **CA Bundle** - Path to custom certificate bundle
 6.  :material-arrow-right-bold: **Redirects** - Follow redirects with max limit (cURL only)
 7.  :material-account: **User Agent** - Custom User-Agent string
+8.  :material-ethernet: **Unix Socket** - Set the Unix domain socket path to be used for this pending request.
+9.  :material-tune: **Custom cURL Options** - Pass raw `CURLOPT_*` options via `->withOptions([CURLOPT_* => ...])` (cURL only)
+
+### Custom cURL Options Examples
+
+```php
+<?php
+
+// Pass CURLOPT_* directly (advanced cURL-only options)
+$res = useFetch('https://api.example.com/users')
+    ->withOptions([
+        CURLOPT_PROXY => 'http://127.0.0.1:8080',
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_2TLS,
+    ])
+    ->get();
+```
+
+```php
+<?php
+
+// Alternative form: nest under "curl" / "curl_options" (useful if you also pass PhpSPA options)
+$res = useFetch('https://api.example.com/users')
+    ->timeout(10)
+    ->withOptions([
+        'curl' => [
+            'CURLOPT_PROXY' => 'http://127.0.0.1:8080',
+        ],
+    ])
+    ->get();
+```
 
 ---
 

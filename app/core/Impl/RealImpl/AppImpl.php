@@ -37,7 +37,7 @@ use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  * routing, and rendering logic that powers the single-page application experience.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
  * @abstract
  */
@@ -67,6 +67,11 @@ abstract class AppImpl implements ApplicationContract {
     * @var Component|IComponent[]
     */
    private array $components = [];
+
+   /**
+    * @var callable[]
+    */
+   private array $middlewares = [];
 
    /**
     * Holds the data that has been rendered.
@@ -155,6 +160,12 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
+   public function middleware (callable $component): ApplicationContract
+   {
+      $this->middlewares[] = $component;
+      return $this;
+   }
+
    public function cors (array $data = []): ApplicationContract
    {
       $this->cors = require __DIR__ . '/../../Config/Cors.php';
@@ -190,52 +201,44 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
-   public function script (callable|string $content, ?string $name = null, string $type = 'text/javascript', array $attributes = []): ApplicationContract
+   public function script (callable|string $content, ?string $name = null, ?string $type = 'text/javascript', array $attributes = []): ApplicationContract
    {
-      $this->scripts[] = [
+      $scripts = [
          'content' => $content,
          'name' => $name,
          'type' => $type
       ];
 
-      $lastIndex = array_key_last($this->scripts);
-      if ($lastIndex !== null) {
-         foreach ($attributes as $attribute => $value) {
-            if (!\is_string($attribute) || $value === null) {
-               continue;
-            }
-            $this->scripts[$lastIndex][$attribute] = $value;
-         }
+      foreach ($attributes as $attribute => $value) {
+         if ((!\is_string($attribute) || !\is_string($value)) && $value !== true) continue;
+         $scripts[$attribute] = $value;
       }
 
+      $this->scripts[] = $scripts;
       return $this;
    }
 
-   public function styleSheet (callable|string $content, ?string $name = null, string $type = 'text/css', string $rel='stylesheet', array $attributes = []): ApplicationContract
+   public function styleSheet (callable|string $content, ?string $name = null, ?string $type = null, ?string $rel='stylesheet', array $attributes = []): ApplicationContract
    {
       $this->link($content, $name, $type, $rel, $attributes);
       return $this;
    }
 
-   public function link (callable|string $content, ?string $name = null, string $type = 'text/css', string $rel='stylesheet', array $attributes = []): ApplicationContract
+   public function link (callable|string $content, ?string $name = null, ?string $type = null, ?string $rel = 'stylesheet', array $attributes = []): ApplicationContract
    {
-      $this->stylesheets[] = [
+      $stylesheets = [
          'content' => $content,
          'name' => $name,
          'type' => $type,
          'rel' => $rel,
       ];
 
-      $lastIndex = array_key_last($this->stylesheets);
-      if ($lastIndex !== null) {
-         foreach ($attributes as $attribute => $value) {
-            if (!\is_string($attribute) || $value === null) {
-               continue;
-            }
-            $this->stylesheets[$lastIndex][$attribute] = $value;
-         }
+      foreach ($attributes as $attribute => $value) {
+         if ((!\is_string($attribute) || !\is_string($value)) && $value !== true) continue;
+         $stylesheets[$attribute] = $value;
       }
 
+      $this->stylesheets[] = $stylesheets;
       return $this;
    }
 
@@ -386,13 +389,13 @@ abstract class AppImpl implements ApplicationContract {
 
          if (isset($data['state'])) {
             $state = $data['state'];
-            
-            if (!empty($state['key']) && !empty($state['value'])) {
+
+            if (!empty($state['key'])) {
                $sessionData = SessionHandler::get(STATE_HANDLE);
-               $sessionData[$state['key']] = $state['value'];
+               $sessionData[$state['key']] = @$state['value'];
                SessionHandler::set(STATE_HANDLE, $sessionData);
             }
-            
+
             return;
          }
 
@@ -435,7 +438,8 @@ abstract class AppImpl implements ApplicationContract {
 
 
    private function runComponent(Component|Icomponent $component, bool $isPreloadingComponent = false, ?string &$layoutOutput = null) {
-      $request = new HttpRequest();
+      static $request = new HttpRequest();
+      static $router = null;
 
       $route = CallableInspector::getProperty($component, 'route');
       $name = CallableInspector::getProperty($component, 'name');
@@ -451,6 +455,7 @@ abstract class AppImpl implements ApplicationContract {
       $reloadTime = CallableInspector::getProperty($component, 'reloadTime');
       $exact = CallableInspector::getProperty($component, 'exact') ?? false;
       $preload = CallableInspector::getProperty($component, 'preload');
+      $componentMiddlewares = CallableInspector::getProperty($component, 'middlewares');
 
       if (!$componentFunction || !is_callable($componentFunction)) {
          return;
@@ -469,25 +474,49 @@ abstract class AppImpl implements ApplicationContract {
 
          DOM::CurrentRoutes(static::$request_uri);
       }
-
-      // --- Merge component meta data only if this is the correct route ---
-      $metaTags = [...$this->metadata, ...$componentMetaData];
-
+      
       if ($isPreloadingComponent && !str_contains($route[0] ?? '', '{')) {
          DOM::CurrentRoutes($route[0] ?? '');
       }
 
       if ($name) DOM::CurrentComponents($name);
 
-      // --- Clear component scope before each component execution ---
-      ComponentScope::clearAll();
+      // --- Merge component meta data only if this is the correct route ---
+      $metaTags = [...$this->metadata, ...$componentMetaData];
+      $middlewares = [...$this->middlewares, ...$componentMiddlewares];
+
+      // --- Define the final handler that executes the component function ---
+      $finalHandler = function () use ($componentFunction, $router, &$request) {
+         // --- Clear component scope before each component execution ---
+         ComponentScope::clearAll();
+
+         // --- Execute the component function and format its output ---
+         $componentOutput = $this->executeComponentFunction($request, $componentFunction, $router['params'] ?? []);
+
+         $scopeId = ComponentScope::createScope();
+         $componentOutput = static::format($componentOutput);
+         ComponentScope::removeScope($scopeId);
+
+         return $componentOutput;
+      };
+
+      // --- Build the middleware pipeline ---
+      // --- Reverse middlewares so the first middleware in the array is executed first ---
+      $pipeline = array_reduce(
+         array_reverse($middlewares),
+         function (callable $next, callable $middleware) use (&$request) {
+            return fn () => $middleware($request, $next);
+         },
+         $finalHandler
+      );
+
+      // --- Execute the pipeline ---
+      $componentOutput = $pipeline($request);
 
       if ($layoutOutput === null) {
-         $layoutOutput = is_callable($this->layout) ? (string) \call_user_func($this->layout) : (string) $this->layout;
+         $layoutOutput = is_callable($this->layout) ? (string) \call_user_func($this->layout, $request) : (string) $this->layout;
          $layoutOutput = $this->ensureHeadTag($layoutOutput);
       }
-
-      $componentOutput = '';
 
       // --- Check if a preload component exists ---
       // --- Then first parse & execute preload components ---
@@ -502,49 +531,6 @@ abstract class AppImpl implements ApplicationContract {
             );
          }
       }
-
-      /**
-       * Invokes the specified component callback with appropriate parameters based on its signature.
-       *
-       * This logic checks if the component's callable accepts 'path' and/or 'request' parameters
-       * using CallableInspector. It then calls the component with the corresponding arguments:
-       * - If both 'path' and 'request' are accepted, both are passed.
-       * - If only 'path' is accepted, only 'path' is passed.
-       * - If only 'request' is accepted, only 'request' is passed.
-       * - If neither is accepted, the component is called without arguments.
-       *
-       * @param object $component The component object containing the callable to invoke.
-       * @param array $router An associative array containing 'params' and 'request' to be passed as arguments.
-       */
-
-      if (CallableInspector::hasParam($componentFunction, 'path') && CallableInspector::hasParam($componentFunction, 'request')) {
-         $componentOutput = \call_user_func(
-            $componentFunction,
-            path: $router['params'],
-            request: $request,
-         );
-      }
-      elseif (CallableInspector::hasParam($componentFunction, 'path')) {
-         $componentOutput = \call_user_func(
-            $componentFunction,
-            path: $router['params'],
-         );
-      }
-      elseif (CallableInspector::hasParam($componentFunction, 'request')) {
-         $componentOutput = \call_user_func(
-            $componentFunction,
-            request: $request,
-         );
-      }
-      else {
-         $componentOutput = \call_user_func($componentFunction);
-      }
-
-
-      // --- Create a new scope for this component and execute formatting ---
-      $scopeId = ComponentScope::createScope();
-      $componentOutput = static::format($componentOutput);
-      ComponentScope::removeScope($scopeId);
 
       if (!$isPreloadingComponent) {
          $title = DOM::Title() ?? $title;
@@ -634,7 +620,7 @@ abstract class AppImpl implements ApplicationContract {
          if ($title) {
             $count = 0;
             $layoutOutput = preg_replace_callback(
-               pattern: '/<title([^>]*)>.*?<\/title>/si',
+               pattern: '/<title\b([^>]*)>.*?<\/title>/si',
                callback: fn ($matches) =>
                   // --- $matches[1] contains any attributes inside the <title> tag ---
                   "\n      <title" . ($matches[1] ?? null) . '>' . $title . '</title>',
@@ -646,7 +632,7 @@ abstract class AppImpl implements ApplicationContract {
             if ($count === 0) {
                // --- If no <title> tag was found, add one inside the <head> section ---
                $layoutOutput = preg_replace(
-                  '/<head([^>]*)>/i',
+                  '/<head\b([^>]*)>/i',
                   "<head$1>\n      <title>$title</title>",
                   $layoutOutput,
                   1,
@@ -656,7 +642,7 @@ abstract class AppImpl implements ApplicationContract {
 
          if ($nonce) {
             $layoutOutput = preg_replace(
-               '/<head([^>]*)>/i',
+               '/<head\b([^>]*)>/i',
                "<head$1 x-phpspa=\"$nonce\">",
                $layoutOutput,
                1,
@@ -751,7 +737,7 @@ abstract class AppImpl implements ApplicationContract {
    {
       $metaBlock = '      ' . $metaMarkup . "\n";
 
-      $updated = preg_replace('/<head([^>]*)>/', "<head$1>\n$metaBlock", $layoutOutput, 1, $count);
+      $updated = preg_replace('/<head\b([^>]*)>/', "<head$1>\n$metaBlock", $layoutOutput, 1, $count);
 
       if ($count > 0 && \is_string($updated)) {
          return $updated;
@@ -768,18 +754,18 @@ abstract class AppImpl implements ApplicationContract {
 
    private function ensureHeadTag(string $layoutOutput): string
    {
-      if (stripos($layoutOutput, '<head') !== false) {
+      if (preg_match('/<head\b[^>]*>/i', $layoutOutput)) {
          return $layoutOutput;
       }
 
       $headMarkup = "<head></head>\n";
 
-      if (preg_match('/<body[^>]*>/i', $layoutOutput, $matches, PREG_OFFSET_CAPTURE)) {
+      if (preg_match('/<body\b[^>]*>/i', $layoutOutput, $matches, PREG_OFFSET_CAPTURE)) {
          $pos = $matches[0][1];
          return substr($layoutOutput, 0, $pos) . $headMarkup . substr($layoutOutput, $pos);
       }
 
-      if (preg_match('/<html[^>]*>/i', $layoutOutput, $matches, PREG_OFFSET_CAPTURE)) {
+      if (preg_match('/<html\b[^>]*>/i', $layoutOutput, $matches, PREG_OFFSET_CAPTURE)) {
          $pos = $matches[0][1] + \strlen($matches[0][0]);
          return substr($layoutOutput, 0, $pos) . "\n" . $headMarkup . substr($layoutOutput, $pos);
       }
@@ -815,9 +801,10 @@ abstract class AppImpl implements ApplicationContract {
          foreach ($globalStylesheets as $index => $stylesheet) {
             $stylesheet = (array) Validate::validate($stylesheet);
 
-            if (is_callable($stylesheet['content']))
+            if (is_callable($stylesheet['content'])) {
+               $stylesheet['type'] ??= 'text/css';
                $stylesheet['href'] = AssetLinkManager::generateCssLink("__global__", $index, $stylesheet['name']);
-            else
+            } else
                $stylesheet['href'] = $stylesheet['content'];
 
             unset($stylesheet['name']);
@@ -832,9 +819,10 @@ abstract class AppImpl implements ApplicationContract {
          foreach ($stylesheets as $index => $stylesheet) {
             $stylesheet = (array) Validate::validate($stylesheet);
 
-            if (is_callable($stylesheet['content']))
+            if (is_callable($stylesheet['content'])) {
+               $stylesheet['type'] ??= 'text/css';
                $stylesheet['href'] = AssetLinkManager::generateCssLink($primaryRoute, $index, $stylesheet['name']);
-            else
+            } else
                $stylesheet['href'] = $stylesheet['content'];
 
             unset($stylesheet['name']);
@@ -1115,13 +1103,7 @@ abstract class AppImpl implements ApplicationContract {
 
       // --- Inject global stylesheets in head for proper CSS cascading ---
       if (!empty(trim($globalStylesheets))) {
-         if (preg_match('/<\/head>/i', $html)) {
-            $html = preg_replace('/<\/head>/i', "{$globalStylesheets}</head>", $html, 1);
-         }
-         else {
-            // --- If no head tag, put stylesheets at the beginning ---
-            $html = "{$globalStylesheets}{$html}";
-         }
+         $html = preg_replace('/<\/head>/i', "{$globalStylesheets}</head>", $html, 1);
       }
 
       // --- If no global assets and no component scripts, return unchanged ---
@@ -1145,5 +1127,36 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       return $html;
+   }
+
+   /**
+    * Executes the component function based on its parameter signature.
+    *
+    * @param Request $request The current HTTP request.
+    * @param callable $componentFunction The component's callable function.
+    * @param array $routerParams An associative array of route parameters.
+    * @return string The output of the component function.
+    */
+   private function executeComponentFunction(Request $request, callable $componentFunction, array $routerParams = []): string
+   {
+      if (CallableInspector::hasParam($componentFunction, 'path') && CallableInspector::hasParam($componentFunction, 'request')) {
+         return (string) \call_user_func(
+            $componentFunction,
+            path: $routerParams,
+            request: $request,
+         );
+      } elseif (CallableInspector::hasParam($componentFunction, 'path')) {
+         return (string) \call_user_func(
+            $componentFunction,
+            path: $routerParams,
+         );
+      } elseif (CallableInspector::hasParam($componentFunction, 'request')) {
+         return (string) \call_user_func(
+            $componentFunction,
+            request: $request,
+         );
+      } else {
+         return (string) \call_user_func($componentFunction, $request, $routerParams);
+      }
    }
 }

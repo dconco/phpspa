@@ -13,7 +13,7 @@ use PhpSPA\Http\Response;
  * 
  * @package HTTP
  * @author Samuel Paschalson <samuelpaschalson@gmail.com>
- * @copyright 2025 Samuel Paschalson
+ * @copyright 2026 Samuel Paschalson
  * @method void get(string|array $route, callable ...$handlers) Register a GET route. Handlers receive (Request $request, Response $response, Closure $next).
  * @method void put(string|array $route, callable ...$handlers) Register a PUT route. Handlers receive (Request $request, Response $response, Closure $next).
  * @method void post(string|array $route, callable ...$handlers) Register a POST route. Handlers receive (Request $request, Response $response, Closure $next).
@@ -50,6 +50,7 @@ class Router
     * 
     * @param callable $handler The middleware handler.
     * @return void
+    * @since v2.0.4
     * @see https://phpspa.tech/references/router/#middleware
     */
    public function middleware(callable $handler) {
@@ -62,6 +63,7 @@ class Router
     * @param string $path The URL prefix for this group.
     * @param callable $handler The callback to define routes within this group.
     * @return void
+    * @since v2.0.4
     * @see https://phpspa.tech/references/router/#nested-prefixes
     */
    public function prefix(string $path, callable $handler) {

@@ -9,7 +9,7 @@ namespace PhpSPA\Core\Interfaces;
  * with support for multiple named forms and automatic token cleanup.
  *
  * @since v1.1.5
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @author dconco <me@dconco.tech>
  * @see https://phpspa.tech/security/csrf-protection
  */

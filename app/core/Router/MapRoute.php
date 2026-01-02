@@ -16,7 +16,7 @@ use PhpSPA\Interfaces\MapInterface;
  * It extends the Controller class and implements the MapInterface interface.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
  * @var string|array $route
  * @var string $request_uri

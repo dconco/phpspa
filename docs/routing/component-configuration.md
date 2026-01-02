@@ -239,4 +239,12 @@ $app->run();
     
     Default behavior for routes
 
+-   :material-shield: **middleware(callable $middleware)**
+
+    ---
+
+    Register middleware/guards directly on a component
+
+    See: [App & Component Middleware](../references/middleware.md)
+
 </div>

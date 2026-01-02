@@ -18,11 +18,11 @@ function HTMLAttrInArrayToString(array $HtmlAttr): string
     $attr = [];
 
     foreach ($HtmlAttr as $AttrName => $AttrValue) {
-        if (!\is_string($AttrName) || !\is_string($AttrValue)) continue;
+        if ((!\is_string($AttrName) || !\is_string($AttrValue)) && $AttrValue !== true) continue;
 
         [$AttrName, $AttrValue] = Validate::validate([$AttrName, $AttrValue]);
 
-        $attr[] = empty($AttrValue) ? $AttrName : "$AttrName=\"$AttrValue\"";
+        $attr[] = empty($AttrValue) || $AttrValue === true ? $AttrName : "$AttrName=\"$AttrValue\"";
     }
     return implode(' ', $attr);
 }

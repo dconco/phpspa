@@ -33,7 +33,7 @@ class HttpRequest implements Request
 
     public function __get($name)
     {
-        return $this->tempData[$name];
+        return $this->tempData[$name] ?? null;
     }
 
     public function files(?string $name = null): ?array
@@ -94,7 +94,7 @@ class HttpRequest implements Request
         if (!$name) {
             return Validate::validate($this->params);
         }
-        return Validate::validate($this->params[$name]);
+        return Validate::validate($this->params[$name] ?? null);
     }
 
     public function header(?string $name = null)
@@ -118,11 +118,7 @@ class HttpRequest implements Request
         if (!$name) {
             return Validate::validate($headers);
         }
-        if (isset($headers[$name])) {
-            return Validate::validate($headers[$name]);
-        } else {
-            return null;
-        }
+        return Validate::validate($headers[$name] ?? null);
     }
 
     public function json(?string $name = null)
@@ -134,7 +130,7 @@ class HttpRequest implements Request
         }
 
         if ($name !== null) {
-            return Validate::validate($data[$name]);
+            return Validate::validate($data[$name] ?? null);
         }
         return Validate::validate($data);
     }
@@ -147,7 +143,7 @@ class HttpRequest implements Request
         if (!isset($_GET[$key])) {
             return null;
         }
-        return Validate::validate($_GET[$key]);
+        return Validate::validate($_GET[$key] ?? null);
     }
 
     public function post(?string $key = null)
@@ -226,13 +222,13 @@ class HttpRequest implements Request
 
     public function isHttps(): bool
     {
-        return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
-            $_SERVER['SERVER_PORT'] == 443;
+        return !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ||
+            $_SERVER['SERVER_PORT'] == 443 || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
     }
 
     public function requestTime(): int
     {
-        return (int) $_SERVER['REQUEST_TIME'];
+        return (int) $_SERVER['REQUEST_TIME'] ?? 0;
     }
 
     public function contentType(): ?string
@@ -265,6 +261,36 @@ class HttpRequest implements Request
         return urldecode(
             parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH),
         );
+    }
+
+    public function path(): string
+    {
+        return $this->getUri();
+    }
+
+    public function siteURL(): string {
+        $path = $this->path();
+        $scheme = $this->isHttps() ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+        return "{$scheme}://{$host}{$path}";
+    }
+
+    public function origin(): string {
+        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+        $referer = $_SERVER['HTTP_REFERER'] ?? '';
+
+        if (empty($origin) && !empty($referer)) {
+            $parts = parse_url($referer);
+            $origin = $parts['scheme'] . '://' . $parts['host'];
+            
+            // Optional: Add port if it exists
+            if (isset($parts['port'])) {
+                $origin .= ':' . $parts['port'];
+            }
+        }
+
+        return $origin;
     }
 
     public function isSameOrigin(): bool {

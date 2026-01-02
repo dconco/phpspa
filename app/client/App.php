@@ -20,7 +20,7 @@ use PhpSPA\Interfaces\ApplicationContract;
  * - Environment-based compression settings
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
  *
  * @see https://phpspa.tech/core-concepts

@@ -11,7 +11,7 @@ namespace PhpSPA\Core\Utils\Formatter;
  *
  * @package PhpSPA\Core\Utils\Formatter
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
  * @since v1.0.0
  * @abstract

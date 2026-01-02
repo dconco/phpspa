@@ -10,7 +10,7 @@
       <div class="relative z-10 px-6 py-6 sm:px-10 mx-auto">
          <nav class="rounded-3xl border border-white/5 bg-white/5 px-10 py-4 backdrop-blur md:flex md:justify-between">
             <div class="flex items-center justify-between gap-4">
-               <span class="pill">PhpSPA + Vite</span>
+               <HeaderComponent />
 
                <button data-nav-toggle class="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 text-white transition-colors hover:border-white/40 md:hidden" aria-label="Toggle navigation">
                   <MenuIcon />
@@ -29,9 +29,8 @@
          <main id="app" class="relative z-10 mt-10"></main>
       </div>
 
-      <!-- Development: Vite dev server with HMR -->
+      <!-- ENABLE HOT RELOAD WITH VITE DEV HMR -->
       <script type="module" src="http://localhost:5173/@vite/client"></script>
       <script type="module" src="http://localhost:5173/src/main.ts"></script>
-
    </body>
 </html>

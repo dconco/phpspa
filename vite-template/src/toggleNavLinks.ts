@@ -1,5 +1,5 @@
 
-import { useCallback } from '../../lib'
+import { useCallback } from '@dconco/phpspa'
 
 export const toggleNavLinks = () => {
    const navToggle = document.querySelector('[data-nav-toggle]') as HTMLElement | null

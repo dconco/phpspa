@@ -11,7 +11,7 @@ namespace PhpSPA\Core\Utils;
  *
  * @package PhpSPA\Core\Utils
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @var string $dataUri
  * @var string $contentType
  * @var string $base64Content

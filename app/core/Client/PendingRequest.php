@@ -77,7 +77,7 @@ class PendingRequest implements \ArrayAccess {
    public function __construct (string $url)
    {
       $this->url = $url;
-      $this->client = HttpClientFactory::create($url);
+      $this->client = HttpClientFactory::create();
    }
 
    /**
@@ -122,7 +122,34 @@ class PendingRequest implements \ArrayAccess {
    }
 
    /**
+    * Set the Unix domain socket path to be used for this pending request.
+    *
+    * This configures the underlying HTTP client/transport to connect via a Unix socket
+    * instead of a TCP host:port. The provided path should point to an existing socket
+    * file (e.g. "/var/run/service.sock").
+    *
+    * @param string $path Absolute or relative filesystem path to the Unix socket file.
+    * @return PendingRequest Returns the current instance for fluent chaining.
+    */
+   public function unixSocket(string $path): PendingRequest
+   {
+      $this->options['unix_socket_path'] = $path;
+      return $this;
+   }
+
+   /**
     * Set custom options for the request.
+    *
+    * Supports both PhpSPA-defined options (like `timeout`, `user_agent`, etc.)
+    * and raw cURL options for advanced usage.
+    *
+    * Raw cURL options can be provided in any of these forms:
+    *
+    * - `withOptions([CURLOPT_PROXY => 'http://...', CURLOPT_TIMEOUT => 5])`
+    * - `withOptions(['CURLOPT_PROXY' => 'http://...'])` (constant name string)
+    * - `withOptions(['curl' => [CURLOPT_PROXY => 'http://...']])`
+    *
+    * When cURL is not available, raw cURL options are ignored by the stream fallback client.
     *
     * @param array $options Custom options array
     * @return PendingRequest
@@ -130,6 +157,35 @@ class PendingRequest implements \ArrayAccess {
    public function withOptions(array $options): PendingRequest
    {
       foreach ($options as $key => $value) {
+         // Allow nesting: ['curl' => [CURLOPT_* => ...]]
+         if (($key === 'curl' || $key === 'curl_options') && \is_array($value)) {
+            $this->options['curl'] ??= [];
+            foreach ($value as $curlKey => $curlValue) {
+               if (\is_string($curlKey) && str_starts_with($curlKey, 'CURLOPT_') && \defined($curlKey)) {
+                  $curlKey = \constant($curlKey);
+               }
+               if (\is_int($curlKey)) {
+                  $this->options['curl'][$curlKey] = $curlValue;
+               }
+            }
+            continue;
+         }
+
+         // Allow passing CURLOPT_* directly at top-level
+         if (\is_int($key)) {
+            $this->options['curl'] ??= [];
+            $this->options['curl'][$key] = $value;
+            continue;
+         }
+
+         // Allow passing CURLOPT_* by constant name string at top-level
+         if (\is_string($key) && str_starts_with($key, 'CURLOPT_') && \defined($key)) {
+            $this->options['curl'] ??= [];
+            $this->options['curl'][\constant($key)] = $value;
+            continue;
+         }
+
+         // Default: treat as PhpSPA option
          $this->options[$key] = $value;
       }
       return $this;
@@ -144,6 +200,25 @@ class PendingRequest implements \ArrayAccess {
    public function verifySSL(bool $verify = true): PendingRequest
    {
       $this->options['verify_ssl'] = $verify;
+      return $this;
+   }
+
+   /**
+    * Sets the IP resolution strategy for this pending request.
+    *
+    * @param string $ip The IP version to resolve: 'v4' or 'v6'.
+    *
+    * @return PendingRequest Returns the current instance for fluent chaining.
+    *
+    * @throws \InvalidArgumentException If $ip is not 'v4' or 'v6'.
+    */
+   public function resolveIP(string $ip): PendingRequest
+   {
+      if ($ip !== 'v4' && $ip !== 'v6') {
+         throw new \InvalidArgumentException("IP must either be v4 or v6", 1);
+      }
+
+      $this->options['ip_resolve'] = $ip;
       return $this;
    }
 

@@ -10,7 +10,7 @@ namespace PhpSPA\Core\Helper\Enums;
  * is managed during navigation operations.
  *
  * @author dconco <me@dconco.tech>
- * @copyright 2025 Dave Conco
+ * @copyright 2026 Dave Conco
  * @license MIT
  */
 enum NavigateState: string {

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">PhpSPA</title>
+  <desc id="desc">Code braces framing a lightning bolt.</desc>
+
+  <defs>
+    <style>
+      .stroke { stroke: #673ab7; }
+      .fill   { fill: #673ab7; }
+    </style>
+  </defs>
+
+  <path class="stroke" d="M128 18c60.75 0 110 49.25 110 110S188.75 238 128 238 18 188.75 18 128 67.25 18 128 18Z"
+        fill="none" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <path class="stroke" d="M106 72c-18 0-24 8-24 20v18c0 9-6 16-16 18 10 2 16 9 16 18v18c0 12 6 20 24 20"
+        fill="none" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <path class="stroke" d="M150 72c18 0 24 8 24 20v18c0 9 6 16 16 18-10 2-16 9-16 18v18c0 12-6 20-24 20"
+        fill="none" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <path class="fill" d="M142 58 92 142h40l-18 56 50-84h-40l18-56Z"/>
+</svg>

@@ -9,6 +9,34 @@ composer require dconco/phpspa:v2.0.5.x-dev
 
 ### What's Added
 
+#### **Middleware (App & Component)**
+
+- Added `->middleware()` API to both `App` and `Component` for guards/logging and request shaping.
+- Middleware signature: `callable(PhpSPA\Http\Request $request, Closure $next): mixed`.
+- Middleware and the final handler run on the **same `Request` instance** (no request re-passing through `$next`), so you can attach values once and read them later.
+
+**Example:**
+
+```php
+$app->middleware(function (Request $request, Closure $next) {
+   $request->user = Auth::user();
+   return $next();
+});
+
+new Component(function (Request $request) {
+   $user = $request->user;
+   return "<h1>Hello {$user->name}</h1>";
+})
+   ->route('/')
+   ->middleware(function ($req, $next) {
+      if (!$req->user) {
+         http_response_code(403);
+         return '<h2>Unauthorized</h2>';
+      }
+      return $next();
+   });
+```
+
 #### **Component-Level SEO Controls** 🧭
 
 - Added chained `->meta()` API to every component so route-specific descriptions, keywords, Open Graph, or HTTP-EQUIV tags can be declared right where the component is defined.

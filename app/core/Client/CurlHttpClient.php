@@ -11,6 +11,45 @@ namespace PhpSPA\Core\Client;
  */
 class CurlHttpClient implements HttpClient {
    /**
+    * Extract raw cURL options from the mixed PhpSPA options array.
+    *
+    * Supports:
+    * - $options['curl'] or $options['curl_options'] as array<int,mixed>
+    * - top-level int keys (CURLOPT_* constants)
+    * - top-level string keys like 'CURLOPT_PROXY'
+    *
+    * @param array $options
+    * @return array<int, mixed>
+    */
+   private function extractCurlOptions(array $options): array
+   {
+      $curlOptions = [];
+
+      foreach ($options as $key => $value) {
+         if (\is_int($key)) {
+            $curlOptions[$key] = $value;
+         }
+         else if (\is_string($key) && str_starts_with($key, 'CURLOPT_') && \defined($key)) {
+            $curlOptions[\constant($key)] = $value;
+         }
+      }
+
+      $nested = $options['curl'] ?? ($options['curl_options'] ?? null);
+      if (\is_array($nested)) {
+         foreach ($nested as $key => $value) {
+            if (\is_string($key) && str_starts_with($key, 'CURLOPT_') && \defined($key)) {
+               $key = \constant($key);
+            }
+            if (\is_int($key)) {
+               $curlOptions[$key] = $value;
+            }
+         }
+      }
+
+      return $curlOptions;
+   }
+
+   /**
     * {@inheritdoc}
     */
    public function request(string $url, string $method, array $headers, ?string $body = null, array $options = []): ClientResponse
@@ -29,7 +68,14 @@ class CurlHttpClient implements HttpClient {
       curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
       curl_setopt($ch, CURLOPT_FOLLOWLOCATION, $options['follow_redirects'] ?? true);
       curl_setopt($ch, CURLOPT_MAXREDIRS, $options['max_redirects'] ?? 10);
-      curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4); // Force IPv4 for localhost issues
+      if (isset($options['ip_resolve'])) {
+         $ipResolve = $options['ip_resolve'];
+         if ($ipResolve === 'v4') {
+            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+         } elseif ($ipResolve === 'v6') {
+            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
+         }
+      }
       
       // Handle timeout - support both seconds (int/float) and milliseconds
       $timeout = $options['timeout'] ?? 30;
@@ -45,7 +91,12 @@ class CurlHttpClient implements HttpClient {
       curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, (int) $connectTimeout);
       curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $options['verify_ssl'] ?? false);
       curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, ($options['verify_ssl'] ?? false) ? 2 : 0);
-      
+
+      // --- Handle Unix Socket ---
+      if (isset($options['unix_socket_path'])) {
+         curl_setopt($ch, CURLOPT_UNIX_SOCKET_PATH, $options['unix_socket_path']);
+      }
+
       if (isset($options['cert_path'])) {
          curl_setopt($ch, CURLOPT_CAINFO, $options['cert_path']);
       }
@@ -58,7 +109,7 @@ class CurlHttpClient implements HttpClient {
       $curlHeaders = [];
       foreach ($headers as $key => $value) {
          if (\is_array($value)) $value = implode(', ', $value);
-
+         
          $curlHeaders[] = "$key: $value";
       }
       curl_setopt($ch, CURLOPT_HTTPHEADER, $curlHeaders);
@@ -67,16 +118,27 @@ class CurlHttpClient implements HttpClient {
       if ($body !== null) {
          curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
       }
-      
+
+      // Apply any user-provided raw cURL options (advanced)
+      $curlOptions = $this->extractCurlOptions($options);
+      if (!empty($curlOptions)) {
+         @curl_setopt_array($ch, $curlOptions);
+      }
+
       $response = curl_exec($ch);
+      $errorNo = curl_errno($ch);
       $error = curl_error($ch);
       $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
       $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-      curl_close($ch);
+      unset($ch);
 
-      if ($response === false || $error) {
-         return new ClientResponse(false, 0, [], $error ?: 'Request failed');
+      if ($response === false || $errorNo !== 0) {
+         $message = $error ?: 'Request failed';
+         if ($errorNo !== 0) {
+            $message = "cURL error ($errorNo): $message";
+         }
+         return new ClientResponse(false, 0, [], $message);
       }
 
       $headerString = substr($response, 0, $headerSize);
@@ -113,7 +175,14 @@ class CurlHttpClient implements HttpClient {
       curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
       curl_setopt($ch, CURLOPT_FOLLOWLOCATION, $options['follow_redirects'] ?? true);
       curl_setopt($ch, CURLOPT_MAXREDIRS, $options['max_redirects'] ?? 10);
-      curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4); // Force IPv4 for localhost issues
+      if (isset($options['ip_resolve'])) {
+         $ipResolve = $options['ip_resolve'];
+         if ($ipResolve === 'v4') {
+            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+         } elseif ($ipResolve === 'v6') {
+            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
+         }
+      }
       
       // Handle timeout - support both seconds (int/float) and milliseconds
       $timeout = $options['timeout'] ?? 30;
@@ -129,7 +198,12 @@ class CurlHttpClient implements HttpClient {
       curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, (int) $connectTimeout);
       curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $options['verify_ssl'] ?? false);
       curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, ($options['verify_ssl'] ?? false) ? 2 : 0);
-      
+
+      // --- Handle Unix Socket ---
+      if (isset($options['unix_socket_path'])) {
+         curl_setopt($ch, CURLOPT_UNIX_SOCKET_PATH, $options['unix_socket_path']);
+      }
+
       if (isset($options['cert_path'])) {
          curl_setopt($ch, CURLOPT_CAINFO, $options['cert_path']);
       }
@@ -150,6 +224,12 @@ class CurlHttpClient implements HttpClient {
       // Add body for POST, PUT, PATCH
       if ($body !== null) {
          curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+      }
+
+      // Apply any user-provided raw cURL options (advanced)
+      $curlOptions = $this->extractCurlOptions($options);
+      if (!empty($curlOptions)) {
+         @curl_setopt_array($ch, $curlOptions);
       }
       
       // Return the prepared handle without executing

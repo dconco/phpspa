@@ -1,5 +1,3 @@
-# Built assets
-/public/assets/
 
 # Dependencies
 /vendor/
@@ -17,4 +15,4 @@ Thumbs.db
 *.log
 npm-debug.log*
 pnpm-lock.yaml
-composer-lock.json
+composer.lock
