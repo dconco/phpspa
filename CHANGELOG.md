@@ -54,7 +54,7 @@ new Component(...)
    ->meta(property: 'og:title', content: 'PhpSPA Design System');
 ```
 
-**Documentation:** [references/component-meta](https://phpspa.readthedocs.io/en/latest/references/component-meta)
+**Documentation:** [references/component-meta](https://phpspa.tech/references/component-meta)
 
 
 #### **`useCallback()`**
