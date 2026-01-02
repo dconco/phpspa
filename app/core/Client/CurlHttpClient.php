@@ -191,13 +191,13 @@ class CurlHttpClient implements HttpClient {
          curl_setopt($ch, CURLOPT_TIMEOUT_MS, (int)($timeout * 1000));
       } else {
          // Use seconds for timeouts >= 1
-         curl_setopt($ch, CURLOPT_TIMEOUT, (int)$timeout);
+         curl_setopt($ch, CURLOPT_TIMEOUT, (int) $timeout);
       }
-      
+
       $connectTimeout = $options['connect_timeout'] ?? 10;
       curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, (int) $connectTimeout);
-      curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $options['verify_ssl'] ?? false);
-      curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, ($options['verify_ssl'] ?? false) ? 2 : 0);
+      curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $options['verify_ssl'] ?? true);
+      curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, ($options['verify_ssl'] ?? true) ? 2 : 0);
 
       // --- Handle Unix Socket ---
       if (isset($options['unix_socket_path'])) {
@@ -207,11 +207,11 @@ class CurlHttpClient implements HttpClient {
       if (isset($options['cert_path'])) {
          curl_setopt($ch, CURLOPT_CAINFO, $options['cert_path']);
       }
-      
+
       if (isset($options['user_agent'])) {
          curl_setopt($ch, CURLOPT_USERAGENT, $options['user_agent']);
       }
-      
+
       // Build headers array for cURL
       $curlHeaders = [];
       foreach ($headers as $key => $value) {
