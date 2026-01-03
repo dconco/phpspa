@@ -931,10 +931,12 @@ abstract class AppImpl implements ApplicationContract {
          return;
       }
 
+      $currentLevel = Compressor::getLevel();
+
       // --- Determine compression level ---
       $compressionLevel = ($request->requestedWith() === 'PHPSPA_REQUEST')
-         ? Compressor::LEVEL_EXTREME
-         : Compressor::getLevel();
+         ? ($currentLevel === Compressor::LEVEL_NONE ? $currentLevel : Compressor::LEVEL_EXTREME)
+         : $currentLevel;
 
       if (\is_array($content)) {
          $content = $content[0];
