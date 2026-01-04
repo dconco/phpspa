@@ -72,7 +72,7 @@
 
     Advanced routing with nested groups, middleware, and prefixing
 
-    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/latest/references/router/)
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/router/)
 
 </div>
 
@@ -104,7 +104,7 @@
 
     Dynamic page title manipulation
 
-    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/latest/references/dom-utilities/)
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/dom-utilities/)
 
 </div>
 
@@ -138,7 +138,7 @@
 
     Load multiple components on different target IDs for complex layouts
 
-    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/latest/references/preloading-component/)
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/preloading-component/)
 
 -   :material-function:{ .lg .middle } **Client-Side useEffect** :material-new-box:
 
@@ -146,7 +146,7 @@
 
     Manage side effects in component scripts
 
-    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/latest/references/hooks/clients/use-effect)
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/hooks/clients/use-effect)
 
 -   :material-repeat:{ .lg .middle } **Client-Side useCallback** :material-new-box:
 
@@ -154,7 +154,7 @@
 
     Memoize DOM/event handlers with state-aware dependencies
 
-    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/latest/references/hooks/clients/use-callback)
+    [:octicons-arrow-right-24: Learn more](https://phpspa.readthedocs.io/en/stable/references/hooks/clients/use-callback)
 
 </div>
 
@@ -169,15 +169,15 @@
     | [`useFetch()`](https://phpspa.readthedocs.io/en/stable/references/hooks/use-fetch/) | Async HTTP client with parallel execution | v2.0.1 |
     | [`useState()`](../hooks/use-state.md) | Reactive state management | v2.0.0 |
     | [`useEffect() (PHP)`](../hooks/use-effect.md) | Side effects and lifecycle hooks | v2.0.0 |
-    | [`useEffect() (JS)`](https://phpspa.readthedocs.io/en/latest/references/hooks/clients/use-effect) | Client-side side effects | v2.0.4 |
-    | [`useCallback() (JS)`](https://phpspa.readthedocs.io/en/latest/references/hooks/clients/use-callback) | Stable callbacks with dependency tracking | v2.0.8 |
+    | [`useEffect() (JS)`](https://phpspa.readthedocs.io/en/stable/references/hooks/clients/use-effect) | Client-side side effects | v2.0.4 |
+    | [`useCallback() (JS)`](https://phpspa.readthedocs.io/en/stable/references/hooks/clients/use-callback) | Stable callbacks with dependency tracking | v2.0.5 |
     | [`useFunction()`](../hooks/use-function.md) | Call PHP functions from JavaScript | v1.1.5 |
 
 === "Helpers"
 
     | Helper | Description | Version |
     |--------|-------------|---------|
-    | [`DOM::Title()`](https://phpspa.readthedocs.io/en/latest/references/dom-utilities/) | Get or set page title dynamically | v2.0.4 |
+    | [`DOM::Title()`](https://phpspa.readthedocs.io/en/stable/references/dom-utilities/) | Get or set page title dynamically | v2.0.4 |
     | [`fmt()`](https://phpspa.readthedocs.io/en/stable/references/helpers/fmt/) | Type preservation for component props | v2.0.1 |
     | [`import()`](https://phpspa.readthedocs.io/en/stable/references/file-import-utility/) | Secure file imports | v1.1.0 |
     | [`response()`](https://phpspa.readthedocs.io/en/stable/references/response/) | HTTP response builder | v1.1.8 |
@@ -187,7 +187,7 @@
 
     | Feature | Description | Version |
     |---------|-------------|---------|
-    | [Component Meta Tags](component-meta.md) | Route/global SEO metadata with `->meta()` | v2.0.5 |
+    | [Component Meta Tags](https://phpspa.readthedocs.io/en/stable/references/component-meta/) | Route/global SEO metadata with `->meta()` | v2.0.5 |
     | [Component Preloading](https://phpspa.readthedocs.io/en/stable/references/preloading-component/) | Multi-section layouts with independent updates | v2.0.4 |
     | [`<Component.Link>`](../navigations/link-component.md) | Client-side navigation | v1.1.0 |
     | [`<Component.Csrf>`](../security/csrf-protection.md) | CSRF token management | v1.1.5 |
