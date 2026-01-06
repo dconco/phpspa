@@ -1,6 +1,17 @@
 # CHANGELOG
 
-## v2.0.5 (Current) (Stable)
+## v2.0.5.1 (Current) (Stable)
+
+Fixed the router by:
+
+1. **Adding segment count validation:** Routes now check that the request URI has the same number of segments as the route pattern.
+So `/chats` (1 segment) won't match `/{username}/profile` (2 segments).
+
+2. **Changed regex pattern from `{.*}` to `([^/]+)`:** This matches only one path segment (any characters except forward slashes), preventing greedy matching across multiple segments.
+
+Now `/{username}/profile` will correctly match `/dconco/profile` but not `/dconco`.
+
+## v2.0.5
 
 **Installation:**
 ```bash

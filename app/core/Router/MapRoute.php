@@ -117,6 +117,13 @@ class MapRoute implements MapInterface
        *   ----------------------------------------------------------------------------------
       */
       $reqUri = explode('/', $this->request_uri);
+      
+      // Check if the number of segments matches
+      $routeSegments = explode('/', $route);
+      if (\count($reqUri) !== \count($routeSegments)) {
+         return false;
+      }
+      
       /**
        *   ----------------------------------------------------------------------------------
        *   |   Running for each loop to set the exact index number with reg expression this will help in matching route
@@ -143,7 +150,8 @@ class MapRoute implements MapInterface
          $req_value[] = $reqUri[$index];
          
          // this is to create a regex for comparing route address
-         $reqUri[$index] = '{.*}';
+         // Use [^/]+ to match only one path segment (not including slashes)
+         $reqUri[$index] = '([^/]+)';
       }
       // converting array to string
       $reqUri = implode('/', $reqUri);
