@@ -227,7 +227,7 @@ class AssetLinkManager
         if (empty(PathResolver::getBasePath())) {
             PathResolver::autoDetectBasePath();
         }
-        
+
         $basePath = PathResolver::getBasePath();
         $filename = $name ? "{$name}-{$hash}" : $hash;
         $assetPath = "phpspa/assets/{$filename}.{$type}";
