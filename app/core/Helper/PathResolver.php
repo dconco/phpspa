@@ -50,8 +50,17 @@ class PathResolver
    public static function extractBasePath(string $requestUri, string $scriptPath = ''): string
    {
       // Remove query string from request URI
-      $requestUri = strtok($requestUri, '?');
-      
+      $requestUri = strtok($requestUri, '?') ?: '';
+
+      // Count trailing slashes (used later for ../../ prefixing)
+      $trailingSlashCount = 0;
+      $uriLength = \strlen($requestUri);
+      if ($uriLength > 0) {
+         for ($i = $uriLength - 1; $i >= 0 && $requestUri[$i] === '/'; $i--) {
+            $trailingSlashCount++;
+         }
+      }
+
       // Get directory of script path (where the entry point is located)
       $scriptDir = dirname($scriptPath);
       
@@ -60,13 +69,22 @@ class PathResolver
       $requestUri = str_replace('\\', '/', $requestUri);
       
       // If script is in web root, base path is empty
-      if ($scriptDir === '/' || $scriptDir === '.' || $scriptDir === '') {
-         return '';
+      $basePath = ($scriptDir === '/' || $scriptDir === '.' || $scriptDir === '') ? '' : $scriptDir;
+
+      // If the request URI ends with extra slashes, prefix the base path with ../ levels
+      if ($trailingSlashCount > 1) {
+         $relativePrefix = str_repeat('../', $trailingSlashCount - 1);
+
+         if ($basePath === '') {
+            return $relativePrefix;
+         }
+
+         $basePath = rtrim($relativePrefix, '/') . '/' . ltrim($basePath, '/');
       }
-      
+
       // The base path is the directory where the script is located
       // This works for any structure: /project/public, /template, /app/web, etc.
-      return $scriptDir;
+      return $basePath;
    }
 
    /**
@@ -78,7 +96,7 @@ class PathResolver
    {
       $requestUri = $_SERVER['REQUEST_URI'] ?? '';
       $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
-      
+
       $basePath = self::extractBasePath($requestUri, $scriptName);
       self::setBasePath($basePath);
 
@@ -95,21 +113,21 @@ class PathResolver
    {
       // Clean the current path
       $currentPath = trim($currentPath, '/');
-      
+
       // If current path is empty or same as base, no relative path needed
       if (empty($currentPath)) {
          return './';
       }
-      
+
       // Count path segments
       $segments = explode('/', $currentPath);
-      $depth = count(array_filter($segments, fn($segment) => !empty($segment)));
+      $depth = \count(array_filter($segments, fn($segment) => !empty($segment)));
       
       // Generate relative path
       if ($depth === 0) {
          return './';
       }
-      
+
       return str_repeat('../', $depth);
    }
 
