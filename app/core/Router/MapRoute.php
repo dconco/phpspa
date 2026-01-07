@@ -119,8 +119,7 @@ class MapRoute implements MapInterface
       $reqUri = explode('/', $this->request_uri);
       
       // Check if the number of segments matches
-      $routeSegments = explode('/', $route);
-      if (\count($reqUri) !== \count($routeSegments)) {
+      if (\count($reqUri) !== \count($uri)) {
          return false;
       }
       
