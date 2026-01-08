@@ -49,32 +49,49 @@ class PathResolver
     */
    public static function extractBasePath(string $requestUri, string $scriptPath = ''): string
    {
-      // Remove query string from request URI
-      $requestUri = strtok($requestUri, '?') ?: '';
-
-      // Count trailing slashes (used later for ../../ prefixing)
-      $trailingSlashCount = 0;
-      $uriLength = \strlen($requestUri);
-      if ($uriLength > 0) {
-         for ($i = $uriLength - 1; $i >= 0 && $requestUri[$i] === '/'; $i--) {
-            $trailingSlashCount++;
-         }
-      }
+      // Remove query string / fragment from request URI (keep leading '//' intact).
+      // NOTE: parse_url() treats leading '//' as scheme-relative URL and will drop it.
+      $requestUri = (string) preg_split('/[?#]/', $requestUri, 2)[0];
 
       // Get directory of script path (where the entry point is located)
       $scriptDir = dirname($scriptPath);
-      
+
       // Normalize paths - convert backslashes to forward slashes
       $scriptDir = str_replace('\\', '/', $scriptDir);
       $requestUri = str_replace('\\', '/', $requestUri);
-      
+
       // If script is in web root, base path is empty
       $basePath = ($scriptDir === '/' || $scriptDir === '.' || $scriptDir === '') ? '' : $scriptDir;
 
-      // If the request URI ends with extra slashes, prefix the base path with ../ levels
-      if ($trailingSlashCount > 1) {
-         $relativePrefix = str_repeat('../', $trailingSlashCount - 1);
+      // Treat every '/' as a real segment boundary (including repeated slashes).
+      // Rationale: browsers resolve relative URLs by walking the path segments. If the URL contains
+      // multiple slashes (e.g. "////"), the path contains empty segments, but the separators still
+      // contribute to how many "../" hops are needed. Since we generate asset URLs as relative paths,
+      // we must mirror the browser's path resolution behavior to avoid broken links on routes like:
+      // //dashboard////  => ../../../../../
+      $path = $requestUri;
+      $endsWithSlash = $path !== '' && substr($path, -1) === '/';
 
+      $segments = explode('/', $path);
+
+      // Build the directory segments of the current URL.
+      // - If URL ends with '/', it's already a directory URL: drop only the trailing empty segment.
+      // - Otherwise, drop the last segment (treat it as a resource segment).
+      if ($endsWithSlash) {
+         if (!empty($segments) && end($segments) === '') {
+            array_pop($segments);
+         }
+      } else {
+         if (\count($segments) > 0) {
+            array_pop($segments);
+         }
+      }
+
+      // Depth is the number of directory segments after the leading empty segment (from the initial '/').
+      $depth = max(0, \count($segments) - 1);
+      $relativePrefix = $depth > 0 ? str_repeat('../', $depth) : '';
+
+      if ($relativePrefix !== '') {
          if ($basePath === '') {
             return $relativePrefix;
          }
@@ -187,7 +204,7 @@ class PathResolver
       
       // Remove base path from current path
       if (!empty(self::$basePath) && strpos($path, self::$basePath) === 0) {
-         $relativePath = substr($path, strlen(self::$basePath));
+         $relativePath = substr($path, \strlen(self::$basePath));
       } else {
          $relativePath = $path;
       }

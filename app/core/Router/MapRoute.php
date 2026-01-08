@@ -53,7 +53,7 @@ class MapRoute implements MapInterface
       $this->method = explode('|', strtoupper($method));
 
       // --- Replacing first and last forward slashes, $request_uri will be empty if req uri is / ---
-      $this->request_uri = preg_replace("/(^\/)|(\/$)/", '', App::$request_uri);
+      $this->request_uri = trim(App::$request_uri, '/');
       $this->request_uri = empty($this->request_uri) ? '/' : $this->request_uri;
 
       // --- If caseSensitive is false, convert request URI to lowercase ---
@@ -62,9 +62,9 @@ class MapRoute implements MapInterface
 
 	public function match(): array|bool {
 		foreach ($this->routes as $route) {
-         
-         $route = preg_replace("/(^\/)|(\/$)/", '', $this->caseSensitive ? $route : strtolower($route));
-         
+
+         $route = trim($this->caseSensitive ? $route : strtolower($route), '/');
+
 			$match = $this->pattern
             ? $this->pattern($route)
             : $this->realMatch($route);
