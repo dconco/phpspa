@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace PhpSPA\Core\Router;
 
 use PhpSPA\App;
-use PhpSPA\Core\Http\HttpRequest;
 use PhpSPA\Http\Request;
+use PhpSPA\Core\Http\HttpRequest;
 use PhpSPA\Interfaces\MapInterface;
 
 /**

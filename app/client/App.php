@@ -3,6 +3,7 @@
 namespace PhpSPA;
 
 use PhpSPA\Http\Session;
+use PhpSPA\Core\Http\HttpRequest;
 use PhpSPA\Core\Config\CompressionConfig;
 use PhpSPA\Core\Impl\RealImpl\AppImpl;
 use PhpSPA\Interfaces\ApplicationContract;
@@ -41,9 +42,7 @@ class App extends AppImpl implements ApplicationContract {
     {
         Session::start();
         $this->layout = $layout;
-        static::$request_uri = urldecode(
-            parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH),
-        );
+        static::$request_uri = new HttpRequest()->path();
 
         // Initialize HTML compression based on environment
         if ($autoInitCompression) {

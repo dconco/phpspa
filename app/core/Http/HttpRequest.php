@@ -265,11 +265,18 @@ class HttpRequest implements Request
 
     public function path(): string
     {
-        return $this->getUri();
+        $uri = $_SERVER['REQUEST_URI'] ?? '/';
+
+        // Strip query string from URI
+        if (strpos($uri, '?') !== false) {
+            $uri = substr($uri, 0, strpos($uri, '?'));
+        }
+
+        return rawurldecode($uri);
     }
 
     public function siteURL(): string {
-        $path = $this->path();
+        $path = $this->getUri();
         $scheme = $this->isHttps() ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
