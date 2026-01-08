@@ -261,7 +261,7 @@ interface Request {
     public function requestedWith ();
 
     /**
-     * Retrieves the request URI. Alias of `Request::path()`
+     * Retrieves the request URI and parses it with parse_url.
      *
      * @since v2.0.4
      * @return string The request URI.
@@ -269,10 +269,10 @@ interface Request {
     public function getUri (): string;
 
     /**
-     * Retrieves the request URI. Alias of `Request::getUri()`
+     * Retrieves the request path from the URL
      *
      * @since v2.0.5
-     * @return string The request URI.
+     * @return string The URL path
      */
     public function path (): string;
 

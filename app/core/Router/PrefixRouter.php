@@ -37,15 +37,15 @@ trait PrefixRouter {
    */
    protected function handlePrefix(array $prefix, array $middlewares = []) {
       // --- Replacing first and last forward slashes, $request_uri will be empty if req uri is / ---
-      static $request_uri = preg_replace("/(^\/)|(\/$)/", '', static::$request_uri);
-      $prefixPath = preg_replace("/(^\/)|(\/$)/", '', $prefix['path']);
+      static $request_uri = trim(static::$request_uri, '/');
+      $prefixPath = trim($prefix['path'], '/');
 
       if (!$this->defaultCaseSensitive) {
          $request_uri = strtolower($request_uri);
          $prefixPath = strtolower($prefixPath);
       }
 
-      $path = substr($request_uri, 0, strlen($prefixPath));
+      $path = substr($request_uri, 0, \strlen($prefixPath));
 
       if ($path === $prefixPath) {
          $router = new Router(
@@ -53,19 +53,19 @@ trait PrefixRouter {
             caseSensitive: $this->defaultCaseSensitive,
             middlewares: $middlewares
          );
-         call_user_func($prefix['handler'], $router);
+         \call_user_func($prefix['handler'], $router);
       }
    }
 
    protected function resolveStaticPath() {
-      static $request_uri = preg_replace("/(^\/)|(\/$)/", '', static::$request_uri);
-   
+      static $request_uri = trim(static::$request_uri, '/');
+
       foreach ($this->static as $static) {
-         $route = preg_replace("/(^\/)|(\/$)/", '', $static['route']);
-         $path = substr($request_uri, 0, strlen($route));
+         $route = trim($static['route'], '/');
+         $path = substr($request_uri, 0, \strlen($route));
 
          if ($path === $route) {
-            $staticRoute = substr($request_uri, strlen($route));
+            $staticRoute = substr($request_uri, \strlen($route));
             $filePath = rtrim($static['staticPath'], '/') . '/' . ltrim($staticRoute, '/');
             
             if (is_file($filePath)) {
