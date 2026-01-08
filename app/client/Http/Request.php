@@ -261,7 +261,7 @@ interface Request {
     public function requestedWith ();
 
     /**
-     * Retrieves the request URI and parses it with parse_uri.
+     * Retrieves the request URI and parses it with parse_url.
      *
      * @since v2.0.4
      * @return string The request URI.
