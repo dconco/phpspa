@@ -78,8 +78,11 @@ class PathResolver
       // - If URL ends with '/', it's already a directory URL: drop only the trailing empty segment.
       // - Otherwise, drop the last segment (treat it as a resource segment).
       if ($endsWithSlash) {
-         if (!empty($segments) && end($segments) === '') {
-            array_pop($segments);
+         if (!empty($segments)) {
+            $lastIndex = \count($segments) - 1;
+            if ($segments[$lastIndex] === '') {
+               array_pop($segments);
+            }
          }
       } else {
          if (\count($segments) > 0) {
