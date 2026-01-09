@@ -2,7 +2,7 @@ name: Update LoC Badge
 
 on:
   push:
-    branches: [dev]
+    branches: [support/php-8.3]
   workflow_dispatch:
 
 permissions:
