@@ -2,8 +2,6 @@
 
 namespace PhpSPA\Core\Utils;
 
-use function strlen;
-use function is_string;
 use RuntimeException;
 use PhpSPA\Compression\Compressor;
 use PhpSPA\Core\Compression\NativeCompressor;
@@ -68,7 +66,7 @@ trait HtmlCompressor
     * @return string Compressed HTML
     */
    public static function compress(string $html, ?string $contentType = null): string {
-      $CONTENT_LENGTH = strlen($html);
+      $CONTENT_LENGTH = \strlen($html);
 
       if (self::$compressionLevel === Compressor::LEVEL_NONE) {
          self::setCompressionEngine('disabled');
@@ -118,12 +116,12 @@ trait HtmlCompressor
    private static function minify(string $content, $type, int $level, ?int $CONTENT_LENGTH = null): string
    {
       if ($level === Compressor::LEVEL_NONE) return $content;
-      if (!$CONTENT_LENGTH) $CONTENT_LENGTH = strlen($content);
+      if (!$CONTENT_LENGTH) $CONTENT_LENGTH = \strlen($content);
 
       $preservedBlocks = null;
       if ($type === 'HTML') {
          [$content, $preservedBlocks] = self::protectPreformattedBlocks($content);
-         $CONTENT_LENGTH = strlen($content);
+         $CONTENT_LENGTH = \strlen($content);
       }
 
       if ($level === Compressor::LEVEL_AUTO) {
@@ -169,7 +167,7 @@ trait HtmlCompressor
          $html,
       );
 
-      return [is_string($protected) ? $protected : $html, $placeholderMap];
+      return [\is_string($protected) ? $protected : $html, $placeholderMap];
    }
 
    /**
@@ -256,7 +254,7 @@ trait HtmlCompressor
       }
 
       $envStrategy = getenv('PHPSPA_COMPRESSION_STRATEGY');
-      $normalized = is_string($envStrategy)
+      $normalized = \is_string($envStrategy)
          ? strtolower(trim($envStrategy))
          : '';
 
@@ -299,7 +297,7 @@ trait HtmlCompressor
          if (!headers_sent()) {
             header('Content-Encoding: gzip');
             header('Vary: Accept-Encoding');
-            header('Content-Length: ' . strlen($compressed));
+            header('Content-Length: ' . \strlen($compressed));
 
             if ($contentType !== null) {
                header("Content-Type: $contentType; charset=UTF-8");
@@ -310,7 +308,7 @@ trait HtmlCompressor
       }
 
       if (!headers_sent()) {
-         header('Content-Length: ' . strlen($content));
+         header('Content-Length: ' . \strlen($content));
 
          if ($contentType !== null) {
             header("Content-Type: $contentType; charset=UTF-8");
@@ -368,7 +366,7 @@ trait HtmlCompressor
     */
    private static function detectOptimalLevel(string $content, ?int $CONTENT_LENGTH = null): int
    {
-      if (!$CONTENT_LENGTH) $CONTENT_LENGTH = strlen($content);
+      if (!$CONTENT_LENGTH) $CONTENT_LENGTH = \strlen($content);
 
       if ($CONTENT_LENGTH < 1024) {
          // Less than 1KB

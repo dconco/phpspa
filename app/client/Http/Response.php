@@ -554,7 +554,7 @@ class Response
     */
    public static function sendSuccess($data, string $message = 'Success'): void
    {
-      new static()->success($data, $message)->send();
+      (new static())->success($data, $message)->send();
    }
 
    /**
@@ -567,6 +567,6 @@ class Response
     */
    public static function sendError(string $message, int $code = Response::StatusInternalServerError, $details = null): void
    {
-      new static()->status($code)->error($message, $details)->send();
+      (new static())->status($code)->error($message, $details)->send();
    }
 }

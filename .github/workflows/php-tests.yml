@@ -1,10 +1,10 @@
-name: PHP Tests
+name: PHP (8.1) Tests
 
 on:
    push:
-      branches: [master, dev]
+      branches: [support/php-8.1]
    pull_request:
-      branches: [master, dev]
+      branches: [support/php-8.1]
 
 jobs:
    test:
@@ -30,7 +30,7 @@ jobs:
          - name: Setup PHP
            uses: shivammathur/setup-php@v2
            with:
-              php-version: "8.4"
+              php-version: "8.1"
               extensions: curl, ffi
               coverage: none
               ini-values: ffi.enable=1

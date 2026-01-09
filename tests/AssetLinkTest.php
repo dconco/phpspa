@@ -77,7 +77,7 @@ function testAssetServing()
         ->script(function () {
             return 'console.log("Test script");';
         })
-        ->styleSheet(function () {
+        ->link(function () {
             return 'body { background-color: blue; }';
         });
     }
@@ -162,7 +162,7 @@ function testCompressionLevels()
         return '<div>Test</div>';
     }))
     ->route('/test-compression')
-    ->styleSheet(function () {
+    ->link(function () {
         return 'body {    background-color: red;    margin: 10px;   }';
     });
 
@@ -189,7 +189,7 @@ function testCompressionLevels()
         return '<div>Test</div>';
     }))
     ->route('/test-compression-extreme')
-    ->styleSheet(function () {
+    ->link(function () {
         return 'body {    background-color: red;    margin: 10px;   }';
     });
 
@@ -234,7 +234,7 @@ function testLinkGeneration()
     ->script(function () {
         return 'console.log("This should be in external file");';
     })
-    ->styleSheet(function () {
+    ->link(function () {
         return 'body { color: green; }';
     });
 

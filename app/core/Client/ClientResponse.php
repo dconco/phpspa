@@ -13,10 +13,10 @@ class ClientResponse {
     * @param string|null $error The error message if request failed.
     */
    public function __construct (
-      private readonly string|false $body,
-      private readonly int $statusCode,
-      private readonly array $rawHeaders,
-      private readonly ?string $error = null,
+      private mixed $body,
+      private int $statusCode,
+      private array $rawHeaders,
+      private ?string $error = null,
    ) {}
 
    /**
@@ -31,7 +31,10 @@ class ClientResponse {
    /**
     * Gets the response body as a raw string.
     */
-   public function text (): string|false
+   /**
+    * @return string|false
+    */
+   public function text ()
    {
       return $this->body;
    }

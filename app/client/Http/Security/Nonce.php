@@ -106,8 +106,8 @@ class Nonce {
       }
       
       if (isset(self::$directives['style-src'])) {
-         $hasUnsafeInline = in_array("'unsafe-inline'", self::$directives['style-src']);
-         $hasUnsafeHashes = in_array("'unsafe-hashes'", self::$directives['style-src']);
+         $hasUnsafeInline = \in_array("'unsafe-inline'", self::$directives['style-src']);
+         $hasUnsafeHashes = \in_array("'unsafe-hashes'", self::$directives['style-src']);
          
          if (!$hasUnsafeInline && !$hasUnsafeHashes) {
             self::$directives['style-src'][] = "'nonce-$nonce'";

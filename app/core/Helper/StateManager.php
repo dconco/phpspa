@@ -25,15 +25,16 @@ class StateManager
 {
 	private string $stateKey;
 
-	private mixed $value {
-		set(mixed $v) {
-			$this->value = Validate::validate($v);
-		}
-	}
+	private mixed $value = UNDEFINED_STATE_VARIABLE;
 
 	protected mixed $lastState;
 
 	protected static bool $firstRender = false;
+
+	private function setValue(mixed $v): void
+	{
+		$this->value = Validate::validate($v);
+	}
 
 	/**
 	 * Initializes the state with a given key and a default value.
@@ -44,7 +45,7 @@ class StateManager
 	public function __construct(string $stateKey, $default)
 	{
 		$sessionData = SessionHandler::get(STATE_HANDLE);
-		$requestedWith = new HttpRequest()->requestedWith();
+		$requestedWith = (new HttpRequest())->requestedWith();
 
 		if (!isset($sessionData[$stateKey]) && $requestedWith !== 'PHPSPA_REQUEST' && $requestedWith !== 'PHPSPA_REQUEST_SCRIPT') {
 			self::$firstRender = true;
@@ -53,7 +54,7 @@ class StateManager
 		$this->stateKey = $stateKey;
 
 		if (!isset($sessionData[$stateKey])) {
-			$this->value = $default;
+			$this->setValue($default);
 			$sessionData[$stateKey] = $this->lastState = $this->value;
 		}
 
@@ -79,8 +80,8 @@ class StateManager
 		// An argument was explicitly provided (even if it is falsy); treat it as the new state value.
 		$value = func_get_arg(0);
 
-		$this->lastState = $this->value ?? Validate::validate($value);
-		$this->value = $value;
+		$this->lastState = $this->value;
+		$this->setValue($value);
 		$sessionData[$this->stateKey] = $this->value;
 		SessionHandler::set(STATE_HANDLE, $sessionData);
 

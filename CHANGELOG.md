@@ -1,6 +1,29 @@
 # CHANGELOG
 
-## v2.0.5+php8.2 (Stable)
+## v2.0.5+php8.1 (Stable) (PHP 8.1)
+
+This is the **PHP 8.1 compatibility** release line.
+It keeps the same public API while removing syntax that is not supported on PHP 8.1.
+
+**Installation:**
+```bash
+composer require dconco/phpspa:v2.0.5+php8.1
+```
+
+### What's Changed
+
+- **PHP 8.1 compatibility:** Removed PHP 8.3 typed class constants (e.g. `public const string X = ...`) and adjusted `string|false` type hints to avoid parse errors on PHP 8.1.
+- **Includes PHP 8.3 line fixes:** Also contains the PHP 8.4 property-hook removal from the `v2.0.5+php8.3` compatibility line.
+
+### Notes
+
+- If your app is pinned to PHP `^8.1`, use this tag/release line.
+- The mainline releases may continue using newer PHP features where appropriate.
+
+
+
+
+## v2.0.5+php8.2 (Stable) (PHP 8.2)
 
 This is the **PHP 8.2 compatibility** release line.
 It keeps the same public API while removing syntax that is not supported on PHP 8.2.
@@ -20,7 +43,10 @@ composer require dconco/phpspa:v2.0.5+php8.2
 - If your app is pinned to PHP `^8.2`, use this tag/release line.
 - The mainline releases may continue using newer PHP features where appropriate.
 
-## v2.0.5+php8.3 (Stable)
+
+
+
+## v2.0.5+php8.3 (Stable) (PHP 8.2)
 
 This is the **PHP 8.3 compatibility** release line.
 It removes PHP 8.4-only syntax while keeping the same public Component API and runtime behavior.
@@ -40,7 +66,11 @@ composer require dconco/phpspa:v2.0.5+php8.3
 - If your app is pinned to PHP `^8.3`, use this tag/release line.
 - The mainline releases may continue using PHP 8.4+ features where appropriate.
 
-## v2.0.5.2 (Current) (Stable)
+
+
+
+
+## v2.0.5.2 (Current) (Stable) (PHP 8.4)
 
 ## v2.0.5.1
 
@@ -52,6 +82,10 @@ So `/chats` (1 segment) won't match `/{username}/profile` (2 segments).
 2. **Changed regex pattern from `{.*}` to `([^/]+)`:** This matches only one path segment (any characters except forward slashes), preventing greedy matching across multiple segments.
 
 Now `/{username}/profile` will correctly match `/dconco/profile` but not `/dconco`.
+
+
+
+
 
 ## v2.0.5
 
