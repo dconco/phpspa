@@ -57,6 +57,6 @@ class FormatComponent implements ArrayAccess {
 
    public function __invoke(): mixed
    {
-      return base64_encode(serialize(($this->data)(func_get_args())));
+      return base64_encode(serialize(($this->data)(\func_get_args())));
    }
 }

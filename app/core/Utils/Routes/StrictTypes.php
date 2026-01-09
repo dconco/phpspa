@@ -127,7 +127,7 @@ trait StrictTypes
             $needle = json_decode($needle, true);
             $eachArrayTypes = preg_split('/,(?![^<]*>)/', $matches[1]);
 
-            if (!is_array($needle)) {
+            if (!\is_array($needle)) {
                 return false;
                 // throw new AppException("Invalid request parameter type. {ARRAY} requested, but got {{$typeOfNeedle}}");
             }
@@ -138,7 +138,7 @@ trait StrictTypes
                     // throw new AppException("Array index $key not found in the request parameter");
                 }
 
-                $needle2 = is_array($needle[$key])
+                $needle2 = \is_array($needle[$key])
                     ? json_encode($needle[$key])
                     : (string) $needle[$key];
 

@@ -346,9 +346,9 @@ class FallbackCompressor
         $css = preg_replace_callback(
             '/rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/',
             function ($matches) {
-                $r = sprintf('%02x', $matches[1]);
-                $g = sprintf('%02x', $matches[2]);
-                $b = sprintf('%02x', $matches[3]);
+                $r = \sprintf('%02x', $matches[1]);
+                $g = \sprintf('%02x', $matches[2]);
+                $b = \sprintf('%02x', $matches[3]);
 
                 if ($r[0] === $r[1] && $g[0] === $g[1] && $b[0] === $b[1]) {
                     return '#' . $r[0] . $g[0] . $b[0];

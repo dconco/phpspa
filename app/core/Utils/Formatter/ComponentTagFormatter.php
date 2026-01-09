@@ -109,7 +109,7 @@ trait ComponentTagFormatter
                }
 
                if (method_exists($className, $methodName)) {
-                  $reflection = ReflectionMethod::createFromMethodName("$className::$methodName");
+                  $reflection = new ReflectionMethod($className, $methodName);
 
                   if ($reflection->isStatic()) {
                      return \call_user_func_array([$className, $methodName], $attributes);
@@ -122,7 +122,7 @@ trait ComponentTagFormatter
             } elseif (class_exists($className)) {
                // Class syntax
                if (method_exists($className, '__render')) {
-                  $reflection = ReflectionMethod::createFromMethodName("$className::__render");
+                  $reflection = new ReflectionMethod($className, '__render');
 
                   if ($reflection->isStatic()) {
                      return \call_user_func_array([$className, '__render'], $attributes);

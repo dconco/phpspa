@@ -61,7 +61,7 @@ class InvalidTypesException extends AppException
      */
     public static function catchInvalidStrictTypes(array|string $type, ?Closure $message = null): void
     {
-        if (is_array($type)) {
+        if (\is_array($type)) {
             foreach ($type as $t) {
                 if (!in_array($t, self::$types) && !preg_match('/<(.+)>/', (string) $t)) {
                     if (!$message) {
@@ -72,7 +72,7 @@ class InvalidTypesException extends AppException
                 }
             }
         } else {
-            if (!in_array($type, self::$types) && !preg_match('/<(.+)>/', (string) $type)) {
+            if (!\in_array($type, self::$types) && !preg_match('/<(.+)>/', (string) $type)) {
                 if (!$message) {
                     throw new self("{{$type}} is not recognized as a URL parameter type");
                 } else {
