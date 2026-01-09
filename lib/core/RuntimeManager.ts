@@ -183,15 +183,7 @@ export class RuntimeManager {
                newScript.setAttribute(attribute.name, attribute.value)
             }
 
-            // --- Check if script should run in async context ---
-            const isAsync = script.hasAttribute("async")
-
-            // --- Wrap in IIFE to create isolated scope ---
-            if (isAsync) {
-               newScript.textContent = `(async function() {\n${script.textContent}\n})()`
-            } else {
-               newScript.textContent = `(function() {\n${script.textContent}\n})()`
-            }
+            newScript.textContent = `(function() {\n${script.textContent}\n})()`
 
             // --- Execute and immediately remove from DOM ---
             document.head.appendChild(newScript).remove()
