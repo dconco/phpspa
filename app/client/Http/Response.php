@@ -221,10 +221,10 @@ class Response
     *
     * @param string $url The URL to redirect to.
     * @param int $code The HTTP status code for the redirect (e.g., 301, 302).
-    * @return never This function does not return; it terminates script execution.
+    * @return void This function does not return; it terminates script execution.
     * @see https://phpspa.tech/requests/#redirects-session-management
     */
-   public function redirect(string $url, int $code = 0): never
+   public function redirect(string $url, int $code = 0): void
    {
       header("Location: $url", true, $code);
       exit();
@@ -554,7 +554,8 @@ class Response
     */
    public static function sendSuccess($data, string $message = 'Success'): void
    {
-      new static()->success($data, $message)->send();
+      $static = new static();
+      $static->success($data, $message)->send();
    }
 
    /**
@@ -567,6 +568,7 @@ class Response
     */
    public static function sendError(string $message, int $code = Response::StatusInternalServerError, $details = null): void
    {
-      new static()->status($code)->error($message, $details)->send();
+      $static = new static();
+      $static->status($code)->error($message, $details)->send();
    }
 }

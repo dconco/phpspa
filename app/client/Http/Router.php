@@ -34,7 +34,10 @@ class Router
     */
    public function __construct(readonly private string $prefix, private bool $caseSensitive, private array $middlewares)
    {
-      static::$request_uri ??= new HttpRequest()->getUri();
+      if (!isset(static::$request_uri)) {
+         $request = new HttpRequest();
+         static::$request_uri = $request->getUri();
+      }
    }
 
    /**
@@ -99,7 +102,8 @@ class Router
       $response = new Response();
       $iterator = 0;
 
-      $map = new MapRoute($method, $route, $this->caseSensitive)->match();
+      $mapRoute = new MapRoute($method, $route, $this->caseSensitive);
+      $map = $mapRoute->match();
 
       if ($map) {
          $request = new HttpRequest($map['params'] ?? []);

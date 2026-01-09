@@ -438,8 +438,12 @@ abstract class AppImpl implements ApplicationContract {
 
 
    private function runComponent(Component|Icomponent $component, bool $isPreloadingComponent = false, ?string &$layoutOutput = null) {
-      static $request = new HttpRequest();
+      static $request = null;
       static $router = null;
+
+      if ($request === null) {
+         $request = new HttpRequest();
+      }
 
       $route = CallableInspector::getProperty($component, 'route');
       $name = CallableInspector::getProperty($component, 'name');
@@ -465,7 +469,8 @@ abstract class AppImpl implements ApplicationContract {
          $m = explode('|', $method);
          if (!\in_array($request->method(), $m)) return;
       } else if (!$isPreloadingComponent) {
-         $router = (new MapRoute($method, $route, $caseSensitive, $pattern))->match();
+         $routerMap = new MapRoute($method, $route, $caseSensitive, $pattern);
+         $router = $routerMap->match();
 
          if (!$router)
             return; // --- Skip if no match found ---

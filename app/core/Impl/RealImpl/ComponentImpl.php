@@ -88,7 +88,8 @@ abstract class ComponentImpl
             $method = $method[0];
          }
 
-         $flat = (new ArrayFlat(array: $method))->flat();
+         $flatHelper = new ArrayFlat(array: $method);
+         $flat = $flatHelper->flat();
          $flat = array_values(array_filter(array_map(static fn ($v) => strtoupper(trim((string) $v)), $flat), static fn ($v) => $v !== ''));
 
          if (count($flat) === 0) {
@@ -124,7 +125,8 @@ abstract class ComponentImpl
          $route = $route[0];
       }
 
-      $this->route = (new ArrayFlat(array: $route))->flat();
+      $flatHelper = new ArrayFlat(array: $route);
+      $this->route = $flatHelper->flat();
    }
 
    /**

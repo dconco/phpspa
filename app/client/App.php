@@ -42,7 +42,8 @@ class App extends AppImpl implements ApplicationContract {
     {
         Session::start();
         $this->layout = $layout;
-        static::$request_uri = (new HttpRequest())->path();
+        $request = new HttpRequest();
+        static::$request_uri = $request->path();
 
         // Initialize HTML compression based on environment
         if ($autoInitCompression) {

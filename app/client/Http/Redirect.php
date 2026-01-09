@@ -11,10 +11,10 @@ namespace PhpSPA\Http;
  * @author dconco <me@dconco.tech>
  * @param string $url The URL to redirect to.
  * @param int $code The HTTP status code for the redirect (e.g., 301, 302).
- * @return never This function does not return; it terminates script execution.
+ * @return void This function does not return; it terminates script execution.
  * @see https://phpspa.tech/requests/#redirects-session-management
  */
-function Redirect(string $url, int $code = 0): never
+function Redirect(string $url, int $code = 0): void
 {
     header("Location: $url", true, $code);
     exit();

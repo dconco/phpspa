@@ -45,7 +45,8 @@ class StateManager
 	public function __construct(string $stateKey, $default)
 	{
 		$sessionData = SessionHandler::get(STATE_HANDLE);
-		$requestedWith = (new HttpRequest())->requestedWith();
+		$request = new HttpRequest();
+		$requestedWith = $request->requestedWith();
 
 		if (!isset($sessionData[$stateKey]) && $requestedWith !== 'PHPSPA_REQUEST' && $requestedWith !== 'PHPSPA_REQUEST_SCRIPT') {
 			self::$firstRender = true;
