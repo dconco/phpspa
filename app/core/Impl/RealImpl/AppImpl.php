@@ -396,10 +396,7 @@ abstract class AppImpl implements ApplicationContract {
                SessionHandler::set(STATE_HANDLE, $sessionData);
             }
 
-            return;
-         }
-
-         if (isset($data['__call'])) {
+         } else if (isset($data['__call'])) {
             try {
                $tokenData = base64_decode($data['__call']['token'] ?? '');
                $tokenData = json_decode($tokenData);
@@ -414,6 +411,7 @@ abstract class AppImpl implements ApplicationContract {
                      $functionName,
                      $data['__call']['args'],
                   );
+
                   print_r(
                      json_encode([
                         'response' => json_encode($res),
@@ -429,10 +427,6 @@ abstract class AppImpl implements ApplicationContract {
             }
             exit();
          }
-      }
-      else if ($request->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT') {
-         Session::remove(STATE_HANDLE);
-         Session::remove(CALL_FUNC_HANDLE);
       }
    }
 
@@ -473,6 +467,9 @@ abstract class AppImpl implements ApplicationContract {
          $request = new HttpRequest($router['params'] ?? []);
 
          DOM::CurrentRoutes(static::$request_uri);
+
+         Session::remove(STATE_HANDLE);
+         Session::remove(CALL_FUNC_HANDLE);
       }
       
       if ($isPreloadingComponent && !str_contains($route[0] ?? '', '{')) {
