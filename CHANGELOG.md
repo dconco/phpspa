@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## v2.0.5+php8.2 (Stable)
+
+This is the **PHP 8.2 compatibility** release line.
+It keeps the same public API while removing syntax that is not supported on PHP 8.2.
+
+**Installation:**
+```bash
+composer require dconco/phpspa:v2.0.5+php8.2
+```
+
+### What's Changed
+
+- **PHP 8.2 compatibility:** Removed PHP 8.3 typed class constants (e.g. `public const string X = ...`) to avoid parse errors on PHP 8.2.
+- **Includes PHP 8.3 line fixes:** Also contains the PHP 8.4 property-hook removal from the `v2.0.5+php8.3` compatibility line.
+
+### Notes
+
+- If your app is pinned to PHP `^8.2`, use this tag/release line.
+- The mainline releases may continue using newer PHP features where appropriate.
+
 ## v2.0.5+php8.3 (Stable)
 
 This is the **PHP 8.3 compatibility** release line.

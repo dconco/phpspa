@@ -94,76 +94,76 @@ class Response
    ];
 
    // --- 1xx: INFORMATIONAL ---
-   public const int StatusContinue                      = 100;
-	public const int StatusSwitchingProtocols            = 101;
-	public const int StatusProcessing                    = 102;
-	public const int StatusEarlyHints                    = 103;
+   public const StatusContinue                      = 100;
+   public const StatusSwitchingProtocols            = 101;
+   public const StatusProcessing                    = 102;
+   public const StatusEarlyHints                    = 103;
 
    // --- 2xx: SUCCESS ---
-	public const int StatusOK                            = 200;
-	public const int StatusCreated                       = 201;
-	public const int StatusAccepted                      = 202;
-	public const int StatusNonAuthoritativeInfo          = 203;
-	public const int StatusNoContent                     = 204;
-	public const int StatusResetContent                  = 205;
-	public const int StatusPartialContent                = 206;
-	public const int StatusMulti                         = 207;
-	public const int StatusAlreadyReported               = 208;
-	public const int StatusIMUsed                        = 226;
+   public const StatusOK                            = 200;
+   public const StatusCreated                       = 201;
+   public const StatusAccepted                      = 202;
+   public const StatusNonAuthoritativeInfo          = 203;
+   public const StatusNoContent                     = 204;
+   public const StatusResetContent                  = 205;
+   public const StatusPartialContent                = 206;
+   public const StatusMulti                         = 207;
+   public const StatusAlreadyReported               = 208;
+   public const StatusIMUsed                        = 226;
 
    // --- 3xx: REDIRECTION ---
-	public const int StatusMultipleChoices               = 300;
-	public const int StatusMovedPermanently              = 301;
-	public const int StatusFound                         = 302;
-	public const int StatusSeeOther                      = 303;
-	public const int StatusNotModified                   = 304;
-	public const int StatusUseProxy                      = 305;
-	public const int StatusTemporaryRedirect             = 307;
-	public const int StatusPermanentRedirect             = 308;
+   public const StatusMultipleChoices               = 300;
+   public const StatusMovedPermanently              = 301;
+   public const StatusFound                         = 302;
+   public const StatusSeeOther                      = 303;
+   public const StatusNotModified                   = 304;
+   public const StatusUseProxy                      = 305;
+   public const StatusTemporaryRedirect             = 307;
+   public const StatusPermanentRedirect             = 308;
 
    // --- 4xx: CLIENT ERROR ---
-	public const int StatusBadRequest                    = 400;
-	public const int StatusUnauthorized                  = 401;
-	public const int StatusPaymentRequired               = 402;
-	public const int StatusForbidden                     = 403;
-	public const int StatusNotFound                      = 404;
-	public const int StatusMethodNotAllowed              = 405;
-	public const int StatusNotAcceptable                 = 406;
-	public const int StatusProxyAuthRequired             = 407;
-	public const int StatusRequestTimeout                = 408;
-	public const int StatusConflict                      = 409;
-	public const int StatusGone                          = 410;
-	public const int StatusLengthRequired                = 411;
-	public const int StatusPreconditionFailed            = 412;
-	public const int StatusRequestEntityTooLarge         = 413;
-	public const int StatusRequestURITooLong             = 414;
-	public const int StatusUnsupportedMediaType          = 415;
-	public const int StatusRequestedRangeNotSatisfiable  = 416;
-	public const int StatusExpectationFailed             = 417;
-	public const int StatusTeapot                        = 418;
-	public const int StatusMisdirectedRequest            = 421;
-	public const int StatusUnprocessableEntity           = 422;
-	public const int StatusLocked                        = 423;
-	public const int StatusFailedDependency              = 424;
-	public const int StatusTooEarly                      = 425;
-	public const int StatusUpgradeRequired               = 426;
-	public const int StatusPreconditionRequired          = 428;
-	public const int StatusTooManyRequests               = 429;
-	public const int StatusRequestHeaderFieldsTooLarge   = 431;
-	public const int StatusUnavailableForLegalReasons    = 451;
+   public const StatusBadRequest                    = 400;
+   public const StatusUnauthorized                  = 401;
+   public const StatusPaymentRequired               = 402;
+   public const StatusForbidden                     = 403;
+   public const StatusNotFound                      = 404;
+   public const StatusMethodNotAllowed              = 405;
+   public const StatusNotAcceptable                 = 406;
+   public const StatusProxyAuthRequired             = 407;
+   public const StatusRequestTimeout                = 408;
+   public const StatusConflict                      = 409;
+   public const StatusGone                          = 410;
+   public const StatusLengthRequired                = 411;
+   public const StatusPreconditionFailed            = 412;
+   public const StatusRequestEntityTooLarge         = 413;
+   public const StatusRequestURITooLong             = 414;
+   public const StatusUnsupportedMediaType          = 415;
+   public const StatusRequestedRangeNotSatisfiable  = 416;
+   public const StatusExpectationFailed             = 417;
+   public const StatusTeapot                        = 418;
+   public const StatusMisdirectedRequest            = 421;
+   public const StatusUnprocessableEntity           = 422;
+   public const StatusLocked                        = 423;
+   public const StatusFailedDependency              = 424;
+   public const StatusTooEarly                      = 425;
+   public const StatusUpgradeRequired               = 426;
+   public const StatusPreconditionRequired          = 428;
+   public const StatusTooManyRequests               = 429;
+   public const StatusRequestHeaderFieldsTooLarge   = 431;
+   public const StatusUnavailableForLegalReasons    = 451;
 
    // --- 5xx: SERVER ERROR ---
-	public const int StatusInternalServerError           = 500;
-	public const int StatusNotImplemented                = 501;
-	public const int StatusBadGateway                    = 502;
-	public const int StatusServiceUnavailable            = 503;
-	public const int StatusGatewayTimeout                = 504;
-	public const int StatusHTTPVersionNotSupported       = 505;
-	public const int StatusVariantAlsoNegotiates         = 506;
-	public const int StatusInsufficientStorage           = 507;
-	public const int StatusLoopDetected             	  = 508;
-	public const int StatusNotExtended               	  = 510;
-	public const int StatusNetworkAuthenticationRequired = 511;
+   public const StatusInternalServerError           = 500;
+   public const StatusNotImplemented                = 501;
+   public const StatusBadGateway                    = 502;
+   public const StatusServiceUnavailable            = 503;
+   public const StatusGatewayTimeout                = 504;
+   public const StatusHTTPVersionNotSupported       = 505;
+   public const StatusVariantAlsoNegotiates         = 506;
+   public const StatusInsufficientStorage           = 507;
+   public const StatusLoopDetected             	  = 508;
+   public const StatusNotExtended               	  = 510;
+   public const StatusNetworkAuthenticationRequired = 511;
 
    /**
     * Create a new response instance.

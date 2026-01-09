@@ -15,13 +15,13 @@ use PhpSPA\Core\Client\HttpClientFactory;
  * @package Client
  */
 class RequestMethod {
-   public const string GET = 'GET';
-   public const string POST = 'POST';
-   public const string PUT = 'PUT';
-   public const string DELETE = 'DELETE';
-   public const string PATCH = 'PATCH';
-   public const string HEAD = 'HEAD';
-   public const string OPTIONS = 'OPTIONS';
+   public const GET = 'GET';
+   public const POST = 'POST';
+   public const PUT = 'PUT';
+   public const DELETE = 'DELETE';
+   public const PATCH = 'PATCH';
+   public const HEAD = 'HEAD';
+   public const OPTIONS = 'OPTIONS';
 }
 
 
