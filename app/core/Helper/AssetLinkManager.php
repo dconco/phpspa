@@ -116,9 +116,9 @@ class AssetLinkManager
             echo "Asset not found";
             exit;
         }
-        
+
         $mapping = $mappings[$hash];
-        
+
         // Check if mapping has expired
         if (self::isMappingExpired($mapping)) {
             unset($mappings[$hash]);
