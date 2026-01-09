@@ -73,7 +73,7 @@ class ImportedFile
 
       $this->contentType = substr($metadata[0], 5); // Remove "data:"
       $this->base64Content = $parts[1];
-      $this->contentLength = strlen($this->base64Content);
+      $this->contentLength = \strlen($this->base64Content);
    }
 
    /**

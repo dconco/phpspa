@@ -40,7 +40,7 @@
 		}
 	],
 	"require": {
-		"php": "^8.3"
+		"php": "8.3.*"
 	},
 	"prefer-stable": true,
 	"minimum-stability": "stable",

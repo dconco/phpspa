@@ -33,7 +33,7 @@ class ArrayFlat {
 
       foreach ($this->array as $val) {
          if (\is_array($val)) {
-            $res = new ArrayFlat($val)->flatRecursive();
+            $res = (new ArrayFlat($val))->flatRecursive();
             $arr = [...$arr, ...array_values($res)];
          } else
             $arr[] = $val;
