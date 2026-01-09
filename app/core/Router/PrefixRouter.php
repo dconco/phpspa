@@ -37,7 +37,7 @@ trait PrefixRouter {
    */
    protected function handlePrefix(array $prefix, array $middlewares = []) {
       // --- Replacing first and last forward slashes, $request_uri will be empty if req uri is / ---
-      static $request_uri = trim(static::$request_uri, '/');
+      $request_uri = trim(static::$request_uri, '/');
       $prefixPath = trim($prefix['path'], '/');
 
       if (!$this->defaultCaseSensitive) {
@@ -58,7 +58,7 @@ trait PrefixRouter {
    }
 
    protected function resolveStaticPath() {
-      static $request_uri = trim(static::$request_uri, '/');
+      $request_uri = trim(static::$request_uri, '/');
 
       foreach ($this->static as $static) {
          $route = trim($static['route'], '/');
@@ -69,7 +69,8 @@ trait PrefixRouter {
             $filePath = rtrim($static['staticPath'], '/') . '/' . ltrim($staticRoute, '/');
             
             if (is_file($filePath)) {
-               (new Response())->sendFile($filePath)->send();
+               $response = new Response();
+               $response->sendFile($filePath)->send();
             }
          }
       }
