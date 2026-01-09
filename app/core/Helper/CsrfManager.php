@@ -116,7 +116,7 @@ class CsrfManager implements CsrfManagerInterface
     {
         $token = $this->getToken();
 
-        return sprintf(
+        return \sprintf(
             '<input type="hidden" name="%s" value="%s">',
             Validate::validate($this->name),
             Validate::validate($token),
@@ -191,8 +191,7 @@ class CsrfManager implements CsrfManagerInterface
 
     private function getSessionData(): array
     {
-        $s = SessionHandler::get($this->sessionKey);
-        return $s;
+        return SessionHandler::get($this->sessionKey);
     }
 
     private function setSessionData(array $vv): void
