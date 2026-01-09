@@ -57,24 +57,75 @@ abstract class ComponentImpl
    /**
     * @var string
     */
-   protected string $method {
-		get => strtoupper($this->method);
-
-      set(mixed $m) {
-			if (\is_array($m)) {
-            $m = array_map('trim', $m);
-				$this->method = implode('|', $m);
-         } else
-				$this->method = $m;
-      }
-   }
+   protected string $method = 'GET|VIEW';
 
    /**
     * @var array
     */
-   protected array $route {
-		set(array $r) => new ArrayFlat(array: $r)->flat();
-	}
+   protected array $route = [];
+
+   /**
+    * Normalizes and sets the allowed HTTP method(s) for this component.
+    *
+    * Accepts either:
+    * - a string like "GET|POST"
+    * - a list of strings like ["GET", "POST"]
+    * - a nested list like [["GET", "POST"]] (when called via __call)
+    */
+   protected function setMethod(mixed $method): void
+   {
+      if ($method === null) {
+         return;
+      }
+
+      if (\is_array($method)) {
+         if (\count($method) === 0) {
+            return;
+         }
+
+         // When called as ->method(['GET','POST']) the __call args is [[...]].
+         if (\count($method) === 1 && \is_array($method[0])) {
+            $method = $method[0];
+         }
+
+         $flat = (new ArrayFlat(array: $method))->flat();
+         $flat = array_values(array_filter(array_map(static fn ($v) => strtoupper(trim((string) $v)), $flat), static fn ($v) => $v !== ''));
+
+         if (count($flat) === 0) {
+            return;
+         }
+
+         $this->method = implode('|', $flat);
+         return;
+      }
+
+      $this->method = strtoupper(trim((string) $method));
+   }
+
+   /**
+    * Normalizes and sets the route(s) for this component.
+    *
+    * Accepts either:
+    * - a string like "/about"
+    * - a list like ["/about", "/docs"]
+    * - a nested list like [["/about", "/docs"]] (when called via __call)
+    */
+   protected function setRoute(mixed $route): void
+   {
+      if ($route === null) {
+         return;
+      }
+
+      if (!\is_array($route)) {
+         $route = [$route];
+      }
+
+      if (\count($route) === 1 && \is_array($route[0])) {
+         $route = $route[0];
+      }
+
+      $this->route = (new ArrayFlat(array: $route))->flat();
+   }
 
    /**
     * @var bool
@@ -185,7 +236,7 @@ abstract class ComponentImpl
          'title',
          'targetID' => $this->$method = $args[0],
          'route',
-         'method',
+         'method' => $this->{'set' . ucfirst($method)}($args),
          'preload' => $this->$method = $args,
          'exact',
          'pattern',
