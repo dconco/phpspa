@@ -807,7 +807,7 @@ abstract class AppImpl implements ApplicationContract {
 
             if (is_callable($stylesheet['content'])) {
                $stylesheet['type'] ??= 'text/css';
-               $stylesheet['href'] = AssetLinkManager::generateCssLink("__global__", $index, $stylesheet['name']);
+               $stylesheet['href'] = AssetLinkManager::generateCssLink("__global__", $index, $stylesheet['name'] ?? null);
             } else
                $stylesheet['href'] = $stylesheet['content'];
 
@@ -825,7 +825,7 @@ abstract class AppImpl implements ApplicationContract {
 
             if (is_callable($stylesheet['content'])) {
                $stylesheet['type'] ??= 'text/css';
-               $stylesheet['href'] = AssetLinkManager::generateCssLink($primaryRoute, $index, $stylesheet['name']);
+               $stylesheet['href'] = AssetLinkManager::generateCssLink($primaryRoute, $index, $stylesheet['name'] ?? null);
             } else
                $stylesheet['href'] = $stylesheet['content'];
 
@@ -851,7 +851,7 @@ abstract class AppImpl implements ApplicationContract {
             $isLink = false;
 
             if (is_callable($script['content']))
-               $script['src'] = AssetLinkManager::generateJsLink("__global__", $index, $script['name'], $script['type']);
+               $script['src'] = AssetLinkManager::generateJsLink("__global__", $index, $script['name'] ?? null, $script['type']);
             else {
                $script['src'] = $script['content'];
                $isLink = true;
@@ -874,7 +874,7 @@ abstract class AppImpl implements ApplicationContract {
             $isLink = false;
 
             if (is_callable($script['content']))
-               $script['src'] = AssetLinkManager::generateJsLink($primaryRoute, $index, $script['name'], $script['type']);
+               $script['src'] = AssetLinkManager::generateJsLink($primaryRoute, $index, $script['name'] ?? null, $script['type']);
             else {
                $script['src'] = $script['content'];
                $isLink = true;
