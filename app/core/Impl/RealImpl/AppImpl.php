@@ -438,8 +438,12 @@ abstract class AppImpl implements ApplicationContract {
 
 
    private function runComponent(Component|Icomponent $component, bool $isPreloadingComponent = false, ?string &$layoutOutput = null) {
-      static $request = new HttpRequest();
+      static $request = null;
       static $router = null;
+
+      if ($request === null) {
+         $request = new HttpRequest();
+      }
 
       $route = CallableInspector::getProperty($component, 'route');
       $name = CallableInspector::getProperty($component, 'name');
