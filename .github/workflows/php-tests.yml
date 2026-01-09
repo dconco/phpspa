@@ -2,9 +2,9 @@ name: PHP (8.4) Tests
 
 on:
    push:
-      branches: [master, support/php-8.1]
+      branches: [master, support/php-8.4]
    pull_request:
-      branches: [master, support/php-8.1]
+      branches: [master, support/php-8.4]
 
 jobs:
    test:
