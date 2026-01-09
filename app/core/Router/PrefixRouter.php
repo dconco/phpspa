@@ -69,7 +69,7 @@ trait PrefixRouter {
             $filePath = rtrim($static['staticPath'], '/') . '/' . ltrim($staticRoute, '/');
             
             if (is_file($filePath)) {
-               new Response()->sendFile($filePath)->send();
+               (new Response())->sendFile($filePath)->send();
             }
          }
       }

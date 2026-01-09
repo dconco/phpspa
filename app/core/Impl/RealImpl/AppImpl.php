@@ -465,7 +465,7 @@ abstract class AppImpl implements ApplicationContract {
          $m = explode('|', $method);
          if (!\in_array($request->method(), $m)) return;
       } else if (!$isPreloadingComponent) {
-         $router = new MapRoute($method, $route, $caseSensitive, $pattern)->match();
+         $router = (new MapRoute($method, $route, $caseSensitive, $pattern))->match();
 
          if (!$router)
             return; // --- Skip if no match found ---
