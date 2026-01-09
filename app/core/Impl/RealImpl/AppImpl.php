@@ -428,10 +428,6 @@ abstract class AppImpl implements ApplicationContract {
             exit();
          }
       }
-      else if ($request->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT') {
-         Session::remove(STATE_HANDLE);
-         Session::remove(CALL_FUNC_HANDLE);
-      }
    }
 
 
@@ -476,8 +472,11 @@ abstract class AppImpl implements ApplicationContract {
          $request = new HttpRequest($router['params'] ?? []);
 
          DOM::CurrentRoutes(static::$request_uri);
+
+         Session::remove(STATE_HANDLE);
+         Session::remove(CALL_FUNC_HANDLE);
       }
-      
+
       if ($isPreloadingComponent && !str_contains($route[0] ?? '', '{')) {
          DOM::CurrentRoutes($route[0] ?? '');
       }
