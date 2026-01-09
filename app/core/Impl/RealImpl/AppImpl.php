@@ -377,7 +377,7 @@ abstract class AppImpl implements ApplicationContract {
    }
 
    private function handlePhpSPARequest(Request $request) {
-      if ($request->requestedWith() === 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
+      if ($request->requestedWith() === 'PHPSPA_REQUEST') {
          if ($request->header('X-Phpspa-Target') === 'navigate') {
             Session::remove(STATE_HANDLE);
             Session::remove(CALL_FUNC_HANDLE);
@@ -397,9 +397,7 @@ abstract class AppImpl implements ApplicationContract {
             }
 
             return;
-         }
-
-         if (isset($data['__call'])) {
+         } else if (isset($data['__call'])) {
             try {
                $tokenData = base64_decode($data['__call']['token'] ?? '');
                $tokenData = json_decode($tokenData);

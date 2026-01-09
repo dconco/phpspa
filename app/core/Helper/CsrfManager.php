@@ -116,7 +116,7 @@ class CsrfManager implements CsrfManagerInterface
     {
         $token = $this->getToken();
 
-        return sprintf(
+        return \sprintf(
             '<input type="hidden" name="%s" value="%s">',
             Validate::validate($this->name),
             Validate::validate($token),
@@ -175,7 +175,7 @@ class CsrfManager implements CsrfManagerInterface
         }
 
         // Limit total number of tokens
-        if (count($this->getSessionData()) > $this->maxTokens) {
+        if (\count($this->getSessionData()) > $this->maxTokens) {
             $sessionData = $this->getSessionData();
 
             // Sort by creation time and remove oldest
@@ -184,7 +184,7 @@ class CsrfManager implements CsrfManagerInterface
             });
 
             $this->setSessionData(
-                array_slice($sessionData, $this->maxTokens, null, true),
+                \array_slice($sessionData, $this->maxTokens, null, true),
             );
         }
     }

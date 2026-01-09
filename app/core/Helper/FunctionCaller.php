@@ -39,10 +39,10 @@ class FunctionCaller
     public function __invoke()
     {
         $arg = '';
-        $args = func_get_args();
+        $args = \func_get_args();
 
         foreach ($args as $value) {
-            if (is_array($value)) $value = json_encode($value);
+            if (\is_array($value)) $value = json_encode($value);
             $arg .= ", $value";
         }
 
@@ -51,12 +51,12 @@ class FunctionCaller
 
     private function getCallableName(callable $callable): string
     {
-        if (is_string($callable)) {
+        if (\is_string($callable)) {
             // Simple function name (e.g., 'strlen')
             return $callable;
-        } elseif (is_array($callable)) {
+        } elseif (\is_array($callable)) {
             // Class method (e.g., [$object, 'method'] or ['ClassName', 'staticMethod'])
-            if (is_object($callable[0])) {
+            if (\is_object($callable[0])) {
                 return get_class($callable[0]) . '::' . $callable[1];
             } else {
                 return $callable[0] . '::' . $callable[1];
