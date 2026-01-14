@@ -1,6 +1,78 @@
 # CHANGELOG
 
-## v2.0.5.1 (Current) (Stable)
+## v2.0.5.81 (Stable) (PHP 8.1)
+
+This is the **PHP 8.1 compatibility** release line.
+It keeps the same public API while removing syntax that is not supported on PHP 8.1.
+
+**Installation:**
+```bash
+composer require dconco/phpspa:v2.0.5.81
+```
+
+### What's Changed
+
+- **PHP 8.1 compatibility:** Removed PHP 8.3 typed class constants (e.g. `public const string X = ...`) and adjusted `string|false` type hints to avoid parse errors on PHP 8.1.
+- **Includes PHP 8.3 line fixes:** Also contains the PHP 8.4 property-hook removal from the `v2.0.5.83` compatibility line.
+
+### Notes
+
+- If your app is pinned to PHP `^8.1`, use this tag/release line.
+- The mainline releases may continue using newer PHP features where appropriate.
+
+
+
+
+## v2.0.5.82 (Stable) (PHP 8.2)
+
+This is the **PHP 8.2 compatibility** release line.
+It keeps the same public API while removing syntax that is not supported on PHP 8.2.
+
+**Installation:**
+```bash
+composer require dconco/phpspa:v2.0.5.82
+```
+
+### What's Changed
+
+- **PHP 8.2 compatibility:** Removed PHP 8.3 typed class constants (e.g. `public const string X = ...`) to avoid parse errors on PHP 8.2.
+- **Includes PHP 8.3 line fixes:** Also contains the PHP 8.4 property-hook removal from the `v2.0.5.83` compatibility line.
+
+### Notes
+
+- If your app is pinned to PHP `^8.2`, use this tag/release line.
+- The mainline releases may continue using newer PHP features where appropriate.
+
+
+
+
+## v2.0.5.83 (Stable) (PHP 8.2)
+
+This is the **PHP 8.3 compatibility** release line.
+It removes PHP 8.4-only syntax while keeping the same public Component API and runtime behavior.
+
+**Installation:**
+```bash
+composer require dconco/phpspa:v2.0.5.83
+```
+
+### What's Changed
+
+- **PHP 8.3 compatibility:** Replaced PHP 8.4 property hook syntax in the core component implementation with PHP 8.3-compatible backing properties and normalizer methods.
+- **No API changes:** Fluent component configuration (`->method()`, `->route()`, etc.) remains unchanged.
+
+### Notes
+
+- If your app is pinned to PHP `^8.3`, use this tag/release line.
+- The mainline releases may continue using PHP 8.4+ features where appropriate.
+
+
+
+
+
+## v2.0.5.2 (Current) (Stable) (PHP 8.4)
+
+## v2.0.5.1
 
 Fixed the router by:
 
@@ -10,6 +82,10 @@ So `/chats` (1 segment) won't match `/{username}/profile` (2 segments).
 2. **Changed regex pattern from `{.*}` to `([^/]+)`:** This matches only one path segment (any characters except forward slashes), preventing greedy matching across multiple segments.
 
 Now `/{username}/profile` will correctly match `/dconco/profile` but not `/dconco`.
+
+
+
+
 
 ## v2.0.5
 

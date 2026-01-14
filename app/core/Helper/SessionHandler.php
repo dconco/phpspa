@@ -28,7 +28,7 @@ class SessionHandler
         return $sessionData;
     }
 
-    public static function set(string $session, &$value): void
+    public static function set(string $session, mixed $value): void
     {
         $v = serialize($value);
         Session::set($session, base64_encode($v));

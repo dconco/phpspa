@@ -1,10 +1,10 @@
-name: PHP Tests
+name: PHP (8.4) Tests
 
 on:
    push:
-      branches: [master, dev]
+      branches: [master, support/php-8.4]
    pull_request:
-      branches: [master, dev]
+      branches: [master, support/php-8.4]
 
 jobs:
    test:
