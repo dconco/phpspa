@@ -378,25 +378,27 @@ abstract class AppImpl implements ApplicationContract {
 
    private function handlePhpSPARequest(Request $request) {
       if ($request->requestedWith() === 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
-         if ($request->header('X-Phpspa-Target') === 'navigate') {
-            Session::remove(STATE_HANDLE);
-            Session::remove(CALL_FUNC_HANDLE);
-            return;
-         }
+         // if ($request->header('X-Phpspa-Target') === 'navigate') {
+         //    Session::remove(STATE_HANDLE);
+         //    Session::remove(CALL_FUNC_HANDLE);
+         //    return;
+         // }
 
          $data = json_decode(base64_decode($request->auth()->bearer ?? ''), true);
          $data = Validate::validate($data);
 
-         if (isset($data['state'])) {
+         if (isset($data['state']) && $request->isSameOrigin()) {
             $state = $data['state'];
 
-            if (!empty($state['key'])) {
+            if (isset($state['key'])) {
                $sessionData = SessionHandler::get(STATE_HANDLE);
                $sessionData[$state['key']] = @$state['value'];
                SessionHandler::set(STATE_HANDLE, $sessionData);
             }
 
-         } else if (isset($data['__call'])) {
+            return;
+
+         } else if (isset($data['__call']) && $request->isSameOrigin()) {
             try {
                $tokenData = base64_decode($data['__call']['token'] ?? '');
                $tokenData = json_decode($tokenData);
@@ -468,8 +470,10 @@ abstract class AppImpl implements ApplicationContract {
 
          DOM::CurrentRoutes(static::$request_uri);
 
-         Session::remove(STATE_HANDLE);
-         Session::remove(CALL_FUNC_HANDLE);
+         if ($request->requestedWith() !== 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
+            Session::remove(STATE_HANDLE);
+            Session::remove(CALL_FUNC_HANDLE);
+         }
       }
       
       if ($isPreloadingComponent && !str_contains($route[0] ?? '', '{')) {
