@@ -20,8 +20,8 @@ jobs:
           debug: false
           directory: ./
           badge: ./badge/loc.svg
-          patterns: '**/*.php|**/*.ts|**/*.js|**/*.cpp|**/*.h|**/*.hh|**.*/md'
-          ignore: 'node_modules|vendor|tests|build|examples'
+          patterns: '**/*.php|**/*.ts|**/*.js|**/*.html|**/*.cpp|**/*.h|**/*.hh|**.*/md'
+          ignore: 'node_modules|vendor|build|examples'
 
       - name: Commit badge
         run: |
