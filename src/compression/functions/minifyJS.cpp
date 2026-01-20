@@ -1,5 +1,10 @@
 #include <cctype>
 #include <string_view>
+#include <filesystem>
+#include <fstream>
+#include <vector>
+#include <cstdlib>
+#include <chrono>
 #include "../HtmlCompressor.h"
 
 namespace {
@@ -36,6 +41,160 @@ namespace {
 
    bool isControlFlowFollower(std::string_view keyword) {
       return keyword == "else" || keyword == "catch" || keyword == "finally" || keyword == "while";
+   }
+
+   std::string toLower(std::string value) {
+      for (auto& ch : value) {
+         ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+      }
+      return value;
+   }
+
+   std::string makeTempFilename(const std::string& prefix, const std::string& extension) {
+      const auto now = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+      return prefix + std::to_string(now) + extension;
+   }
+
+   struct Placeholder {
+      std::string token;
+      std::string original;
+   };
+
+   std::string protectPhpVars(const std::string& input, std::vector<Placeholder>& placeholders) {
+      std::string output;
+      output.reserve(input.size());
+
+      for (size_t i = 0; i < input.size(); ++i) {
+         if (input[i] == '{' && i + 2 < input.size() && input[i + 1] == '$') {
+            size_t j = i + 2;
+            if (std::isalpha(static_cast<unsigned char>(input[j])) || input[j] == '_') {
+               ++j;
+               while (j < input.size()) {
+                  char ch = input[j];
+                  if (std::isalnum(static_cast<unsigned char>(ch)) || ch == '_') {
+                     ++j;
+                     continue;
+                  }
+                  break;
+               }
+
+               if (j < input.size() && input[j] == '}') {
+                  std::string original = input.substr(i, j - i + 1);
+                  std::string token = "__PHPSPA_PHP_VAR_" + std::to_string(placeholders.size()) + "__";
+                  placeholders.push_back({token, original});
+                  output.append(token);
+                  i = j;
+                  continue;
+               }
+            }
+         }
+
+         output.push_back(input[i]);
+      }
+
+      return output;
+   }
+
+   std::string restorePhpVars(std::string input, const std::vector<Placeholder>& placeholders) {
+      for (const auto& entry : placeholders) {
+         size_t pos = 0;
+         while ((pos = input.find(entry.token, pos)) != std::string::npos) {
+            input.replace(pos, entry.token.size(), entry.original);
+            pos += entry.original.size();
+         }
+      }
+
+      return input;
+   }
+
+   std::string getBundlerPath() {
+      #if defined(_WIN32)
+            char* envPath = nullptr;
+            size_t length = 0;
+            if (_dupenv_s(&envPath, &length, "PHPSPA_JS_BUNDLER") == 0 && envPath != nullptr && envPath[0] != '\0') {
+               std::string value = envPath;
+               free(envPath);
+               return value;
+            }
+            if (envPath != nullptr) {
+               free(envPath);
+            }
+      #else
+            const char* envPath = std::getenv("PHPSPA_JS_BUNDLER");
+            if (envPath != nullptr && envPath[0] != '\0') {
+               return envPath;
+            }
+      #endif
+
+      return "npx esbuild";
+   }
+
+
+   bool runBundler(const std::string& input, const std::string& scope, int level, std::string& output) {
+      std::vector<Placeholder> placeholders;
+      std::string prepared = protectPhpVars(input, placeholders);
+
+      std::filesystem::path tempDir = std::filesystem::temp_directory_path();
+      std::filesystem::path inputPath = tempDir / makeTempFilename("phpspa_js_", ".js");
+      std::filesystem::path outputPath = tempDir / makeTempFilename("phpspa_js_out_", ".js");
+
+      {
+         std::ofstream out(inputPath, std::ios::binary);
+         if (!out.is_open()) {
+            return false;
+         }
+         out << prepared;
+      }
+
+      const std::string bundler = getBundlerPath();
+      const std::string normalizedScope = toLower(scope);
+
+      std::string command = bundler;
+      command += " \"" + inputPath.string() + "\"";
+      command += " --outfile=\"" + outputPath.string() + "\"";
+      command += " --platform=browser --log-level=error";
+
+      if (normalizedScope == "scoped") {
+         if (level == 3) { // EXTREME
+            command += " --bundle --minify --tree-shaking=true --format=iife";
+         } else { // AGGRESSIVE
+            command += " --bundle --minify-whitespace --tree-shaking=true --format=iife";
+         }
+      } else { // global
+         if (level == 3) { // EXTREME
+            command += " --minify-syntax --minify-whitespace --keep-names --tree-shaking=false";
+         } else { // AGGRESSIVE
+            command += " --minify-whitespace --keep-names --tree-shaking=false";
+         }
+      }
+
+      int status = std::system(command.c_str());
+      
+      if (status != 0 || !std::filesystem::exists(outputPath)) {
+         std::error_code ec;
+         std::filesystem::remove(inputPath, ec);
+         std::filesystem::remove(outputPath, ec);
+         return false;
+      }
+
+      std::ifstream in(outputPath, std::ios::binary);
+      if (!in.is_open()) {
+         std::error_code ec;
+         std::filesystem::remove(inputPath, ec);
+         std::filesystem::remove(outputPath, ec);
+         return false;
+      }
+
+      std::string bundled((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+      in.close();
+      
+      output = restorePhpVars(bundled, placeholders);
+
+      std::error_code ec;
+      std::filesystem::remove(inputPath, ec);
+      std::filesystem::remove(outputPath, ec);
+
+      return true;
    }
 
 } // namespace
@@ -214,4 +373,26 @@ void HtmlCompressor::minifyJS(std::string& js) {
    }
 
    js = result;
+}
+
+void HtmlCompressor::minifyJS(std::string& js, const std::string& scope) {
+   if (currentLevel < AGGRESSIVE) {
+      return;
+   }
+
+   // BASIC level: use internal minifier only
+   if (currentLevel == BASIC) {
+      minifyJS(js);
+      return;
+   }
+
+   // AGGRESSIVE and EXTREME: use esbuild bundler
+   std::string bundled;
+   if (runBundler(js, scope, currentLevel, bundled)) {
+      js = bundled;
+      return;
+   }
+
+   // fallback to internal minifier if bundler fails
+   minifyJS(js);
 }

@@ -113,9 +113,10 @@ trait HtmlCompressor
     * @param string $content HTML content
     * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @param int $level Compression level
+    * @param ?string $scoped Decides if the JS to compress is scoped or global
     * @return string Minified HTML
     */
-   private static function minify(string $content, $type, int $level, ?int $CONTENT_LENGTH = null): string
+   private static function minify(string $content, $type, int $level, ?int $CONTENT_LENGTH = null, ?string $scoped = null): string
    {
       if ($level === Compressor::LEVEL_NONE) return $content;
       if (!$CONTENT_LENGTH) $CONTENT_LENGTH = strlen($content);
@@ -131,7 +132,7 @@ trait HtmlCompressor
       }
 
       if (self::isNativeCompressorAvailable($CONTENT_LENGTH)) {
-         $result = self::compressWithNative($content, $level, $type);
+         $result = self::compressWithNative($content, $level, $type, $scoped);
       } else {
          // Fallback to PHP implementation
          $result = self::compressWithFallback($content, $level, $type);
@@ -194,11 +195,17 @@ trait HtmlCompressor
                   self::emitEngineHeader();
                   return true;
                } catch (\Throwable $exception) {
-                  if ($strategy === 'native') 
-                     throw new RuntimeException('Native compressor is required but failed to execute.', 0, $exception);
+                  if ($strategy === 'native') {
+                     $details = NativeCompressor::getLastError();
+                     $suffix = $details ? ' (' . $details . ')' : '';
+                     throw new RuntimeException('Native compressor is required but failed to execute' . $suffix . '.', 0, $exception);
+                  }
                };
-         } elseif ($strategy === 'native')
-            throw new RuntimeException('Native compressor is required but unavailable.');
+         } elseif ($strategy === 'native') {
+            $details = NativeCompressor::getLastError();
+            $suffix = $details ? ' (' . $details . ')' : '';
+            throw new RuntimeException('Native compressor is required but unavailable' . $suffix . '.');
+         }
       }
 
       self::setCompressionEngine('php');
@@ -209,7 +216,7 @@ trait HtmlCompressor
    /**
     * Compress using the native shared library via FFI
     */
-   private static function compressWithNative(string $html, int $level, string $type): string
+   private static function compressWithNative(string $html, int $level, string $type, ?string $scoped): string
    {
 		$nativeLevel = match ($level) {
          Compressor::LEVEL_AGGRESSIVE => 2,
@@ -217,7 +224,7 @@ trait HtmlCompressor
          default => 1,
       };
 
-      return NativeCompressor::compress($html, $nativeLevel, $type);
+      return NativeCompressor::compress($html, $nativeLevel, $type, $scoped);
    }
 
    /**
@@ -398,11 +405,12 @@ trait HtmlCompressor
     * @param string $content Content to compress
     * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @param int $level Compression level
+    * @param ?string $scoped Decides if the JS to compress is scoped or global
     * @return string Compressed content
     */
-   public static function compressWithLevel(string $content, int $level, $type = 'HTML'): string
+   public static function compressWithLevel(string $content, int $level, $type = 'HTML', ?string $scoped = null): string
    {
-      return self::minify($content, $type, $level);
+      return self::minify($content, $type, $level, null, $scoped);
    }
 
    public static function getCompressionEngine(): string

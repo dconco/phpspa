@@ -899,9 +899,10 @@ abstract class AppImpl implements ApplicationContract {
    private function serveAsset (array $assetInfo): void
    {
       $request = new HttpRequest();
+      $isGlobalAsset = $assetInfo['componentRoute'] === '__global__';
 
       // --- Check if this is a global asset ---
-      if ($assetInfo['componentRoute'] === '__global__') {
+      if ($isGlobalAsset) {
          $content = $this->getGlobalAssetContent($assetInfo);
       }
       else {
@@ -943,7 +944,7 @@ abstract class AppImpl implements ApplicationContract {
          $content = $content[0];
       } else {
          // --- Compress the content ---
-         $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type']);
+         $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type'], $isGlobalAsset ? 'global' : 'scoped');
       }
 
       // --- Set appropriate headers ---
@@ -1056,14 +1057,15 @@ abstract class AppImpl implements ApplicationContract {
     * @param string $content The content to compress
     * @param int $level Compression level
     * @param string $type Asset type ('css' or 'js')
+    * @param string $scoped Decides if the JS to compress is scoped or global
     * @return string Compressed content
     */
-   private function compressAssetContent (string $content, int $level, string $type): string
+   private function compressAssetContent (string $content, int $level, string $type, string $scoped): string
    {
       if ($type === 'css')
          return Compressor::compressWithLevel($content, $level, 'CSS');
       elseif ($type === 'js')
-         return Compressor::compressWithLevel($content, $level, 'JS');
+         return Compressor::compressWithLevel($content, $level, 'JS', $scoped);
 
       return Compressor::compressWithLevel($content, $level, 'HTML');
    }
