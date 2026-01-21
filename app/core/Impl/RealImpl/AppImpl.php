@@ -860,7 +860,7 @@ abstract class AppImpl implements ApplicationContract {
             $attributes = HTMLAttrInArrayToString($script);
 
             $result['global']['scripts'] .= $isPhpSpaRequest && !$isLink
-               ? "\n      <phpspa-script $attributes></phpspa-script>"
+               ? "\n      <script data-type=\"phpspa/script\" $attributes></script>"
                : "\n      <script $attributes></script>";
          }
       }
@@ -903,9 +903,6 @@ abstract class AppImpl implements ApplicationContract {
       $currentLevel = Compressor::getLevel();
       $isGlobalAsset = $assetInfo['componentRoute'] === '__global__';
       $isPhpSpaRequest = $request->requestedWith() === 'PHPSPA_REQUEST' || $request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT';
-
-      // --- For global JS: wrap in IIFE if requested by PHPSPA to execute in isolation ---
-      $shouldWrapIIFE = strtolower($assetInfo['assetType']) === 'js' && (!$isGlobalAsset || ($isGlobalAsset && $isPhpSpaRequest));
 
       if ($isGlobalAsset) {
          if ($assetInfo['assetType'] === 'css') {
@@ -968,10 +965,6 @@ abstract class AppImpl implements ApplicationContract {
 
                   if ($oldFileSize !== 0 && $oldFileSize === $fileSize) {
                      $content = require $newName;
-
-                     if ($shouldWrapIIFE) {
-                        $content = "(()=>{{$content}})();";
-                     }
                      $content = Compressor::gzipCompress($content);
                      $this->setAssetHeaders($assetInfo['type']);
                      echo $content;
@@ -1003,11 +996,6 @@ abstract class AppImpl implements ApplicationContract {
       $compressionLevel = ($request->requestedWith() === 'PHPSPA_REQUEST')
          ? ($currentLevel === Compressor::LEVEL_NONE ? $currentLevel : Compressor::LEVEL_EXTREME)
          : $currentLevel;
-
-      // --- For component JS: wrap in IIFE if compressionis disabled ---
-      if ($shouldWrapIIFE && $currentLevel === Compressor::LEVEL_NONE) {
-         $content = "(()=>{{$content}})();";
-      }
 
       if (\is_array($content)) {
          $content = $content[0];

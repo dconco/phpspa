@@ -1,5 +1,5 @@
 /*!
- * PhpSPA Client Runtime v2.0.8
+ * PhpSPA Client Runtime v2.0.9
  * Docs: https://phpspa.tech | Package: @dconco/phpspa
  * License: MIT
  */
@@ -160,22 +160,10 @@ class RuntimeManager {
         return dependency;
     }
     static invokeEffect(effect, nextDeps) {
-        if (effect.cleanup) {
-            try {
-                effect.cleanup();
-            }
-            catch (error) {
-                console.error('Error in effect cleanup:', error);
-            }
-        }
-        try {
-            const cleanup = effect.callback();
-            effect.cleanup = typeof cleanup === 'function' ? cleanup : null;
-        }
-        catch (error) {
-            console.error('Error in effect callback:', error);
-            effect.cleanup = null;
-        }
+        if (effect.cleanup)
+            effect.cleanup();
+        const cleanup = effect.callback();
+        effect.cleanup = typeof cleanup === 'function' ? cleanup : null;
         effect.lastDeps = nextDeps ? nextDeps.slice() : nextDeps;
     }
     static runAll() {
@@ -208,15 +196,7 @@ class RuntimeManager {
                 for (const attribute of Array.from(script.attributes)) {
                     newScript.setAttribute(attribute.name, attribute.value);
                 }
-                // --- Check if script should run in async context ---
-                const isAsync = script.hasAttribute("async");
-                // --- Wrap in IIFE to create isolated scope ---
-                if (isAsync) {
-                    newScript.textContent = `(async function() {\n${script.textContent}\n})()`;
-                }
-                else {
-                    newScript.textContent = `(function() {\n${script.textContent}\n})()`;
-                }
+                newScript.textContent = `(()=>{\n${script.textContent}\n})()`;
                 // --- Execute and immediately remove from DOM ---
                 document.head.appendChild(newScript).remove();
             }
@@ -234,7 +214,7 @@ class RuntimeManager {
                 // --- Check cache first ---
                 if (this.ScriptsCachedContent[scriptUrl]) {
                     const newScript = document.createElement("script");
-                    newScript.textContent = this.ScriptsCachedContent[scriptUrl];
+                    newScript.textContent = `(()=>{\n${this.ScriptsCachedContent[scriptUrl]}\n})()`;
                     newScript.nonce = nonce ?? undefined;
                     newScript.type = scriptType;
                     // --- Execute and immediately remove from DOM ---
@@ -244,13 +224,13 @@ class RuntimeManager {
                 const response = await fetch(scriptUrl, {
                     headers: {
                         "X-Requested-With": "PHPSPA_REQUEST_SCRIPT",
-                    },
+                    }
                 });
                 if (response.ok) {
                     const scriptContent = await response.text();
                     // --- Create new script element ---
                     const newScript = document.createElement("script");
-                    newScript.textContent = scriptContent;
+                    newScript.textContent = `(()=>{\n${scriptContent}\n})()`;
                     newScript.nonce = nonce ?? undefined;
                     newScript.type = scriptType;
                     // --- Execute and immediately remove from DOM ---
@@ -1413,7 +1393,7 @@ class AppManager {
      * @returns A promise that resolves when the state is updated successfully.
      *
      * @example
-     * AppManager.setState('user', { name: 'Alice' })
+     * setState('user', { name: 'Alice' })
      *   .then(() => console.log('State updated!'))
      *   .catch(err => console.error('Failed to update state:', err))
      */
