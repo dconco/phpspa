@@ -965,6 +965,11 @@ abstract class AppImpl implements ApplicationContract {
 
                   if ($oldFileSize !== 0 && $oldFileSize === $fileSize) {
                      $content = require $newName;
+
+                     // --- Wrap component requested by initial page load in IIFE ---
+                     if (!$isGlobalAsset && !$isPhpSpaRequest) {
+                        $content = "(()=>{{$content}})()";
+                     }
                      $content = Compressor::gzipCompress($content);
                      $this->setAssetHeaders($assetInfo['type']);
                      echo $content;
@@ -1002,6 +1007,11 @@ abstract class AppImpl implements ApplicationContract {
       } else {
          // --- Compress the content ---
          $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type']);
+
+         // --- Wrap component requested by initial page load in IIFE ---
+         if (!$isGlobalAsset && !$isPhpSpaRequest) {
+            $content = "(()=>{{$content}})()";
+         }
 
          if ($currentLevel > Compressor::LEVEL_NONE) {
             if (!is_dir($fileDir)) mkdir($fileDir);
