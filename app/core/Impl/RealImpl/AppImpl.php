@@ -942,8 +942,17 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       if (\is_callable($callable)) {
-         $func = new ReflectionFunction($callable);
-         $fileName = $func->getFileName();
+         $fileName = null;
+
+         if (\is_array($callable)) {
+            // Array callable like [$object, 'method'] or ['Class', 'method']
+            $reflection = new \ReflectionMethod($callable[0], $callable[1]);
+            $fileName = $reflection->getFileName();
+         } elseif ($callable instanceof \Closure || \is_string($callable)) {
+            // Closure or function name
+            $func = new ReflectionFunction($callable);
+            $fileName = $func->getFileName();
+         }
 
          if ($fileName) {
             $extName = pathinfo($fileName, PATHINFO_EXTENSION);
