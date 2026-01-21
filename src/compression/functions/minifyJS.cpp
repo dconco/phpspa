@@ -55,57 +55,7 @@ namespace {
       return prefix + std::to_string(now) + extension;
    }
 
-   struct Placeholder {
-      std::string token;
-      std::string original;
-   };
 
-   std::string protectPhpVars(const std::string& input, std::vector<Placeholder>& placeholders) {
-      std::string output;
-      output.reserve(input.size());
-
-      for (size_t i = 0; i < input.size(); ++i) {
-         if (input[i] == '{' && i + 2 < input.size() && input[i + 1] == '$') {
-            size_t j = i + 2;
-            if (std::isalpha(static_cast<unsigned char>(input[j])) || input[j] == '_') {
-               ++j;
-               while (j < input.size()) {
-                  char ch = input[j];
-                  if (std::isalnum(static_cast<unsigned char>(ch)) || ch == '_') {
-                     ++j;
-                     continue;
-                  }
-                  break;
-               }
-
-               if (j < input.size() && input[j] == '}') {
-                  std::string original = input.substr(i, j - i + 1);
-                  std::string token = "__PHPSPA_PHP_VAR_" + std::to_string(placeholders.size()) + "__";
-                  placeholders.push_back({token, original});
-                  output.append(token);
-                  i = j;
-                  continue;
-               }
-            }
-         }
-
-         output.push_back(input[i]);
-      }
-
-      return output;
-   }
-
-   std::string restorePhpVars(std::string input, const std::vector<Placeholder>& placeholders) {
-      for (const auto& entry : placeholders) {
-         size_t pos = 0;
-         while ((pos = input.find(entry.token, pos)) != std::string::npos) {
-            input.replace(pos, entry.token.size(), entry.original);
-            pos += entry.original.size();
-         }
-      }
-
-      return input;
-   }
 
    std::string getBundlerPath() {
       #if defined(_WIN32)
@@ -131,9 +81,6 @@ namespace {
 
 
    bool runBundler(const std::string& input, const std::string& scope, int level, std::string& output) {
-      std::vector<Placeholder> placeholders;
-      std::string prepared = protectPhpVars(input, placeholders);
-
       std::filesystem::path tempDir = std::filesystem::temp_directory_path();
       std::filesystem::path inputPath = tempDir / makeTempFilename("phpspa_js_", ".js");
       std::filesystem::path outputPath = tempDir / makeTempFilename("phpspa_js_out_", ".js");
@@ -143,7 +90,7 @@ namespace {
          if (!out.is_open()) {
             return false;
          }
-         out << prepared;
+         out << input;
       }
 
       const std::string bundler = getBundlerPath();
@@ -188,7 +135,7 @@ namespace {
       std::string bundled((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
       in.close();
       
-      output = restorePhpVars(bundled, placeholders);
+      output = bundled;
 
       std::error_code ec;
       std::filesystem::remove(inputPath, ec);

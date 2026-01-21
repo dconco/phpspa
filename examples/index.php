@@ -65,8 +65,7 @@ new App(require 'layout/Layout.php')
 
     ->script(
         fn () => <<<JS
-        function nameo() { return false }
-        var ss = '';
+        function nameo() { return true }
             // Global script - should execute FIRST
             console.log('1. Global script executing first');
             
@@ -99,6 +98,11 @@ new App(require 'layout/Layout.php')
         JS,
         'global-js',
     )
+
+    ->script(fn() => <<<JS
+        const sure = 'Making sure'
+        console.log(sure);
+    JS)
 
     ->run();
 

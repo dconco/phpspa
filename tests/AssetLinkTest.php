@@ -77,7 +77,7 @@ function testAssetServing()
         ->script(function () {
             return 'console.log("Test script");';
         })
-        ->styleSheet(function () {
+        ->link(function () {
             return 'body { background-color: blue; }';
         });
     }

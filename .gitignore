@@ -25,6 +25,9 @@ site/
 cmake-build-*/
 out/
 
+# PhpSPA generated output
+/**/*/generated/
+
 # Ignore environment files
 .env
 .env.dev

@@ -23,6 +23,7 @@ use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 use PhpSPA\Core\Utils\Validate;
 use PhpSPA\Interfaces\ApplicationContract;
 use PhpSPA\Interfaces\IComponent;
+use ReflectionFunction;
 
 use function Component\HTMLAttrInArrayToString;
 
@@ -841,26 +842,21 @@ abstract class AppImpl implements ApplicationContract {
          $result['global']['stylesheets'] .= "\n      <script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
       }
 
-      // --- Generate global script links ---
-      if (!empty($globalScripts)) {
+      // --- Generate global script links (only on initial page load, not during PHPSPA requests) ---
+      if (!empty($globalScripts) && !$isPhpSpaRequest) {
          foreach ($globalScripts as $index => $script) {
             $script = (array) Validate::validate($script);
-            $isLink = false;
 
             if (is_callable($script['content']))
                $script['src'] = AssetLinkManager::generateJsLink("__global__", $index, $script['name'] ?? null, $script['type']);
-            else {
+            else
                $script['src'] = $script['content'];
-               $isLink = true;
-            }
 
             unset($script['name']);
             unset($script['content']);
             $attributes = HTMLAttrInArrayToString($script);
 
-            $result['global']['scripts'] .= $isPhpSpaRequest && !$isLink
-               ? "\n      <phpspa-script $attributes></phpspa-script>"
-               : "\n      <script $attributes></script>";
+            $result['global']['scripts'] .= "\n      <script $attributes></script>";
          }
       }
 
@@ -899,13 +895,18 @@ abstract class AppImpl implements ApplicationContract {
    private function serveAsset (array $assetInfo): void
    {
       $request = new HttpRequest();
+      $currentLevel = Compressor::getLevel();
       $isGlobalAsset = $assetInfo['componentRoute'] === '__global__';
 
-      // --- Check if this is a global asset ---
       if ($isGlobalAsset) {
-         $content = $this->getGlobalAssetContent($assetInfo);
-      }
-      else {
+         if ($assetInfo['assetType'] === 'css') {
+            $callable = $this->stylesheets[$assetInfo['assetIndex']] ?? null;
+            $callable = $callable['content'] ?? null;
+         } else {
+            $callable = $this->scripts[$assetInfo['assetIndex']] ?? null;
+            $callable = $callable['content'] ?? null;
+         }
+      } else {
          // --- Find the component that matches the asset's route ---
          $component = $this->findComponentByRoute($assetInfo['componentRoute']);
 
@@ -916,14 +917,48 @@ abstract class AppImpl implements ApplicationContract {
             return;
          }
 
-         $isRealJavascript = strtolower($assetInfo['scriptType']) === 'application/javascript' || strtolower($assetInfo['scriptType']) === 'text/javascript';
+         if ($assetInfo['assetType'] === 'css') {
+            $stylesheets = CallableInspector::getProperty($component, 'stylesheets');
+            $stylesheet = $stylesheets[$assetInfo['assetIndex']] ?? null;
+            $callable = $stylesheet['content'] ?? null;
+         } else {
+            $scripts = CallableInspector::getProperty($component, 'scripts');
+            $script = $scripts[$assetInfo['assetIndex']] ?? null;
+            $callable = $script['content'] ?? null;
+         }
+      }
 
-         if ($assetInfo['assetType'] === 'js' && $isRealJavascript)
-            // --- For JS, we wrap the content in an IIFE to avoid polluting global scope ---
-            $content = '(()=>{' . $this->getAssetContent($component, $assetInfo) . '})();';
-         else
-            // --- For CSS, we can serve the content directly ---
-            $content = $this->getAssetContent($component, $assetInfo);
+      if (\is_callable($callable)) {
+         $func = new ReflectionFunction($callable);
+         $fileName = $func->getFileName();
+
+         if ($fileName) {
+            $extName = pathinfo($fileName, PATHINFO_EXTENSION);
+            $fileDir = pathinfo($fileName, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 'generated';
+            $pathWithoutExt = $fileDir . DIRECTORY_SEPARATOR . pathinfo($fileName, PATHINFO_FILENAME);
+            $newName = "{$pathWithoutExt}-{$assetInfo['assetIndex']}.{$assetInfo['assetType']}.generated.{$extName}";
+
+            if (file_exists($newName)) {
+               if ($currentLevel === Compressor::LEVEL_NONE) unlink($newName);
+               else {
+                  $content = require $newName;
+                  $content = Compressor::gzipCompress($content);
+                  $this->setAssetHeaders($assetInfo['type']);
+                  echo $content;
+                  return;
+               }
+            }
+         }
+      }
+
+      // --- Check if this is a global asset ---
+      if ($isGlobalAsset) {
+         $content = $this->getGlobalAssetContent($assetInfo, $callable);
+      }
+      else {
+         if ($callable && is_callable($callable)) {
+            $content = \call_user_func($callable);
+         } else $content = '';
       }
 
       if ($content === null) {
@@ -933,22 +968,40 @@ abstract class AppImpl implements ApplicationContract {
          return;
       }
 
-      $currentLevel = Compressor::getLevel();
-
       // --- Determine compression level ---
       $compressionLevel = ($request->requestedWith() === 'PHPSPA_REQUEST')
          ? ($currentLevel === Compressor::LEVEL_NONE ? $currentLevel : Compressor::LEVEL_EXTREME)
          : $currentLevel;
+
+      // --- For component JS: only wrap in IIFE if compression level is less than AGGRESSIVE ---
+      // --- AGGRESSIVE/EXTREME levels use bundler with --format=iife for scoped JS ---
+      // --- PHPSPA requests also get bundled (with extreme level), so no manual wrapping needed ---
+      $isRealJavascript = strtolower($assetInfo['scriptType']) === 'application/javascript' || strtolower($assetInfo['scriptType']) === 'text/javascript';
+      $isComponentJS = !$isGlobalAsset && $assetInfo['assetType'] === 'js' && $isRealJavascript;
+      $shouldWrapIIFE = $isComponentJS && $compressionLevel < Compressor::LEVEL_AGGRESSIVE;
+
+      if ($shouldWrapIIFE) {
+         $content = "(()=>{{$content}})();";
+      }
 
       if (\is_array($content)) {
          $content = $content[0];
       } else {
          // --- Compress the content ---
          $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type'], $isGlobalAsset ? 'global' : 'scoped');
+
+         if ($currentLevel > Compressor::LEVEL_NONE) {
+            if (!is_dir($fileDir)) mkdir($fileDir);
+
+            if ($fileName) {
+               $assetType = strtoupper($assetInfo['assetType']);
+               @file_put_contents($newName, "<?php\nreturn <<<$assetType\n$content\n$assetType;");
+            }
+         }
       }
 
       // --- Set appropriate headers ---
-      $this->setAssetHeaders($assetInfo['type'], $content);
+      $this->setAssetHeaders($assetInfo['type']);
       // --- Output the content ---
       echo $content;
    }
@@ -1012,32 +1065,18 @@ abstract class AppImpl implements ApplicationContract {
     * @param array $assetInfo Asset information
     * @return string|array|null The asset content if found, null otherwise
     */
-   private function getGlobalAssetContent (array $assetInfo): string|array|null
+   private function getGlobalAssetContent (array $assetInfo, $callable): array|string|null
    {
       $request = new HttpRequest();
 
       if ($assetInfo['assetType'] === 'css') {
-         $stylesheet = $this->stylesheets[$assetInfo['assetIndex']] ?? null;
-         $stylesheetCallable = $stylesheet['content'] ?? null;
-
-         if ($stylesheetCallable && \is_callable($stylesheetCallable))
-            return \call_user_func($stylesheetCallable);
+         if ($callable && \is_callable($callable))
+            return \call_user_func($callable);
       }
       elseif ($assetInfo['assetType'] === 'js') {
-         $script = $this->scripts[$assetInfo['assetIndex']] ?? null;
-         $scriptCallable = $script['content'] ?? null;
-
-         $isRealJavascript = strtolower($assetInfo['scriptType']) === 'application/javascript' || strtolower($assetInfo['scriptType']) === 'text/javascript';
-
-         if (\is_callable($scriptCallable)) {
-            $content = \call_user_func($scriptCallable);
-
-            if ($request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT' && $isRealJavascript)
-               // --- Wrap global JS content in an IIFE to avoid polluting global scope ---
-               return '(()=>{' . $content . '})();';
-
-            // --- For non-PHPSPA requests, return raw JS content ---
-            return $content;
+         if (\is_callable($callable)) {
+            // --- Global scripts are intentionally global, no IIFE wrapping needed ---
+            return \call_user_func($callable);
          }
 
          if ($assetInfo['assetIndex'] === -1 && $request->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT' && $request->requestedWith() !== 'PHPSPA_REQUEST') {
@@ -1074,17 +1113,15 @@ abstract class AppImpl implements ApplicationContract {
     * Set appropriate headers for asset response
     *
     * @param string $type Asset type ('css' or 'js')
-    * @param string $content The content to send
     * @return void
     */
-   private function setAssetHeaders (string $type, string $content): void
+   private function setAssetHeaders (string $type): void
    {
       if (!headers_sent()) {
          if ($type === 'css') header('Content-Type: text/css; charset=UTF-8');
          elseif ($type === 'js') header('Content-Type: application/javascript; charset=UTF-8');
 
-         header('Content-Length: ' . \strlen($content));
-         header('Cache-Control: private, max-age=' . (AssetLinkManager::getCacheConfig()['hours'] * 3600));
+         header('Cache-Control: private, max-age=' . AssetLinkManager::getCacheConfig()['hours'] * 3600);
       }
    }
 

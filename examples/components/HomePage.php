@@ -45,7 +45,7 @@ return (new Component(function (Request $request): string {
 	->route('/', '/template')
 	->name('main')
 
-   ->styleSheet(
+   ->link(
       fn () => <<<CSS
 			body {
 				background-color: #d9cdcd;
@@ -89,4 +89,9 @@ return (new Component(function (Request $request): string {
 			}
 		JS,
 		'homepage-script'
-   );
+   )
+
+	->script(fn() => <<<JS
+		const sup = 'hello world'
+		alert(sure);
+	JS);
