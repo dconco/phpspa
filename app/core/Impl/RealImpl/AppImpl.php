@@ -995,7 +995,7 @@ abstract class AppImpl implements ApplicationContract {
 
             if ($fileName) {
                $assetType = strtoupper($assetInfo['assetType']);
-               @file_put_contents($newName, "<?php\nreturn <<<$assetType\n$content\n$assetType;");
+               @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
             }
          }
       }
