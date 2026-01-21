@@ -959,19 +959,25 @@ abstract class AppImpl implements ApplicationContract {
             $fileDir = pathinfo($fileName, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 'generated';
             $pathWithoutExt = $fileDir . DIRECTORY_SEPARATOR . pathinfo($fileName, PATHINFO_FILENAME);
             $newName = "{$pathWithoutExt}-{$assetInfo['assetIndex']}.{$assetInfo['assetType']}.generated.{$extName}";
+            $newAssetMap = "$newName.map";
+            $fileSize = filesize($fileName);
 
             if (file_exists($newName)) {
-               if ($currentLevel === Compressor::LEVEL_NONE) unlink($newName);
-               else {
-                  $content = require $newName;
+               $oldFileSize = (int) @file_get_contents($newAssetMap);
 
-                  if ($shouldWrapIIFE) {
-                     $content = "(()=>{{$content}})();";
+               if ($oldFileSize === $fileSize) {
+                  if ($currentLevel === Compressor::LEVEL_NONE) unlink($newName);
+                  else {
+                     $content = require $newName;
+
+                     if ($shouldWrapIIFE) {
+                        $content = "(()=>{{$content}})();";
+                     }
+                     $content = Compressor::gzipCompress($content);
+                     $this->setAssetHeaders($assetInfo['type']);
+                     echo $content;
+                     return;
                   }
-                  $content = Compressor::gzipCompress($content);
-                  $this->setAssetHeaders($assetInfo['type']);
-                  echo $content;
-                  return;
                }
             }
          }
@@ -1016,6 +1022,7 @@ abstract class AppImpl implements ApplicationContract {
             if ($fileName) {
                $assetType = strtoupper($assetInfo['assetType']);
                @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
+               @file_put_contents($newAssetMap, $fileSize);
             }
          }
       }
