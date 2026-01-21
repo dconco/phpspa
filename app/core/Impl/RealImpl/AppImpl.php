@@ -960,14 +960,11 @@ abstract class AppImpl implements ApplicationContract {
             $pathWithoutExt = $fileDir . DIRECTORY_SEPARATOR . pathinfo($fileName, PATHINFO_FILENAME);
             $newName = "{$pathWithoutExt}-{$assetInfo['assetIndex']}.{$assetInfo['assetType']}.generated.{$extName}";
             $newAssetMap = "$newName.map";
-            $fileSize = filesize($fileName);
 
             if (file_exists($newName)) {
-               $oldFileSize = (int) @file_get_contents($newAssetMap);
-
-               if ($oldFileSize === $fileSize) {
-                  if ($currentLevel === Compressor::LEVEL_NONE) unlink($newName);
-                  else {
+               if ($currentLevel === Compressor::LEVEL_NONE) unlink($newName);
+               else {
+                  $serveAsset = (function () use ($newName) {
                      $content = require $newName;
 
                      if ($shouldWrapIIFE) {
@@ -977,9 +974,17 @@ abstract class AppImpl implements ApplicationContract {
                      $this->setAssetHeaders($assetInfo['type']);
                      echo $content;
                      return;
-                  }
+                  })->bindTo($this);
+
+                  if ($currentLevel === Compressor::LEVEL_AGGRESSIVE) {
+                     $fileSize = filesize($fileName);
+                     $oldFileSize = (int) @file_get_contents($newAssetMap);
+
+                     if ($oldFileSize !== 0 && $oldFileSize === $fileSize) $serveAsset();
+                  } else $serveAsset();
                }
             }
+            $fileSize = filesize($fileName);
          }
       }
 

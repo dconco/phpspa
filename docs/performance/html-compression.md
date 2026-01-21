@@ -99,8 +99,8 @@ $app->compression(Compressor::LEVEL_EXTREME, true);
 
 ## Asset Caching Behavior
 
-!!! warning "Development vs Production"
-    When compression is enabled (any level above `LEVEL_NONE`), PhpSPA caches compressed assets to `.generated.php` files for faster subsequent requests. This is great for production but can cause issues during development.
+!!! success "Smart Caching with Targeted Invalidation"
+    When compression is enabled (any level above `LEVEL_NONE`), PhpSPA caches compressed assets to `.generated.php` files for faster subsequent requests. Cache validation runs only at **AGGRESSIVE** level (staging). **EXTREME** (production) trusts the cache for maximum speed.
 
 ### How Asset Caching Works
 
@@ -110,14 +110,21 @@ When you enable compression, PhpSPA generates cached files alongside your compon
 examples/components/
 ├── Counter.php
 └── generated/
-    ├── Counter-0.js.generated.php   # Cached compressed JS
-    └── Counter-0.css.generated.php  # Cached compressed CSS
+    ├── Counter-0.js.generated.php       # Cached compressed JS
+    ├── Counter-0.js.generated.php.map   # Cache validation map
+    └── Counter-0.css.generated.php      # Cached compressed CSS
+    └── Counter-0.css.generated.php.map  # Cache validation map
 ```
 
-**Important:** These cached files are served directly on subsequent requests **without checking if the source files have changed**. This means:
+**Smart Cache Invalidation:**
 
-- ✅ **Production**: Excellent performance - compressed content is reused always
-- ❌ **Development**: Stale cache - your changes won't appear until you disable compression
+- **Staging (AGGRESSIVE)**: PhpSPA tracks file sizes in `.map` files. When a change is detected, it regenerates the cached asset and updates the map.
+- **Production (EXTREME)**: No validation reads; cached assets are served directly for maximum speed. Regenerate caches by rebuilding/deploying.
+
+This means:
+
+- ✅ **Production**: Maximum performance; cached assets are trusted
+- ✅ **Staging/QA**: Safe validation; caches rebuild automatically when source changes
 
 ### Recommended Environment Setup
 
@@ -142,8 +149,8 @@ Then configure your `.env` file:
     
     - Compression disabled (`LEVEL_NONE`)
     - No cached files generated
-    - Changes appear immediately
-    - Cached files automatically deleted when switching to development
+    - Changes appear immediately (no compression overhead)
+    - Existing cached files automatically deleted when switching to development
 
 === "Production (.env)"
 
@@ -154,27 +161,40 @@ Then configure your `.env` file:
     - Maximum compression (`LEVEL_EXTREME`)
     - Assets cached for performance
     - Blazing fast subsequent requests
-    - Generated files reused
+    - Cache trusted (no per-request validation); rebuild on deploy
 
 !!! tip "Environment Switching"
     When you switch from production back to development mode (`LEVEL_NONE`), PhpSPA automatically **deletes** cached `.generated.php` files to prevent stale content issues.
 
 ### Manual Cache Management
 
-If you need to manually clear the asset cache during development with compression enabled:
+The cache is automatically managed, but you can manually clear it if needed:
 
 ```bash
-# Delete all generated cache files
-find . -name "*.generated.php" -type f -delete
+# Delete all generated cache files and maps
+find . -name "*.generated.php*" -type f -delete
 ```
 
-Or temporarily disable compression to force fresh generation:
+Or temporarily disable compression to bypass the cache entirely:
 
 ```php
 <?php
-// Force fresh assets without cache
+// Force fresh assets without caching
 $app->compression(Compressor::LEVEL_NONE);
 ```
 
-!!! info "Cache Invalidation"
-    Future versions may include automatic cache invalidation based on file modification times. For now, use `LEVEL_NONE` in development or manually clear the cache when needed.
+!!! tip "Automatic Cache Validation"
+    Cache validation runs only at the AGGRESSIVE level. At EXTREME, assets are trusted; rebuild or redeploy to refresh them by deleting those caches.
+
+### IIFE Wrapping for Component Scripts
+
+PhpSPA automatically wraps component JavaScript in Immediately Invoked Function Expressions (IIFE) for scope isolation:
+
+- **Component JS**: Always wrapped in IIFE `(()=>{/* your code */})()`
+- **Global JS**: Only wrapped when requested via PHPSPA (SPA navigation) to execute in isolation
+- **External script links**: Never wrapped (assumed pre-bundled)
+
+This ensures:
+- Component scripts don't pollute the global scope
+- Variables and functions are properly isolated
+- Global scripts can re-execute during SPA navigation
