@@ -92,7 +92,7 @@ jobs:
           cp build/compressor.dll src/bin/compressor.dll
 
       - name: Commit and push updated shared libraries
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/support/php-8.4')
+        if: github.event_name == 'push' && github.ref == 'refs/heads/support/php-8.4'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

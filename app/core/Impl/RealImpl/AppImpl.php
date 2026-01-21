@@ -842,7 +842,7 @@ abstract class AppImpl implements ApplicationContract {
          $result['global']['stylesheets'] .= "\n      <script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
       }
 
-      // --- Generate global script links (include during PHPSPA requests to re-execute globals) ---
+      // --- Generate global script links ---
       if (!empty($globalScripts)) {
          foreach ($globalScripts as $index => $script) {
             $script = (array) Validate::validate($script);
@@ -883,7 +883,7 @@ abstract class AppImpl implements ApplicationContract {
             $attributes = HTMLAttrInArrayToString($script);
 
             $result['component']['scripts'] .= $isPhpSpaRequest && !$isLink
-               ? "\n      <phpspa-script $attributes></phpspa-script>"
+               ? "\n      <script data-type=\"phpspa/script\" $attributes></script>"
                : "\n      <script $attributes></script>";
          }
       }
