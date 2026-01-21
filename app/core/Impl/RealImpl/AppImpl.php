@@ -963,7 +963,10 @@ abstract class AppImpl implements ApplicationContract {
             $fileSize = filesize($fileName);
 
             if (file_exists($newName)) {
-               if ($currentLevel === Compressor::LEVEL_NONE) unlink($newName);
+               if ($currentLevel === Compressor::LEVEL_NONE) {
+                  unlink($newName);
+                  unlink($newAssetMap);
+               }
                else {
                   $oldFileSize = (int) @file_get_contents($newAssetMap);
 
