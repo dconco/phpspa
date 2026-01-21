@@ -27,9 +27,9 @@ src/utils/ export-ignore
 CMakeLists.txt export-ignore
 
 # Keep compiled native compressor binaries for distribution
-!src/bin/
-!src/bin/compressor.* -export-ignore
-!src/bin/libcompressor.* -export-ignore
+src/bin/ -export-ignore
+src/bin/compressor.* -export-ignore
+src/bin/libcompressor.* -export-ignore
 
 # Ignore development and environment files
 TODO.md export-ignore
