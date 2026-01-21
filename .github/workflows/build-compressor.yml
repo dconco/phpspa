@@ -98,7 +98,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull origin ${GITHUB_REF#refs/heads/} --rebase
+          git fetch origin ${GITHUB_REF#refs/heads/}
+          git reset --hard origin/${GITHUB_REF#refs/heads/}
+          mkdir -p src/bin
+          cp build/libcompressor.so src/bin/libcompressor.so
+          cp build/compressor.dll src/bin/compressor.dll
           git add src/bin/libcompressor.so src/bin/compressor.dll
           if git diff --cached --quiet; then
             echo "No shared library updates to commit"
