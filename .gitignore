@@ -70,7 +70,6 @@ Makefile
 *.cmake
 !CMakeLists.txt
 
-src/bin/.gitignore
 !src/bin/compressor.*
 !src/bin/libcompressor.*
 
