@@ -904,12 +904,8 @@ abstract class AppImpl implements ApplicationContract {
       $isGlobalAsset = $assetInfo['componentRoute'] === '__global__';
       $isPhpSpaRequest = $request->requestedWith() === 'PHPSPA_REQUEST' || $request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT';
 
-      $isRealJavascript = strtolower($assetInfo['scriptType']) === 'application/javascript' || strtolower($assetInfo['scriptType']) === 'text/javascript';
-      $isComponentJS = !$isGlobalAsset && $assetInfo['assetType'] === 'js' && $isRealJavascript;
-      $isGlobalJS = $isGlobalAsset && $assetInfo['assetType'] === 'js' && $isRealJavascript;
-
       // --- For global JS: wrap in IIFE if requested by PHPSPA to execute in isolation ---
-      $shouldWrapIIFE = $isComponentJS || ($isGlobalJS && $isPhpSpaRequest);
+      $shouldWrapIIFE = strtolower($assetInfo['assetType']) === 'js' && (!$isGlobalAsset || ($isGlobalAsset && $isPhpSpaRequest));
 
       if ($isGlobalAsset) {
          if ($assetInfo['assetType'] === 'css') {
