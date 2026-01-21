@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## v2.0.7 (Unreleased) (PHP 8.4)
+
+**Installation:**
+```bash
+composer require dconco/phpspa:dev-support/php-8.4
+```
+
+### ✨ New Features
+
+#### **esbuild Bundler Integration** ⚡
+
+Added external JavaScript bundler support with intelligent compression levels:
+
+- **Level-based optimization** - Different esbuild flags for BASIC, AGGRESSIVE, and EXTREME compression
+- **Scope-aware bundling** - Separate handling for global vs component-scoped JS
+- **Asset caching** - Generated `.generated.php` files for faster subsequent requests
+- **Automatic fallback** - Uses internal minifier when bundler unavailable
+
+**Compression Levels:**
+- `BASIC` - Internal minifier only
+- `AGGRESSIVE` - esbuild with `--minify-whitespace` and light tree-shaking
+- `EXTREME` - Full esbuild minification with `--bundle` and `--tree-shaking`
+
+### 🔧 Fixes
+
+- **Native compressor FFI** - Added legacy symbol fallback and improved error diagnostics
+- **Global script loading** - Optimized to load only on initial page load, not during SPA navigation
+- **Double IIFE wrapping** - Fixed component scripts being wrapped twice (PHP + bundler)
+- **Performance** - Removed unnecessary `strlen()` calls for Content-Length headers
+
+**Documentation:** [performance/html-compression](https://www.phpspa.tech/performance/html-compression/#asset-caching-behavior)
+
+
+
+
+
+
 ## v2.0.5.81 (Stable) (PHP 8.1)
 
 This is the **PHP 8.1 compatibility** release line.

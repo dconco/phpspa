@@ -58,7 +58,7 @@ class CompressionConfig
      */
     private static function setupStaging(): void
     {
-        Compressor::setLevel(Compressor::LEVEL_BASIC);
+        Compressor::setLevel(Compressor::LEVEL_AGGRESSIVE);
         Compressor::setGzipEnabled(true);
     }
 
@@ -69,7 +69,7 @@ class CompressionConfig
      */
     private static function setupProduction(): void
     {
-        Compressor::setLevel(Compressor::LEVEL_AGGRESSIVE);
+        Compressor::setLevel(Compressor::LEVEL_EXTREME);
         Compressor::setGzipEnabled(true);
     }
 

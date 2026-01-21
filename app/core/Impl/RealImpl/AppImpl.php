@@ -23,6 +23,7 @@ use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 use PhpSPA\Core\Utils\Validate;
 use PhpSPA\Interfaces\ApplicationContract;
 use PhpSPA\Interfaces\IComponent;
+use ReflectionFunction;
 
 use function Component\HTMLAttrInArrayToString;
 
@@ -378,25 +379,27 @@ abstract class AppImpl implements ApplicationContract {
 
    private function handlePhpSPARequest(Request $request) {
       if ($request->requestedWith() === 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
-         if ($request->header('X-Phpspa-Target') === 'navigate') {
-            Session::remove(STATE_HANDLE);
-            Session::remove(CALL_FUNC_HANDLE);
-            return;
-         }
+         // if ($request->header('X-Phpspa-Target') === 'navigate') {
+         //    Session::remove(STATE_HANDLE);
+         //    Session::remove(CALL_FUNC_HANDLE);
+         //    return;
+         // }
 
          $data = json_decode(base64_decode($request->auth()->bearer ?? ''), true);
          $data = Validate::validate($data);
 
-         if (isset($data['state'])) {
+         if (isset($data['state']) && $request->isSameOrigin()) {
             $state = $data['state'];
 
-            if (!empty($state['key'])) {
+            if (isset($state['key'])) {
                $sessionData = SessionHandler::get(STATE_HANDLE);
                $sessionData[$state['key']] = @$state['value'];
                SessionHandler::set(STATE_HANDLE, $sessionData);
             }
 
-         } else if (isset($data['__call'])) {
+            return;
+
+         } else if (isset($data['__call']) && $request->isSameOrigin()) {
             try {
                $tokenData = base64_decode($data['__call']['token'] ?? '');
                $tokenData = json_decode($tokenData);
@@ -468,8 +471,10 @@ abstract class AppImpl implements ApplicationContract {
 
          DOM::CurrentRoutes(static::$request_uri);
 
-         Session::remove(STATE_HANDLE);
-         Session::remove(CALL_FUNC_HANDLE);
+         if ($request->requestedWith() !== 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
+            Session::remove(STATE_HANDLE);
+            Session::remove(CALL_FUNC_HANDLE);
+         }
       }
       
       if ($isPreloadingComponent && !str_contains($route[0] ?? '', '{')) {
@@ -837,7 +842,7 @@ abstract class AppImpl implements ApplicationContract {
          $result['global']['stylesheets'] .= "\n      <script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
       }
 
-      // --- Generate global script links ---
+      // --- Generate global script links (include during PHPSPA requests to re-execute globals) ---
       if (!empty($globalScripts)) {
          foreach ($globalScripts as $index => $script) {
             $script = (array) Validate::validate($script);
@@ -895,12 +900,26 @@ abstract class AppImpl implements ApplicationContract {
    private function serveAsset (array $assetInfo): void
    {
       $request = new HttpRequest();
+      $currentLevel = Compressor::getLevel();
+      $isGlobalAsset = $assetInfo['componentRoute'] === '__global__';
+      $isPhpSpaRequest = $request->requestedWith() === 'PHPSPA_REQUEST' || $request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT';
 
-      // --- Check if this is a global asset ---
-      if ($assetInfo['componentRoute'] === '__global__') {
-         $content = $this->getGlobalAssetContent($assetInfo);
-      }
-      else {
+      $isRealJavascript = strtolower($assetInfo['scriptType']) === 'application/javascript' || strtolower($assetInfo['scriptType']) === 'text/javascript';
+      $isComponentJS = !$isGlobalAsset && $assetInfo['assetType'] === 'js' && $isRealJavascript;
+      $isGlobalJS = $isGlobalAsset && $assetInfo['assetType'] === 'js' && $isRealJavascript;
+
+      // --- For global JS: wrap in IIFE if requested by PHPSPA to execute in isolation ---
+      $shouldWrapIIFE = $isComponentJS || ($isGlobalJS && $isPhpSpaRequest);
+
+      if ($isGlobalAsset) {
+         if ($assetInfo['assetType'] === 'css') {
+            $callable = $this->stylesheets[$assetInfo['assetIndex']] ?? null;
+            $callable = $callable['content'] ?? null;
+         } else {
+            $callable = $this->scripts[$assetInfo['assetIndex']] ?? null;
+            $callable = $callable['content'] ?? null;
+         }
+      } else {
          // --- Find the component that matches the asset's route ---
          $component = $this->findComponentByRoute($assetInfo['componentRoute']);
 
@@ -911,14 +930,70 @@ abstract class AppImpl implements ApplicationContract {
             return;
          }
 
-         $isRealJavascript = strtolower($assetInfo['scriptType']) === 'application/javascript' || strtolower($assetInfo['scriptType']) === 'text/javascript';
+         if ($assetInfo['assetType'] === 'css') {
+            $stylesheets = CallableInspector::getProperty($component, 'stylesheets');
+            $stylesheet = $stylesheets[$assetInfo['assetIndex']] ?? null;
+            $callable = $stylesheet['content'] ?? null;
+         } else {
+            $scripts = CallableInspector::getProperty($component, 'scripts');
+            $script = $scripts[$assetInfo['assetIndex']] ?? null;
+            $callable = $script['content'] ?? null;
+         }
+      }
 
-         if ($assetInfo['assetType'] === 'js' && $isRealJavascript)
-            // --- For JS, we wrap the content in an IIFE to avoid polluting global scope ---
-            $content = '(()=>{' . $this->getAssetContent($component, $assetInfo) . '})();';
-         else
-            // --- For CSS, we can serve the content directly ---
-            $content = $this->getAssetContent($component, $assetInfo);
+      if (\is_callable($callable)) {
+         $fileName = null;
+
+         if (\is_array($callable)) {
+            // Array callable like [$object, 'method'] or ['Class', 'method']
+            $reflection = new \ReflectionMethod($callable[0], $callable[1]);
+            $fileName = $reflection->getFileName();
+         } elseif ($callable instanceof \Closure || \is_string($callable)) {
+            // Closure or function name
+            $func = new ReflectionFunction($callable);
+            $fileName = $func->getFileName();
+         }
+
+         if ($fileName) {
+            $extName = pathinfo($fileName, PATHINFO_EXTENSION);
+            $fileDir = pathinfo($fileName, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 'generated';
+            $pathWithoutExt = $fileDir . DIRECTORY_SEPARATOR . pathinfo($fileName, PATHINFO_FILENAME);
+            $newName = "{$pathWithoutExt}-{$assetInfo['assetIndex']}.{$assetInfo['assetType']}.generated.{$extName}";
+            $newAssetMap = "$newName.map";
+            $fileSize = filesize($fileName);
+
+            if (file_exists($newName)) {
+               if ($currentLevel === Compressor::LEVEL_NONE) {
+                  unlink($newName);
+                  unlink($newAssetMap);
+               }
+               else {
+                  $oldFileSize = (int) @file_get_contents($newAssetMap);
+
+                  if ($oldFileSize !== 0 && $oldFileSize === $fileSize) {
+                     $content = require $newName;
+
+                     if ($shouldWrapIIFE) {
+                        $content = "(()=>{{$content}})();";
+                     }
+                     $content = Compressor::gzipCompress($content);
+                     $this->setAssetHeaders($assetInfo['type']);
+                     echo $content;
+                     return;
+                  }
+               }
+            }
+         }
+      }
+
+      // --- Check if this is a global asset ---
+      if ($isGlobalAsset) {
+         $content = $this->getGlobalAssetContent($assetInfo, $callable);
+      }
+      else {
+         if ($callable && is_callable($callable)) {
+            $content = \call_user_func($callable);
+         } else $content = '';
       }
 
       if ($content === null) {
@@ -928,22 +1003,35 @@ abstract class AppImpl implements ApplicationContract {
          return;
       }
 
-      $currentLevel = Compressor::getLevel();
-
       // --- Determine compression level ---
       $compressionLevel = ($request->requestedWith() === 'PHPSPA_REQUEST')
          ? ($currentLevel === Compressor::LEVEL_NONE ? $currentLevel : Compressor::LEVEL_EXTREME)
          : $currentLevel;
+
+      // --- For component JS: wrap in IIFE if compressionis disabled ---
+      if ($shouldWrapIIFE && $currentLevel === Compressor::LEVEL_NONE) {
+         $content = "(()=>{{$content}})();";
+      }
 
       if (\is_array($content)) {
          $content = $content[0];
       } else {
          // --- Compress the content ---
          $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type']);
+
+         if ($currentLevel > Compressor::LEVEL_NONE) {
+            if (!is_dir($fileDir)) mkdir($fileDir);
+
+            if ($fileName) {
+               $assetType = strtoupper($assetInfo['assetType']);
+               @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
+               @file_put_contents($newAssetMap, $fileSize);
+            }
+         }
       }
 
       // --- Set appropriate headers ---
-      $this->setAssetHeaders($assetInfo['type'], $content);
+      $this->setAssetHeaders($assetInfo['type']);
       // --- Output the content ---
       echo $content;
    }
@@ -1007,32 +1095,18 @@ abstract class AppImpl implements ApplicationContract {
     * @param array $assetInfo Asset information
     * @return string|array|null The asset content if found, null otherwise
     */
-   private function getGlobalAssetContent (array $assetInfo): string|array|null
+   private function getGlobalAssetContent (array $assetInfo, $callable): array|string|null
    {
       $request = new HttpRequest();
 
       if ($assetInfo['assetType'] === 'css') {
-         $stylesheet = $this->stylesheets[$assetInfo['assetIndex']] ?? null;
-         $stylesheetCallable = $stylesheet['content'] ?? null;
-
-         if ($stylesheetCallable && \is_callable($stylesheetCallable))
-            return \call_user_func($stylesheetCallable);
+         if ($callable && \is_callable($callable))
+            return \call_user_func($callable);
       }
       elseif ($assetInfo['assetType'] === 'js') {
-         $script = $this->scripts[$assetInfo['assetIndex']] ?? null;
-         $scriptCallable = $script['content'] ?? null;
-
-         $isRealJavascript = strtolower($assetInfo['scriptType']) === 'application/javascript' || strtolower($assetInfo['scriptType']) === 'text/javascript';
-
-         if (\is_callable($scriptCallable)) {
-            $content = \call_user_func($scriptCallable);
-
-            if ($request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT' && $isRealJavascript)
-               // --- Wrap global JS content in an IIFE to avoid polluting global scope ---
-               return '(()=>{' . $content . '})();';
-
-            // --- For non-PHPSPA requests, return raw JS content ---
-            return $content;
+         if (\is_callable($callable)) {
+            // --- Global scripts are intentionally global, no IIFE wrapping needed ---
+            return \call_user_func($callable);
          }
 
          if ($assetInfo['assetIndex'] === -1 && $request->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT' && $request->requestedWith() !== 'PHPSPA_REQUEST') {
@@ -1068,17 +1142,15 @@ abstract class AppImpl implements ApplicationContract {
     * Set appropriate headers for asset response
     *
     * @param string $type Asset type ('css' or 'js')
-    * @param string $content The content to send
     * @return void
     */
-   private function setAssetHeaders (string $type, string $content): void
+   private function setAssetHeaders (string $type): void
    {
       if (!headers_sent()) {
          if ($type === 'css') header('Content-Type: text/css; charset=UTF-8');
          elseif ($type === 'js') header('Content-Type: application/javascript; charset=UTF-8');
 
-         header('Content-Length: ' . \strlen($content));
-         header('Cache-Control: private, max-age=' . (AssetLinkManager::getCacheConfig()['hours'] * 3600));
+         header('Cache-Control: private, max-age=' . AssetLinkManager::getCacheConfig()['hours'] * 3600);
       }
    }
 

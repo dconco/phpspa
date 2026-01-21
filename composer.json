@@ -30,7 +30,7 @@
 			"name": "Dave Conco",
 			"email": "me@dconco.tech",
 			"role": "Author & Maintainer",
-			"homepage": "https://dconco.github.io"
+			"homepage": "https://dconco.tech"
 		},
 		{
 			"name": "Samuel Paschalson",
@@ -42,10 +42,15 @@
 	"require": {
 		"php": "^8.4"
 	},
+	"require-dev": {
+		"phpunit/phpunit": "^11.0"
+	},
 	"prefer-stable": true,
 	"minimum-stability": "stable",
 	"scripts": {
-		"test": "php tests/Test.php",
+		"test": "vendor/bin/phpunit",
+		"test:legacy": "php tests/Test.php",
+		"test:all": "vendor/bin/phpunit && php tests/Test.php",
 		"test:async": "php tests/Test.php --async",
 		"start": [
 			"Composer\\Config::disableProcessTimeout",

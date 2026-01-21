@@ -1,29 +1,32 @@
 # Ignore dependencies
-/vite-example/node_modules
-/vite-example/vendor
-/node_modules
-/vendor
+vite-example/node_modules/
+vite-example/vendor/
+node_modules/
+vendor/
 
 # Ignore build artifacts
-/public/build
-/public/storage
+public/build/
+public/storage/
 
 # Ignore sensitive files
-/storage/*.key
+storage/*.key/
 
 # Ignore IDE/editor folders
-/.idea
+.idea/
 
 # Ignore system files
 .DS_Store
-/venv
+venv/
 
 # Ignore build outputs
-/dist
-/build
-/site
+dist/
+build/
+site/
 cmake-build-*/
 out/
+
+# PhpSPA generated output
+/**/*/generated/
 
 # Ignore environment files
 .env
@@ -67,6 +70,8 @@ Makefile
 *.cmake
 !CMakeLists.txt
 
-src/bin/.gitignore
 !src/bin/compressor.*
 !src/bin/libcompressor.*
+
+# Tests
+.phpunit.cache/

@@ -68,14 +68,11 @@ trait HtmlCompressor
     * @return string Compressed HTML
     */
    public static function compress(string $html, ?string $contentType = null): string {
-      $CONTENT_LENGTH = strlen($html);
-
       if (self::$compressionLevel === Compressor::LEVEL_NONE) {
          self::setCompressionEngine('disabled');
          self::emitEngineHeader();
 
          if (!headers_sent()) {
-            header("Content-Length: $CONTENT_LENGTH");
             if ($contentType !== null) header("Content-Type: $contentType; charset=UTF-8");
          }
 
@@ -96,7 +93,7 @@ trait HtmlCompressor
 -->\n";
 
       // Apply minification based on compression level
-      $html = self::minify($html, 'HTML', self::$compressionLevel, $CONTENT_LENGTH);
+      $html = self::minify($html, 'HTML', self::$compressionLevel);
 
       // Append Comments
       $html = $comment . $html;
@@ -115,22 +112,20 @@ trait HtmlCompressor
     * @param int $level Compression level
     * @return string Minified HTML
     */
-   private static function minify(string $content, $type, int $level, ?int $CONTENT_LENGTH = null): string
+   private static function minify(string $content, $type, int $level): string
    {
       if ($level === Compressor::LEVEL_NONE) return $content;
-      if (!$CONTENT_LENGTH) $CONTENT_LENGTH = strlen($content);
 
       $preservedBlocks = null;
       if ($type === 'HTML') {
          [$content, $preservedBlocks] = self::protectPreformattedBlocks($content);
-         $CONTENT_LENGTH = strlen($content);
       }
 
       if ($level === Compressor::LEVEL_AUTO) {
-         $level = self::detectOptimalLevel($content, $CONTENT_LENGTH);
+         $level = self::detectOptimalLevel($content);
       }
 
-      if (self::isNativeCompressorAvailable($CONTENT_LENGTH)) {
+      if (self::isNativeCompressorAvailable()) {
          $result = self::compressWithNative($content, $level, $type);
       } else {
          // Fallback to PHP implementation
@@ -180,25 +175,28 @@ trait HtmlCompressor
       return $placeholderMap === [] ? $html : strtr($html, $placeholderMap);
    }
 
-   private static function isNativeCompressorAvailable(int $CONTENT_LENGTH): bool
+   private static function isNativeCompressorAvailable(): bool
    {
-      static $THRESHOLD_SIZE = 10240; // 5KB = 5120 bytes
-
       $strategy = self::compressionStrategy();
 
       if ($strategy !== 'fallback') {
          if (NativeCompressor::isAvailable()) {
-            // if ($CONTENT_LENGTH > $THRESHOLD_SIZE)
                try {
                   self::setCompressionEngine('native');
                   self::emitEngineHeader();
                   return true;
                } catch (\Throwable $exception) {
-                  if ($strategy === 'native') 
-                     throw new RuntimeException('Native compressor is required but failed to execute.', 0, $exception);
+                  if ($strategy === 'native') {
+                     $details = NativeCompressor::getLastError();
+                     $suffix = $details ? ' (' . $details . ')' : '';
+                     throw new RuntimeException('Native compressor is required but failed to execute' . $suffix . '.', 0, $exception);
+                  }
                };
-         } elseif ($strategy === 'native')
-            throw new RuntimeException('Native compressor is required but unavailable.');
+         } elseif ($strategy === 'native') {
+            $details = NativeCompressor::getLastError();
+            $suffix = $details ? ' (' . $details . ')' : '';
+            throw new RuntimeException('Native compressor is required but unavailable' . $suffix . '.');
+         }
       }
 
       self::setCompressionEngine('php');
@@ -290,7 +288,7 @@ trait HtmlCompressor
     */
    public static function gzipCompress(
       string $content,
-      ?string $contentType,
+      ?string $contentType = null,
    ): string {
       if (self::supportsGzip() && self::$useGzip) {
          $compressed = gzencode($content, 9); // Maximum compression level
@@ -310,8 +308,6 @@ trait HtmlCompressor
       }
 
       if (!headers_sent()) {
-         header('Content-Length: ' . strlen($content));
-
          if ($contentType !== null) {
             header("Content-Type: $contentType; charset=UTF-8");
          }
@@ -366,9 +362,9 @@ trait HtmlCompressor
     * @param string $content Content to analyze
     * @return int Recommended compression level
     */
-   private static function detectOptimalLevel(string $content, ?int $CONTENT_LENGTH = null): int
+   private static function detectOptimalLevel(string $content): int
    {
-      if (!$CONTENT_LENGTH) $CONTENT_LENGTH = strlen($content);
+      $CONTENT_LENGTH = strlen($content);
 
       if ($CONTENT_LENGTH < 1024) {
          // Less than 1KB

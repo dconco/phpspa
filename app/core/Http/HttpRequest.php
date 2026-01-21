@@ -303,15 +303,16 @@ class HttpRequest implements Request
     public function isSameOrigin(): bool {
         $host = parse_url($_SERVER['HTTP_HOST'] ?? '', PHP_URL_HOST);
         $origin = $_SERVER['HTTP_ORIGIN'] ?? null;
+        $pathIsRelative = str_starts_with($this->getUri(), '/');
 
         // Case 1: Browser explicitly sent Origin header
         if ($origin !== null) {
             $parsed = parse_url($origin, PHP_URL_HOST);
-            return $parsed === $host;
+            return ($parsed === $host) || $pathIsRelative;
         }
 
-        // Case 2: No Origin -> verify Host matches server and path is relative
+        // Case 2: No Origin -> verify Host matches server or path is relative
         $serverHost = $_SERVER['SERVER_NAME'] ?? '';
-        return $host === $serverHost && str_starts_with($this->getUri(), '/');
+        return ($host === $serverHost) || $pathIsRelative;
     }
 }

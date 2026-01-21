@@ -96,3 +96,106 @@ $app->compression(Compressor::LEVEL_EXTREME, true);
     - **`Compressor::LEVEL_BASIC`**: Removes comments and basic whitespace
     - **`Compressor::LEVEL_AGGRESSIVE`**: Performs more intense whitespace removal
     - **`Compressor::LEVEL_EXTREME`**: Applies the most aggressive minification for the smallest possible file size
+
+## Asset Caching Behavior
+
+!!! success "Smart Caching with Auto-Invalidation"
+    When compression is enabled (any level above `LEVEL_NONE`), PhpSPA caches compressed assets to `.generated.php` files for faster subsequent requests. The cache automatically invalidates when source files change!
+
+### How Asset Caching Works
+
+When you enable compression, PhpSPA generates cached files alongside your component files:
+
+```
+examples/components/
+├── Counter.php
+└── generated/
+    ├── Counter-0.js.generated.php       # Cached compressed JS
+    ├── Counter-0.js.generated.php.map   # Cache validation map
+    └── Counter-0.css.generated.php      # Cached compressed CSS
+    └── Counter-0.css.generated.php.map  # Cache validation map
+```
+
+**Smart Cache Invalidation:** PhpSPA automatically detects when source files change by tracking file sizes in `.map` files. When a change is detected:
+
+1. The cached `.generated.php` file is regenerated
+2. The `.map` file is updated with the new file size
+3. Fresh compressed content is served
+
+This means:
+
+- ✅ **Production**: Excellent performance - compressed content is reused when unchanged
+- ✅ **Development**: Always fresh - changes are automatically detected and cache is rebuilt
+
+### Recommended Environment Setup
+
+Use environment-based configuration to automatically handle caching:
+
+```php
+<?php
+use PhpSPA\App;
+
+// Read from environment variable
+$app = new App($layout);
+$app->compressionEnvironment($_ENV['APP_ENV']);
+```
+
+Then configure your `.env` file:
+
+=== "Development (.env)"
+
+    ```bash
+    APP_ENV=development
+    ```
+    
+    - Compression disabled (`LEVEL_NONE`)
+    - No cached files generated
+    - Changes appear immediately (no compression overhead)
+    - Existing cached files automatically deleted when switching to development
+
+=== "Production (.env)"
+
+    ```bash
+    APP_ENV=production
+    ```
+    
+    - Maximum compression (`LEVEL_EXTREME`)
+    - Assets cached for performance
+    - Blazing fast subsequent requests
+    - Generated files reused until source changes detected
+
+!!! tip "Environment Switching"
+    When you switch from production back to development mode (`LEVEL_NONE`), PhpSPA automatically **deletes** cached `.generated.php` files to prevent stale content issues.
+
+### Manual Cache Management
+
+The cache is automatically managed, but you can manually clear it if needed:
+
+```bash
+# Delete all generated cache files and maps
+find . -name "*.generated.php*" -type f -delete
+```
+
+Or temporarily disable compression to bypass the cache entirely:
+
+```php
+<?php
+// Force fresh assets without caching
+$app->compression(Compressor::LEVEL_NONE);
+```
+
+!!! tip "Automatic Cache Validation"
+    PhpSPA tracks file sizes in `.map` files and automatically regenerates cached assets when source files change. You typically don't need to manually clear the cache!
+
+### IIFE Wrapping for Component Scripts
+
+PhpSPA automatically wraps component JavaScript in Immediately Invoked Function Expressions (IIFE) for scope isolation:
+
+- **Component JS**: Always wrapped in IIFE `(()=>{/* your code */})()`
+- **Global JS**: Only wrapped when requested via PHPSPA (SPA navigation) to execute in isolation
+- **External script links**: Never wrapped (assumed pre-bundled)
+
+This ensures:
+- Component scripts don't pollute the global scope
+- Variables and functions are properly isolated
+- Global scripts can re-execute during SPA navigation

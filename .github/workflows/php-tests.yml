@@ -38,8 +38,8 @@ jobs:
          - name: Validate composer.json and composer.lock
            run: composer validate --no-check-all --strict
 
-         - name: Autoload all classes with Composer
-           run: composer dump-autoload
+         - name: Install Dependencies with Composer
+           run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
          - name: Run tests
-           run: composer test
+           run: composer test:all

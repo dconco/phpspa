@@ -5,8 +5,7 @@ permissions:
 
 on:
   push:
-    branches:
-      - master
+    branches: [master, support/php-8.4]
   release:
     types: [published]
   workflow_dispatch:
@@ -93,12 +92,17 @@ jobs:
           cp build/compressor.dll src/bin/compressor.dll
 
       - name: Commit and push updated shared libraries
-        if: github.ref == 'refs/heads/dev'
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/support/php-8.4')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin ${GITHUB_REF#refs/heads/}
+          git reset --hard origin/${GITHUB_REF#refs/heads/}
+          mkdir -p src/bin
+          cp build/libcompressor.so src/bin/libcompressor.so
+          cp build/compressor.dll src/bin/compressor.dll
           git add src/bin/libcompressor.so src/bin/compressor.dll
           if git diff --cached --quiet; then
             echo "No shared library updates to commit"

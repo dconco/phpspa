@@ -10,6 +10,8 @@ final class NativeCompressor
 
    private static ?bool $available = null;
 
+   private static ?string $lastError = null;
+
    private static ?\FFI $ffi = null;
 
    private static ?string $libraryPath = null;
@@ -21,12 +23,17 @@ final class NativeCompressor
       return self::$available = self::initialize();
    }
 
+   public static function getLastError(): ?string
+   {
+      return self::$lastError;
+   }
+
    /**
     * Compress HTML using the native shared library.
     *
     * @param string $content Content payload to compress
-   * @param int $nativeLevel Native compressor level (1-3)
-   * @param string $type Content type enum['HTML', 'JS', 'CSS']
+    * @param int $nativeLevel Native compressor level (1-3)
+    * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @return string
     */
    public static function compress(string $content, int $nativeLevel, string $type): string
@@ -62,12 +69,16 @@ final class NativeCompressor
          return true;
       }
 
+      self::$lastError = null;
+
       if (!\extension_loaded('FFI')) {
+         self::$lastError = 'FFI extension is not loaded.';
          return false;
       }
 
       $libraryPath = self::resolveLibraryPath();
       if ($libraryPath === null) {
+         self::$lastError = 'Native compressor library not found. Set PHPSPA_COMPRESSOR_LIB to an absolute path to compressor.dll.';
          return false;
       }
 
@@ -77,6 +88,7 @@ final class NativeCompressor
          return true;
       } catch (\Throwable $e) {
          self::$ffi = null;
+         self::$lastError = 'FFI failed to load ' . $libraryPath . ': ' . $e->getMessage();
          return false;
       }
    }

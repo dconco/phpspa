@@ -9,7 +9,7 @@ use PhpSPA\App;
 use PhpSPA\DOM;
 use PhpSPA\Compression\Compressor;
 
-//putenv('PHPSPA_COMPRESSION_STRATEGY=native');
+putenv('PHPSPA_COMPRESSION_STRATEGY=native');
 
 // --- Initialize a new Application ---
 new App(require 'layout/Layout.php')
@@ -38,7 +38,7 @@ new App(require 'layout/Layout.php')
     ->defaultTargetID('app')
     ->defaultToCaseSensitive()
 
-    ->compression(Compressor::LEVEL_NONE, true)
+    ->compression(Compressor::LEVEL_EXTREME, true)
 
     ->cors()
 
@@ -65,6 +65,7 @@ new App(require 'layout/Layout.php')
 
     ->script(
         fn () => <<<JS
+        function nameo() { return true }
             // Global script - should execute FIRST
             console.log('1. Global script executing first');
             
@@ -97,6 +98,11 @@ new App(require 'layout/Layout.php')
         JS,
         'global-js',
     )
+
+    ->script(fn() => <<<JS
+        const sure = 'Making sure'
+        console.log(sure);
+    JS)
 
     ->run();
 
