@@ -96,3 +96,85 @@ $app->compression(Compressor::LEVEL_EXTREME, true);
     - **`Compressor::LEVEL_BASIC`**: Removes comments and basic whitespace
     - **`Compressor::LEVEL_AGGRESSIVE`**: Performs more intense whitespace removal
     - **`Compressor::LEVEL_EXTREME`**: Applies the most aggressive minification for the smallest possible file size
+
+## Asset Caching Behavior
+
+!!! warning "Development vs Production"
+    When compression is enabled (any level above `LEVEL_NONE`), PhpSPA caches compressed assets to `.generated.php` files for faster subsequent requests. This is great for production but can cause issues during development.
+
+### How Asset Caching Works
+
+When you enable compression, PhpSPA generates cached files alongside your component files:
+
+```
+examples/components/
+├── Counter.php
+└── generated/
+    ├── Counter-0.js.generated.php   # Cached compressed JS
+    └── Counter-0.css.generated.php  # Cached compressed CSS
+```
+
+**Important:** These cached files are served directly on subsequent requests **without checking if the source files have changed**. This means:
+
+- ✅ **Production**: Excellent performance - compressed content is reused always
+- ❌ **Development**: Stale cache - your changes won't appear until you disable compression
+
+### Recommended Environment Setup
+
+Use environment-based configuration to automatically handle caching:
+
+```php
+<?php
+use PhpSPA\App;
+
+// Read from environment variable
+$app = new App($layout);
+$app->compressionEnvironment($_ENV['APP_ENV']);
+```
+
+Then configure your `.env` file:
+
+=== "Development (.env)"
+
+    ```bash
+    APP_ENV=development
+    ```
+    
+    - Compression disabled (`LEVEL_NONE`)
+    - No cached files generated
+    - Changes appear immediately
+    - Cached files automatically deleted when switching to development
+
+=== "Production (.env)"
+
+    ```bash
+    APP_ENV=production
+    ```
+    
+    - Maximum compression (`LEVEL_EXTREME`)
+    - Assets cached for performance
+    - Blazing fast subsequent requests
+    - Generated files reused
+
+!!! tip "Environment Switching"
+    When you switch from production back to development mode (`LEVEL_NONE`), PhpSPA automatically **deletes** cached `.generated.php` files to prevent stale content issues.
+
+### Manual Cache Management
+
+If you need to manually clear the asset cache during development with compression enabled:
+
+```bash
+# Delete all generated cache files
+find . -name "*.generated.php" -type f -delete
+```
+
+Or temporarily disable compression to force fresh generation:
+
+```php
+<?php
+// Force fresh assets without cache
+$app->compression(Compressor::LEVEL_NONE);
+```
+
+!!! info "Cache Invalidation"
+    Future versions may include automatic cache invalidation based on file modification times. For now, use `LEVEL_NONE` in development or manually clear the cache when needed.
