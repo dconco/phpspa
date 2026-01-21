@@ -99,8 +99,8 @@ $app->compression(Compressor::LEVEL_EXTREME, true);
 
 ## Asset Caching Behavior
 
-!!! success "Smart Caching with Targeted Invalidation"
-    When compression is enabled (any level above `LEVEL_NONE`), PhpSPA caches compressed assets to `.generated.php` files for faster subsequent requests. Cache validation runs only at **AGGRESSIVE** level (staging). **EXTREME** (production) trusts the cache for maximum speed.
+!!! success "Smart Caching with Auto-Invalidation"
+    When compression is enabled (any level above `LEVEL_NONE`), PhpSPA caches compressed assets to `.generated.php` files for faster subsequent requests. The cache automatically invalidates when source files change!
 
 ### How Asset Caching Works
 
@@ -116,15 +116,16 @@ examples/components/
     └── Counter-0.css.generated.php.map  # Cache validation map
 ```
 
-**Smart Cache Invalidation:**
+**Smart Cache Invalidation:** PhpSPA automatically detects when source files change by tracking file sizes in `.map` files. When a change is detected:
 
-- **Staging (AGGRESSIVE)**: PhpSPA tracks file sizes in `.map` files. When a change is detected, it regenerates the cached asset and updates the map.
-- **Production (EXTREME)**: No validation reads; cached assets are served directly for maximum speed. Regenerate caches by rebuilding/deploying.
+1. The cached `.generated.php` file is regenerated
+2. The `.map` file is updated with the new file size
+3. Fresh compressed content is served
 
 This means:
 
-- ✅ **Production**: Maximum performance; cached assets are trusted
-- ✅ **Staging/QA**: Safe validation; caches rebuild automatically when source changes
+- ✅ **Production**: Excellent performance - compressed content is reused when unchanged
+- ✅ **Development**: Always fresh - changes are automatically detected and cache is rebuilt
 
 ### Recommended Environment Setup
 
@@ -161,7 +162,7 @@ Then configure your `.env` file:
     - Maximum compression (`LEVEL_EXTREME`)
     - Assets cached for performance
     - Blazing fast subsequent requests
-    - Cache trusted (no per-request validation); rebuild on deploy
+    - Generated files reused until source changes detected
 
 !!! tip "Environment Switching"
     When you switch from production back to development mode (`LEVEL_NONE`), PhpSPA automatically **deletes** cached `.generated.php` files to prevent stale content issues.
@@ -184,7 +185,7 @@ $app->compression(Compressor::LEVEL_NONE);
 ```
 
 !!! tip "Automatic Cache Validation"
-    Cache validation runs only at the AGGRESSIVE level. At EXTREME, assets are trusted; rebuild or redeploy to refresh them by deleting those caches.
+    PhpSPA tracks file sizes in `.map` files and automatically regenerates cached assets when source files change. You typically don't need to manually clear the cache!
 
 ### IIFE Wrapping for Component Scripts
 
