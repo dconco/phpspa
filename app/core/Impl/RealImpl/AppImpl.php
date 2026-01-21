@@ -903,6 +903,7 @@ abstract class AppImpl implements ApplicationContract {
       $currentLevel = Compressor::getLevel();
       $isGlobalAsset = $assetInfo['componentRoute'] === '__global__';
       $isPhpSpaRequest = $request->requestedWith() === 'PHPSPA_REQUEST' || $request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT';
+      $isJS = strtolower($assetInfo['assetType']) === 'js';
 
       if ($isGlobalAsset) {
          if ($assetInfo['assetType'] === 'css') {
@@ -967,7 +968,7 @@ abstract class AppImpl implements ApplicationContract {
                      $content = require $newName;
 
                      // --- Wrap component requested by initial page load in IIFE ---
-                     if (!$isGlobalAsset && !$isPhpSpaRequest) {
+                     if (!$isGlobalAsset && !$isPhpSpaRequest && $isJS) {
                         $content = "(()=>{{$content}})()";
                      }
                      $content = Compressor::gzipCompress($content);
@@ -1009,7 +1010,7 @@ abstract class AppImpl implements ApplicationContract {
          $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type']);
 
          // --- Wrap component requested by initial page load in IIFE ---
-         if (!$isGlobalAsset && !$isPhpSpaRequest) {
+         if (!$isGlobalAsset && !$isPhpSpaRequest && $isJS) {
             $content = "(()=>{{$content}})()";
          }
 
