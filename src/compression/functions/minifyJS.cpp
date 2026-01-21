@@ -103,7 +103,7 @@ namespace {
 
       if (normalizedScope == "scoped") {
          if (level == 3) { // EXTREME
-            command += " --bundle --minify --tree-shaking=true --format=iife";
+            command += " --bundle --minify --minify-identifiers --tree-shaking=true --format=iife";
          } else { // AGGRESSIVE
             command += " --bundle --minify-whitespace --tree-shaking=true --format=iife";
          }
