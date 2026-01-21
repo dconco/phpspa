@@ -115,7 +115,28 @@ namespace {
          }
       }
 
-      int status = std::system(command.c_str());
+            // Use popen/_popen to avoid console window visibility on all platforms
+      #ifdef _WIN32
+            command += " 2>nul";
+            FILE* pipe = _popen(command.c_str(), "r");
+            if (!pipe) {
+               std::error_code ec;
+               std::filesystem::remove(inputPath, ec);
+               std::filesystem::remove(outputPath, ec);
+               return false;
+            }
+            int status = _pclose(pipe);
+      #else
+            command += " 2>/dev/null";
+            FILE* pipe = popen(command.c_str(), "r");
+            if (!pipe) {
+               std::error_code ec;
+               std::filesystem::remove(inputPath, ec);
+               std::filesystem::remove(outputPath, ec);
+               return false;
+            }
+            int status = pclose(pipe);
+      #endif
       
       if (status != 0 || !std::filesystem::exists(outputPath)) {
          std::error_code ec;
