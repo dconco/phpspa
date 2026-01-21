@@ -110,19 +110,11 @@ trait HtmlCompressor
     * @param string $content HTML content
     * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @param int $level Compression level
-    * @param ?string $scoped Decides if the JS to compress is scoped or global
     * @return string Minified HTML
     */
-   private static function minify(string $content, $type, int $level, ?string $scoped = null): string
+   private static function minify(string $content, $type, int $level): string
    {
       if ($level === Compressor::LEVEL_NONE) return $content;
-
-      if ($type === 'JS' && $level >= Compressor::LEVEL_AGGRESSIVE) {
-         $bundled = self::runBundlerWithPhp($content, $level, $scoped);
-         if (is_string($bundled) && $bundled !== '') {
-            return $bundled;
-         }
-      }
 
       $preservedBlocks = null;
       if ($type === 'HTML') {
@@ -134,10 +126,10 @@ trait HtmlCompressor
       }
 
       if (self::isNativeCompressorAvailable()) {
-         $result = self::compressWithNative($content, $level, $type, $scoped);
+         $result = self::compressWithNative($content, $level, $type);
       } else {
          // Fallback to PHP implementation
-         $result = self::compressWithFallback($content, $level, $type, $scoped);
+         $result = self::compressWithFallback($content, $level, $type);
       }
 
       if ($type === 'HTML' && \is_array($preservedBlocks) && $preservedBlocks !== []) {
@@ -215,7 +207,7 @@ trait HtmlCompressor
    /**
     * Compress using the native shared library via FFI
     */
-   private static function compressWithNative(string $html, int $level, string $type, ?string $scoped): string
+   private static function compressWithNative(string $html, int $level, string $type): string
    {
 		$nativeLevel = match ($level) {
          Compressor::LEVEL_AGGRESSIVE => 2,
@@ -223,7 +215,7 @@ trait HtmlCompressor
          default => 1,
       };
 
-      return NativeCompressor::compress($html, $nativeLevel, $type, $scoped);
+      return NativeCompressor::compress($html, $nativeLevel, $type);
    }
 
    /**
@@ -234,7 +226,7 @@ trait HtmlCompressor
     * @param int $level Compression level
     * @return string Compressed HTML
     */
-   private static function compressWithFallback(string $content, int $level, string $type, ?string $scoped = null): string
+   private static function compressWithFallback(string $content, int $level, string $type): string
    {
       if ($type === 'JS') $content = "<script>$content</script>";
       elseif ($type === 'CSS') $content = "<style>$content</style>";
@@ -251,133 +243,6 @@ trait HtmlCompressor
       elseif ($type === 'CSS') $result = substr($result, 7, -8); // Extract content inside <style> tags
 
       return $result;
-   }
-
-   private static function runBundlerWithPhp(string $input, int $level, ?string $scoped = null): ?string
-   {
-      $bundler = self::getBundlerPath();
-      if ($bundler === '') {
-         return null;
-      }
-
-      $tmpDir = sys_get_temp_dir();
-      $inputBase = tempnam($tmpDir, 'phpspa_js_');
-      $outputBase = tempnam($tmpDir, 'phpspa_js_out_');
-
-      if ($inputBase === false || $outputBase === false) {
-         if (is_string($inputBase)) @unlink($inputBase);
-         if (is_string($outputBase)) @unlink($outputBase);
-         return null;
-      }
-
-      $inputPath = $inputBase . '.js';
-      $outputPath = $outputBase . '.js';
-
-      @rename($inputBase, $inputPath);
-      @rename($outputBase, $outputPath);
-
-      if (file_put_contents($inputPath, $input) === false) {
-         @unlink($inputPath);
-         @unlink($outputPath);
-         return null;
-      }
-
-      $args = self::buildBundlerArgs($inputPath, $outputPath, $level, $scoped);
-      $parts = str_getcsv($bundler, ' ');
-      $parts = \is_array($parts) ? array_values(array_filter($parts, 'strlen')) : [];
-
-      if ($parts === []) {
-         @unlink($inputPath);
-         @unlink($outputPath);
-         return null;
-      }
-
-      $command = \array_merge($parts, $args);
-      $descriptors = [
-         1 => ['pipe', 'w'],
-         2 => ['pipe', 'w'],
-      ];
-
-      $process = proc_open(
-         $command,
-         $descriptors,
-         $pipes,
-         null,
-         null,
-         ['bypass_shell' => true, 'suppress_errors' => true]
-      );
-
-      if (!\is_resource($process)
-      ) {
-         @unlink($inputPath);
-         @unlink($outputPath);
-         return null;
-      }
-
-      if (isset($pipes[1])) fclose($pipes[1]);
-      if (isset($pipes[2])) fclose($pipes[2]);
-
-      $status = proc_close($process);
-
-      if ($status !== 0 || !file_exists($outputPath)) {
-         @unlink($inputPath);
-         @unlink($outputPath);
-         return null;
-      }
-
-      $output = file_get_contents($outputPath);
-
-      @unlink($inputPath);
-      @unlink($outputPath);
-
-      return is_string($output) ? $output : null;
-   }
-
-   private static function buildBundlerArgs(string $inputPath, string $outputPath, int $level, ?string $scoped): array
-   {
-      $args = [
-         $inputPath,
-         "--outfile=$outputPath",
-         '--platform=browser',
-         '--log-level=error',
-      ];
-
-      $normalizedScope = strtolower((string) $scoped);
-      $normalizedScope = $normalizedScope === 'scoped' ? 'scoped' : 'global';
-
-      if ($normalizedScope === 'scoped') {
-         if ($level >= Compressor::LEVEL_EXTREME) {
-            $args[] = '--bundle';
-            $args[] = '--minify';
-            $args[] = '--minify-identifiers';
-            $args[] = '--tree-shaking=true';
-            $args[] = '--format=iife';
-         } else { // AGGRESSIVE
-            $args[] = '--bundle';
-            $args[] = '--minify-whitespace';
-            $args[] = '--minify-identifiers';
-            $args[] = '--tree-shaking=true';
-            $args[] = '--format=iife';
-         }
-      } else {
-         if ($level >= Compressor::LEVEL_EXTREME) {
-            $args[] = '--minify-syntax';
-            $args[] = '--minify-whitespace';
-            $args[] = '--keep-names';
-            $args[] = '--tree-shaking=false';
-         } else { // AGGRESSIVE
-            $args[] = '--minify-whitespace';
-            $args[] = '--keep-names';
-            $args[] = '--tree-shaking=false';
-         }
-      }
-
-      return $args;
-   }
-
-   private static function getBundlerPath(): string
-   {
-      return 'npx esbuild';
    }
 
    private static function compressionStrategy(): string
@@ -529,12 +394,11 @@ trait HtmlCompressor
     * @param string $content Content to compress
     * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @param int $level Compression level
-    * @param ?string $scoped Decides if the JS to compress is scoped or global
     * @return string Compressed content
     */
-   public static function compressWithLevel(string $content, int $level, $type = 'HTML', ?string $scoped = null): string
+   public static function compressWithLevel(string $content, int $level, $type = 'HTML'): string
    {
-      return self::minify($content, $type, $level, $scoped);
+      return self::minify($content, $type, $level);
    }
 
    public static function getCompressionEngine(): string

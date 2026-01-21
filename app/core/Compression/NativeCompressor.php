@@ -34,10 +34,9 @@ final class NativeCompressor
     * @param string $content Content payload to compress
     * @param int $nativeLevel Native compressor level (1-3)
     * @param string $type Content type enum['HTML', 'JS', 'CSS']
-    * @param ?string $scoped Decides if the JS to compress is scoped or global
     * @return string
     */
-   public static function compress(string $content, int $nativeLevel, string $type, ?string $scoped): string
+   public static function compress(string $content, int $nativeLevel, string $type): string
    {
       if (!self::initialize()) {
          throw new \RuntimeException('Native compressor is unavailable.');
@@ -46,7 +45,7 @@ final class NativeCompressor
       $level = max(1, min(3, $nativeLevel));
       $outLen = self::$ffi->new('size_t');
 
-      $resultPointer = self::invoke('phpspa_compress_html_ex', $content, $level, $type, $scoped, \FFI::addr($outLen));
+      $resultPointer = self::invoke('phpspa_compress_html', $content, $level, $type, \FFI::addr($outLen));
 
       if ($resultPointer === null || \FFI::isNull($resultPointer)) {
          throw new \RuntimeException('Native compressor returned a null pointer.');
@@ -146,7 +145,6 @@ final class NativeCompressor
    {
       return <<<'CDEF'
 char* phpspa_compress_html(const char* input, int level, const char* type, size_t* out_len);
-char* phpspa_compress_html_ex(const char* input, int level, const char* type, const char* scope, size_t* out_len);
 void phpspa_free_string(char* buffer);
 CDEF;
    }

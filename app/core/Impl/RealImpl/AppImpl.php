@@ -842,21 +842,26 @@ abstract class AppImpl implements ApplicationContract {
          $result['global']['stylesheets'] .= "\n      <script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
       }
 
-      // --- Generate global script links (only on initial page load, not during PHPSPA requests) ---
-      if (!empty($globalScripts) && !$isPhpSpaRequest) {
+      // --- Generate global script links (include during PHPSPA requests to re-execute globals) ---
+      if (!empty($globalScripts)) {
          foreach ($globalScripts as $index => $script) {
             $script = (array) Validate::validate($script);
+            $isLink = false;
 
             if (is_callable($script['content']))
                $script['src'] = AssetLinkManager::generateJsLink("__global__", $index, $script['name'] ?? null, $script['type']);
-            else
+            else {
                $script['src'] = $script['content'];
+               $isLink = true;
+            }
 
             unset($script['name']);
             unset($script['content']);
             $attributes = HTMLAttrInArrayToString($script);
 
-            $result['global']['scripts'] .= "\n      <script $attributes></script>";
+            $result['global']['scripts'] .= $isPhpSpaRequest && !$isLink
+               ? "\n      <phpspa-script $attributes></phpspa-script>"
+               : "\n      <script $attributes></script>";
          }
       }
 
@@ -897,6 +902,14 @@ abstract class AppImpl implements ApplicationContract {
       $request = new HttpRequest();
       $currentLevel = Compressor::getLevel();
       $isGlobalAsset = $assetInfo['componentRoute'] === '__global__';
+      $isPhpSpaRequest = $request->requestedWith() === 'PHPSPA_REQUEST' || $request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT';
+
+      $isRealJavascript = strtolower($assetInfo['scriptType']) === 'application/javascript' || strtolower($assetInfo['scriptType']) === 'text/javascript';
+      $isComponentJS = !$isGlobalAsset && $assetInfo['assetType'] === 'js' && $isRealJavascript;
+      $isGlobalJS = $isGlobalAsset && $assetInfo['assetType'] === 'js' && $isRealJavascript;
+
+      // --- For global JS: wrap in IIFE if requested by PHPSPA to execute in isolation ---
+      $shouldWrapIIFE = $isComponentJS || ($isGlobalJS && $isPhpSpaRequest);
 
       if ($isGlobalAsset) {
          if ($assetInfo['assetType'] === 'css') {
@@ -942,6 +955,10 @@ abstract class AppImpl implements ApplicationContract {
                if ($currentLevel === Compressor::LEVEL_NONE) unlink($newName);
                else {
                   $content = require $newName;
+
+                  if ($shouldWrapIIFE) {
+                     $content = "(()=>{{$content}})();";
+                  }
                   $content = Compressor::gzipCompress($content);
                   $this->setAssetHeaders($assetInfo['type']);
                   echo $content;
@@ -973,14 +990,8 @@ abstract class AppImpl implements ApplicationContract {
          ? ($currentLevel === Compressor::LEVEL_NONE ? $currentLevel : Compressor::LEVEL_EXTREME)
          : $currentLevel;
 
-      // --- For component JS: only wrap in IIFE if compression level is less than AGGRESSIVE ---
-      // --- AGGRESSIVE/EXTREME levels use bundler with --format=iife for scoped JS ---
-      // --- PHPSPA requests also get bundled (with extreme level), so no manual wrapping needed ---
-      $isRealJavascript = strtolower($assetInfo['scriptType']) === 'application/javascript' || strtolower($assetInfo['scriptType']) === 'text/javascript';
-      $isComponentJS = !$isGlobalAsset && $assetInfo['assetType'] === 'js' && $isRealJavascript;
-      $shouldWrapIIFE = $isComponentJS && $compressionLevel < Compressor::LEVEL_AGGRESSIVE;
-
-      if ($shouldWrapIIFE) {
+      // --- For component JS: wrap in IIFE if compressionis disabled ---
+      if ($shouldWrapIIFE && $currentLevel === Compressor::LEVEL_NONE) {
          $content = "(()=>{{$content}})();";
       }
 
@@ -988,7 +999,7 @@ abstract class AppImpl implements ApplicationContract {
          $content = $content[0];
       } else {
          // --- Compress the content ---
-         $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type'], $isGlobalAsset ? 'global' : 'scoped');
+         $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type']);
 
          if ($currentLevel > Compressor::LEVEL_NONE) {
             if (!is_dir($fileDir)) mkdir($fileDir);
@@ -1096,15 +1107,14 @@ abstract class AppImpl implements ApplicationContract {
     * @param string $content The content to compress
     * @param int $level Compression level
     * @param string $type Asset type ('css' or 'js')
-    * @param string $scoped Decides if the JS to compress is scoped or global
     * @return string Compressed content
     */
-   private function compressAssetContent (string $content, int $level, string $type, string $scoped): string
+   private function compressAssetContent (string $content, int $level, string $type): string
    {
       if ($type === 'css')
          return Compressor::compressWithLevel($content, $level, 'CSS');
       elseif ($type === 'js')
-         return Compressor::compressWithLevel($content, $level, 'JS', $scoped);
+         return Compressor::compressWithLevel($content, $level, 'JS');
 
       return Compressor::compressWithLevel($content, $level, 'HTML');
    }
