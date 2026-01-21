@@ -4,10 +4,56 @@
 #include <fstream>
 #include <vector>
 #include <cstdlib>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #include <chrono>
 #include "../HtmlCompressor.h"
 
 namespace {
+
+#ifdef _WIN32
+   int runCommandHiddenWindows(const std::string& command) {
+      std::string cmdLine = "cmd.exe /C " + command;
+      std::vector<char> buffer(cmdLine.begin(), cmdLine.end());
+      buffer.push_back('\0');
+
+      STARTUPINFOA si;
+      PROCESS_INFORMATION pi;
+      ZeroMemory(&si, sizeof(si));
+      ZeroMemory(&pi, sizeof(pi));
+      si.cb = sizeof(si);
+      si.dwFlags = STARTF_USESHOWWINDOW;
+      si.wShowWindow = SW_HIDE;
+
+      BOOL created = CreateProcessA(
+         nullptr,
+         buffer.data(),
+         nullptr,
+         nullptr,
+         FALSE,
+         CREATE_NO_WINDOW,
+         nullptr,
+         nullptr,
+         &si,
+         &pi
+      );
+
+      if (!created) {
+         return -1;
+      }
+
+      WaitForSingleObject(pi.hProcess, INFINITE);
+
+      DWORD exitCode = 0;
+      GetExitCodeProcess(pi.hProcess, &exitCode);
+
+      CloseHandle(pi.hProcess);
+      CloseHandle(pi.hThread);
+
+      return static_cast<int>(exitCode);
+   }
+#endif
 
    bool isIdentifierStart(char ch) {
       return std::isalpha(static_cast<unsigned char>(ch)) || ch == '_' || ch == '$';
@@ -115,28 +161,14 @@ namespace {
          }
       }
 
-            // Use popen/_popen to avoid console window visibility on all platforms
-      #ifdef _WIN32
+            // Run bundler silently
+         #ifdef _WIN32
             command += " 2>nul";
-            FILE* pipe = _popen(command.c_str(), "r");
-            if (!pipe) {
-               std::error_code ec;
-               std::filesystem::remove(inputPath, ec);
-               std::filesystem::remove(outputPath, ec);
-               return false;
-            }
-            int status = _pclose(pipe);
-      #else
+            int status = runCommandHiddenWindows(command);
+         #else
             command += " 2>/dev/null";
-            FILE* pipe = popen(command.c_str(), "r");
-            if (!pipe) {
-               std::error_code ec;
-               std::filesystem::remove(inputPath, ec);
-               std::filesystem::remove(outputPath, ec);
-               return false;
-            }
-            int status = pclose(pipe);
-      #endif
+            int status = std::system(command.c_str());
+         #endif
       
       if (status != 0 || !std::filesystem::exists(outputPath)) {
          std::error_code ec;
