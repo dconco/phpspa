@@ -98,6 +98,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull origin ${GITHUB_REF#refs/heads/} --rebase
           git add src/bin/libcompressor.so src/bin/compressor.dll
           if git diff --cached --quiet; then
             echo "No shared library updates to commit"
