@@ -5,8 +5,7 @@ permissions:
 
 on:
   push:
-    branches:
-      - master
+    branches: [master, support/php-8.4]
   release:
     types: [published]
   workflow_dispatch:
