@@ -25,7 +25,7 @@ final class CompressionConfigTest extends TestCase
    {
       CompressionConfig::initialize(Compressor::ENV_STAGING);
 
-      $this->assertSame(Compressor::LEVEL_BASIC, Compressor::getLevel());
+      $this->assertSame(Compressor::LEVEL_AGGRESSIVE, Compressor::getLevel());
       $this->assertTrue($this->getGzipEnabled());
    }
 
