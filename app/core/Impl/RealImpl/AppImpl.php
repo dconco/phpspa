@@ -323,7 +323,7 @@ abstract class AppImpl implements ApplicationContract {
       $assetInfo = AssetLinkManager::resolveAssetRequest(static::$request_uri);
       if ($assetInfo !== null) {
          $this->serveAsset($assetInfo);
-         exit();
+         return;
       }
 
       // Clean up expired asset mappings periodically
@@ -918,9 +918,6 @@ abstract class AppImpl implements ApplicationContract {
          $component = $this->findComponentByRoute($assetInfo['componentRoute']);
 
          if ($component === null) {
-            http_response_code(Response::StatusNotFound);
-            header('Content-Type: text/plain');
-            echo "Asset not found";
             return;
          }
 
@@ -974,7 +971,7 @@ abstract class AppImpl implements ApplicationContract {
                      $content = Compressor::gzipCompress($content);
                      $this->setAssetHeaders($assetInfo['type']);
                      echo $content;
-                     return;
+                     exit(0);
                   }
                }
             }
@@ -992,9 +989,6 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       if ($content === null) {
-         http_response_code(Response::StatusNotFound);
-         header('Content-Type: text/plain');
-         echo "Asset content not found";
          return;
       }
 
@@ -1029,6 +1023,7 @@ abstract class AppImpl implements ApplicationContract {
       $this->setAssetHeaders($assetInfo['type']);
       // --- Output the content ---
       echo $content;
+      exit(0);
    }
 
    /**
