@@ -1002,20 +1002,20 @@ abstract class AppImpl implements ApplicationContract {
       } else {
          // --- Compress the content ---
          $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type']);
-
-         // --- Wrap component requested by initial page load in IIFE ---
-         if (!$isGlobalAsset && !$isPhpSpaRequest && $isJS) {
-            $content = "(()=>{{$content}})()";
-         }
-
+         
          if ($currentLevel > Compressor::LEVEL_NONE) {
             if (!is_dir($fileDir)) mkdir($fileDir);
-
+            
             if ($fileName) {
                $assetType = strtoupper($assetInfo['assetType']);
                @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
                @file_put_contents($newAssetMap, $fileSize);
             }
+         }
+
+         // --- Wrap component requested by initial page load in IIFE ---
+         if (!$isGlobalAsset && !$isPhpSpaRequest && $isJS) {
+            $content = "(()=>{{$content}})()";
          }
       }
 
