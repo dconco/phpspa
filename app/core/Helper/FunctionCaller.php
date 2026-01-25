@@ -17,13 +17,12 @@ use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  * @copyright 2026 Dave Conco
  * @license MIT
  * @see https://phpspa.tech/v1.1.5/2-php-js-integration/ PHP-JS Integration Documentation
- * @var callable $function
  */
 class FunctionCaller
 {
     public string $token;
 
-    public function __construct(callable $function, bool $use_once)
+    public function __construct(callable|string $function, bool $use_once)
     {
         $funcName = $this->getCallableName($function);
         $csrf = new CsrfManager($funcName, CALL_FUNC_HANDLE);
@@ -39,25 +38,25 @@ class FunctionCaller
     public function __invoke()
     {
         $arg = '';
-        $args = func_get_args();
+        $args = \func_get_args();
 
         foreach ($args as $value) {
-            if (is_array($value)) $value = json_encode($value);
+            if (\is_array($value)) $value = json_encode($value);
             $arg .= ", $value";
         }
 
         return "phpspa.__call('{$this->token}'{$arg})";
     }
 
-    private function getCallableName(callable $callable): string
+    private function getCallableName(callable|string $callable): string
     {
-        if (is_string($callable)) {
+        if (\is_string($callable)) {
             // Simple function name (e.g., 'strlen')
             return $callable;
-        } elseif (is_array($callable)) {
+        } elseif (\is_array($callable)) {
             // Class method (e.g., [$object, 'method'] or ['ClassName', 'staticMethod'])
-            if (is_object($callable[0])) {
-                return get_class($callable[0]) . '::' . $callable[1];
+            if (\is_object($callable[0])) {
+                return \get_class($callable[0]) . '::' . $callable[1];
             } else {
                 return $callable[0] . '::' . $callable[1];
             }
