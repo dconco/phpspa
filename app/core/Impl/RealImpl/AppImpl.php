@@ -5,7 +5,6 @@ namespace PhpSPA\Core\Impl\RealImpl;
 use PhpSPA\DOM;
 use PhpSPA\Component;
 use PhpSPA\Http\Request;
-use PhpSPA\Http\Response;
 use PhpSPA\Http\Session;
 use PhpSPA\Http\Security\Nonce;
 use PhpSPA\Core\Router\MapRoute;
@@ -70,7 +69,7 @@ abstract class AppImpl implements ApplicationContract {
    private array $components = [];
 
    /**
-    * @var callable[]
+    * @var callable|string[]
     */
    private array $middlewares = [];
 
@@ -120,7 +119,7 @@ abstract class AppImpl implements ApplicationContract {
    /**
     * @var array<array{
     *    path: string,
-    *    handler: callable
+    *    handler: callable|string
     * }>
     */
    protected array $prefix = [];
@@ -161,7 +160,7 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
-   public function middleware (callable $component): ApplicationContract
+   public function middleware (callable|string $component): ApplicationContract
    {
       $this->middlewares[] = $component;
       return $this;
@@ -297,7 +296,7 @@ abstract class AppImpl implements ApplicationContract {
       $this->static[] = ['route' => $route, 'staticPath' => $staticPath]; return $this;
    }
 
-   public function prefix(string $path, callable $handler): ApplicationContract {
+   public function prefix(string $path, callable|string $handler): ApplicationContract {
       $this->prefix[] = ['path' => $path, 'handler' => $handler]; return $this;
    }
 
@@ -1192,11 +1191,11 @@ abstract class AppImpl implements ApplicationContract {
     * Executes the component function based on its parameter signature.
     *
     * @param Request $request The current HTTP request.
-    * @param callable $componentFunction The component's callable function.
+    * @param callable|string $componentFunction The component's callable function.
     * @param array $routerParams An associative array of route parameters.
     * @return string The output of the component function.
     */
-   private function executeComponentFunction(Request $request, callable $componentFunction, array $routerParams = []): string
+   private function executeComponentFunction(Request $request, callable|string $componentFunction, array $routerParams = []): string
    {
       if (CallableInspector::hasParam($componentFunction, 'path') && CallableInspector::hasParam($componentFunction, 'request')) {
          return (string) \call_user_func(

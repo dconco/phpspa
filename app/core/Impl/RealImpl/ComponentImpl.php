@@ -26,7 +26,7 @@ use PhpSPA\Interfaces\IComponent;
  * @method IComponent preload(string ...$componentName) This loads the component with the specific name as a layout on the exact URL on this page
  * @method IComponent name(string $value) This is a unique key for each components to use for preloading
  * @method IComponent targetID(string $targetID) Set the target ID for the component
- * @method IComponent middleware(callable $middleware) Register a component middleware/guard for this route (WIP). Signature: `fn(Request $req, Closure $next): mixed`.
+ * @method IComponent middleware(callable|string $middleware) Register a component middleware/guard for this route (WIP). Signature: `fn(Request $req, Closure $next): mixed`.
  * @method IComponent caseSensitive() Enable case sensitivity for the component
  * @method IComponent caseInsensitive() Disable case sensitivity for the component
  * @method IComponent script(callable|string $content, ?string $name = null, ?string $type = 'text/javascript', array $attributes = []) Add scripts to the component
@@ -128,7 +128,7 @@ abstract class ComponentImpl
    protected array $stylesheets = [];
 
    /**
-    * @var callable[]
+    * @var callable|string[]
     */
    protected array $middlewares = [];
 
@@ -263,12 +263,12 @@ abstract class ComponentImpl
    /**
     * Renders a component by executing it and formatting the output.
     *
-    * @param callable $component The component to render.
+    * @param callable|string $component The component to render.
     * @return string The rendered output.
     */
-   public static function Render(callable $component): string
+   public static function Render(callable|string $component): string
    {
-      $output = \call_user_func($component, new HttpRequest());
+      $output = is_callable($component) ? \call_user_func($component, new HttpRequest()) : $component;
       return static::format($output);
    }
 }

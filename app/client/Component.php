@@ -18,9 +18,9 @@ class Component extends \PhpSPA\Core\Impl\RealImpl\ComponentImpl
      *
      * Initializes the component with a callable that defines the component function.
      *
-     * @param callable $component The callable representing the component logic.
+     * @param callable|string $component The callable representing the component logic.
      */
-    public function __construct(callable $component)
+    public function __construct(callable|string $component)
     {
         $this->component = $component;
     }
