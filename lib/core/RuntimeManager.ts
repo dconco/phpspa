@@ -145,13 +145,22 @@ export class RuntimeManager {
       effect.lastDeps = nextDeps ? nextDeps.slice() : nextDeps
    }
 
-   public static runAll(): void {
+   public static runScripts(): void {
       for (const targetID in RuntimeManager.currentRoutes) {
          const element = document.getElementById(targetID)
 
          if (element) {
             this.runInlineScripts(element)
             this.runPhpSpaScripts(element)
+         }
+      }
+   }
+
+   public static runStyles(): void {
+      for (const targetID in RuntimeManager.currentRoutes) {
+         const element = document.getElementById(targetID)
+
+         if (element) {
             this.runInlineStyles(element)
          }
       }
@@ -192,7 +201,7 @@ export class RuntimeManager {
    }
 
 
-   static runPhpSpaScripts(container: HTMLElement) {
+   private static runPhpSpaScripts(container: HTMLElement) {
       const scripts = container.querySelectorAll("phpspa-script, script[data-type=\"phpspa/script\"]") as NodeListOf<HTMLScriptElement>
       const nonce = document.head.getAttribute('x-phpspa')
 

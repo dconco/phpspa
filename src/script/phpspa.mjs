@@ -1,5 +1,5 @@
 /*!
- * PhpSPA Client Runtime v2.0.9
+ * PhpSPA Client Runtime v2.0.10
  * Docs: https://phpspa.tech | Package: @dconco/phpspa
  * License: MIT
  */
@@ -166,12 +166,19 @@ class RuntimeManager {
         effect.cleanup = typeof cleanup === 'function' ? cleanup : null;
         effect.lastDeps = nextDeps ? nextDeps.slice() : nextDeps;
     }
-    static runAll() {
+    static runScripts() {
         for (const targetID in RuntimeManager.currentRoutes) {
             const element = document.getElementById(targetID);
             if (element) {
                 this.runInlineScripts(element);
                 this.runPhpSpaScripts(element);
+            }
+        }
+    }
+    static runStyles() {
+        for (const targetID in RuntimeManager.currentRoutes) {
+            const element = document.getElementById(targetID);
+            if (element) {
                 this.runInlineStyles(element);
             }
         }
@@ -1266,6 +1273,8 @@ class AppManager {
                 catch {
                     targetElement.innerHTML = component.content;
                 }
+                // --- Execute any inline styles in the new content ---
+                RuntimeManager.runStyles();
             };
             const stateData = {
                 url: newUrl.toString(),
@@ -1301,8 +1310,8 @@ class AppManager {
                 // --- Clear old executed scripts cache ---
                 RuntimeManager.clearEffects();
                 RuntimeManager.clearExecutedScripts();
-                // --- Execute any inline scripts and styles in the new content ---
-                RuntimeManager.runAll();
+                // --- Execute any inline scripts in the new content ---
+                RuntimeManager.runScripts();
                 // --- Emit successful load event ---
                 RuntimeManager.emit("load", {
                     route: newUrl.toString(),
@@ -1600,13 +1609,15 @@ class AppManager {
                 catch {
                     targetElement.innerHTML = component.content;
                 }
+                // --- Execute any inline styles in the new content ---
+                RuntimeManager.runStyles();
             };
             const completedDOMUpdate = () => {
                 // --- Clear old executed scripts cache ---
                 RuntimeManager.clearEffects();
                 RuntimeManager.clearExecutedScripts();
-                // --- Execute any inline scripts and styles in the new content ---
-                RuntimeManager.runAll();
+                // --- Execute any inline scripts in the new content ---
+                RuntimeManager.runScripts();
                 // --- Set up next auto-reload if specified ---
                 if (component?.reloadTime) {
                     setTimeout(AppManager.reloadComponent, component.reloadTime);
@@ -1825,13 +1836,15 @@ const navigateHistory = (event) => {
             catch {
                 targetContainer.innerHTML = navigationState.content;
             }
+            // --- Execute any inline styles in the new content ---
+            RuntimeManager.runStyles();
         };
         const completedDOMUpdate = () => {
             // --- Clear old executed scripts cache ---
             RuntimeManager.clearEffects();
             RuntimeManager.clearExecutedScripts();
-            // --- Execute any inline scripts and styles in the restored content ---
-            RuntimeManager.runAll();
+            // --- Execute any inline scripts in the restored content ---
+            RuntimeManager.runScripts();
             // --- Restart auto-reload timer if needed ---
             if (navigationState?.reloadTime) {
                 setTimeout(AppManager.reloadComponent, navigationState.reloadTime);

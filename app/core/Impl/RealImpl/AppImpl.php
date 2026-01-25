@@ -993,19 +993,17 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       // --- Determine compression level ---
-      $compressionLevel = ($request->requestedWith() === 'PHPSPA_REQUEST')
-         ? ($currentLevel === Compressor::LEVEL_NONE ? $currentLevel : Compressor::LEVEL_EXTREME)
-         : $currentLevel;
+      $compressionLevel = $isPhpSpaRequest ? Compressor::LEVEL_EXTREME : $currentLevel;
 
       if (\is_array($content)) {
          $content = $content[0];
       } else {
          // --- Compress the content ---
          $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type']);
-         
-         if ($currentLevel > Compressor::LEVEL_NONE) {
+
+         if ($currentLevel > Compressor::LEVEL_NONE && !$isPhpSpaRequest) {
             if (!is_dir($fileDir)) mkdir($fileDir);
-            
+
             if ($fileName) {
                $assetType = strtoupper($assetInfo['assetType']);
                @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");

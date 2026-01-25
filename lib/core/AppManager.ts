@@ -176,6 +176,9 @@ export class AppManager {
             } catch {
                targetElement.innerHTML = component.content
             }
+
+            // --- Execute any inline styles in the new content ---
+            RuntimeManager.runStyles()
          }
 
 
@@ -219,8 +222,8 @@ export class AppManager {
             RuntimeManager.clearEffects()
             RuntimeManager.clearExecutedScripts()
 
-            // --- Execute any inline scripts and styles in the new content ---
-            RuntimeManager.runAll()
+            // --- Execute any inline scripts in the new content ---
+            RuntimeManager.runScripts()
 
             // --- Emit successful load event ---
             RuntimeManager.emit("load", {
@@ -549,6 +552,9 @@ export class AppManager {
             } catch {
                targetElement.innerHTML = component.content
             }
+
+            // --- Execute any inline styles in the new content ---
+            RuntimeManager.runStyles()
          }
 
          const completedDOMUpdate = () => {
@@ -556,8 +562,8 @@ export class AppManager {
             RuntimeManager.clearEffects()
             RuntimeManager.clearExecutedScripts()
 
-            // --- Execute any inline scripts and styles in the new content ---
-            RuntimeManager.runAll()
+            // --- Execute any inline scripts in the new content ---
+            RuntimeManager.runScripts()
 
             // --- Set up next auto-reload if specified ---
             if (component?.reloadTime) {

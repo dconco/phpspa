@@ -40,7 +40,6 @@ class App extends AppImpl implements ApplicationContract {
      */
     public function __construct (callable|string $layout = "", bool $autoInitCompression = true)
     {
-        Session::start();
         $this->layout = $layout;
         static::$request_uri = (new HttpRequest())->path();
 

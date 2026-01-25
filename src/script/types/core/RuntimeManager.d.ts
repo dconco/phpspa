@@ -56,13 +56,14 @@ export declare class RuntimeManager {
     private static resolveDependencies;
     private static resolveDependency;
     private static invokeEffect;
-    static runAll(): void;
+    static runScripts(): void;
+    static runStyles(): void;
     /**
      * Processes and executes inline scripts within a container
      * Creates isolated scopes using IIFE to prevent variable conflicts
      */
     private static runInlineScripts;
-    static runPhpSpaScripts(container: HTMLElement): void;
+    private static runPhpSpaScripts;
     /**
      * Clears all executed scripts from the runtime manager.
      * This method removes all entries from the executedScripts collection,
