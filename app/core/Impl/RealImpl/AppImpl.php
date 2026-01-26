@@ -378,12 +378,6 @@ abstract class AppImpl implements ApplicationContract {
 
    private function handlePhpSPARequest(Request $request) {
       if ($request->requestedWith() === 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
-         // if ($request->header('X-Phpspa-Target') === 'navigate') {
-         //    Session::remove(STATE_HANDLE);
-         //    Session::remove(CALL_FUNC_HANDLE);
-         //    return;
-         // }
-
          $data = json_decode(base64_decode($request->auth()->bearer ?? ''), true);
          $data = Validate::validate($data);
 
@@ -472,7 +466,6 @@ abstract class AppImpl implements ApplicationContract {
 
          if ($request->requestedWith() !== 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
             Session::remove(STATE_HANDLE);
-            Session::remove(CALL_FUNC_HANDLE);
          }
       }
       

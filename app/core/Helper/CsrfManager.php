@@ -32,6 +32,9 @@ class CsrfManager implements CsrfManagerInterface
     ) {
         $this->name = $name;
         $this->sessionKey = $sessionKey;
+
+        // Clean up old tokens if too many
+        $this->cleanupTokens();
     }
 
     public function generate(): string
@@ -45,9 +48,6 @@ class CsrfManager implements CsrfManagerInterface
 
         // Add new token
         $this->registerForm($tokenData);
-
-        // Clean up old tokens if too many
-        $this->cleanupTokens();
 
         return $token;
     }

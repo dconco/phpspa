@@ -27,7 +27,7 @@ class FunctionCaller
         $funcName = $this->getCallableName($function);
         $csrf = new CsrfManager($funcName, CALL_FUNC_HANDLE);
 
-        $this->token = base64_encode(json_encode([$funcName, $csrf->getToken(), $use_once]));
+        $this->token = base64_encode(json_encode([$funcName, $csrf->generate(), $use_once]));
     }
 
     public function __toString()
