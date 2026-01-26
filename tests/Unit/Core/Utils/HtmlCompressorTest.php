@@ -62,12 +62,18 @@ final class HtmlCompressorTest extends TestCase
       $this->assertStringNotContainsString("\n", $minified);
    }
 
-   public function testCompressComponentUsesCurrentLevel(): void
+   public function testCompressComponentUsesExtremeLevel(): void
    {
-      Compressor::setLevel(Compressor::LEVEL_NONE);
-      $html = '<div>  x </div>';
+      $html = '<div>x</div>';
 
-      $this->assertSame($html, Compressor::compressComponent($html, 'HTML'));
+      $this->assertSame($html, Compressor::compressComponent('<div>  x  </div>', 'HTML'));
+   }
+
+   public function testNoCompression(): void
+   {
+      $html = '<div>  x  </div>';
+
+      $this->assertSame($html, Compressor::compressWithLevel($html, Compressor::LEVEL_NONE, 'HTML'));
    }
 
    public function testGetLevelReturnsCurrentLevel(): void
