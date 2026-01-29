@@ -4,6 +4,7 @@ namespace PhpSPA\Core\Utils\Formatter;
 
 use PhpSPA\Exceptions\AppException;
 use PhpSPA\Core\Helper\ComponentScope;
+use ReflectionFunction;
 use ReflectionMethod;
 
 /**
@@ -101,42 +102,60 @@ trait ComponentTagFormatter
             // Handle different component types
             if ($isVariable) {
                // Variable component
-               return \call_user_func_array($callable, $attributes);
+               $fileName = new ReflectionFunction($callable)->getFileName();
+               try {
+                  return \call_user_func_array($callable, $attributes);
+               } catch (\Throwable $e) {
+                  throw new \InvalidArgumentException("{$e->getMessage()} at component &lt;$className::$methodName /&gt; in {$fileName}\n", 1);
+               }
             } elseif ($methodName) {
                // Class::method syntax
                if (!class_exists($className)) {
-                  throw new AppException("Class {$className} does not exist.");
+                  throw new \BadFunctionCallException("Class {$className} does not exist.");
                }
 
                if (method_exists($className, $methodName)) {
                   $reflection = ReflectionMethod::createFromMethodName("$className::$methodName");
 
-                  if ($reflection->isStatic()) {
-                     return \call_user_func_array([$className, $methodName], $attributes);
-                  } else {
-                     return (new $className)->$methodName(...$attributes);
+                  try {
+                     if ($reflection->isStatic()) {
+                        return \call_user_func_array([$className, $methodName], $attributes);
+                     } else {
+                        return (new $className)->$methodName(...$attributes);
+                     }
+                  } catch (\Throwable $e) {
+                     throw new \InvalidArgumentException("{$e->getMessage()} at component &lt;$className::$methodName /&gt; in {$reflection->getFileName()}\n", 1);
                   }
                } else {
-                  throw new AppException("Method {$methodName} does not exist in class {$className}.");
+                  throw new \BadFunctionCallException("Method {$methodName} does not exist in class {$className}.");
                }
             } elseif (class_exists($className)) {
                // Class syntax
                if (method_exists($className, '__render')) {
                   $reflection = ReflectionMethod::createFromMethodName("$className::__render");
 
-                  if ($reflection->isStatic()) {
-                     return \call_user_func_array([$className, '__render'], $attributes);
-                  } else {
-                     return (new $className)->__render(...$attributes);
+                  try {
+                     if ($reflection->isStatic()) {
+                        return \call_user_func_array([$className, '__render'], $attributes);
+                     } else {
+                        return (new $className)->__render(...$attributes);
+                     }
+                  } catch (\Throwable $e) {
+                     throw new \InvalidArgumentException("{$e->getMessage()} at component &lt;$className::$methodName /&gt; in {$reflection->getFileName()}\n", 1);
                   }
                } else {
-                  throw new AppException("Class {$className} does not have __render method.");
+                  throw new \BadFunctionCallException("Class {$className} does not have __render method.");
                }
             } elseif (function_exists($className)) {
                // Function syntax
-               return \call_user_func_array($className, $attributes);
+               $fileName = new ReflectionFunction($callable)->getFileName();
+               try {
+                  return \call_user_func_array($className, $attributes);
+               } catch (\Throwable $e) {
+                  throw new \InvalidArgumentException("{$e->getMessage()} at component &lt;$className::$methodName /&gt; in {$fileName}\n", 1);
+               }
             } else {
-               throw new AppException("Component {$component} does not exist.");
+               throw new \BadFunctionCallException("Component {$component} does not exist.");
             }
          },
          $dom,
