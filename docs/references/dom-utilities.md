@@ -51,6 +51,7 @@ Set or override meta tags dynamically from inside any component. This allows you
 ### Usage
 
 ```php
+<?php
 use PhpSPA\DOM;
 
 // Set a meta tag (e.g., description)
@@ -67,6 +68,7 @@ DOM::meta(property: 'og:title', content: 'Dynamic OG Title');
 ### Example
 
 ```php
+<?php
 use PhpSPA\Component;
 use PhpSPA\DOM;
 
