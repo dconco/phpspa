@@ -106,7 +106,7 @@ trait ComponentTagFormatter
                try {
                   return \call_user_func_array($callable, $attributes);
                } catch (\Throwable $e) {
-                  throw new \InvalidArgumentException("{$e->getMessage()} at component &lt;$className::$methodName /&gt; in {$fileName}\n", 1);
+                  throw new \InvalidArgumentException("{$e->getMessage()} at component <$callable /> in {$fileName}\n", 1);
                }
             } elseif ($methodName) {
                // Class::method syntax
@@ -124,7 +124,7 @@ trait ComponentTagFormatter
                         return (new $className)->$methodName(...$attributes);
                      }
                   } catch (\Throwable $e) {
-                     throw new \InvalidArgumentException("{$e->getMessage()} at component &lt;$className::$methodName /&gt; in {$reflection->getFileName()}\n", 1);
+                     throw new \InvalidArgumentException("{$e->getMessage()} at component <$className::$methodName /> in {$reflection->getFileName()}\n", 1);
                   }
                } else {
                   throw new \BadFunctionCallException("Method {$methodName} does not exist in class {$className}.");
@@ -141,18 +141,19 @@ trait ComponentTagFormatter
                         return (new $className)->__render(...$attributes);
                      }
                   } catch (\Throwable $e) {
-                     throw new \InvalidArgumentException("{$e->getMessage()} at component &lt;$className::$methodName /&gt; in {$reflection->getFileName()}\n", 1);
+                     throw new \InvalidArgumentException("{$e->getMessage()} at component <$className /> in {$reflection->getFileName()}\n", 1);
                   }
                } else {
                   throw new \BadFunctionCallException("Class {$className} does not have __render method.");
                }
             } elseif (function_exists($className)) {
                // Function syntax
-               $fileName = new ReflectionFunction($callable)->getFileName();
+               $fileName = new ReflectionFunction($className)->getFileName();
+
                try {
                   return \call_user_func_array($className, $attributes);
                } catch (\Throwable $e) {
-                  throw new \InvalidArgumentException("{$e->getMessage()} at component &lt;$className::$methodName /&gt; in {$fileName}\n", 1);
+                  throw new \InvalidArgumentException("{$e->getMessage()} at component <$className /> in {$fileName}\n", 1);
                }
             } else {
                throw new \BadFunctionCallException("Component {$component} does not exist.");
