@@ -38,11 +38,14 @@ new App(require 'layout/Layout.php')
     ->defaultTargetID('app')
     ->defaultToCaseSensitive()
 
-    ->compression(Compressor::LEVEL_EXTREME, true)
+    ->compression(Compressor::LEVEL_NONE, true)
 
     ->cors()
 
     ->assetCacheHours(0)
+
+    ->meta(charset: 'utf-8')
+    ->meta(name: 'viewport', content: 'from App')
 
     ->link(
         fn () => <<<CSS

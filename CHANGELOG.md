@@ -23,6 +23,18 @@ Added external JavaScript bundler support with intelligent compression levels:
 - `AGGRESSIVE` - esbuild with `--minify-whitespace` and light tree-shaking
 - `EXTREME` - Full esbuild minification with `--bundle` and `--tree-shaking`
 
+### 🆕 DOM::meta() for Dynamic Meta Tags
+
+- Added `DOM::meta()` utility for setting or overriding meta tags dynamically from inside any component function.
+- Component meta now overrides App meta, and `DOM::meta()` can override both at runtime, enabling per-request SEO and social tags.
+- Example:
+  ```php
+  use PhpSPA\DOM;
+  DOM::meta(name: 'description', content: 'Dynamic page description');
+  ```
+- See docs: [references/dom-utilities#dommeta](https://phpspa.tech/references/dom-utilities/#dommeta)
+
+
 ### 🔧 Fixes
 
 - **Native compressor FFI** - Added legacy symbol fallback and improved error diagnostics

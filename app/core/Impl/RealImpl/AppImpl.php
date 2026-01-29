@@ -475,8 +475,20 @@ abstract class AppImpl implements ApplicationContract {
 
       if ($name) DOM::CurrentComponents($name);
 
-      // --- Merge component meta data only if this is the correct route ---
-      $metaTags = [...$this->metadata, ...$componentMetaData];
+      // --- Merge meta: component meta overrides app meta, DOM meta overrides both ---
+      $metaTags = $this->metadata;
+      // Remove app meta that is overridden by component meta
+      foreach ($componentMetaData as $compEntry) {
+         foreach ($metaTags as $k => $meta) {
+            if ((isset($compEntry['name']) && isset($meta['name']) && $compEntry['name'] === $meta['name']) ||
+                (isset($compEntry['property']) && isset($meta['property']) && $compEntry['property'] === $meta['property']) ||
+                (isset($compEntry['charset']) && isset($meta['charset']) && $compEntry['charset'] === $meta['charset'])) {
+               unset($metaTags[$k]);
+            }
+         }
+      }
+      $metaTags = array_merge($metaTags, $componentMetaData);
+
       $middlewares = [...$this->middlewares, ...$componentMiddlewares];
 
       // --- Define the final handler that executes the component function ---
@@ -529,6 +541,21 @@ abstract class AppImpl implements ApplicationContract {
       if (!$isPreloadingComponent) {
          $title = DOM::Title() ?? $title;
          DOM::Title($title);
+
+         // Merge DOM meta (dynamic, set by user in component) and override any with same name/property/charset
+         $domMeta = DOM::meta();
+         if (!empty($domMeta)) {
+            foreach ($domMeta as $domEntry) {
+               foreach ($metaTags as $k => $meta) {
+                  if ((isset($domEntry['name']) && isset($meta['name']) && $domEntry['name'] === $meta['name']) ||
+                      (isset($domEntry['property']) && isset($meta['property']) && $domEntry['property'] === $meta['property']) ||
+                      (isset($domEntry['charset']) && isset($meta['charset']) && $domEntry['charset'] === $meta['charset'])) {
+                     unset($metaTags[$k]);
+                  }
+               }
+            }
+            $metaTags = array_merge($metaTags, $domMeta);
+         }
 
          if ($request->requestedWith() !== 'PHPSPA_REQUEST' && !empty($metaTags)) {
             $metaMarkup = $this->buildMetaTagMarkup($metaTags);
