@@ -493,7 +493,7 @@ abstract class AppImpl implements ApplicationContract {
             }
          }
       }
-      $metaTags = array_merge($metaTags, $componentMetaData);
+      $metaTags = \array_merge($metaTags, $componentMetaData);
 
       $middlewares = [...$this->middlewares, ...$componentMiddlewares];
 
@@ -829,22 +829,24 @@ abstract class AppImpl implements ApplicationContract {
             $stylesheet = (array) Validate::validate($stylesheet);
 
             if (is_callable($stylesheet['content'])) {
-               $stylesheet['type'] ??= 'text/css';
                $stylesheet['href'] = AssetLinkManager::generateCssLink("__global__", $index, $this->randomizeAssetName ? null : ($stylesheet['name'] ?? null));
             } else
                $stylesheet['href'] = $stylesheet['content'];
 
             unset($stylesheet['name']);
             unset($stylesheet['content']);
-            $attributes = HTMLAttrInArrayToString($stylesheet);
-            $result['global']['stylesheets'] .= "\n      <link $attributes />";
 
             if ($stylesheet['rel'] === 'stylesheet') {
-               $stylesheet['rel'] = 'preload';
-               $stylesheet['as'] = 'style';
-               $attributes = HTMLAttrInArrayToString($stylesheet);
+               $preloadStylesheet = $stylesheet;
+
+               $preloadStylesheet['rel'] = 'preload';
+               $preloadStylesheet['as'] = 'style';
+               $attributes = HTMLAttrInArrayToString($preloadStylesheet);
                $result['global']['stylesheets'] .= "\n      <link $attributes />";
             }
+
+            $attributes = HTMLAttrInArrayToString($stylesheet);
+            $result['global']['stylesheets'] .= "\n      <link $attributes />";
          }
       }
 
@@ -854,22 +856,28 @@ abstract class AppImpl implements ApplicationContract {
             $stylesheet = (array) Validate::validate($stylesheet);
 
             if (is_callable($stylesheet['content'])) {
-               $stylesheet['type'] ??= 'text/css';
                $stylesheet['href'] = AssetLinkManager::generateCssLink($primaryRoute, $index, $this->randomizeAssetName ? null : ($stylesheet['name'] ?? null));
             } else
                $stylesheet['href'] = $stylesheet['content'];
 
             unset($stylesheet['name']);
             unset($stylesheet['content']);
+
+            if ($stylesheet['rel'] === 'stylesheet') {
+               $preloadStylesheet = $stylesheet;
+
+               unset($preloadStylesheet['name']);
+               unset($preloadStylesheet['content']);
+
+               $preloadStylesheet['rel'] = 'preload';
+               $preloadStylesheet['as'] = 'style';
+               $attributes = HTMLAttrInArrayToString($preloadStylesheet);
+               $result['component']['stylesheets'] .= "\n      <link $attributes />";
+            }
+
             $attributes = HTMLAttrInArrayToString($stylesheet);
             $result['component']['stylesheets'] .= "\n      <link $attributes />";
 
-            if ($stylesheet['rel'] === 'stylesheet') {
-               $stylesheet['rel'] = 'preload';
-               $stylesheet['as'] = 'style';
-               $attributes = HTMLAttrInArrayToString($stylesheet);
-               $result['component']['stylesheets'] .= "\n      <link $attributes />";
-            }
          }
       }
 
