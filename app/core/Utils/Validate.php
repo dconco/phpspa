@@ -31,11 +31,7 @@ class Validate
      * @return mixed Returns the validated data, maintaining its original type(s).
      * If an array is passed, an array of validated values is returned.
      */
-    public static function validate($data): array|bool|float|int|string|null {
-        if (!\is_bool($data) && !\is_int($data) && !\is_numeric($data) && !\is_float($data) && !\is_double($data) && !\is_string($data)) {
-            return $data;
-        }
-
+    public static function validate($data) {
         // If the data is an array, validate each item recursively
         if (\is_array($data)) {
             return array_map(function ($item) {
@@ -57,8 +53,10 @@ class Validate
      * @param mixed $value The value to be validated.
      * @return mixed The validated value, converted back to its original type.
      */
-    private static function realValidate($value): string|int|float|bool|null {
-        if ($value == null) return null;
+    private static function realValidate($value) {
+        if (!\is_bool($value) && !\is_int($value) && !\is_numeric($value) && !\is_float($value) && !\is_double($value) && !\is_string($value)) {
+            return $value;
+        }
 
         $type = \gettype($value);
 
