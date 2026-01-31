@@ -5,7 +5,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 use PhpSPA\Core\Helper\AssetLinkManager;
 
 // Test through public API only
-$link = AssetLinkManager::generateCssLink('/test', 0);
+$link = AssetLinkManager::generateCssLink('/test', 0, 0);
 echo "Generated link: $link\n";
 
 // Extract and test resolution
@@ -14,11 +14,11 @@ if (preg_match('/\/phpspa\/assets\/(.+)\.css$/', $path, $matches)) {
     $encodedPart = $matches[1];
     echo "Encoded part from URL: $encodedPart\n";
 
-    // Verify the encoded part contains underscore (our separator)
-    if (strpos($encodedPart, '_') !== false) {
-        echo "✅ SUCCESS: Underscore separator found in encoded part\n";
+    // Verify the encoded part contains tildes (our separator)
+    if (strpos($encodedPart, '~') !== false) {
+        echo "✅ SUCCESS: Tilde separator found in encoded part\n";
     } else {
-        echo "❌ FAIL: Underscore separator not found\n";
+        echo "❌ FAIL: Tilde separator not found\n";
     }
 
     // Test resolution
@@ -45,7 +45,7 @@ try {
 }
 
 // Test with named asset
-$namedLink = AssetLinkManager::generateCssLink('/test', 0, 'mystyle');
+$namedLink = AssetLinkManager::generateCssLink('/test', 0, 0, 'mystyle');
 echo "\nNamed asset link: $namedLink\n";
 
 $namedPath = parse_url($namedLink, PHP_URL_PATH);
