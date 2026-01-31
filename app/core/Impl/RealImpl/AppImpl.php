@@ -853,7 +853,7 @@ abstract class AppImpl implements ApplicationContract {
          foreach ($stylesheets as $index => $stylesheet) {
             $stylesheet = (array) Validate::validate($stylesheet);
 
-            if (is_callable($stylesheet['content'])) {
+            if (\is_callable($stylesheet['content'])) {
                $modificationTime = new FileFunction($stylesheet['content'])->getFileModificationTime();
                $stylesheet['href'] = AssetLinkManager::generateCssLink($primaryRoute, $index, $modificationTime, $this->randomizeAssetName ? null : ($stylesheet['name'] ?? null));
             } else
@@ -884,7 +884,7 @@ abstract class AppImpl implements ApplicationContract {
       // --- Attaching it to the global stylesheet to expicitly... ---
       // --- add it to the head tag alongside with the styles instead of the body ---
       if (!$isPhpSpaRequest && !$this->module) {
-         $modificationTime = new FileFunction($this->getPhpSPAScriptPath())->getFileModificationTime();
+         $modificationTime = filemtime($this->getPhpSPAScriptPath());
          $jsLink = AssetLinkManager::generateJsLink("__global__", -1, $modificationTime, 'text/javascript');
          $result['global']['stylesheets'] .= "\n      <script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
       }
@@ -987,10 +987,9 @@ abstract class AppImpl implements ApplicationContract {
          $fileModifyTime = $ff->getFileModificationTime();
 
          if ($fileName) {
-            $extName = pathinfo($fileName, PATHINFO_EXTENSION);
+            $hashed = md5($assetInfo['componentRoute'] . $assetInfo['assetIndex'] . $fileModifyTime . $assetInfo['assetType']);
             $fileDir = pathinfo($fileName, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 'generated';
-            $pathWithoutExt = $fileDir . DIRECTORY_SEPARATOR . pathinfo($fileName, PATHINFO_FILENAME);
-            $newName = "{$pathWithoutExt}-{$assetInfo['assetIndex']}-{$fileModifyTime}.{$assetInfo['assetType']}.generated.{$extName}";
+            $newName = $fileDir . DIRECTORY_SEPARATOR . $hashed . ".generated.php";
 
             if (file_exists($newName)) {
                if ($currentLevel === Compressor::LEVEL_NONE) {
@@ -1140,7 +1139,7 @@ abstract class AppImpl implements ApplicationContract {
 
    public function getPhpSPAScriptPath (): string
    {
-      return __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'script' . DIRECTORY_SEPARATOR . 'phpspa.min.js';
+      return realpath(dirname(__DIR__, 4) . '/src/script/phpspa.min.js');
    }
 
    /**
