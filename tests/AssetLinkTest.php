@@ -24,7 +24,7 @@ function testAssetLinkGeneration()
     // Test 1: CSS link generation
     $total++;
     echo "\n=== Test: CSS Link Generation ===\n";
-    $cssLink = AssetLinkManager::generateCssLink('/test', 0);
+    $cssLink = AssetLinkManager::generateCssLink('/test', 0, 0);
     if (preg_match('/\/phpspa\/assets\/[^\/]+\.css$/', parse_url($cssLink, PHP_URL_PATH))) {
         echo "PASS\n";
         $passed++;
@@ -35,7 +35,7 @@ function testAssetLinkGeneration()
     // Test 2: JS link generation
     $total++;
     echo "\n=== Test: JS Link Generation ===\n";
-    $jsLink = AssetLinkManager::generateJsLink('/test', 1, null, 'application/js');
+    $jsLink = AssetLinkManager::generateJsLink('/test', 1, 0, null, 'application/js');
     if (preg_match('/\/phpspa\/assets\/[^\/]+\.js$/', parse_url($jsLink, PHP_URL_PATH))) {
         echo "PASS\n";
         $passed++;
@@ -89,7 +89,7 @@ function testAssetServing()
     echo "\n=== Test: CSS Asset Serving ===\n";
 
     // Generate CSS link
-    $cssLink = AssetLinkManager::generateCssLink('/test-asset', 0);
+    $cssLink = AssetLinkManager::generateCssLink('/test-asset', 0, 0);
     $cssPath = parse_url($cssLink, PHP_URL_PATH);
 
     // Set up environment
@@ -115,7 +115,7 @@ function testAssetServing()
     echo "\n=== Test: JS Asset Serving ===\n";
 
     // Generate JS link
-    $jsLink = AssetLinkManager::generateJsLink('/test-asset', 0, null, 'application/js');
+    $jsLink = AssetLinkManager::generateJsLink('/test-asset', 0, 0, null, 'application/js');
     $jsPath = parse_url($jsLink, PHP_URL_PATH);
 
     // Set up environment
@@ -151,7 +151,7 @@ function testCompressionLevels()
     $total++;
     echo "\n=== Test: Normal Request Uses Standard Compression ===\n";
 
-    $cssLink = AssetLinkManager::generateCssLink('/test-compression', 0);
+    $cssLink = AssetLinkManager::generateCssLink('/test-compression', 0, 0);
     $cssPath = parse_url($cssLink, PHP_URL_PATH);
 
     // Set up normal request
@@ -180,7 +180,7 @@ function testCompressionLevels()
     $total++;
     echo "\n=== Test: PHPSPA_REQUEST Uses LEVEL_EXTREME Compression ===\n";
 
-    $cssLink2 = AssetLinkManager::generateCssLink('/test-compression-extreme', 0);
+    $cssLink2 = AssetLinkManager::generateCssLink('/test-compression-extreme', 0, 0);
     $cssPath2 = parse_url($cssLink2, PHP_URL_PATH);
 
     // Set up PHPSPA_REQUEST
@@ -236,7 +236,7 @@ function testLinkGeneration()
     ->script(function () {
         return 'console.log("This should be in external file");';
     })
-    ->styleSheet(function () {
+    ->link(function () {
         return 'body { color: green; }';
     });
 
@@ -270,7 +270,7 @@ function testAssetEncodingAndSecurity()
     // Test 1: Verify tilde separator is used
     $total++;
     echo "\n=== Test: Tilde Separator in URLs ===\n";
-    $link = AssetLinkManager::generateCssLink('/test', 0);
+    $link = AssetLinkManager::generateCssLink('/test', 0, 0);
     $path = parse_url($link, PHP_URL_PATH);
     if (preg_match('/\/phpspa\/assets\/(.+)\.css$/', $path, $matches)) {
         $encodedPart = $matches[1];
@@ -324,7 +324,7 @@ function testAssetEncodingAndSecurity()
     // Test 4: Named asset
     $total++;
     echo "\n=== Test: Named Asset Support ===\n";
-    $namedLink = AssetLinkManager::generateCssLink('/test', 0, 'mystyle');
+    $namedLink = AssetLinkManager::generateCssLink('/test', 0, 0, 'mystyle');
     $namedPath = parse_url($namedLink, PHP_URL_PATH);
     $namedResolved = AssetLinkManager::resolveAssetRequest($namedPath);
     if ($namedResolved && isset($namedResolved['name']) && $namedResolved['name'] === 'mystyle') {

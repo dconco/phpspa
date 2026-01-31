@@ -53,7 +53,7 @@ final class HttpRequestTest extends TestCase
       $request = new HttpRequest();
 
       $this->assertSame('bar', $request->urlQuery('foo'));
-      $this->assertSame('1', $request->urlQuery('baz'));
+      $this->assertSame(1, $request->urlQuery('baz'));
    }
 
    public function testInvokeReturnsDefaultWhenMissing(): void
@@ -136,8 +136,8 @@ final class HttpRequestTest extends TestCase
    {
       $request = new HttpRequest(['id' => '10']);
 
-      $this->assertSame(['id' => '10'], $request->urlParams());
-      $this->assertSame('10', $request->urlParams('id'));
+      $this->assertSame(['id' => 10], $request->urlParams());
+      $this->assertSame(10, $request->urlParams('id'));
       $this->assertNull($request->urlParams('missing'));
    }
 
@@ -166,7 +166,7 @@ final class HttpRequestTest extends TestCase
 
       $request = new HttpRequest();
 
-      $this->assertSame('1', $request->get('page'));
+      $this->assertSame(1, $request->get('page'));
       $this->assertSame('PhpSPA', $request->post('name'));
       $this->assertSame('dark', $request->cookie('mode'));
    }

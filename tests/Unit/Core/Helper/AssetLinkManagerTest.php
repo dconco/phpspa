@@ -22,8 +22,8 @@ final class AssetLinkManagerTest extends TestCase
 
    public function testGenerateCssAndJsLinks(): void
    {
-      $css = AssetLinkManager::generateCssLink('/test', 0);
-      $js = AssetLinkManager::generateJsLink('/test', 1);
+      $css = AssetLinkManager::generateCssLink('/test', 0, 0);
+      $js = AssetLinkManager::generateJsLink('/test', 1, 0);
 
       $this->assertMatchesRegularExpression('/phpspa\/assets\/[^\/]+\.css$/', $css);
       $this->assertMatchesRegularExpression('/phpspa\/assets\/[^\/]+\.js$/', $js);
@@ -31,7 +31,7 @@ final class AssetLinkManagerTest extends TestCase
 
    public function testResolveAssetRequestReturnsMapping(): void
    {
-      $css = AssetLinkManager::generateCssLink('/test', 0);
+      $css = AssetLinkManager::generateCssLink('/test', 0, 0);
       $path = parse_url($css, PHP_URL_PATH);
 
       $resolved = AssetLinkManager::resolveAssetRequest($path);
