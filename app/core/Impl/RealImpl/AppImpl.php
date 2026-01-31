@@ -885,7 +885,7 @@ abstract class AppImpl implements ApplicationContract {
       // --- add it to the head tag alongside with the styles instead of the body ---
       if (!$isPhpSpaRequest && !$this->module) {
          $modificationTime = filemtime($this->getPhpSPAScriptPath());
-         $jsLink = AssetLinkManager::generateJsLink("__global__", -1, $modificationTime, 'text/javascript');
+         $jsLink = AssetLinkManager::generateJsLink("__global__", -1, $modificationTime);
          $result['global']['stylesheets'] .= "\n      <script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
       }
 
