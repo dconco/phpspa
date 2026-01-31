@@ -11,7 +11,7 @@ class DOM {
 
    /**
     * Set or get meta tags dynamically.
-    * Signature matches AppImpl::meta().
+    * Signature matches App::meta().
     * If called with arguments, sets meta; if called with no args, returns all set meta.
     *
     * @since v2.0.7
