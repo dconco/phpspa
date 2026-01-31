@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../vendor/autoload.php';
+
 /**
  * Asset Link Generation and Serving Test
  *
@@ -23,7 +25,7 @@ function testAssetLinkGeneration()
     $total++;
     echo "\n=== Test: CSS Link Generation ===\n";
     $cssLink = AssetLinkManager::generateCssLink('/test', 0);
-    if (preg_match('/\/phpspa\/assets\/[a-f0-9]{32}\.css$/', parse_url($cssLink, PHP_URL_PATH))) {
+    if (preg_match('/\/phpspa\/assets\/[^\/]+\.css$/', parse_url($cssLink, PHP_URL_PATH))) {
         echo "PASS\n";
         $passed++;
     } else {
@@ -34,7 +36,7 @@ function testAssetLinkGeneration()
     $total++;
     echo "\n=== Test: JS Link Generation ===\n";
     $jsLink = AssetLinkManager::generateJsLink('/test', 1, null, 'application/js');
-    if (preg_match('/\/phpspa\/assets\/[a-f0-9]{32}\.js$/', parse_url($jsLink, PHP_URL_PATH))) {
+    if (preg_match('/\/phpspa\/assets\/[^\/]+\.js$/', parse_url($jsLink, PHP_URL_PATH))) {
         echo "PASS\n";
         $passed++;
     } else {
@@ -258,6 +260,86 @@ function testLinkGeneration()
     return $passed === $total;
 }
 
+function testAssetEncodingAndSecurity()
+{
+    echo "============== ASSET ENCODING AND SECURITY TEST STARTED ==============\n";
+
+    $passed = 0;
+    $total = 0;
+
+    // Test 1: Verify tilde separator is used
+    $total++;
+    echo "\n=== Test: Tilde Separator in URLs ===\n";
+    $link = AssetLinkManager::generateCssLink('/test', 0);
+    $path = parse_url($link, PHP_URL_PATH);
+    if (preg_match('/\/phpspa\/assets\/(.+)\.css$/', $path, $matches)) {
+        $encodedPart = $matches[1];
+        if (strpos($encodedPart, '~') !== false) {
+            echo "PASS: Tilde separator found\n";
+            $passed++;
+        } else {
+            echo "FAIL: Tilde separator not found in: $encodedPart\n";
+        }
+    } else {
+        echo "FAIL: Could not parse link: $link\n";
+    }
+
+    // Test 2: Asset resolution works
+    $total++;
+    echo "\n=== Test: Asset Resolution ===\n";
+    $resolved = AssetLinkManager::resolveAssetRequest($path);
+    if ($resolved && $resolved['componentRoute'] === '/test' && $resolved['assetType'] === 'css') {
+        echo "PASS: Asset resolution successful\n";
+        $passed++;
+    } else {
+        echo "FAIL: Asset resolution failed\n";
+    }
+
+    // Test 3: Tamper detection
+    $total++;
+    echo "\n=== Test: Tamper Detection ===\n";
+    // Get the encoded part from the path
+    if (preg_match('/\/phpspa\/assets\/(.+)\.css$/', $path, $matches)) {
+        $encodedWithSig = $matches[1];
+        // Tamper by changing one character
+        $tampered = $encodedWithSig;
+        $tampered[0] = ($tampered[0] === 'a') ? 'b' : 'a'; // Simple tamper
+        
+        // Use reflection to access private method
+        $reflection = new ReflectionClass('PhpSPA\\Core\\Helper\\AssetLinkManager');
+        $method = $reflection->getMethod('decodeAssetData');
+        $method->setAccessible(true);
+        
+        $result = $method->invoke(null, $tampered);
+        if ($result === null) {
+            echo "PASS: Tampering detected (decodeAssetData returned null)\n";
+            $passed++;
+        } else {
+            echo "FAIL: Tampering not detected\n";
+        }
+    } else {
+        echo "FAIL: Could not extract encoded data from path\n";
+    }
+
+    // Test 4: Named asset
+    $total++;
+    echo "\n=== Test: Named Asset Support ===\n";
+    $namedLink = AssetLinkManager::generateCssLink('/test', 0, 'mystyle');
+    $namedPath = parse_url($namedLink, PHP_URL_PATH);
+    $namedResolved = AssetLinkManager::resolveAssetRequest($namedPath);
+    if ($namedResolved && isset($namedResolved['name']) && $namedResolved['name'] === 'mystyle') {
+        echo "PASS: Named asset resolution works\n";
+        $passed++;
+    } else {
+        echo "FAIL: Named asset resolution failed\n";
+    }
+
+    echo "\nAsset Encoding and Security Tests Summary: $passed/$total PASSED\n";
+    echo "============== ASSET ENCODING AND SECURITY TESTS COMPLETED ==============\n\n";
+
+    return $passed === $total;
+}
+
 // Run all tests
 $allTestsPassed = true;
 
@@ -265,6 +347,7 @@ $allTestsPassed &= testAssetLinkGeneration();
 $allTestsPassed &= testAssetServing();
 $allTestsPassed &= testCompressionLevels();
 $allTestsPassed &= testLinkGeneration();
+$allTestsPassed &= testAssetEncodingAndSecurity();
 
 if ($allTestsPassed) {
     echo "================= ASSET LINK TESTS RESULT: ALL PASSED =================\n";

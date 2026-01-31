@@ -18,11 +18,11 @@ use PhpSPA\Core\Helper\CallableInspector;
 use PhpSPA\Core\Helper\ComponentScope;
 use PhpSPA\Core\Helper\AssetLinkManager;
 use PhpSPA\Core\Helper\PathResolver;
+use PhpSPA\Core\Utils\FileFunction;
 use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 use PhpSPA\Core\Utils\Validate;
 use PhpSPA\Interfaces\ApplicationContract;
 use PhpSPA\Interfaces\IComponent;
-use ReflectionFunction;
 
 use function Component\HTMLAttrInArrayToString;
 
@@ -330,9 +330,6 @@ abstract class AppImpl implements ApplicationContract {
          $this->serveAsset($assetInfo);
          return;
       }
-
-      // Clean up expired asset mappings periodically
-      AssetLinkManager::cleanupExpiredMappings();
 
       $success = false;
 
@@ -829,7 +826,8 @@ abstract class AppImpl implements ApplicationContract {
             $stylesheet = (array) Validate::validate($stylesheet);
 
             if (is_callable($stylesheet['content'])) {
-               $stylesheet['href'] = AssetLinkManager::generateCssLink("__global__", $index, $this->randomizeAssetName ? null : ($stylesheet['name'] ?? null));
+               $modificationTime = new FileFunction($stylesheet['content'])->getFileModificationTime();
+               $stylesheet['href'] = AssetLinkManager::generateCssLink("__global__", $index, $modificationTime, $this->randomizeAssetName ? null : ($stylesheet['name'] ?? null));
             } else
                $stylesheet['href'] = $stylesheet['content'];
 
@@ -856,7 +854,8 @@ abstract class AppImpl implements ApplicationContract {
             $stylesheet = (array) Validate::validate($stylesheet);
 
             if (is_callable($stylesheet['content'])) {
-               $stylesheet['href'] = AssetLinkManager::generateCssLink($primaryRoute, $index, $this->randomizeAssetName ? null : ($stylesheet['name'] ?? null));
+               $modificationTime = new FileFunction($stylesheet['content'])->getFileModificationTime();
+               $stylesheet['href'] = AssetLinkManager::generateCssLink($primaryRoute, $index, $modificationTime, $this->randomizeAssetName ? null : ($stylesheet['name'] ?? null));
             } else
                $stylesheet['href'] = $stylesheet['content'];
 
@@ -885,7 +884,8 @@ abstract class AppImpl implements ApplicationContract {
       // --- Attaching it to the global stylesheet to expicitly... ---
       // --- add it to the head tag alongside with the styles instead of the body ---
       if (!$isPhpSpaRequest && !$this->module) {
-         $jsLink = AssetLinkManager::generateJsLink("__global__", -1, null, 'text/javascript');
+         $modificationTime = new FileFunction($this->getPhpSPAScriptPath())->getFileModificationTime();
+         $jsLink = AssetLinkManager::generateJsLink("__global__", -1, $modificationTime, 'text/javascript');
          $result['global']['stylesheets'] .= "\n      <script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
       }
 
@@ -895,9 +895,10 @@ abstract class AppImpl implements ApplicationContract {
             $script = (array) Validate::validate($script);
             $isLink = false;
 
-            if (is_callable($script['content']))
-               $script['src'] = AssetLinkManager::generateJsLink("__global__", $index, $this->randomizeAssetName ? null : ($script['name'] ?? null), $script['type']);
-            else {
+            if (is_callable($script['content'])) {
+               $modificationTime = new FileFunction($script['content'])->getFileModificationTime();
+               $script['src'] = AssetLinkManager::generateJsLink("__global__", $index, $modificationTime, $this->randomizeAssetName ? null : ($script['name'] ?? null), $script['type']);
+            } else {
                $script['src'] = $script['content'];
                $isLink = true;
             }
@@ -918,9 +919,10 @@ abstract class AppImpl implements ApplicationContract {
             $script = (array) Validate::validate($script);
             $isLink = false;
 
-            if (is_callable($script['content']))
-               $script['src'] = AssetLinkManager::generateJsLink($primaryRoute, $index, $this->randomizeAssetName ? null : ($script['name'] ?? null), $script['type']);
-            else {
+            if (is_callable($script['content'])) {
+               $modificationTime = new FileFunction($script['content'])->getFileModificationTime();
+               $script['src'] = AssetLinkManager::generateJsLink($primaryRoute, $index, $modificationTime, $this->randomizeAssetName ? null : ($script['name'] ?? null), $script['type']);
+            } else {
                $script['src'] = $script['content'];
                $isLink = true;
             }
@@ -980,46 +982,31 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       if (\is_callable($callable)) {
-         $fileName = null;
-
-         if (\is_array($callable)) {
-            // Array callable like [$object, 'method'] or ['Class', 'method']
-            $reflection = new \ReflectionMethod($callable[0], $callable[1]);
-            $fileName = $reflection->getFileName();
-         } elseif ($callable instanceof \Closure || \is_string($callable)) {
-            // Closure or function name
-            $func = new ReflectionFunction($callable);
-            $fileName = $func->getFileName();
-         }
+         $ff = new FileFunction($callable);
+         $fileName = $ff->getFileName();
+         $fileModifyTime = $ff->getFileModificationTime();
 
          if ($fileName) {
             $extName = pathinfo($fileName, PATHINFO_EXTENSION);
             $fileDir = pathinfo($fileName, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 'generated';
             $pathWithoutExt = $fileDir . DIRECTORY_SEPARATOR . pathinfo($fileName, PATHINFO_FILENAME);
-            $newName = "{$pathWithoutExt}-{$assetInfo['assetIndex']}.{$assetInfo['assetType']}.generated.{$extName}";
-            $newAssetMap = "$newName.map";
-            $fileSize = filesize($fileName);
+            $newName = "{$pathWithoutExt}-{$assetInfo['assetIndex']}-{$fileModifyTime}.{$assetInfo['assetType']}.generated.{$extName}";
 
             if (file_exists($newName)) {
                if ($currentLevel === Compressor::LEVEL_NONE) {
                   unlink($newName);
-                  unlink($newAssetMap);
                }
                else {
-                  $oldFileSize = (int) @file_get_contents($newAssetMap);
+                  $content = require $newName;
 
-                  if ($oldFileSize !== 0 && $oldFileSize === $fileSize) {
-                     $content = require $newName;
-
-                     // --- Wrap component requested by initial page load in IIFE ---
-                     if (!$isGlobalAsset && !$isPhpSpaRequest && $isJS) {
-                        $content = "(()=>{{$content}})()";
-                     }
-                     $content = Compressor::gzipCompress($content);
-                     $this->setAssetHeaders($assetInfo['type']);
-                     echo $content;
-                     exit(0);
+                  // --- Wrap component requested by initial page load in IIFE ---
+                  if (!$isGlobalAsset && !$isPhpSpaRequest && $isJS) {
+                     $content = "(()=>{{$content}})()";
                   }
+                  $content = Compressor::gzipCompress($content);
+                  $this->setAssetHeaders($assetInfo['type']);
+                  echo $content;
+                  exit(0);
                }
             }
          }
@@ -1054,7 +1041,6 @@ abstract class AppImpl implements ApplicationContract {
             if ($fileName) {
                $assetType = strtoupper($assetInfo['assetType']);
                @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
-               @file_put_contents($newAssetMap, $fileSize);
             }
          }
 
@@ -1145,14 +1131,16 @@ abstract class AppImpl implements ApplicationContract {
          }
 
          if ($assetInfo['assetIndex'] === -1 && $request->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT' && $request->requestedWith() !== 'PHPSPA_REQUEST') {
-            $scriptPath = dirname(__DIR__, 4);
-            $path = '/src/script/phpspa.min.js'; // --- PRODUCTION ---
-
-            return [file_get_contents($scriptPath . $path)];
+            return [file_get_contents($this->getPhpSPAScriptPath())];
          }
       }
 
       return null;
+   }
+
+   public function getPhpSPAScriptPath (): string
+   {
+      return __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'script' . DIRECTORY_SEPARATOR . 'phpspa.min.js';
    }
 
    /**

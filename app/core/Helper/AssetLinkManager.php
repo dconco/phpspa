@@ -6,14 +6,12 @@ namespace PhpSPA\Core\Helper;
 
 use PhpSPA\Core\Helper\PathResolver;
 use PhpSPA\Http\Response;
-use PhpSPA\Http\Session;
 
 /**
  * Asset Link Manager
  *
- * Manages the generation and storage of session-based links for CSS and JavaScript assets.
- * Provides functionality to store function references via component routes and serve
- * compressed content through dynamic links.
+ * Manages the generation of encoded links for CSS and JavaScript assets.
+ * Encodes asset details in the URL with HMAC for integrity and stateless asset serving with expiration validation.
  *
  * @author dconco <me@dconco.tech>
  * @copyright 2026 Dave Conco
@@ -23,107 +21,95 @@ use PhpSPA\Http\Session;
 class AssetLinkManager
 {
     /**
-     * Session key for storing asset mappings
-     */
-    private const ASSET_MAPPINGS_KEY = 'phpspa_asset_mappings';
-
-    /**
-     * Session key for storing cache configuration
-     */
-    private const CACHE_CONFIG_KEY = 'phpspa_cache_config';
-
-    /**
      * Default cache duration in hours
      */
     private const DEFAULT_CACHE_HOURS = 24;
 
     /**
-     * Generate a unique session-based link for a CSS asset
+     * Secret key for HMAC
+     */
+    private static string $secretKey = 'phpspa_asset_secret_key_2026';
+
+    /**
+     * Cache duration in hours
+     */
+    private static int $cacheHours = self::DEFAULT_CACHE_HOURS;
+
+    /**
+     * Generate a unique encoded link for a CSS asset
      *
      * @param string $componentRoute The route identifier for the component
      * @param int $stylesheetIndex The index of the stylesheet in the component's stylesheets array
+     * @param int $filemtime The file modification time of the asset
      * @param string|null $name Optional name for the asset
      * @return string The generated CSS link
      */
-    public static function generateCssLink(string $componentRoute, int $stylesheetIndex, ?string $name = null): string
+    public static function generateCssLink(string $componentRoute, int $stylesheetIndex, int $filemtime, ?string $name = null): string
     {
-        $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
+        $data = [
+            'componentRoute' => $componentRoute,
+            'assetType' => 'css',
+            'assetIndex' => $stylesheetIndex,
+            'name' => $name,
+            'created' => time(),
+            'scriptType' => 'text/css',
+            'version' => $filemtime
+        ];
 
-        foreach ($mappings as $hash => $mapping) {
-            if (!self::isMappingExpired($mapping) && $mapping['componentRoute'] === $componentRoute && $mapping['assetType'] === 'css' && $mapping['assetIndex'] === $stylesheetIndex) {
-                return self::buildAssetUrl($hash, 'css', $name);
-            }
-        }
-
-        $hash = self::generateAssetHash($componentRoute, 'css', $stylesheetIndex, $name);
-        self::storeAssetMapping($hash, $componentRoute, 'css', $stylesheetIndex, $name);
-
-        return self::buildAssetUrl($hash, 'css', $name);
+        $encoded = self::encodeAssetData($data);
+        return self::buildAssetUrl($encoded, 'css', $name);
     }
 
     /**
-     * Generate a unique session-based link for a JavaScript asset
+     * Generate a unique encoded link for a JavaScript asset
      *
      * @param string $componentRoute The route identifier for the component
      * @param int $scriptIndex The index of the script in the component's scripts array
+     * @param int $filemtime The file modification time of the asset
      * @param string|null $name Optional name for the asset
      * @param string $type The type of the script
      * @return string The generated JS link
      */
-    public static function generateJsLink(string $componentRoute, int $scriptIndex, ?string $name = null, string $type = 'text/javascript'): string
+    public static function generateJsLink(string $componentRoute, int $scriptIndex, int $filemtime, ?string $name = null, string $type = 'text/javascript'): string
     {
-        $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
+        $data = [
+            'componentRoute' => $componentRoute,
+            'assetType' => 'js',
+            'assetIndex' => $scriptIndex,
+            'name' => $name,
+            'created' => time(),
+            'scriptType' => $type,
+            'version' => $filemtime
+        ];
 
-        foreach ($mappings as $hash => $mapping) {
-            if (!self::isMappingExpired($mapping) && $mapping['componentRoute'] === $componentRoute && $mapping['assetType'] === 'js' && $mapping['assetIndex'] === $scriptIndex) {
-                return self::buildAssetUrl($hash, 'js', $name);
-            }
-        }
-
-        $hash = self::generateAssetHash($componentRoute, 'js', $scriptIndex, $name, $type);
-        self::storeAssetMapping($hash, $componentRoute, 'js', $scriptIndex, $name, $type);
-
-        return self::buildAssetUrl($hash, 'js', $name);
+        $encoded = self::encodeAssetData($data);
+        return self::buildAssetUrl($encoded, 'js', $name);
     }
 
     /**
-     * Check if a request is for a session-based asset
+     * Check if a request is for an encoded asset
      *
      * @param string $requestUri The current request URI
      * @return array|null Asset information if found, null otherwise
      */
     public static function resolveAssetRequest(string $requestUri): ?array
     {
-        if (!preg_match('/\/phpspa\/assets\/(?:(.+)-([a-f0-9]{32})|([a-f0-9]{32}))\.(css|js)$/', $requestUri, $matches)) {
+        if (!preg_match('/\/phpspa\/assets\/(?:([^\/]+)-)?([^\/]+)\.(css|js)$/', $requestUri, $matches)) {
             return null;
         }
 
-        if (!empty($matches[1])) {
-            $name = $matches[1];
-            $hash = $matches[2];
-            $type = $matches[4];
-        } else {
-            $name = null;
-            $hash = $matches[3];
-            $type = $matches[4];
-        }
-        
-        $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
-        
-        if (!isset($mappings[$hash])) {
-            http_response_code(Response::StatusNotFound);
-            header('Content-Type: text/plain');
-            echo "Asset not found";
-            exit;
-        }
-        
-        $mapping = $mappings[$hash];
-        
-        // Check if mapping has expired
-        if (self::isMappingExpired($mapping)) {
-            unset($mappings[$hash]);
-            Session::set(self::ASSET_MAPPINGS_KEY, $mappings, true);
+        $name = !empty($matches[1]) ? $matches[1] : null;
+        $encoded = $matches[2]; // This now contains the data + signature. e.g., "eyJ...~abc123"
+        $type = $matches[3];
 
+        $data = self::decodeAssetData($encoded);
+
+        if (!$data || $data['name'] !== $name || $data['assetType'] !== $type) {
+            return null;
+        }
+
+        // Check if mapping has expired
+        if (self::isMappingExpired($data['created'])) {
             http_response_code(Response::StatusGone);
             header('Content-Type: text/plain');
             echo "Asset has expired";
@@ -131,27 +117,36 @@ class AssetLinkManager
         }
 
         return [
-            'hash' => $hash,
+            'hash' => $encoded,
             'type' => $type,
-            'componentRoute' => $mapping['componentRoute'],
-            'scriptType' => $mapping['scriptType'],
-            'assetType' => $mapping['assetType'],
-            'assetIndex' => $mapping['assetIndex']
+            'componentRoute' => $data['componentRoute'],
+            'scriptType' => $data['scriptType'],
+            'assetType' => $data['assetType'],
+            'assetIndex' => $data['assetIndex'],
+            'name' => $name
         ];
+    }
+
+    /**
+     * Set the secret key for HMAC verification
+     *
+     * @param string $key The secret key
+     * @return void
+     */
+    public static function setSecretKey(string $key): void
+    {
+        self::$secretKey = $key;
     }
 
     /**
      * Set cache configuration for assets
      *
-     * @param int $hours Number of hours to cache assets (0 for session-only)
+     * @param int $hours Number of hours to cache assets (0 for no expiration)
      * @return void
      */
     public static function setCacheConfig(int $hours): void
     {
-        Session::set(self::CACHE_CONFIG_KEY, [
-            'hours' => $hours,
-            'timestamp' => time()
-        ]);
+        self::$cacheHours = $hours;
     }
 
     /**
@@ -161,56 +156,52 @@ class AssetLinkManager
      */
     public static function getCacheConfig(): array
     {
-        return Session::get(self::CACHE_CONFIG_KEY, [
-            'hours' => self::DEFAULT_CACHE_HOURS,
+        return [
+            'hours' => self::$cacheHours,
             'timestamp' => time()
-        ]);
-    }
-
-    /**
-     * Generate a unique hash for an asset
-     *
-     * @param string $componentRoute The component route
-     * @param string $assetType Type of asset ('css' or 'js')
-     * @param int $assetIndex Index of the asset
-     * @param string|null $name Optional name for the asset
-     * @return string Generated hash
-     */
-    private static function generateAssetHash(string $componentRoute, string $assetType, int $assetIndex, ?string $name = null, ?string $type = null): string
-    {
-        $sessionId = session_id();
-        $data = $sessionId . $componentRoute . $assetType . $assetIndex;
-
-        if ($name) $data .= $name;
-        if ($type) $data .= $type;
-
-        return md5($data);
-    }
-
-    /**
-     * Store asset mapping in session
-     *
-     * @param string $hash The asset hash
-     * @param string $componentRoute The component route
-     * @param string $assetType Type of asset ('css' or 'js')
-     * @param int $assetIndex Index of the asset
-     * @param string|null $name Optional name for the asset
-     * @return void
-     */
-    private static function storeAssetMapping(string $hash, string $componentRoute, string $assetType, int $assetIndex, ?string $name = null, ?string $type = null): void
-    {
-        $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
-
-        $mappings[$hash] = [
-            'componentRoute' => $componentRoute,
-            'assetType' => $assetType,
-            'assetIndex' => $assetIndex,
-            'name' => $name,
-            'created' => time(),
-            'scriptType' => $type ?? 'text/javascript'
         ];
+    }
 
-        Session::set(self::ASSET_MAPPINGS_KEY, $mappings, true);
+    /**
+     * Encode asset data for URL with HMAC for integrity
+     *
+     * @param array $data The asset data
+     * @return string URL-encoded base64 data with HMAC signature
+     */
+    private static function encodeAssetData(array $data): string
+    {
+        $json = json_encode($data);
+
+        // Use URL-safe Base64: + becomes -, / becomes _
+        $base64 = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($json));
+
+        $signature = hash_hmac('sha256', $base64, self::$secretKey);
+        $sigShort = substr($signature, 0, 16);
+
+        // Use '~' as the signature separator to avoid dot/extension conflicts
+        return $base64 . '~' . $sigShort;
+    }
+
+    /**
+     * Decode asset data from URL and verify HMAC
+     *
+     * @param string $encodedWithSig URL-encoded base64 data with HMAC signature
+     * @return array|null Decoded data or null on failure/verification error
+     */
+    private static function decodeAssetData(string $encodedWithSig): ?array
+    {
+        if (strpos($encodedWithSig, '~') === false) return null;
+
+        [$encoded, $signature] = explode('~', $encodedWithSig);
+
+        // Verify the signature
+        $expected = substr(hash_hmac('sha256', $encoded, self::$secretKey), 0, 16);
+        if (!hash_equals($expected, $signature)) return null;
+
+        $standardBase64 = str_replace(['-', '_'], ['+', '/'], $encoded);
+        $json = base64_decode($standardBase64);
+        
+        return $json ? json_decode($json, true) : null;
     }
 
     /**
@@ -257,41 +248,18 @@ class AssetLinkManager
     /**
      * Check if an asset mapping has expired
      *
-     * @param array $mapping The asset mapping
+     * @param int $created The creation timestamp
      * @return bool True if expired, false otherwise
      */
-    private static function isMappingExpired(array $mapping): bool
+    private static function isMappingExpired(int $created): bool
     {
-        $cacheConfig = self::getCacheConfig();
-
-        // If cache hours is 0, use session-only (never expires until session ends)
-        if ($cacheConfig['hours'] === 0) {
+        // If cache hours is 0, never expires
+        if (self::$cacheHours === 0) {
             return false;
         }
 
-        $expireTime = $mapping['created'] + ($cacheConfig['hours'] * 3600);
+        $expireTime = $created + (self::$cacheHours * 3600);
         return time() > $expireTime;
     }
 
-    /**
-     * Clean up expired asset mappings
-     *
-     * @return void
-     */
-    public static function cleanupExpiredMappings(): void
-    {
-        $mappings = Session::get(self::ASSET_MAPPINGS_KEY, []);
-        $cleaned = false;
-
-        foreach ($mappings as $hash => $mapping) {
-            if (self::isMappingExpired($mapping)) {
-                unset($mappings[$hash]);
-                $cleaned = true;
-            }
-        }
-
-        if ($cleaned) {
-            Session::set(self::ASSET_MAPPINGS_KEY, $mappings, true);
-        }
-    }
 }
