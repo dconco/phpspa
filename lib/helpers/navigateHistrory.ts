@@ -60,23 +60,58 @@ export const navigateHistory = (event: PopStateEvent) => {
          }
       }
 
+
+      const tempElem = document.createElement('div');
+
+      // --- Preload stylesheets in the new content ---
+      tempElem.innerHTML = navigationState.content
+
+      tempElem.style.display = 'none' // Prevent rendering during preload
+      document.head.appendChild(tempElem) // Append to head to start loading styles
+
+
       // --- Decode and restore HTML content ---
-      const updateDOM = () => {
-         targetContainer.style.visibility = 'hidden' // --- Hide during update ---
+      const updateDOM = async () => {
+
+         // Wait for stylesheets in temp element to load
+         const links = tempElem.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')
+
+         if (links.length > 0) {
+            await Promise.all(
+               Array.from(links).map((link) => {
+                  if (link.sheet) return Promise.resolve()
+
+                  return new Promise<void>((resolve) => {
+                     link.onload = () => resolve()
+                     link.onerror = () => resolve()
+                  })
+               })
+            )
+         }
+
+         targetContainer.style.transition = 'opacity 300ms ease-in-out 200ms'
+         targetContainer.style.opacity = '0' // --- Hide during update ---
 
          try {
-            morphdom(targetContainer, '<div>' + navigationState.content + '</div>', {
+            morphdom(targetContainer, tempElem, {
                childrenOnly: true
             })
          } catch {
-            targetContainer.innerHTML = navigationState.content
+            targetContainer.innerHTML = tempElem.innerHTML
          }
 
          // --- Execute any inline styles in the new content ---
          RuntimeManager.runStyles()
       }
 
-      const completedDOMUpdate = () => {
+      const completedDOMUpdate = async () => {
+
+         document.head.removeChild(tempElem); // Clean up temp element
+
+         setTimeout(() => {
+            targetContainer.style.opacity = '1' // --- Show content after styles finish loading ---
+         }, 60);
+
          // --- Clear old executed scripts cache ---
          RuntimeManager.clearEffects()
          RuntimeManager.clearExecutedScripts()
@@ -84,10 +119,6 @@ export const navigateHistory = (event: PopStateEvent) => {
          // --- Execute any inline scripts in the restored content ---
          RuntimeManager.runScripts()
 
-         // --- Show the updated content after all scripts and styles are processed ---
-         requestAnimationFrame(() => {
-            targetContainer.style.visibility = 'visible'
-         })
 
          // --- Restart auto-reload timer if needed ---
          if (navigationState?.reloadTime) {
@@ -108,11 +139,6 @@ export const navigateHistory = (event: PopStateEvent) => {
                success: false,
                error: reason || 'Unknown error during view transition',
             })
-         })
-
-         // --- Show content even if view transition failed ---
-         requestAnimationFrame(() => {
-            targetContainer.style.visibility = 'visible'
          })
       } else {
          updateDOM()

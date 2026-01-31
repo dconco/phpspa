@@ -167,16 +167,42 @@ export class AppManager {
             }
          }
 
+         const tempElem = document.createElement('div');
+
          // --- Update content ---
-         const updateDOM = () => {
-            targetElement.style.visibility = 'hidden' // --- Hide during update ---
+         const updateDOM = async () => {
+
+            // --- Preload stylesheets in the new content ---
+            tempElem.innerHTML = component.content
+   
+            tempElem.style.display = 'none' // Prevent rendering during preload
+            document.head.appendChild(tempElem) // Append to head to start loading styles
+
+            // Wait for stylesheets in temp element to load
+            const links = tempElem.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')
+
+            if (links.length > 0) {
+               await Promise.all(
+                  Array.from(links).map((link) => {
+                     if (link.sheet) return Promise.resolve()
+
+                     return new Promise<void>((resolve) => {
+                        link.onload = () => resolve()
+                        link.onerror = () => resolve()
+                     });
+                  })
+               )
+            }
+
+            targetElement.style.transition = 'opacity 300ms ease-in-out 200ms'
+            targetElement.style.opacity = '0' // --- Hide during update ---
 
             try {
-               morphdom(targetElement, '<div>' + component.content + '</div>', {
+               morphdom(targetElement, tempElem, {
                   childrenOnly: true
                })
             } catch {
-               targetElement.innerHTML = component.content
+               targetElement.innerHTML = tempElem.innerHTML
             }
 
             // --- Execute any inline styles in the new content ---
@@ -198,14 +224,26 @@ export class AppManager {
             stateData.reloadTime = component.reloadTime
          }
 
-         const completedDOMUpdate = () => {
-
+         const completedDOMUpdate = async (): Promise<void> => {
             // --- Update browser history ---
             if (state === "push") {
                RuntimeManager.pushState(stateData, stateData.title, newUrl)
             } else if (state === "replace") {
                RuntimeManager.replaceState(stateData, stateData.title, newUrl)
             }
+
+            document.head.removeChild(tempElem); // Clean up temp element
+
+            setTimeout(() => {
+               targetElement.style.opacity = '1' // --- Show content after styles finish loading ---
+            }, 60);
+
+            // --- Clear old executed scripts cache ---
+            RuntimeManager.clearEffects()
+            RuntimeManager.clearExecutedScripts()
+
+            // --- Execute any inline scripts in the new content ---
+            RuntimeManager.runScripts()
 
             // --- Handle URL fragments (hash navigation) ---
             const hashElement = document.getElementById(newUrl.hash.substring(1))
@@ -218,19 +256,6 @@ export class AppManager {
             } else {
                scroll(0, 0) // --- Scroll to top if no hash or element not found ---
             }
-
-
-            // --- Clear old executed scripts cache ---
-            RuntimeManager.clearEffects()
-            RuntimeManager.clearExecutedScripts()
-
-            // --- Execute any inline scripts in the new content ---
-            RuntimeManager.runScripts()
-
-            // --- Show the updated content after all scripts and styles are processed ---
-            requestAnimationFrame(() => {
-               targetElement.style.visibility = 'visible'
-            })
 
             // --- Emit successful load event ---
             RuntimeManager.emit("load", {
@@ -251,11 +276,6 @@ export class AppManager {
                   route: newUrl.toString(),
                   success: false,
                   error: reason || 'Unknown error during view transition',
-               })
-
-               // --- Show content even if view transition failed ---
-               requestAnimationFrame(() => {
-                  targetElement.style.visibility = 'visible'
                })
             })
          } else {
@@ -556,33 +576,61 @@ export class AppManager {
             document.getElementById(history.state?.targetID) ??
             document.body
 
-         const updateDOM = () => {
-            targetElement.style.visibility = 'hidden' // --- Hide during update ---
+         const tempElem = document.createElement('div');
+
+         const updateDOM = async () => {
+
+            // --- Preload stylesheets in the new content ---
+            tempElem.innerHTML = component.content;
+   
+            tempElem.style.display = 'none'; // Prevent rendering during preload
+            document.head.appendChild(tempElem); // Append to head to start loading styles
+
+            // Wait for stylesheets in temp element to load
+            const links = tempElem.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]');
+
+            if (links.length > 0) {
+               await Promise.all(
+                  Array.from(links).map((link) => {
+                     if (link.sheet) return Promise.resolve();
+                     
+                     return new Promise<void>((resolve) => {
+                        link.onload = () => resolve()
+                        link.onerror = () => resolve()
+                     })
+                  })
+               )
+            }
+
+            targetElement.style.transition = 'opacity 300ms ease-in-out 200ms'
+            targetElement.style.opacity = '0' // --- Hide during update ---
 
             try {
-               morphdom(targetElement, '<div>' + component.content + '</div>', {
+               morphdom(targetElement, tempElem, {
                   childrenOnly: true
                })
             } catch {
-               targetElement.innerHTML = component.content
+               targetElement.innerHTML = tempElem.innerHTML
             }
 
             // --- Execute any inline styles in the new content ---
             RuntimeManager.runStyles()
          }
 
-         const completedDOMUpdate = () => {
+         const completedDOMUpdate = async () => {
+
+            document.head.removeChild(tempElem); // Clean up temp element
+
+            setTimeout(() => {
+               targetElement.style.opacity = '1' // --- Show content after styles finish loading ---
+            }, 60);
+
             // --- Clear old executed scripts cache ---
             RuntimeManager.clearEffects()
             RuntimeManager.clearExecutedScripts()
 
             // --- Execute any inline scripts in the new content ---
             RuntimeManager.runScripts()
-
-            // --- Show the updated content after all scripts and styles are processed ---
-            requestAnimationFrame(() => {
-               targetElement.style.visibility = 'visible'
-            })
 
             // --- Set up next auto-reload if specified ---
             if (component?.reloadTime) {
