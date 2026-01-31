@@ -11,9 +11,11 @@ class DOM {
 
    /**
     * Set or get meta tags dynamically.
-      * Signature matches AppImpl::meta().
-      * If called with arguments, sets meta; if called with no args, returns all set meta.
-      */
+    * Signature matches AppImpl::meta().
+    * If called with arguments, sets meta; if called with no args, returns all set meta.
+    *
+    * @since v2.0.7
+    */
    public static function meta(
       ?string $name = null,
       ?string $content = null,

@@ -213,6 +213,21 @@ interface ApplicationContract {
     public function useModule(): self;
 
     /**
+     * Overrides custom asset names and randomizes them, typically used for cache busting in production.
+     *
+     * This method modifies the internal representation of an asset's name
+     * by replacing any custom names with a random or unique hash string.
+     * This is primarily intended for production environments to ensure browsers
+     * always fetch the latest version of assets (like CSS or JavaScript files)
+     * instead of serving cached versions when the file content has changed.
+     *
+     * It is recommended to remove this method call in development environments for debugging purposes.
+     *
+     * @since v2.0.7
+     */
+    public function randomizeAssetName(): self;
+
+    /**
      * Configure CORS (Cross-Origin Resource Sharing) settings for the application.
      *
      * Loads default CORS configuration from the config file and optionally merges
