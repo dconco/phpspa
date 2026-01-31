@@ -72,12 +72,6 @@ export const navigateHistory = (event: PopStateEvent) => {
             targetContainer.innerHTML = navigationState.content
          }
 
-         requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-               targetContainer.style.visibility = 'visible' // --- Show after update ---
-            })
-         })
-
          // --- Execute any inline styles in the new content ---
          RuntimeManager.runStyles()
       }
@@ -89,6 +83,11 @@ export const navigateHistory = (event: PopStateEvent) => {
 
          // --- Execute any inline scripts in the restored content ---
          RuntimeManager.runScripts()
+
+         // --- Show the updated content after all scripts and styles are processed ---
+         requestAnimationFrame(() => {
+            targetContainer.style.visibility = 'visible'
+         })
 
          // --- Restart auto-reload timer if needed ---
          if (navigationState?.reloadTime) {
@@ -109,6 +108,11 @@ export const navigateHistory = (event: PopStateEvent) => {
                success: false,
                error: reason || 'Unknown error during view transition',
             })
+         })
+
+         // --- Show content even if view transition failed ---
+         requestAnimationFrame(() => {
+            targetContainer.style.visibility = 'visible'
          })
       } else {
          updateDOM()

@@ -179,12 +179,6 @@ export class AppManager {
                targetElement.innerHTML = component.content
             }
 
-            requestAnimationFrame(() => {
-               requestAnimationFrame(() => {
-                  targetElement.style.visibility = 'visible' // --- Show after update ---
-               })
-            })
-
             // --- Execute any inline styles in the new content ---
             RuntimeManager.runStyles()
          }
@@ -233,6 +227,11 @@ export class AppManager {
             // --- Execute any inline scripts in the new content ---
             RuntimeManager.runScripts()
 
+            // --- Show the updated content after all scripts and styles are processed ---
+            requestAnimationFrame(() => {
+               targetElement.style.visibility = 'visible'
+            })
+
             // --- Emit successful load event ---
             RuntimeManager.emit("load", {
                route: newUrl.toString(),
@@ -252,6 +251,11 @@ export class AppManager {
                   route: newUrl.toString(),
                   success: false,
                   error: reason || 'Unknown error during view transition',
+               })
+
+               // --- Show content even if view transition failed ---
+               requestAnimationFrame(() => {
+                  targetElement.style.visibility = 'visible'
                })
             })
          } else {
@@ -563,12 +567,6 @@ export class AppManager {
                targetElement.innerHTML = component.content
             }
 
-            requestAnimationFrame(() => {
-               requestAnimationFrame(() => {
-                  targetElement.style.visibility = 'visible' // --- Show after update ---
-               })
-            })
-
             // --- Execute any inline styles in the new content ---
             RuntimeManager.runStyles()
          }
@@ -580,6 +578,11 @@ export class AppManager {
 
             // --- Execute any inline scripts in the new content ---
             RuntimeManager.runScripts()
+
+            // --- Show the updated content after all scripts and styles are processed ---
+            requestAnimationFrame(() => {
+               targetElement.style.visibility = 'visible'
+            })
 
             // --- Set up next auto-reload if specified ---
             if (component?.reloadTime) {

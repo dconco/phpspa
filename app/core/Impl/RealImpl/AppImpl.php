@@ -833,8 +833,12 @@ abstract class AppImpl implements ApplicationContract {
             $attributes = HTMLAttrInArrayToString($stylesheet);
             $result['global']['stylesheets'] .= "\n      <link $attributes />";
 
-            if ($stylesheet['rel'] === 'stylesheet')
-               $result['global']['stylesheets'] .= "\n      <link rel=\"preload\" href=\"{$stylesheet['href']}\" as=\"style\" />";
+            if ($stylesheet['rel'] === 'stylesheet') {
+               $stylesheet['rel'] = 'preload';
+               $stylesheet['as'] = 'style';
+               $attributes = HTMLAttrInArrayToString($stylesheet);
+               $result['global']['stylesheets'] .= "\n      <link $attributes />";
+            }
          }
       }
 
@@ -854,8 +858,12 @@ abstract class AppImpl implements ApplicationContract {
             $attributes = HTMLAttrInArrayToString($stylesheet);
             $result['component']['stylesheets'] .= "\n      <link $attributes />";
 
-            if ($stylesheet['rel'] === 'stylesheet')
-               $result['component']['stylesheets'] .= "\n      <link rel=\"preload\" href=\"{$stylesheet['href']}\" as=\"style\" />";
+            if ($stylesheet['rel'] === 'stylesheet') {
+               $stylesheet['rel'] = 'preload';
+               $stylesheet['as'] = 'style';
+               $attributes = HTMLAttrInArrayToString($stylesheet);
+               $result['component']['stylesheets'] .= "\n      <link $attributes />";
+            }
          }
       }
 

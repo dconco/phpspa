@@ -1278,11 +1278,6 @@ class AppManager {
                 catch {
                     targetElement.innerHTML = component.content;
                 }
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                        targetElement.style.visibility = 'visible'; // --- Show after update ---
-                    });
-                });
                 // --- Execute any inline styles in the new content ---
                 RuntimeManager.runStyles();
             };
@@ -1322,6 +1317,10 @@ class AppManager {
                 RuntimeManager.clearExecutedScripts();
                 // --- Execute any inline scripts in the new content ---
                 RuntimeManager.runScripts();
+                // --- Show the updated content after all scripts and styles are processed ---
+                requestAnimationFrame(() => {
+                    targetElement.style.visibility = 'visible';
+                });
                 // --- Emit successful load event ---
                 RuntimeManager.emit("load", {
                     route: newUrl.toString(),
@@ -1339,6 +1338,10 @@ class AppManager {
                         route: newUrl.toString(),
                         success: false,
                         error: reason || 'Unknown error during view transition',
+                    });
+                    // --- Show content even if view transition failed ---
+                    requestAnimationFrame(() => {
+                        targetElement.style.visibility = 'visible';
                     });
                 });
             }
@@ -1620,11 +1623,6 @@ class AppManager {
                 catch {
                     targetElement.innerHTML = component.content;
                 }
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                        targetElement.style.visibility = 'visible'; // --- Show after update ---
-                    });
-                });
                 // --- Execute any inline styles in the new content ---
                 RuntimeManager.runStyles();
             };
@@ -1634,6 +1632,10 @@ class AppManager {
                 RuntimeManager.clearExecutedScripts();
                 // --- Execute any inline scripts in the new content ---
                 RuntimeManager.runScripts();
+                // --- Show the updated content after all scripts and styles are processed ---
+                requestAnimationFrame(() => {
+                    targetElement.style.visibility = 'visible';
+                });
                 // --- Set up next auto-reload if specified ---
                 if (component?.reloadTime) {
                     setTimeout(AppManager.reloadComponent, component.reloadTime);
@@ -1853,11 +1855,6 @@ const navigateHistory = (event) => {
             catch {
                 targetContainer.innerHTML = navigationState.content;
             }
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    targetContainer.style.visibility = 'visible'; // --- Show after update ---
-                });
-            });
             // --- Execute any inline styles in the new content ---
             RuntimeManager.runStyles();
         };
@@ -1867,6 +1864,10 @@ const navigateHistory = (event) => {
             RuntimeManager.clearExecutedScripts();
             // --- Execute any inline scripts in the restored content ---
             RuntimeManager.runScripts();
+            // --- Show the updated content after all scripts and styles are processed ---
+            requestAnimationFrame(() => {
+                targetContainer.style.visibility = 'visible';
+            });
             // --- Restart auto-reload timer if needed ---
             if (navigationState?.reloadTime) {
                 setTimeout(AppManager.reloadComponent, navigationState.reloadTime);
@@ -1884,6 +1885,10 @@ const navigateHistory = (event) => {
                     success: false,
                     error: reason || 'Unknown error during view transition',
                 });
+            });
+            // --- Show content even if view transition failed ---
+            requestAnimationFrame(() => {
+                targetContainer.style.visibility = 'visible';
             });
         }
         else {
