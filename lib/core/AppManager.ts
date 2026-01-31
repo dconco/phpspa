@@ -169,6 +169,8 @@ export class AppManager {
 
          // --- Update content ---
          const updateDOM = () => {
+            targetElement.style.visibility = 'hidden' // --- Hide during update ---
+
             try {
                morphdom(targetElement, '<div>' + component.content + '</div>', {
                   childrenOnly: true
@@ -176,6 +178,12 @@ export class AppManager {
             } catch {
                targetElement.innerHTML = component.content
             }
+
+            requestAnimationFrame(() => {
+               requestAnimationFrame(() => {
+                  targetElement.style.visibility = 'visible' // --- Show after update ---
+               })
+            })
 
             // --- Execute any inline styles in the new content ---
             RuntimeManager.runStyles()
@@ -545,6 +553,8 @@ export class AppManager {
             document.body
 
          const updateDOM = () => {
+            targetElement.style.visibility = 'hidden' // --- Hide during update ---
+
             try {
                morphdom(targetElement, '<div>' + component.content + '</div>', {
                   childrenOnly: true
@@ -552,6 +562,12 @@ export class AppManager {
             } catch {
                targetElement.innerHTML = component.content
             }
+
+            requestAnimationFrame(() => {
+               requestAnimationFrame(() => {
+                  targetElement.style.visibility = 'visible' // --- Show after update ---
+               })
+            })
 
             // --- Execute any inline styles in the new content ---
             RuntimeManager.runStyles()

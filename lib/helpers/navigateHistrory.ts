@@ -62,6 +62,8 @@ export const navigateHistory = (event: PopStateEvent) => {
 
       // --- Decode and restore HTML content ---
       const updateDOM = () => {
+         targetContainer.style.visibility = 'hidden' // --- Hide during update ---
+
          try {
             morphdom(targetContainer, '<div>' + navigationState.content + '</div>', {
                childrenOnly: true
@@ -69,6 +71,12 @@ export const navigateHistory = (event: PopStateEvent) => {
          } catch {
             targetContainer.innerHTML = navigationState.content
          }
+
+         requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+               targetContainer.style.visibility = 'visible' // --- Show after update ---
+            })
+         })
 
          // --- Execute any inline styles in the new content ---
          RuntimeManager.runStyles()

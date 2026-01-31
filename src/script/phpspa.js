@@ -1271,6 +1271,7 @@
                 }
                 // --- Update content ---
                 const updateDOM = () => {
+                    targetElement.style.visibility = 'hidden'; // --- Hide during update ---
                     try {
                         morphdom(targetElement, '<div>' + component.content + '</div>', {
                             childrenOnly: true
@@ -1279,6 +1280,11 @@
                     catch {
                         targetElement.innerHTML = component.content;
                     }
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            targetElement.style.visibility = 'visible'; // --- Show after update ---
+                        });
+                    });
                     // --- Execute any inline styles in the new content ---
                     RuntimeManager.runStyles();
                 };
@@ -1607,6 +1613,7 @@
                     document.getElementById(history.state?.targetID) ??
                     document.body;
                 const updateDOM = () => {
+                    targetElement.style.visibility = 'hidden'; // --- Hide during update ---
                     try {
                         morphdom(targetElement, '<div>' + component.content + '</div>', {
                             childrenOnly: true
@@ -1615,6 +1622,11 @@
                     catch {
                         targetElement.innerHTML = component.content;
                     }
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            targetElement.style.visibility = 'visible'; // --- Show after update ---
+                        });
+                    });
                     // --- Execute any inline styles in the new content ---
                     RuntimeManager.runStyles();
                 };
@@ -1834,6 +1846,7 @@
             }
             // --- Decode and restore HTML content ---
             const updateDOM = () => {
+                targetContainer.style.visibility = 'hidden'; // --- Hide during update ---
                 try {
                     morphdom(targetContainer, '<div>' + navigationState.content + '</div>', {
                         childrenOnly: true
@@ -1842,6 +1855,11 @@
                 catch {
                     targetContainer.innerHTML = navigationState.content;
                 }
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        targetContainer.style.visibility = 'visible'; // --- Show after update ---
+                    });
+                });
                 // --- Execute any inline styles in the new content ---
                 RuntimeManager.runStyles();
             };
