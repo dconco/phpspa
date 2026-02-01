@@ -7,6 +7,64 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
+const waitForNextPaint = () => new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+});
+const waitForStylesheet = (link) => new Promise((resolve) => {
+    if (link.sheet) {
+        waitForNextPaint().then(resolve);
+        return;
+    }
+    const cleanup = () => {
+        link.removeEventListener('load', onLoad);
+        link.removeEventListener('error', onLoad);
+        resolve();
+    };
+    const onLoad = () => cleanup();
+    link.addEventListener('load', onLoad, { once: true });
+    link.addEventListener('error', onLoad, { once: true });
+});
+const preloadStylesFromContent = async (content) => {
+    const tempElem = document.createElement('div');
+    tempElem.innerHTML = content;
+    const links = Array.from(tempElem.querySelectorAll('link[rel="stylesheet"]'));
+    if (links.length === 0) {
+        return tempElem;
+    }
+    const headLinks = Array.from(document.head.querySelectorAll('link[rel="stylesheet"]'));
+    const loadPromises = links.map((link) => {
+        const href = link.getAttribute('href');
+        link.remove();
+        if (!href) {
+            return Promise.resolve();
+        }
+        let resolvedHref = '';
+        try {
+            resolvedHref = new URL(href, location.toString()).href;
+        }
+        catch {
+            resolvedHref = href;
+        }
+        let headLink = headLinks.find((existing) => {
+            try {
+                return existing.href === resolvedHref;
+            }
+            catch {
+                return existing.getAttribute('href') === href;
+            }
+        });
+        if (!headLink) {
+            headLink = link.cloneNode(true);
+            document.head.appendChild(headLink);
+            headLinks.push(headLink);
+        }
+        return waitForStylesheet(headLink);
+    });
+    await Promise.all(loadPromises);
+    await waitForNextPaint();
+    return tempElem;
+};
+
 /**
  * UTF-8 safe base64 encoding function
  * Handles Unicode characters that btoa cannot process
@@ -1267,34 +1325,20 @@ class AppManager {
                     delete currentRoutes[targetID];
                 }
             }
-            const tempElem = document.createElement('div');
+            let tempElem = null;
             // --- Update content ---
             const updateDOM = async () => {
                 // --- Preload stylesheets in the new content ---
-                tempElem.innerHTML = component.content;
-                tempElem.style.display = 'none'; // Prevent rendering during preload
-                document.head.appendChild(tempElem); // Append to head to start loading styles
-                // Wait for stylesheets in temp element to load
-                const links = tempElem.querySelectorAll('link[rel="stylesheet"]');
-                if (links.length > 0) {
-                    await Promise.all(Array.from(links).map((link) => {
-                        if (link.sheet)
-                            return Promise.resolve();
-                        return new Promise((resolve) => {
-                            link.onload = () => resolve();
-                            link.onerror = () => resolve();
+                tempElem = await preloadStylesFromContent(component.content);
+                if (tempElem) {
+                    try {
+                        morphdom(targetElement, tempElem, {
+                            childrenOnly: true
                         });
-                    }));
-                }
-                targetElement.style.transition = 'opacity 300ms ease-in-out 200ms';
-                targetElement.style.opacity = '0'; // --- Hide during update ---
-                try {
-                    morphdom(targetElement, tempElem, {
-                        childrenOnly: true
-                    });
-                }
-                catch {
-                    targetElement.innerHTML = tempElem.innerHTML;
+                    }
+                    catch {
+                        targetElement.innerHTML = tempElem.innerHTML;
+                    }
                 }
                 // --- Execute any inline styles in the new content ---
                 RuntimeManager.runStyles();
@@ -1319,10 +1363,6 @@ class AppManager {
                 else if (state === "replace") {
                     RuntimeManager.replaceState(stateData, stateData.title, newUrl);
                 }
-                document.head.removeChild(tempElem); // Clean up temp element
-                setTimeout(() => {
-                    targetElement.style.opacity = '1'; // --- Show content after styles finish loading ---
-                }, 60);
                 // --- Clear old executed scripts cache ---
                 RuntimeManager.clearEffects();
                 RuntimeManager.clearExecutedScripts();
@@ -1627,26 +1667,8 @@ class AppManager {
             const targetElement = document.getElementById(component?.targetID) ??
                 document.getElementById(history.state?.targetID) ??
                 document.body;
-            const tempElem = document.createElement('div');
             const updateDOM = async () => {
-                // --- Preload stylesheets in the new content ---
-                tempElem.innerHTML = component.content;
-                tempElem.style.display = 'none'; // Prevent rendering during preload
-                document.head.appendChild(tempElem); // Append to head to start loading styles
-                // Wait for stylesheets in temp element to load
-                const links = tempElem.querySelectorAll('link[rel="stylesheet"]');
-                if (links.length > 0) {
-                    await Promise.all(Array.from(links).map((link) => {
-                        if (link.sheet)
-                            return Promise.resolve();
-                        return new Promise((resolve) => {
-                            link.onload = () => resolve();
-                            link.onerror = () => resolve();
-                        });
-                    }));
-                }
-                targetElement.style.transition = 'opacity 300ms ease-in-out 200ms';
-                targetElement.style.opacity = '0'; // --- Hide during update ---
+                const tempElem = await preloadStylesFromContent(component.content);
                 try {
                     morphdom(targetElement, tempElem, {
                         childrenOnly: true
@@ -1658,11 +1680,8 @@ class AppManager {
                 // --- Execute any inline styles in the new content ---
                 RuntimeManager.runStyles();
             };
-            const completedDOMUpdate = async () => {
-                document.head.removeChild(tempElem); // Clean up temp element
-                setTimeout(() => {
-                    targetElement.style.opacity = '1'; // --- Show content after styles finish loading ---
-                }, 60);
+            const completedDOMUpdate = () => {
+                // Clean up temp element
                 // --- Clear old executed scripts cache ---
                 RuntimeManager.clearEffects();
                 RuntimeManager.clearExecutedScripts();
@@ -1876,27 +1895,9 @@ const navigateHistory = (event) => {
                 delete currentRoutes[targetID];
             }
         }
-        const tempElem = document.createElement('div');
-        // --- Preload stylesheets in the new content ---
-        tempElem.innerHTML = navigationState.content;
-        tempElem.style.display = 'none'; // Prevent rendering during preload
-        document.head.appendChild(tempElem); // Append to head to start loading styles
         // --- Decode and restore HTML content ---
         const updateDOM = async () => {
-            // Wait for stylesheets in temp element to load
-            const links = tempElem.querySelectorAll('link[rel="stylesheet"]');
-            if (links.length > 0) {
-                await Promise.all(Array.from(links).map((link) => {
-                    if (link.sheet)
-                        return Promise.resolve();
-                    return new Promise((resolve) => {
-                        link.onload = () => resolve();
-                        link.onerror = () => resolve();
-                    });
-                }));
-            }
-            targetContainer.style.transition = 'opacity 300ms ease-in-out 200ms';
-            targetContainer.style.opacity = '0'; // --- Hide during update ---
+            const tempElem = await preloadStylesFromContent(navigationState.content);
             try {
                 morphdom(targetContainer, tempElem, {
                     childrenOnly: true
@@ -1909,10 +1910,6 @@ const navigateHistory = (event) => {
             RuntimeManager.runStyles();
         };
         const completedDOMUpdate = async () => {
-            document.head.removeChild(tempElem); // Clean up temp element
-            setTimeout(() => {
-                targetContainer.style.opacity = '1'; // --- Show content after styles finish loading ---
-            }, 60);
             // --- Clear old executed scripts cache ---
             RuntimeManager.clearEffects();
             RuntimeManager.clearExecutedScripts();

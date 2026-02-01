@@ -1,5 +1,6 @@
 import { ComponentObject, StateObject, StateValueType } from "../types/StateObjectTypes"
 import { EventObject, EventPayload } from "../types/RuntimeInterfaces"
+import { preloadStylesFromContent } from "../utils/preloadStylesFromContent"
 import { utf8ToBase64 } from "../utils/baseConverter"
 import { RuntimeManager } from "./RuntimeManager"
 import morphdom from "morphdom"
@@ -7,6 +8,7 @@ import morphdom from "morphdom"
 export class AppManager {
 
    public static currentStateData: Record<string, StateValueType> = {}
+
 
    /**
     * Navigates to a given URL using PHPSPA's custom navigation logic.
@@ -167,42 +169,22 @@ export class AppManager {
             }
          }
 
-         const tempElem = document.createElement('div');
+         let tempElem: HTMLDivElement | null = null
 
          // --- Update content ---
          const updateDOM = async () => {
 
             // --- Preload stylesheets in the new content ---
-            tempElem.innerHTML = component.content
-   
-            tempElem.style.display = 'none' // Prevent rendering during preload
-            document.head.appendChild(tempElem) // Append to head to start loading styles
+            tempElem = await preloadStylesFromContent(component.content)
 
-            // Wait for stylesheets in temp element to load
-            const links = tempElem.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')
-
-            if (links.length > 0) {
-               await Promise.all(
-                  Array.from(links).map((link) => {
-                     if (link.sheet) return Promise.resolve()
-
-                     return new Promise<void>((resolve) => {
-                        link.onload = () => resolve()
-                        link.onerror = () => resolve()
-                     });
+            if (tempElem) {
+               try {
+                  morphdom(targetElement, tempElem, {
+                     childrenOnly: true
                   })
-               )
-            }
-
-            targetElement.style.transition = 'opacity 300ms ease-in-out 200ms'
-            targetElement.style.opacity = '0' // --- Hide during update ---
-
-            try {
-               morphdom(targetElement, tempElem, {
-                  childrenOnly: true
-               })
-            } catch {
-               targetElement.innerHTML = tempElem.innerHTML
+               } catch {
+                  targetElement.innerHTML = tempElem.innerHTML
+               }
             }
 
             // --- Execute any inline styles in the new content ---
@@ -231,12 +213,6 @@ export class AppManager {
             } else if (state === "replace") {
                RuntimeManager.replaceState(stateData, stateData.title, newUrl)
             }
-
-            document.head.removeChild(tempElem); // Clean up temp element
-
-            setTimeout(() => {
-               targetElement.style.opacity = '1' // --- Show content after styles finish loading ---
-            }, 60);
 
             // --- Clear old executed scripts cache ---
             RuntimeManager.clearEffects()
@@ -576,34 +552,8 @@ export class AppManager {
             document.getElementById(history.state?.targetID) ??
             document.body
 
-         const tempElem = document.createElement('div');
-
          const updateDOM = async () => {
-
-            // --- Preload stylesheets in the new content ---
-            tempElem.innerHTML = component.content;
-   
-            tempElem.style.display = 'none'; // Prevent rendering during preload
-            document.head.appendChild(tempElem); // Append to head to start loading styles
-
-            // Wait for stylesheets in temp element to load
-            const links = tempElem.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]');
-
-            if (links.length > 0) {
-               await Promise.all(
-                  Array.from(links).map((link) => {
-                     if (link.sheet) return Promise.resolve();
-                     
-                     return new Promise<void>((resolve) => {
-                        link.onload = () => resolve()
-                        link.onerror = () => resolve()
-                     })
-                  })
-               )
-            }
-
-            targetElement.style.transition = 'opacity 300ms ease-in-out 200ms'
-            targetElement.style.opacity = '0' // --- Hide during update ---
+            const tempElem = await preloadStylesFromContent(component.content)
 
             try {
                morphdom(targetElement, tempElem, {
@@ -617,13 +567,9 @@ export class AppManager {
             RuntimeManager.runStyles()
          }
 
-         const completedDOMUpdate = async () => {
+         const completedDOMUpdate = () => {
 
-            document.head.removeChild(tempElem); // Clean up temp element
-
-            setTimeout(() => {
-               targetElement.style.opacity = '1' // --- Show content after styles finish loading ---
-            }, 60);
+             // Clean up temp element
 
             // --- Clear old executed scripts cache ---
             RuntimeManager.clearEffects()

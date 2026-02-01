@@ -1,4 +1,5 @@
 import morphdom from "morphdom"
+import { preloadStylesFromContent } from "../utils/preloadStylesFromContent"
 import { RuntimeManager } from "../core/RuntimeManager"
 import { StateObject } from "../types/StateObjectTypes"
 import { AppManager } from "../core/AppManager"
@@ -61,36 +62,9 @@ export const navigateHistory = (event: PopStateEvent) => {
       }
 
 
-      const tempElem = document.createElement('div');
-
-      // --- Preload stylesheets in the new content ---
-      tempElem.innerHTML = navigationState.content
-
-      tempElem.style.display = 'none' // Prevent rendering during preload
-      document.head.appendChild(tempElem) // Append to head to start loading styles
-
-
       // --- Decode and restore HTML content ---
       const updateDOM = async () => {
-
-         // Wait for stylesheets in temp element to load
-         const links = tempElem.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')
-
-         if (links.length > 0) {
-            await Promise.all(
-               Array.from(links).map((link) => {
-                  if (link.sheet) return Promise.resolve()
-
-                  return new Promise<void>((resolve) => {
-                     link.onload = () => resolve()
-                     link.onerror = () => resolve()
-                  })
-               })
-            )
-         }
-
-         targetContainer.style.transition = 'opacity 300ms ease-in-out 200ms'
-         targetContainer.style.opacity = '0' // --- Hide during update ---
+         const tempElem = await preloadStylesFromContent(navigationState.content)
 
          try {
             morphdom(targetContainer, tempElem, {
@@ -106,19 +80,12 @@ export const navigateHistory = (event: PopStateEvent) => {
 
       const completedDOMUpdate = async () => {
 
-         document.head.removeChild(tempElem); // Clean up temp element
-
-         setTimeout(() => {
-            targetContainer.style.opacity = '1' // --- Show content after styles finish loading ---
-         }, 60);
-
          // --- Clear old executed scripts cache ---
          RuntimeManager.clearEffects()
          RuntimeManager.clearExecutedScripts()
 
          // --- Execute any inline scripts in the restored content ---
          RuntimeManager.runScripts()
-
 
          // --- Restart auto-reload timer if needed ---
          if (navigationState?.reloadTime) {
