@@ -1,4 +1,5 @@
 import morphdom from "morphdom"
+import { preloadStylesFromContent } from "../utils/preloadStylesFromContent"
 import { RuntimeManager } from "../core/RuntimeManager"
 import { StateObject } from "../types/StateObjectTypes"
 import { AppManager } from "../core/AppManager"
@@ -60,24 +61,31 @@ export const navigateHistory = (event: PopStateEvent) => {
          }
       }
 
+
       // --- Decode and restore HTML content ---
-      const updateDOM = () => {
+      const updateDOM = async () => {
+         const tempElem = await preloadStylesFromContent(navigationState.content)
+
          try {
-            morphdom(targetContainer, '<div>' + navigationState.content + '</div>', {
+            morphdom(targetContainer, tempElem, {
                childrenOnly: true
             })
          } catch {
-            targetContainer.innerHTML = navigationState.content
+            targetContainer.innerHTML = tempElem.innerHTML
          }
+
+         // --- Execute any inline styles in the new content ---
+         RuntimeManager.runStyles()
       }
 
-      const completedDOMUpdate = () => {
+      const completedDOMUpdate = async () => {
+
          // --- Clear old executed scripts cache ---
          RuntimeManager.clearEffects()
          RuntimeManager.clearExecutedScripts()
 
-         // --- Execute any inline scripts and styles in the restored content ---
-         RuntimeManager.runAll()
+         // --- Execute any inline scripts in the restored content ---
+         RuntimeManager.runScripts()
 
          // --- Restart auto-reload timer if needed ---
          if (navigationState?.reloadTime) {

@@ -1,5 +1,6 @@
 import { ComponentObject, StateObject, StateValueType } from "../types/StateObjectTypes"
 import { EventObject, EventPayload } from "../types/RuntimeInterfaces"
+import { preloadStylesFromContent } from "../utils/preloadStylesFromContent"
 import { utf8ToBase64 } from "../utils/baseConverter"
 import { RuntimeManager } from "./RuntimeManager"
 import morphdom from "morphdom"
@@ -7,6 +8,7 @@ import morphdom from "morphdom"
 export class AppManager {
 
    public static currentStateData: Record<string, StateValueType> = {}
+
 
    /**
     * Navigates to a given URL using PHPSPA's custom navigation logic.
@@ -167,15 +169,26 @@ export class AppManager {
             }
          }
 
+         let tempElem: HTMLDivElement | null = null
+
          // --- Update content ---
-         const updateDOM = () => {
-            try {
-               morphdom(targetElement, '<div>' + component.content + '</div>', {
-                  childrenOnly: true
-               })
-            } catch {
-               targetElement.innerHTML = component.content
+         const updateDOM = async () => {
+
+            // --- Preload stylesheets in the new content ---
+            tempElem = await preloadStylesFromContent(component.content)
+
+            if (tempElem) {
+               try {
+                  morphdom(targetElement, tempElem, {
+                     childrenOnly: true
+                  })
+               } catch {
+                  targetElement.innerHTML = tempElem.innerHTML
+               }
             }
+
+            // --- Execute any inline styles in the new content ---
+            RuntimeManager.runStyles()
          }
 
 
@@ -193,14 +206,20 @@ export class AppManager {
             stateData.reloadTime = component.reloadTime
          }
 
-         const completedDOMUpdate = () => {
-
+         const completedDOMUpdate = async (): Promise<void> => {
             // --- Update browser history ---
             if (state === "push") {
                RuntimeManager.pushState(stateData, stateData.title, newUrl)
             } else if (state === "replace") {
                RuntimeManager.replaceState(stateData, stateData.title, newUrl)
             }
+
+            // --- Clear old executed scripts cache ---
+            RuntimeManager.clearEffects()
+            RuntimeManager.clearExecutedScripts()
+
+            // --- Execute any inline scripts in the new content ---
+            RuntimeManager.runScripts()
 
             // --- Handle URL fragments (hash navigation) ---
             const hashElement = document.getElementById(newUrl.hash.substring(1))
@@ -213,14 +232,6 @@ export class AppManager {
             } else {
                scroll(0, 0) // --- Scroll to top if no hash or element not found ---
             }
-
-
-            // --- Clear old executed scripts cache ---
-            RuntimeManager.clearEffects()
-            RuntimeManager.clearExecutedScripts()
-
-            // --- Execute any inline scripts and styles in the new content ---
-            RuntimeManager.runAll()
 
             // --- Emit successful load event ---
             RuntimeManager.emit("load", {
@@ -541,23 +552,31 @@ export class AppManager {
             document.getElementById(history.state?.targetID) ??
             document.body
 
-         const updateDOM = () => {
+         const updateDOM = async () => {
+            const tempElem = await preloadStylesFromContent(component.content)
+
             try {
-               morphdom(targetElement, '<div>' + component.content + '</div>', {
+               morphdom(targetElement, tempElem, {
                   childrenOnly: true
                })
             } catch {
-               targetElement.innerHTML = component.content
+               targetElement.innerHTML = tempElem.innerHTML
             }
+
+            // --- Execute any inline styles in the new content ---
+            RuntimeManager.runStyles()
          }
 
          const completedDOMUpdate = () => {
+
+             // Clean up temp element
+
             // --- Clear old executed scripts cache ---
             RuntimeManager.clearEffects()
             RuntimeManager.clearExecutedScripts()
 
-            // --- Execute any inline scripts and styles in the new content ---
-            RuntimeManager.runAll()
+            // --- Execute any inline scripts in the new content ---
+            RuntimeManager.runScripts()
 
             // --- Set up next auto-reload if specified ---
             if (component?.reloadTime) {

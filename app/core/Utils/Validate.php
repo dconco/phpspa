@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace PhpSPA\Core\Utils;
 
+use DateTime;
+
 /**
- * Data validation and sanitization utilities
+ * Data validation
  *
- * This trait provides methods for validating and sanitizing various types of data
+ * This trait provides methods for validating various types of data
  * within the PhpSPA framework. It ensures data integrity and security by applying
- * appropriate validation rules and sanitization techniques.
+ * appropriate validation rules and techniques.
  *
  * @author dconco <me@dconco.tech>
  * @copyright 2026 Dave Conco
@@ -18,10 +20,10 @@ namespace PhpSPA\Core\Utils;
 class Validate
 {
     /**
-     * Validates and sanitizes the provided data.
+     * Validates the provided data.
      *
      * This method handles both individual values and arrays of values. It applies the appropriate validation
-     * and sanitization to each item in the array or to the single provided value.
+     * to each item in the array or to the single provided value.
      * It also ensures that each item is validated according to its type.
      *
      * @param mixed $data The data to validate. Can be a single value or an array of values.
@@ -30,10 +32,6 @@ class Validate
      * If an array is passed, an array of validated values is returned.
      */
     public static function validate($data) {
-        if (!\is_bool($data) || !\is_int($data) || !\is_numeric($data) || !\is_float($data) || !\is_double($data) || !\is_string($data)) {
-            return $data;
-        }
-        
         // If the data is an array, validate each item recursively
         if (\is_array($data)) {
             return array_map(function ($item) {
@@ -50,34 +48,43 @@ class Validate
     }
 
     /**
-     * Performs the actual validation and sanitization of a single value.
+     * Performs the actual validation of a single value.
      *
-     * This method converts the value to a string, sanitizes it using `htmlspecialchars`, and then converts it
-     * back to its original type (boolean, integer, float, or string) based on the input type.
-     *
-     * @param mixed $value The value to be validated and sanitized.
-     * @return mixed The validated and sanitized value, converted back to its original type.
+     * @param mixed $value The value to be validated.
+     * @return mixed The validated value, converted back to its original type.
      */
     private static function realValidate($value) {
-        if (!\is_bool($value) || !\is_int($value) || !\is_numeric($value) || !\is_float($value) || !\is_double($value) || !\is_string($value)) {
+        if (!\is_bool($value) && !\is_int($value) && !\is_numeric($value) && !\is_float($value) && !\is_double($value) && !\is_string($value)) {
             return $value;
         }
 
-        // Convert the value to string for sanitation
-        $validatedValue = (string) $value;
-
-        // Sanitize the string to prevent potential HTML injection issues
-        $sanitizedValue = htmlspecialchars($validatedValue);
         $type = \gettype($value);
 
-        // Convert the sanitized string back to its original type based on the initial value's type
+        // 1. Check for Strings (Date Formats)
+        // if ($type === 'string') {
+        //     // Matches YYYY-MM-DD or DD-MM-YYYY (with dashes or slashes)
+        //     if (preg_match('/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}.*)?$|^\d{2}-\d{2}-\d{4}$/', $value)) {
+        //         try {
+        //             return new DateTime($value);
+        //         } catch (\Exception $e) {}
+        //     }
+        // }
+
+        // 2. Check for Timestamps (Integers or Numeric Strings)
+        // Looking for 10-digit numbers (roughly year 2001 to 2286)
+        // if (\is_numeric($value) && (int)$value > 1000000000 && (int)$value < 9999999999) {
+        //     try {
+        //         return (new DateTime())->setTimestamp((int)$value);
+        //     } catch (\Exception $e) {}
+        // }
+
         $convertedValue = \is_bool($value) || $type === 'boolean'
-            ? (bool) $sanitizedValue
+            ? (bool) $value
             : (\is_numeric($value) || \is_int($value) || $type === 'integer'
                 ? (\is_double($value) || \is_float($value) || $type === 'double' || strpos((string) $value, '.') !== false
-                    ? (float) $sanitizedValue
-                    : (int) $sanitizedValue)
-                : $sanitizedValue);
+                    ? (float) $value
+                    : (int) $value)
+                : $value);
 
         return $convertedValue;
     }

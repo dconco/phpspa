@@ -18,11 +18,11 @@ class CallableInspector
    /**
     * Checks if the given callable has a parameter with the specified name.
     *
-    * @param callable $func The callable to inspect.
+    * @param callable|string $func The callable to inspect.
     * @param string $paramName The name of the parameter to look for.
     * @return bool Returns true if the parameter exists, false otherwise.
     */
-   public static function hasParam (callable $func, string $paramName): bool
+   public static function hasParam (callable|string $func, string $paramName): bool
    {
       $ref = new ReflectionFunction($func);
 

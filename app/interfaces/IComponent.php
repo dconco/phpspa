@@ -20,10 +20,10 @@ interface  IComponent
      *
      * Initializes the component with a callable that defines the component function.
      *
-     * @param callable $component The callable representing the component logic.
+     * @param callable|string $component The callable representing the component logic.
      * @see https://phpspa.tech/core-concepts
      */
-    public function __construct(callable $component);
+    public function __construct(callable|string $component);
 
     /**
      * Sets the title for the component.
@@ -153,11 +153,11 @@ interface  IComponent
      * ```
      * 
      * @since v2.0.5
-     * @param callable $middleware
+     * @param callable|string $middleware
      * @return self Returns the current instance for method chaining.
      * @see https://phpspa.tech/references/middleware/#component-middleware
      */
-    public function middleware(callable $middleware): self;
+    public function middleware(callable|string $middleware): self;
 
     /**
      * Sets the script to be executed when the component is mounted.
@@ -211,8 +211,8 @@ interface  IComponent
     /**
     * Renders a component by executing it and formatting the output.
     *
-    * @param callable $component The component to render.
+    * @param callable|string $component The component to render.
     * @return string The rendered output.
     */
-    public static function Render(callable $component): string;
+    public static function Render(callable|string $component): string;
 }

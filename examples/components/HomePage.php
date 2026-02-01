@@ -1,6 +1,7 @@
 <?php
 
 use PhpSPA\Component;
+use PhpSPA\DOM;
 use PhpSPA\Http\Request;
 use PhpSPA\Http\Security\Nonce;
 
@@ -8,6 +9,10 @@ use function Component\import;
 use function Component\useState;
 
 return (new Component(function (Request $request): string {
+	DOM::Title('sss');
+	DOM::meta(charset: 'UTF-8');
+	DOM::meta(name: 'viewport', content: 'from DOM');
+
    $name = $request('name', 'dconco');
 	$nonce = Nonce::attr();
    $counter = useState('counter', 0);
@@ -44,6 +49,9 @@ return (new Component(function (Request $request): string {
 	->title('Home Page')
 	->route('/', '/template')
 	->name('main')
+
+	->meta(charset: 'UTF')
+	->meta(name: 'viewport', content: 'from component')
 
    ->link(
       fn () => <<<CSS

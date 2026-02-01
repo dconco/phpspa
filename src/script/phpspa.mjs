@@ -1,8 +1,66 @@
 /*!
- * PhpSPA Client Runtime v2.0.8
+ * PhpSPA Client Runtime v2.0.10
  * Docs: https://phpspa.tech | Package: @dconco/phpspa
  * License: MIT
  */
+const waitForNextPaint = () => new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+});
+const waitForStylesheet = (link) => new Promise((resolve) => {
+    if (link.sheet) {
+        waitForNextPaint().then(resolve);
+        return;
+    }
+    const cleanup = () => {
+        link.removeEventListener('load', onLoad);
+        link.removeEventListener('error', onLoad);
+        resolve();
+    };
+    const onLoad = () => cleanup();
+    link.addEventListener('load', onLoad, { once: true });
+    link.addEventListener('error', onLoad, { once: true });
+});
+const preloadStylesFromContent = async (content) => {
+    const tempElem = document.createElement('div');
+    tempElem.innerHTML = content;
+    const links = Array.from(tempElem.querySelectorAll('link[rel="stylesheet"]'));
+    if (links.length === 0) {
+        return tempElem;
+    }
+    const headLinks = Array.from(document.head.querySelectorAll('link[rel="stylesheet"]'));
+    const loadPromises = links.map((link) => {
+        const href = link.getAttribute('href');
+        link.remove();
+        if (!href) {
+            return Promise.resolve();
+        }
+        let resolvedHref = '';
+        try {
+            resolvedHref = new URL(href, location.toString()).href;
+        }
+        catch {
+            resolvedHref = href;
+        }
+        let headLink = headLinks.find((existing) => {
+            try {
+                return existing.href === resolvedHref;
+            }
+            catch {
+                return existing.getAttribute('href') === href;
+            }
+        });
+        if (!headLink) {
+            headLink = link.cloneNode(true);
+            document.head.appendChild(headLink);
+            headLinks.push(headLink);
+        }
+        return waitForStylesheet(headLink);
+    });
+    await Promise.all(loadPromises);
+    await waitForNextPaint();
+    return tempElem;
+};
+
 /**
  * UTF-8 safe base64 encoding function
  * Handles Unicode characters that btoa cannot process
@@ -160,30 +218,25 @@ class RuntimeManager {
         return dependency;
     }
     static invokeEffect(effect, nextDeps) {
-        if (effect.cleanup) {
-            try {
-                effect.cleanup();
-            }
-            catch (error) {
-                console.error('Error in effect cleanup:', error);
-            }
-        }
-        try {
-            const cleanup = effect.callback();
-            effect.cleanup = typeof cleanup === 'function' ? cleanup : null;
-        }
-        catch (error) {
-            console.error('Error in effect callback:', error);
-            effect.cleanup = null;
-        }
+        if (effect.cleanup)
+            effect.cleanup();
+        const cleanup = effect.callback();
+        effect.cleanup = typeof cleanup === 'function' ? cleanup : null;
         effect.lastDeps = nextDeps ? nextDeps.slice() : nextDeps;
     }
-    static runAll() {
+    static runScripts() {
         for (const targetID in RuntimeManager.currentRoutes) {
             const element = document.getElementById(targetID);
             if (element) {
                 this.runInlineScripts(element);
                 this.runPhpSpaScripts(element);
+            }
+        }
+    }
+    static runStyles() {
+        for (const targetID in RuntimeManager.currentRoutes) {
+            const element = document.getElementById(targetID);
+            if (element) {
                 this.runInlineStyles(element);
             }
         }
@@ -208,15 +261,7 @@ class RuntimeManager {
                 for (const attribute of Array.from(script.attributes)) {
                     newScript.setAttribute(attribute.name, attribute.value);
                 }
-                // --- Check if script should run in async context ---
-                const isAsync = script.hasAttribute("async");
-                // --- Wrap in IIFE to create isolated scope ---
-                if (isAsync) {
-                    newScript.textContent = `(async function() {\n${script.textContent}\n})()`;
-                }
-                else {
-                    newScript.textContent = `(function() {\n${script.textContent}\n})()`;
-                }
+                newScript.textContent = `(()=>{\n${script.textContent}\n})()`;
                 // --- Execute and immediately remove from DOM ---
                 document.head.appendChild(newScript).remove();
             }
@@ -234,7 +279,7 @@ class RuntimeManager {
                 // --- Check cache first ---
                 if (this.ScriptsCachedContent[scriptUrl]) {
                     const newScript = document.createElement("script");
-                    newScript.textContent = this.ScriptsCachedContent[scriptUrl];
+                    newScript.textContent = `(()=>{\n${this.ScriptsCachedContent[scriptUrl]}\n})()`;
                     newScript.nonce = nonce ?? undefined;
                     newScript.type = scriptType;
                     // --- Execute and immediately remove from DOM ---
@@ -244,13 +289,13 @@ class RuntimeManager {
                 const response = await fetch(scriptUrl, {
                     headers: {
                         "X-Requested-With": "PHPSPA_REQUEST_SCRIPT",
-                    },
+                    }
                 });
                 if (response.ok) {
                     const scriptContent = await response.text();
                     // --- Create new script element ---
                     const newScript = document.createElement("script");
-                    newScript.textContent = scriptContent;
+                    newScript.textContent = `(()=>{\n${scriptContent}\n})()`;
                     newScript.nonce = nonce ?? undefined;
                     newScript.type = scriptType;
                     // --- Execute and immediately remove from DOM ---
@@ -1276,16 +1321,23 @@ class AppManager {
                     delete currentRoutes[targetID];
                 }
             }
+            let tempElem = null;
             // --- Update content ---
-            const updateDOM = () => {
-                try {
-                    morphdom(targetElement, '<div>' + component.content + '</div>', {
-                        childrenOnly: true
-                    });
+            const updateDOM = async () => {
+                // --- Preload stylesheets in the new content ---
+                tempElem = await preloadStylesFromContent(component.content);
+                if (tempElem) {
+                    try {
+                        morphdom(targetElement, tempElem, {
+                            childrenOnly: true
+                        });
+                    }
+                    catch {
+                        targetElement.innerHTML = tempElem.innerHTML;
+                    }
                 }
-                catch {
-                    targetElement.innerHTML = component.content;
-                }
+                // --- Execute any inline styles in the new content ---
+                RuntimeManager.runStyles();
             };
             const stateData = {
                 url: newUrl.toString(),
@@ -1299,7 +1351,7 @@ class AppManager {
             if (component?.reloadTime) {
                 stateData.reloadTime = component.reloadTime;
             }
-            const completedDOMUpdate = () => {
+            const completedDOMUpdate = async () => {
                 // --- Update browser history ---
                 if (state === "push") {
                     RuntimeManager.pushState(stateData, stateData.title, newUrl);
@@ -1307,6 +1359,11 @@ class AppManager {
                 else if (state === "replace") {
                     RuntimeManager.replaceState(stateData, stateData.title, newUrl);
                 }
+                // --- Clear old executed scripts cache ---
+                RuntimeManager.clearEffects();
+                RuntimeManager.clearExecutedScripts();
+                // --- Execute any inline scripts in the new content ---
+                RuntimeManager.runScripts();
                 // --- Handle URL fragments (hash navigation) ---
                 const hashElement = document.getElementById(newUrl.hash.substring(1));
                 if (hashElement) {
@@ -1318,11 +1375,6 @@ class AppManager {
                 else {
                     scroll(0, 0); // --- Scroll to top if no hash or element not found ---
                 }
-                // --- Clear old executed scripts cache ---
-                RuntimeManager.clearEffects();
-                RuntimeManager.clearExecutedScripts();
-                // --- Execute any inline scripts and styles in the new content ---
-                RuntimeManager.runAll();
                 // --- Emit successful load event ---
                 RuntimeManager.emit("load", {
                     route: newUrl.toString(),
@@ -1413,7 +1465,7 @@ class AppManager {
      * @returns A promise that resolves when the state is updated successfully.
      *
      * @example
-     * AppManager.setState('user', { name: 'Alice' })
+     * setState('user', { name: 'Alice' })
      *   .then(() => console.log('State updated!'))
      *   .catch(err => console.error('Failed to update state:', err))
      */
@@ -1611,22 +1663,26 @@ class AppManager {
             const targetElement = document.getElementById(component?.targetID) ??
                 document.getElementById(history.state?.targetID) ??
                 document.body;
-            const updateDOM = () => {
+            const updateDOM = async () => {
+                const tempElem = await preloadStylesFromContent(component.content);
                 try {
-                    morphdom(targetElement, '<div>' + component.content + '</div>', {
+                    morphdom(targetElement, tempElem, {
                         childrenOnly: true
                     });
                 }
                 catch {
-                    targetElement.innerHTML = component.content;
+                    targetElement.innerHTML = tempElem.innerHTML;
                 }
+                // --- Execute any inline styles in the new content ---
+                RuntimeManager.runStyles();
             };
             const completedDOMUpdate = () => {
+                // Clean up temp element
                 // --- Clear old executed scripts cache ---
                 RuntimeManager.clearEffects();
                 RuntimeManager.clearExecutedScripts();
-                // --- Execute any inline scripts and styles in the new content ---
-                RuntimeManager.runAll();
+                // --- Execute any inline scripts in the new content ---
+                RuntimeManager.runScripts();
                 // --- Set up next auto-reload if specified ---
                 if (component?.reloadTime) {
                     setTimeout(AppManager.reloadComponent, component.reloadTime);
@@ -1836,22 +1892,25 @@ const navigateHistory = (event) => {
             }
         }
         // --- Decode and restore HTML content ---
-        const updateDOM = () => {
+        const updateDOM = async () => {
+            const tempElem = await preloadStylesFromContent(navigationState.content);
             try {
-                morphdom(targetContainer, '<div>' + navigationState.content + '</div>', {
+                morphdom(targetContainer, tempElem, {
                     childrenOnly: true
                 });
             }
             catch {
-                targetContainer.innerHTML = navigationState.content;
+                targetContainer.innerHTML = tempElem.innerHTML;
             }
+            // --- Execute any inline styles in the new content ---
+            RuntimeManager.runStyles();
         };
-        const completedDOMUpdate = () => {
+        const completedDOMUpdate = async () => {
             // --- Clear old executed scripts cache ---
             RuntimeManager.clearEffects();
             RuntimeManager.clearExecutedScripts();
-            // --- Execute any inline scripts and styles in the restored content ---
-            RuntimeManager.runAll();
+            // --- Execute any inline scripts in the restored content ---
+            RuntimeManager.runScripts();
             // --- Restart auto-reload timer if needed ---
             if (navigationState?.reloadTime) {
                 setTimeout(AppManager.reloadComponent, navigationState.reloadTime);

@@ -54,7 +54,7 @@ export declare class AppManager {
      * @returns A promise that resolves when the state is updated successfully.
      *
      * @example
-     * AppManager.setState('user', { name: 'Alice' })
+     * setState('user', { name: 'Alice' })
      *   .then(() => console.log('State updated!'))
      *   .catch(err => console.error('Failed to update state:', err))
      */

@@ -187,23 +187,23 @@ interface ApplicationContract {
      * });
      * ```
      * 
-     * @param callable $middleware The middleware function.
+     * @param callable|string $middleware The middleware function.
      * @return self
      * @since v2.0.5
      * @see https://phpspa.tech/references/middleware/#app-middleware
      */
-    public function middleware(callable $component): self;
+    public function middleware(callable|string $component): self;
 
     /**
      * Group routes under a common prefix.
      *
      * @param string $path The prefix path.
-     * @param callable $handler The handler function with Router as the parameter.
+     * @param callable|string $handler The handler function with Router as the parameter.
      * @return self
      * @since v2.0.4
      * @see https://phpspa.tech/references/router/#app-level-prefixing
     */
-    public function prefix(string $path, callable $handler): self;
+    public function prefix(string $path, callable|string $handler): self;
 
     /**
      * If you are using script module with `@dconco/phpspa` js package, enable this function
@@ -211,6 +211,21 @@ interface ApplicationContract {
      * @since v2.0.5
      */
     public function useModule(): self;
+
+    /**
+     * Overrides custom asset names and randomizes them, typically used for cache busting in production.
+     *
+     * This method modifies the internal representation of an asset's name
+     * by replacing any custom names with a random or unique hash string.
+     * This is primarily intended for production environments to ensure browsers
+     * always fetch the latest version of assets (like CSS or JavaScript files)
+     * instead of serving cached versions when the file content has changed.
+     *
+     * It is recommended to remove this method call in development environments for debugging purposes.
+     *
+     * @since v2.0.7
+     */
+    public function randomizeAssetName(): self;
 
     /**
      * Configure CORS (Cross-Origin Resource Sharing) settings for the application.

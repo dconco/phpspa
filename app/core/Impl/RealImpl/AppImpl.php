@@ -5,7 +5,6 @@ namespace PhpSPA\Core\Impl\RealImpl;
 use PhpSPA\DOM;
 use PhpSPA\Component;
 use PhpSPA\Http\Request;
-use PhpSPA\Http\Response;
 use PhpSPA\Http\Session;
 use PhpSPA\Http\Security\Nonce;
 use PhpSPA\Core\Router\MapRoute;
@@ -19,11 +18,11 @@ use PhpSPA\Core\Helper\CallableInspector;
 use PhpSPA\Core\Helper\ComponentScope;
 use PhpSPA\Core\Helper\AssetLinkManager;
 use PhpSPA\Core\Helper\PathResolver;
+use PhpSPA\Core\Utils\FileFunction;
 use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 use PhpSPA\Core\Utils\Validate;
 use PhpSPA\Interfaces\ApplicationContract;
 use PhpSPA\Interfaces\IComponent;
-use ReflectionFunction;
 
 use function Component\HTMLAttrInArrayToString;
 
@@ -70,7 +69,7 @@ abstract class AppImpl implements ApplicationContract {
    private array $components = [];
 
    /**
-    * @var callable[]
+    * @var callable|string[]
     */
    private array $middlewares = [];
 
@@ -120,12 +119,13 @@ abstract class AppImpl implements ApplicationContract {
    /**
     * @var array<array{
     *    path: string,
-    *    handler: callable
+    *    handler: callable|string
     * }>
     */
    protected array $prefix = [];
 
    private bool $module = false;
+   private bool $randomizeAssetName = false;
 
    public function defaultTargetID (string $targetID): ApplicationContract
    {
@@ -161,7 +161,7 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
-   public function middleware (callable $component): ApplicationContract
+   public function middleware (callable|string $component): ApplicationContract
    {
       $this->middlewares[] = $component;
       return $this;
@@ -297,12 +297,17 @@ abstract class AppImpl implements ApplicationContract {
       $this->static[] = ['route' => $route, 'staticPath' => $staticPath]; return $this;
    }
 
-   public function prefix(string $path, callable $handler): ApplicationContract {
+   public function prefix(string $path, callable|string $handler): ApplicationContract {
       $this->prefix[] = ['path' => $path, 'handler' => $handler]; return $this;
    }
 
    public function useModule(): ApplicationContract {
       $this->module = true;
+      return $this;
+   }
+
+   public function randomizeAssetName(): ApplicationContract {
+      $this->randomizeAssetName = true;
       return $this;
    }
 
@@ -323,11 +328,8 @@ abstract class AppImpl implements ApplicationContract {
       $assetInfo = AssetLinkManager::resolveAssetRequest(static::$request_uri);
       if ($assetInfo !== null) {
          $this->serveAsset($assetInfo);
-         exit();
+         return;
       }
-
-      // Clean up expired asset mappings periodically
-      AssetLinkManager::cleanupExpiredMappings();
 
       $success = false;
 
@@ -379,12 +381,6 @@ abstract class AppImpl implements ApplicationContract {
 
    private function handlePhpSPARequest(Request $request) {
       if ($request->requestedWith() === 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
-         // if ($request->header('X-Phpspa-Target') === 'navigate') {
-         //    Session::remove(STATE_HANDLE);
-         //    Session::remove(CALL_FUNC_HANDLE);
-         //    return;
-         // }
-
          $data = json_decode(base64_decode($request->auth()->bearer ?? ''), true);
          $data = Validate::validate($data);
 
@@ -473,7 +469,6 @@ abstract class AppImpl implements ApplicationContract {
 
          if ($request->requestedWith() !== 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
             Session::remove(STATE_HANDLE);
-            Session::remove(CALL_FUNC_HANDLE);
          }
       }
       
@@ -483,8 +478,20 @@ abstract class AppImpl implements ApplicationContract {
 
       if ($name) DOM::CurrentComponents($name);
 
-      // --- Merge component meta data only if this is the correct route ---
-      $metaTags = [...$this->metadata, ...$componentMetaData];
+      // --- Merge meta: component meta overrides app meta, DOM meta overrides both ---
+      $metaTags = $this->metadata;
+      // Remove app meta that is overridden by component meta
+      foreach ($componentMetaData as $compEntry) {
+         foreach ($metaTags as $k => $meta) {
+            if ((isset($compEntry['name']) && isset($meta['name']) && $compEntry['name'] === $meta['name']) ||
+                (isset($compEntry['property']) && isset($meta['property']) && $compEntry['property'] === $meta['property']) ||
+                (isset($compEntry['charset']) && isset($meta['charset']) && $compEntry['charset'] === $meta['charset'])) {
+               unset($metaTags[$k]);
+            }
+         }
+      }
+      $metaTags = \array_merge($metaTags, $componentMetaData);
+
       $middlewares = [...$this->middlewares, ...$componentMiddlewares];
 
       // --- Define the final handler that executes the component function ---
@@ -537,6 +544,21 @@ abstract class AppImpl implements ApplicationContract {
       if (!$isPreloadingComponent) {
          $title = DOM::Title() ?? $title;
          DOM::Title($title);
+
+         // Merge DOM meta (dynamic, set by user in component) and override any with same name/property/charset
+         $domMeta = DOM::meta();
+         if (!empty($domMeta)) {
+            foreach ($domMeta as $domEntry) {
+               foreach ($metaTags as $k => $meta) {
+                  if ((isset($domEntry['name']) && isset($meta['name']) && $domEntry['name'] === $meta['name']) ||
+                      (isset($domEntry['property']) && isset($meta['property']) && $domEntry['property'] === $meta['property']) ||
+                      (isset($domEntry['charset']) && isset($meta['charset']) && $domEntry['charset'] === $meta['charset'])) {
+                     unset($metaTags[$k]);
+                  }
+               }
+            }
+            $metaTags = array_merge($metaTags, $domMeta);
+         }
 
          if ($request->requestedWith() !== 'PHPSPA_REQUEST' && !empty($metaTags)) {
             $metaMarkup = $this->buildMetaTagMarkup($metaTags);
@@ -804,13 +826,23 @@ abstract class AppImpl implements ApplicationContract {
             $stylesheet = (array) Validate::validate($stylesheet);
 
             if (is_callable($stylesheet['content'])) {
-               $stylesheet['type'] ??= 'text/css';
-               $stylesheet['href'] = AssetLinkManager::generateCssLink("__global__", $index, $stylesheet['name'] ?? null);
+               $modificationTime = new FileFunction($stylesheet['content'])->getFileModificationTime();
+               $stylesheet['href'] = AssetLinkManager::generateCssLink("__global__", $index, $modificationTime, $this->randomizeAssetName ? null : ($stylesheet['name'] ?? null));
             } else
                $stylesheet['href'] = $stylesheet['content'];
 
             unset($stylesheet['name']);
             unset($stylesheet['content']);
+
+            if ($stylesheet['rel'] === 'stylesheet') {
+               $preloadStylesheet = $stylesheet;
+
+               $preloadStylesheet['rel'] = 'preload';
+               $preloadStylesheet['as'] = 'style';
+               $attributes = HTMLAttrInArrayToString($preloadStylesheet);
+               $result['global']['stylesheets'] .= "\n      <link $attributes />";
+            }
+
             $attributes = HTMLAttrInArrayToString($stylesheet);
             $result['global']['stylesheets'] .= "\n      <link $attributes />";
          }
@@ -821,16 +853,30 @@ abstract class AppImpl implements ApplicationContract {
          foreach ($stylesheets as $index => $stylesheet) {
             $stylesheet = (array) Validate::validate($stylesheet);
 
-            if (is_callable($stylesheet['content'])) {
-               $stylesheet['type'] ??= 'text/css';
-               $stylesheet['href'] = AssetLinkManager::generateCssLink($primaryRoute, $index, $stylesheet['name'] ?? null);
+            if (\is_callable($stylesheet['content'])) {
+               $modificationTime = new FileFunction($stylesheet['content'])->getFileModificationTime();
+               $stylesheet['href'] = AssetLinkManager::generateCssLink($primaryRoute, $index, $modificationTime, $this->randomizeAssetName ? null : ($stylesheet['name'] ?? null));
             } else
                $stylesheet['href'] = $stylesheet['content'];
 
             unset($stylesheet['name']);
             unset($stylesheet['content']);
+
+            if ($stylesheet['rel'] === 'stylesheet') {
+               $preloadStylesheet = $stylesheet;
+
+               unset($preloadStylesheet['name']);
+               unset($preloadStylesheet['content']);
+
+               $preloadStylesheet['rel'] = 'preload';
+               $preloadStylesheet['as'] = 'style';
+               $attributes = HTMLAttrInArrayToString($preloadStylesheet);
+               $result['component']['stylesheets'] .= "\n      <link $attributes />";
+            }
+
             $attributes = HTMLAttrInArrayToString($stylesheet);
             $result['component']['stylesheets'] .= "\n      <link $attributes />";
+
          }
       }
 
@@ -838,19 +884,21 @@ abstract class AppImpl implements ApplicationContract {
       // --- Attaching it to the global stylesheet to expicitly... ---
       // --- add it to the head tag alongside with the styles instead of the body ---
       if (!$isPhpSpaRequest && !$this->module) {
-         $jsLink = AssetLinkManager::generateJsLink("__global__", -1, null, 'text/javascript');
+         $modificationTime = filemtime($this->getPhpSPAScriptPath());
+         $jsLink = AssetLinkManager::generateJsLink("__global__", -1, $modificationTime);
          $result['global']['stylesheets'] .= "\n      <script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
       }
 
-      // --- Generate global script links (include during PHPSPA requests to re-execute globals) ---
+      // --- Generate global script links ---
       if (!empty($globalScripts)) {
          foreach ($globalScripts as $index => $script) {
             $script = (array) Validate::validate($script);
             $isLink = false;
 
-            if (is_callable($script['content']))
-               $script['src'] = AssetLinkManager::generateJsLink("__global__", $index, $script['name'] ?? null, $script['type']);
-            else {
+            if (is_callable($script['content'])) {
+               $modificationTime = new FileFunction($script['content'])->getFileModificationTime();
+               $script['src'] = AssetLinkManager::generateJsLink("__global__", $index, $modificationTime, $this->randomizeAssetName ? null : ($script['name'] ?? null), $script['type']);
+            } else {
                $script['src'] = $script['content'];
                $isLink = true;
             }
@@ -860,7 +908,7 @@ abstract class AppImpl implements ApplicationContract {
             $attributes = HTMLAttrInArrayToString($script);
 
             $result['global']['scripts'] .= $isPhpSpaRequest && !$isLink
-               ? "\n      <phpspa-script $attributes></phpspa-script>"
+               ? "\n      <script data-type=\"phpspa/script\" $attributes></script>"
                : "\n      <script $attributes></script>";
          }
       }
@@ -871,9 +919,10 @@ abstract class AppImpl implements ApplicationContract {
             $script = (array) Validate::validate($script);
             $isLink = false;
 
-            if (is_callable($script['content']))
-               $script['src'] = AssetLinkManager::generateJsLink($primaryRoute, $index, $script['name'] ?? null, $script['type']);
-            else {
+            if (is_callable($script['content'])) {
+               $modificationTime = new FileFunction($script['content'])->getFileModificationTime();
+               $script['src'] = AssetLinkManager::generateJsLink($primaryRoute, $index, $modificationTime, $this->randomizeAssetName ? null : ($script['name'] ?? null), $script['type']);
+            } else {
                $script['src'] = $script['content'];
                $isLink = true;
             }
@@ -883,7 +932,7 @@ abstract class AppImpl implements ApplicationContract {
             $attributes = HTMLAttrInArrayToString($script);
 
             $result['component']['scripts'] .= $isPhpSpaRequest && !$isLink
-               ? "\n      <phpspa-script $attributes></phpspa-script>"
+               ? "\n      <script data-type=\"phpspa/script\" $attributes></script>"
                : "\n      <script $attributes></script>";
          }
       }
@@ -903,13 +952,7 @@ abstract class AppImpl implements ApplicationContract {
       $currentLevel = Compressor::getLevel();
       $isGlobalAsset = $assetInfo['componentRoute'] === '__global__';
       $isPhpSpaRequest = $request->requestedWith() === 'PHPSPA_REQUEST' || $request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT';
-
-      $isRealJavascript = strtolower($assetInfo['scriptType']) === 'application/javascript' || strtolower($assetInfo['scriptType']) === 'text/javascript';
-      $isComponentJS = !$isGlobalAsset && $assetInfo['assetType'] === 'js' && $isRealJavascript;
-      $isGlobalJS = $isGlobalAsset && $assetInfo['assetType'] === 'js' && $isRealJavascript;
-
-      // --- For global JS: wrap in IIFE if requested by PHPSPA to execute in isolation ---
-      $shouldWrapIIFE = $isComponentJS || ($isGlobalJS && $isPhpSpaRequest);
+      $isJS = strtolower($assetInfo['assetType']) === 'js';
 
       if ($isGlobalAsset) {
          if ($assetInfo['assetType'] === 'css') {
@@ -924,9 +967,6 @@ abstract class AppImpl implements ApplicationContract {
          $component = $this->findComponentByRoute($assetInfo['componentRoute']);
 
          if ($component === null) {
-            http_response_code(Response::StatusNotFound);
-            header('Content-Type: text/plain');
-            echo "Asset not found";
             return;
          }
 
@@ -942,45 +982,30 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       if (\is_callable($callable)) {
-         $fileName = null;
-
-         if (\is_array($callable)) {
-            // Array callable like [$object, 'method'] or ['Class', 'method']
-            $reflection = new \ReflectionMethod($callable[0], $callable[1]);
-            $fileName = $reflection->getFileName();
-         } elseif ($callable instanceof \Closure || \is_string($callable)) {
-            // Closure or function name
-            $func = new ReflectionFunction($callable);
-            $fileName = $func->getFileName();
-         }
+         $ff = new FileFunction($callable);
+         $fileName = $ff->getFileName();
+         $fileModifyTime = $ff->getFileModificationTime();
 
          if ($fileName) {
-            $extName = pathinfo($fileName, PATHINFO_EXTENSION);
+            $hashed = md5($assetInfo['componentRoute'] . $assetInfo['assetIndex'] . $fileModifyTime . $assetInfo['assetType']);
             $fileDir = pathinfo($fileName, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 'generated';
-            $pathWithoutExt = $fileDir . DIRECTORY_SEPARATOR . pathinfo($fileName, PATHINFO_FILENAME);
-            $newName = "{$pathWithoutExt}-{$assetInfo['assetIndex']}.{$assetInfo['assetType']}.generated.{$extName}";
-            $newAssetMap = "$newName.map";
-            $fileSize = filesize($fileName);
+            $newName = $fileDir . DIRECTORY_SEPARATOR . $hashed . ".generated.php";
 
             if (file_exists($newName)) {
                if ($currentLevel === Compressor::LEVEL_NONE) {
                   unlink($newName);
-                  unlink($newAssetMap);
                }
                else {
-                  $oldFileSize = (int) @file_get_contents($newAssetMap);
+                  $content = require $newName;
 
-                  if ($oldFileSize !== 0 && $oldFileSize === $fileSize) {
-                     $content = require $newName;
-
-                     if ($shouldWrapIIFE) {
-                        $content = "(()=>{{$content}})();";
-                     }
-                     $content = Compressor::gzipCompress($content);
-                     $this->setAssetHeaders($assetInfo['type']);
-                     echo $content;
-                     return;
+                  // --- Wrap component requested by initial page load in IIFE ---
+                  if (!$isGlobalAsset && !$isPhpSpaRequest && $isJS) {
+                     $content = "(()=>{{$content}})()";
                   }
+                  $content = Compressor::gzipCompress($content);
+                  $this->setAssetHeaders($assetInfo['type']);
+                  echo $content;
+                  exit(0);
                }
             }
          }
@@ -997,21 +1022,11 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       if ($content === null) {
-         http_response_code(Response::StatusNotFound);
-         header('Content-Type: text/plain');
-         echo "Asset content not found";
          return;
       }
 
       // --- Determine compression level ---
-      $compressionLevel = ($request->requestedWith() === 'PHPSPA_REQUEST')
-         ? ($currentLevel === Compressor::LEVEL_NONE ? $currentLevel : Compressor::LEVEL_EXTREME)
-         : $currentLevel;
-
-      // --- For component JS: wrap in IIFE if compressionis disabled ---
-      if ($shouldWrapIIFE && $currentLevel === Compressor::LEVEL_NONE) {
-         $content = "(()=>{{$content}})();";
-      }
+      $compressionLevel = $isPhpSpaRequest ? Compressor::LEVEL_EXTREME : $currentLevel;
 
       if (\is_array($content)) {
          $content = $content[0];
@@ -1019,14 +1034,18 @@ abstract class AppImpl implements ApplicationContract {
          // --- Compress the content ---
          $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type']);
 
-         if ($currentLevel > Compressor::LEVEL_NONE) {
+         if ($currentLevel > Compressor::LEVEL_NONE && !$isPhpSpaRequest) {
             if (!is_dir($fileDir)) mkdir($fileDir);
 
             if ($fileName) {
                $assetType = strtoupper($assetInfo['assetType']);
                @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
-               @file_put_contents($newAssetMap, $fileSize);
             }
+         }
+
+         // --- Wrap component requested by initial page load in IIFE ---
+         if (!$isGlobalAsset && !$isPhpSpaRequest && $isJS) {
+            $content = "(()=>{{$content}})()";
          }
       }
 
@@ -1034,6 +1053,7 @@ abstract class AppImpl implements ApplicationContract {
       $this->setAssetHeaders($assetInfo['type']);
       // --- Output the content ---
       echo $content;
+      exit(0);
    }
 
    /**
@@ -1110,14 +1130,16 @@ abstract class AppImpl implements ApplicationContract {
          }
 
          if ($assetInfo['assetIndex'] === -1 && $request->requestedWith() !== 'PHPSPA_REQUEST_SCRIPT' && $request->requestedWith() !== 'PHPSPA_REQUEST') {
-            $scriptPath = dirname(__DIR__, 4);
-            $path = '/src/script/phpspa.min.js'; // --- PRODUCTION ---
-
-            return [file_get_contents($scriptPath . $path)];
+            return [file_get_contents($this->getPhpSPAScriptPath())];
          }
       }
 
       return null;
+   }
+
+   public function getPhpSPAScriptPath (): string
+   {
+      return realpath(dirname(__DIR__, 4) . '/src/script/phpspa.min.js');
    }
 
    /**
@@ -1204,11 +1226,11 @@ abstract class AppImpl implements ApplicationContract {
     * Executes the component function based on its parameter signature.
     *
     * @param Request $request The current HTTP request.
-    * @param callable $componentFunction The component's callable function.
+    * @param callable|string $componentFunction The component's callable function.
     * @param array $routerParams An associative array of route parameters.
     * @return string The output of the component function.
     */
-   private function executeComponentFunction(Request $request, callable $componentFunction, array $routerParams = []): string
+   private function executeComponentFunction(Request $request, callable|string $componentFunction, array $routerParams = []): string
    {
       if (CallableInspector::hasParam($componentFunction, 'path') && CallableInspector::hasParam($componentFunction, 'request')) {
          return (string) \call_user_func(

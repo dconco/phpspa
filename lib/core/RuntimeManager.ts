@@ -145,13 +145,22 @@ export class RuntimeManager {
       effect.lastDeps = nextDeps ? nextDeps.slice() : nextDeps
    }
 
-   public static runAll(): void {
+   public static runScripts(): void {
       for (const targetID in RuntimeManager.currentRoutes) {
          const element = document.getElementById(targetID)
 
          if (element) {
             this.runInlineScripts(element)
             this.runPhpSpaScripts(element)
+         }
+      }
+   }
+
+   public static runStyles(): void {
+      for (const targetID in RuntimeManager.currentRoutes) {
+         const element = document.getElementById(targetID)
+
+         if (element) {
             this.runInlineStyles(element)
          }
       }
@@ -176,14 +185,14 @@ export class RuntimeManager {
             // --- Create new script element ---
             const newScript = document.createElement("script")
 
-            newScript.nonce = nonce ?? undefined
+            newScript.nonce = nonce ?? undefined;
 
             // --- Copy all attributes except the data-type identifier ---
             for (const attribute of Array.from(script.attributes)) {
                newScript.setAttribute(attribute.name, attribute.value)
             }
 
-            newScript.textContent = `(function() {\n${script.textContent}\n})()`
+            newScript.textContent = `(()=>{\n${script.textContent}\n})()`;
 
             // --- Execute and immediately remove from DOM ---
             document.head.appendChild(newScript).remove()
@@ -192,7 +201,7 @@ export class RuntimeManager {
    }
 
 
-   static runPhpSpaScripts(container: HTMLElement) {
+   private static runPhpSpaScripts(container: HTMLElement) {
       const scripts = container.querySelectorAll("phpspa-script, script[data-type=\"phpspa/script\"]") as NodeListOf<HTMLScriptElement>
       const nonce = document.head.getAttribute('x-phpspa')
 
@@ -202,24 +211,24 @@ export class RuntimeManager {
 
          // --- Skip if this script has already been executed ---
          if (!this.executedScripts.has(scriptUrl)) {
-            this.executedScripts.add(scriptUrl)
+            this.executedScripts.add(scriptUrl);
 
             // --- Check cache first ---
             if (this.ScriptsCachedContent[scriptUrl]) {
-               const newScript = document.createElement("script")
-               newScript.textContent = this.ScriptsCachedContent[scriptUrl]
-               newScript.nonce = nonce ?? undefined
-               newScript.type = scriptType
+               const newScript = document.createElement("script");
+               newScript.textContent = `(()=>{\n${this.ScriptsCachedContent[scriptUrl]}\n})()`;
+               newScript.nonce = nonce ?? undefined;
+               newScript.type = scriptType;
 
                // --- Execute and immediately remove from DOM ---
-               document.head.appendChild(newScript).remove()
-               return
+               document.head.appendChild(newScript).remove();
+               return;
             }
 
             const response = await fetch(scriptUrl, {
                headers: {
                   "X-Requested-With": "PHPSPA_REQUEST_SCRIPT",
-               },
+               }
             })
 
             if (response.ok) {
@@ -227,17 +236,17 @@ export class RuntimeManager {
 
                // --- Create new script element ---
                const newScript = document.createElement("script")
-               newScript.textContent = scriptContent
-               newScript.nonce = nonce ?? undefined
-               newScript.type = scriptType
+               newScript.textContent = `(()=>{\n${scriptContent}\n})()`;
+               newScript.nonce = nonce ?? undefined;
+               newScript.type = scriptType;
 
                // --- Execute and immediately remove from DOM ---
                document.head.appendChild(newScript).remove()
 
                // --- Cache the fetched script content ---
-               this.ScriptsCachedContent[scriptUrl] = scriptContent
+               this.ScriptsCachedContent[scriptUrl] = scriptContent;
             } else {
-               console.error(`Failed to load script from ${scriptUrl}: ${response.statusText}`)
+               console.error(`Failed to load script from ${scriptUrl}: ${response.statusText}`);
             }
          }
       })

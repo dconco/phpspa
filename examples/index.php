@@ -44,6 +44,9 @@ new App(require 'layout/Layout.php')
 
     ->assetCacheHours(0)
 
+    ->meta(charset: 'utf-8')
+    ->meta(name: 'viewport', content: 'from App')
+
     ->link(
         fn () => <<<CSS
         /* Global styles for the application */
@@ -65,7 +68,7 @@ new App(require 'layout/Layout.php')
 
     ->script(
         fn () => <<<JS
-        function nameo() { return true }
+        function name() { return true }
             // Global script - should execute FIRST
             console.log('1. Global script executing first');
             

@@ -30,7 +30,7 @@ class Router
    /**
     * @param bool $caseSensitive Whether routes are case sensitive
     * @param string $prefix Base path for the router
-    * @param array<callable> $middlewares
+    * @param array<callable|string> $middlewares
     */
    public function __construct(readonly private string $prefix, private bool $caseSensitive, private array $middlewares)
    {
@@ -48,12 +48,12 @@ class Router
    /**
     * Adds a middleware to the router group.
     * 
-    * @param callable $handler The middleware handler.
+    * @param callable|string $handler The middleware handler.
     * @return void
     * @since v2.0.4
     * @see https://phpspa.tech/references/router/#middleware
     */
-   public function middleware(callable $handler) {
+   public function middleware(callable|string $handler) {
       $this->middlewares[] = $handler;
    }
 
@@ -61,12 +61,12 @@ class Router
     * Creates a route group with a specific prefix.
     * 
     * @param string $path The URL prefix for this group.
-    * @param callable $handler The callback to define routes within this group.
+    * @param callable|string $handler The callback to define routes within this group.
     * @return void
     * @since v2.0.4
     * @see https://phpspa.tech/references/router/#nested-prefixes
     */
-   public function prefix(string $path, callable $handler) {
+   public function prefix(string $path, callable|string $handler) {
       $prefix = ['path' => rtrim($this->prefix, '/') . '/' . ltrim($path, '/'), 'handler' => $handler];
       $this->handlePrefix($prefix, $this->middlewares);
    }
@@ -89,12 +89,12 @@ class Router
          default => throw new \BadMethodCallException("Method {$method} does not exist in " . __CLASS__),
       };
    }
-   
-   private function handleHandler(callable $handler, &$request, $response, Closure $next) {
+
+   private function handleHandler(callable|string $handler, &$request, $response, Closure $next) {
       return \call_user_func($handler, $request, $response, $next);
    }
 
-   private function handle(string $method, array $route, callable ...$handlers): void
+   private function handle(string $method, array $route, callable|string ...$handlers): void
    {
       $response = new Response();
       $iterator = 0;

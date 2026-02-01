@@ -348,10 +348,8 @@ trait HtmlCompressor
     */
    public static function compressComponent(string $content, $type = 'HTML'): string
    {
-      $currentLevel = Compressor::getLevel();
-
       // Apply minification based on compression level
-      return self::minify($content, $type, $currentLevel === Compressor::LEVEL_NONE ? $currentLevel : Compressor::LEVEL_EXTREME);
+      return self::minify($content, $type, Compressor::LEVEL_EXTREME);
    }
 
 

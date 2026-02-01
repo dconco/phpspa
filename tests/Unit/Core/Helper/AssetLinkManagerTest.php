@@ -17,22 +17,21 @@ final class AssetLinkManagerTest extends TestCase
 
    protected function tearDown(): void
    {
-      Session::remove('phpspa_asset_mappings');
-      Session::remove('phpspa_cache_config');
+      // No session cleanup needed in stateless mode
    }
 
    public function testGenerateCssAndJsLinks(): void
    {
-      $css = AssetLinkManager::generateCssLink('/test', 0);
-      $js = AssetLinkManager::generateJsLink('/test', 1);
+      $css = AssetLinkManager::generateCssLink('/test', 0, 0);
+      $js = AssetLinkManager::generateJsLink('/test', 1, 0);
 
-      $this->assertMatchesRegularExpression('/phpspa\/assets\/[a-f0-9]{32}\.css$/', $css);
-      $this->assertMatchesRegularExpression('/phpspa\/assets\/[a-f0-9]{32}\.js$/', $js);
+      $this->assertMatchesRegularExpression('/phpspa\/assets\/[^\/]+\.css$/', $css);
+      $this->assertMatchesRegularExpression('/phpspa\/assets\/[^\/]+\.js$/', $js);
    }
 
    public function testResolveAssetRequestReturnsMapping(): void
    {
-      $css = AssetLinkManager::generateCssLink('/test', 0);
+      $css = AssetLinkManager::generateCssLink('/test', 0, 0);
       $path = parse_url($css, PHP_URL_PATH);
 
       $resolved = AssetLinkManager::resolveAssetRequest($path);
