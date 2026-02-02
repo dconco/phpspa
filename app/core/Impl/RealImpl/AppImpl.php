@@ -125,7 +125,10 @@ abstract class AppImpl implements ApplicationContract {
    protected array $prefix = [];
 
    private bool $module = false;
+
    private bool $randomizeAssetName = false;
+
+   private ?string $generatedCacheDirectory = null;
 
    public function defaultTargetID (string $targetID): ApplicationContract
    {
@@ -308,6 +311,11 @@ abstract class AppImpl implements ApplicationContract {
 
    public function randomizeAssetName(): ApplicationContract {
       $this->randomizeAssetName = true;
+      return $this;
+   }
+
+   public function setGeneratedCacheDirectory(string $path): ApplicationContract {
+      $this->generatedCacheDirectory = $path;
       return $this;
    }
 
@@ -987,7 +995,7 @@ abstract class AppImpl implements ApplicationContract {
 
          if ($fileName) {
             $hashed = md5($assetInfo['componentRoute'] . $assetInfo['assetIndex'] . $fileModifyTime . $assetInfo['assetType']);
-            $fileDir = pathinfo($fileName, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 'generated';
+            $fileDir = $this->generatedCacheDirectory ?? (pathinfo($fileName, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 'generated');
             $newName = $fileDir . DIRECTORY_SEPARATOR . $hashed . ".generated.php";
 
             if (file_exists($newName)) {

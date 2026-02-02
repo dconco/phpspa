@@ -26,6 +26,26 @@ $router->methods(['GET', 'POST'], '/data', function (Request $req, Response $res
 $router->methods('GET|POST|PUT', '/resource', fn($req, $res) => $res->success('OK'));
 ```
 
+#### **Custom Cache Directory Configuration** 📁
+
+Added `App::setGeneratedCacheDirectory()` to customize where generated asset cache files are stored:
+
+```php
+// Set custom directory for generated cache files
+$app->setGeneratedCacheDirectory(__DIR__ . '/cache/phpspa');
+
+// Useful for organizing your project structure
+$app->setGeneratedCacheDirectory('/tmp/app-cache');
+```
+
+This allows you to:
+- Organize cache files in a centralized location
+- Use different cache directories per environment
+- Store cache on faster storage (e.g., tmpfs, RAM disk)
+- Simplify cache cleanup and management
+
+**Documentation:** [performance/assets-caching#custom-cache-directory](https://phpspa.tech/performance/assets-caching/#custom-cache-directory)
+
 
 #### **Enhanced HTTP Client Methods** 🌐
 
