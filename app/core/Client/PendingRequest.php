@@ -96,6 +96,20 @@ class PendingRequest implements \ArrayAccess {
    }
 
    /**
+    * Attach query parameters to the request URL.
+    *
+    * Useful when sending query params with non-GET methods (e.g. POST).
+    *
+    * @param array|string $query Query parameters as array or query string.
+    * @return PendingRequest
+    */
+   public function query(array|string $query): PendingRequest
+   {
+      $this->buildQueryParams([$query]);
+      return $this;
+   }
+
+   /**
     * Set request timeout in seconds.
     *
     * @param int $seconds Timeout in seconds
