@@ -86,3 +86,78 @@ function ProfileUpload(Request $request) {
 
 !!! success "Secure Upload"
     Always validate file uploads on the server-side before processing them.
+
+---
+
+## Request Helper Methods
+
+The Request object provides several helper methods for common operations:
+
+### **Method Checking**
+
+```php
+<?php
+
+// Check if request method matches
+if ($request->isMethod('POST')) {
+    // Handle POST request
+}
+
+// Get the current HTTP method
+$method = $request->method(); // 'GET', 'POST', 'PUT', etc.
+```
+
+### **Protocol & Security**
+
+```php
+<?php
+
+// Check if request is over HTTPS
+if ($request->isHttps()) {
+    // Secure connection
+}
+
+// Get server protocol
+$protocol = $request->protocol(); // 'HTTP/1.1', 'HTTP/2', etc.
+
+// Get request URI
+$uri = $request->getUri(); // '/api/users/123'
+```
+
+### **Request Metadata**
+
+```php
+<?php
+
+// Get request timestamp
+$timestamp = $request->requestTime();
+
+// Get content type
+$contentType = $request->contentType(); // 'application/json'
+
+// Get client IP address
+$ip = $request->ip();
+
+// Check if AJAX/XHR request
+if ($request->isAjax()) {
+    // Handle async request
+}
+
+// Get referrer URL
+$referrer = $request->referrer();
+```
+
+### **API Reference**
+
+| Method | Returns | Description |
+| :--- | :--- | :--- |
+| `isMethod(string $method)` | `bool` | Checks if request method matches |
+| `method()` | `string` | Returns HTTP method (GET, POST, etc.) |
+| `isHttps()` | `bool` | Checks if request is over HTTPS |
+| `protocol()` | `?string` | Returns server protocol |
+| `getUri()` | `string` | Returns request URI |
+| `requestTime()` | `int` | Returns Unix timestamp of request |
+| `contentType()` | `?string` | Returns Content-Type header value |
+| `ip()` | `string` | Returns client IP address |
+| `isAjax()` | `bool` | Checks if request is AJAX/XHR |
+| `referrer()` | `?string` | Returns referring URL |

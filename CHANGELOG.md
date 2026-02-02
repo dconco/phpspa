@@ -1,10 +1,70 @@
 # CHANGELOG
 
-## v2.0.7 (Unreleased) (PHP 8.4)
+## v2.0.8 (Unreleased) (PHP 8.4)
 
 **Installation:**
 ```bash
 composer require dconco/phpspa:dev-support/php-8.4
+```
+
+### ✨ New Features
+
+#### **Multi-Method Routing** 🛣️
+
+Added `Router::methods()` to handle multiple HTTP methods on a single route:
+
+```php
+// Accept both GET and POST on the same route
+$router->methods(['GET', 'POST'], '/data', function (Request $req, Response $res) {
+   if ($req->method() === 'GET') {
+      return $res->json(['data' => 'fetched']);
+   }
+   return $res->json(['data' => 'created']);
+});
+
+// Or use pipe-separated string
+$router->methods('GET|POST|PUT', '/resource', fn($req, $res) => $res->success('OK'));
+```
+
+
+#### **Enhanced HTTP Client Methods** 🌐
+
+Added `query()` and `form()` methods to `useFetch()` for better request body control:
+
+- **`query()`** - Attach query parameters to any HTTP method (not just GET)
+- **`form()`** - Send form-encoded data with automatic `Content-Type: application/x-www-form-urlencoded` header
+
+```php
+// Add query params to POST request
+$response = useFetch('https://api.example.com/search')
+               ->query(['page' => 2, 'limit' => 10])
+               ->post(['term' => 'php']);
+
+// Send form-encoded data instead of JSON
+$response = useFetch('https://api.example.com/login')
+               ->form(['username' => 'dave', 'password' => 'secret'])
+               ->post();
+
+// Or use pre-encoded string
+$response = useFetch('https://api.example.com/webhook')
+               ->form('event=push&repo=phpspa')
+               ->post();-
+```
+
+**Documentation:** [references/hooks/use-fetch#configuration-options](https://phpspa.tech/references/hooks/use-fetch/#configuration-options)
+
+
+
+
+---
+
+
+
+## v2.0.7 (Stable) (Latest) (PHP 8.4)
+
+**Installation:**
+```bash
+composer require dconco/phpspa:v2.0.7
 ```
 
 ### ✨ New Features
