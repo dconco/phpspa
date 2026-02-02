@@ -48,10 +48,21 @@ interface Request {
      * Retrieves file data from the request by name.
      *
      * This method retrieves file data from the request. If a name is provided, it returns the file data for that specific
-     * input field; otherwise, it returns all file data as an object.
+     * input field; otherwise, it returns all file data as an array of file information arrays.
      *
      * @param ?string $name The name of the file input.
-     * @return ?array File data, or null if not set.
+     * @return ?array{
+     *   name: string,
+     *   type: string,
+     *   size: int,
+     *   tmp_name: string,
+     *   error: UPLOAD_ERR_*
+     * } File data array containing upload information, or null if not set. Each file contains:
+     *   - name: Original filename on the client machine
+     *   - type: MIME type of the file (e.g., 'image/jpeg')
+     *   - size: Size of uploaded file in bytes
+     *   - tmp_name: Temporary path where the file is stored on the server
+     *   - error: Upload error code (UPLOAD_ERR_OK = 0 for success)
      */
     public function files (?string $name = null): ?array;
 
