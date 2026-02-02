@@ -173,10 +173,8 @@ interface ApplicationContract {
      *
      * Signature: `callable(Request $req, Closure $next): mixed`
      *
-     * Example:
-     * 
+     * @example
      * ```php
-     * <?php
      * new App()->middleware(function (Request $req, Closure $next) {
      *    if ($req->auth()->bearer) {
      *        return $next();
