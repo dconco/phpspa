@@ -380,11 +380,10 @@ abstract class AppImpl implements ApplicationContract {
    }
 
    private function handlePhpSPARequest(Request $request) {
-      if ($request->requestedWith() === 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
+      if ($request->requestedWith() === 'PHPSPA_REQUEST') {
          $data = json_decode(base64_decode($request->auth()->bearer ?? ''), true);
-         $data = Validate::validate($data);
 
-         if (isset($data['state']) && $request->isSameOrigin()) {
+         if (isset($data['state'])) {
             $state = $data['state'];
 
             if (isset($state['key'])) {
@@ -395,7 +394,7 @@ abstract class AppImpl implements ApplicationContract {
 
             return;
 
-         } else if (isset($data['__call']) && $request->isSameOrigin()) {
+         } else if (isset($data['__call'])) {
             try {
                $tokenData = base64_decode($data['__call']['token'] ?? '');
                $tokenData = json_decode($tokenData);
@@ -467,7 +466,7 @@ abstract class AppImpl implements ApplicationContract {
 
          DOM::CurrentRoutes(static::$request_uri);
 
-         if ($request->requestedWith() !== 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
+         if ($request->requestedWith() !== 'PHPSPA_REQUEST') {
             Session::remove(STATE_HANDLE);
          }
       }

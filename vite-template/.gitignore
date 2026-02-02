@@ -14,5 +14,3 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
-pnpm-lock.yaml
-composer.lock

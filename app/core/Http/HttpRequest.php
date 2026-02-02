@@ -2,7 +2,6 @@
 
 namespace PhpSPA\Core\Http;
 
-use PhpSPA\Core\Utils\Validate;
 use PhpSPA\Http\Request;
 use PhpSPA\Http\Session;
 use stdClass;
@@ -20,7 +19,7 @@ class HttpRequest implements Request
     public function __invoke(string $key, ?string $default = null): mixed
     {
         if (isset($_REQUEST[$key])) {
-            return Validate::validate($_REQUEST[$key]);
+            return $_REQUEST[$key];
         }
 
         return $default;
@@ -50,7 +49,7 @@ class HttpRequest implements Request
 
     public function apiKey(string $key = 'Api-Key')
     {
-        return Validate::validate(self::RequestApiKey($key));
+        return self::RequestApiKey($key);
     }
 
     public function auth(): stdClass
@@ -77,7 +76,7 @@ class HttpRequest implements Request
         while ($i < \count($parsed)) {
             $p = mb_split('=', $parsed[$i]);
             $key = $p[0];
-            $value = $p[1] ? Validate::validate($p[1]) : null;
+            $value = $p[1] ? $p[1] : null;
 
             $cl->$key = $value;
             $i++;
@@ -92,9 +91,9 @@ class HttpRequest implements Request
     public function urlParams(?string $name = null)
     {
         if (!$name) {
-            return Validate::validate($this->params);
+            return $this->params;
         }
-        return Validate::validate($this->params[$name] ?? null);
+        return $this->params[$name] ?? null;
     }
 
     public function header(?string $name = null)
@@ -116,9 +115,9 @@ class HttpRequest implements Request
         }
 
         if (!$name) {
-            return Validate::validate($headers);
+            return $headers;
         }
-        return Validate::validate($headers[$name] ?? null);
+        return $headers[$name] ?? null;
     }
 
     public function json(?string $name = null)
@@ -130,41 +129,41 @@ class HttpRequest implements Request
         }
 
         if ($name !== null) {
-            return Validate::validate($data[$name] ?? null);
+            return $data[$name] ?? null;
         }
-        return Validate::validate($data);
+        return $data;
     }
 
     public function get(?string $key = null)
     {
         if (!$key) {
-            return Validate::validate($_GET);
+            return $_GET;
         }
         if (!isset($_GET[$key])) {
             return null;
         }
-        return Validate::validate($_GET[$key] ?? null);
+        return $_GET[$key] ?? null;
     }
 
     public function post(?string $key = null)
     {
         if (!$key) {
-            return Validate::validate($_POST);
+            return $_POST;
         }
         if (!isset($_POST[$key])) {
             return null;
         }
 
-        $data = Validate::validate($_POST[$key]);
+        $data = $_POST[$key];
         return $data;
     }
 
     public function cookie(?string $key = null)
     {
         if (!$key) {
-            return Validate::validate($_COOKIE);
+            return $_COOKIE;
         }
-        return isset($_COOKIE[$key]) ? Validate::validate($_COOKIE[$key]) : null;
+        return isset($_COOKIE[$key]) ? $_COOKIE[$key] : null;
     }
 
     public function session(?string $key = null)
@@ -172,10 +171,10 @@ class HttpRequest implements Request
         Session::start();
 
         if (!$key) {
-            return Validate::validate($_SESSION);
+            return $_SESSION;
         }
 
-        return Validate::validate(Session::get($key));
+        return Session::get($key);
     }
 
     public function method(): string
