@@ -395,8 +395,15 @@ class PendingRequest implements \ArrayAccess {
          // POST, PUT, and PATCH use a data body
          RequestMethod::POST,
          RequestMethod::PUT,
-         RequestMethod::PATCH => \array_key_exists(0, $args)
-            ? $this->data = \is_array($args[0]) ? json_encode($args[0]) : ($args[0] ?? null)
+         RequestMethod::PATCH => array_key_exists(0, $args)
+            ? $this->data = \is_array($args[0])
+               ? (function () use ($args) {
+                  if (!isset($this->headers['Content-Type'])) {
+                     $this->headers['Content-Type'] = 'application/json';
+                  }
+                  return json_encode($args[0]);
+               })()
+               : ($args[0] ?? null)
             : null,
          default => throw new BadMethodCallException("Method $method does not exist.")
       };
