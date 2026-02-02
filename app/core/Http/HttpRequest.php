@@ -300,18 +300,38 @@ class HttpRequest implements Request
     }
 
     public function isSameOrigin(): bool {
-        $host = parse_url($_SERVER['HTTP_HOST'] ?? '', PHP_URL_HOST);
         $origin = $_SERVER['HTTP_ORIGIN'] ?? null;
         $pathIsRelative = str_starts_with($this->getUri(), '/');
 
+        $rawHost = $_SERVER['HTTP_HOST'] ?? '';
+        $host = parse_url($rawHost, PHP_URL_HOST) ?: $rawHost;
+        $port = parse_url($rawHost, PHP_URL_PORT);
+        $serverName = $_SERVER['SERVER_NAME'] ?? '';
+        $serverPort = $_SERVER['SERVER_PORT'] ?? null;
+        $expectedHost = $host ?: $serverName;
+        $expectedPort = $port ?? $serverPort;
+
         // Case 1: Browser explicitly sent Origin header
         if ($origin !== null) {
-            $parsed = parse_url($origin, PHP_URL_HOST);
-            return ($parsed === $host) || $pathIsRelative;
+            $parsedHost = parse_url($origin, PHP_URL_HOST);
+            $parsedPort = parse_url($origin, PHP_URL_PORT);
+
+            if (!$parsedHost) {
+                return false;
+            }
+
+            if ($parsedHost !== $expectedHost) {
+                return false;
+            }
+
+            if ($parsedPort !== null && $expectedPort !== null) {
+                return (string) $parsedPort === (string) $expectedPort;
+            }
+
+            return true;
         }
 
-        // Case 2: No Origin -> verify Host matches server or path is relative
-        $serverHost = $_SERVER['SERVER_NAME'] ?? '';
-        return ($host === $serverHost) || $pathIsRelative;
+        // Case 2: No Origin -> allow same-site relative paths
+        return $pathIsRelative;
     }
 }
