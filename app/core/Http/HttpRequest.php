@@ -158,12 +158,49 @@ class HttpRequest implements Request
         return $data;
     }
 
+    public function form(?string $key = null)
+    {
+        if ($key === null) {
+            return [...$_POST ?? [], ...$_FILES ?? []];
+        }
+
+        if (isset($_POST[$key])) {
+            return $_POST[$key];
+        }
+
+        if (isset($_FILES[$key])) {
+            return $_FILES[$key];
+        }
+
+        return null;
+    }
+
+    public function all(): array
+    {
+        $data = [];
+
+        if (\is_array($_GET ?? null)) {
+            $data = [...$data, ...$_GET];
+        }
+
+        if (\is_array($_POST ?? null)) {
+            $data = [...$data, ...$_POST];
+        }
+
+        $json = $this->json();
+        if (\is_array($json)) {
+            $data = [...$data, ...$json];
+        }
+
+        return $data;
+    }
+
     public function cookie(?string $key = null)
     {
         if (!$key) {
             return $_COOKIE;
         }
-        return isset($_COOKIE[$key]) ? $_COOKIE[$key] : null;
+        return $_COOKIE[$key] ?? null;
     }
 
     public function session(?string $key = null)

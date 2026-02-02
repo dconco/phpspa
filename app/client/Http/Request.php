@@ -59,7 +59,7 @@ interface Request {
      * Validates the API key from the request headers.
      *
      * @param string $key The name of the header containing the API key. Default is 'Api-Key'.
-     * @return bool Returns true if the API key is valid, false otherwise.
+     * @return mixed Returns true if the API key is valid, false otherwise.
      */
     public function apiKey (string $key = 'Api-Key');
 
@@ -136,6 +136,23 @@ interface Request {
      * @return mixed The parameter value, or null if not set.
      */
     public function post (?string $key = null);
+
+    /**
+     * Retrieves form data (POST + FILES).
+     *
+     * If a key is provided, it returns that value from POST or FILES.
+     *
+     * @param ?string $key The key of the form field or file.
+     * @return mixed The form field, file info, or null if not set.
+     */
+    public function form (?string $key = null);
+
+    /**
+     * Retrieves all input data merged from query, POST, and JSON body.
+     *
+     * @return array The merged input data.
+     */
+    public function all (): array;
 
     /**
      * Retrieves a cookie value by key, or all cookies if no key is provided.
