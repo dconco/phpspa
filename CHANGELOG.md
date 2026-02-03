@@ -46,6 +46,34 @@ This allows you to:
 
 **Documentation:** [performance/assets-caching#custom-cache-directory](https://phpspa.tech/performance/assets-caching/#custom-cache-directory)
 
+#### **Dynamic Link Tags with DOM::link()** 🔗
+
+Added `DOM::link()` for setting or overriding link tags dynamically at runtime from inside components:
+
+```php
+use PhpSPA\DOM;
+
+// Override stylesheet based on user preference
+$theme = $request->cookie('theme') ?? 'light';
+DOM::link("/assets/{$theme}-theme.css", 'theme', 'text/css', 'stylesheet');
+
+// Add preload links conditionally
+DOM::link('/fonts/custom.woff2', 'custom-font', 'font/woff2', 'preload', [
+    'as' => 'font',
+    'crossorigin' => 'anonymous'
+]);
+
+// Dynamic favicon
+DOM::link('/favicon-dark.ico', 'favicon', 'image/x-icon', 'icon');
+```
+
+**Features:**
+- Merges with and overrides `App::link()` and `Component::link()` declarations
+- Perfect for dynamic theming, conditional resource loading, and per-route assets
+- Override by name, href, or rel+type combination
+
+**Documentation:** [references/dom-utilities#domlink](https://phpspa.tech/references/dom-utilities/#domlink)
+
 
 #### **Enhanced HTTP Client Methods** 🌐
 

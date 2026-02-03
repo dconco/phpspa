@@ -564,7 +564,72 @@ abstract class AppImpl implements ApplicationContract {
                   }
                }
             }
-            $metaTags = array_merge($metaTags, $domMeta);
+            $metaTags = [...$metaTags, ...$domMeta];
+         }
+
+         // Merge DOM link (dynamic, set by user in component) and override any with same name/href/rel+type
+         $domLinks = DOM::link();
+         if (!empty($domLinks)) {
+            foreach ($domLinks as $domLink) {
+               $domName = $domLink['name'] ?? null;
+               $domHref = \is_string($domLink['content']) ? $domLink['content'] : null;
+               $domRel = $domLink['rel'] ?? null;
+               $domType = $domLink['type'] ?? null;
+
+               foreach ($stylesheets as $k => $link) {
+                  $shouldOverride = false;
+
+                  // Override by name
+                  if ($domName !== null && isset($link['name']) && $link['name'] === $domName) {
+                     $shouldOverride = true;
+                  }
+
+                  // Override by href (if content is a direct path)
+                  if ($domHref !== null && isset($link['content']) && \is_string($link['content']) && $link['content'] === $domHref) {
+                     $shouldOverride = true;
+                  }
+
+                  // Override by rel+type combination
+                  if ($domName === null && $domRel !== null && $domType !== null &&
+                      isset($link['rel']) && $link['rel'] === $domRel &&
+                      isset($link['type']) && $link['type'] === $domType) {
+                     $shouldOverride = true;
+                  }
+
+                  if ($shouldOverride) {
+                     unset($stylesheets[$k]);
+                  }
+               }
+
+               // Also check global stylesheets
+               foreach ($this->stylesheets as $k => $link) {
+                  $shouldOverride = false;
+
+                  // Override by name
+                  if ($domName !== null && isset($link['name']) && $link['name'] === $domName) {
+                     $shouldOverride = true;
+                  }
+
+                  // Override by href
+                  if ($domHref !== null && isset($link['content']) && \is_string($link['content']) && $link['content'] === $domHref) {
+                     $shouldOverride = true;
+                  }
+
+                  // Override by rel+type combination
+                  if ($domName === null && $domRel !== null && $domType !== null &&
+                      isset($link['rel']) && $link['rel'] === $domRel &&
+                      isset($link['type']) && $link['type'] === $domType) {
+                     $shouldOverride = true;
+                  }
+
+                  if ($shouldOverride) {
+                     unset($this->stylesheets[$k]);
+                  }
+               }
+            }
+
+            // Add DOM links to component stylesheets
+            $stylesheets = [...$stylesheets, ...$domLinks];
          }
 
          if ($request->requestedWith() !== 'PHPSPA_REQUEST' && !empty($metaTags)) {

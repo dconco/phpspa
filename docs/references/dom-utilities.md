@@ -81,3 +81,87 @@ $home = (new Component(function() {
 
 !!! info "Override Order"
     App meta < Component meta < DOM::meta() (highest priority)
+
+---
+
+## `DOM::link()`
+
+!!! success "New in v2.0.8"
+    Set or override link tags dynamically from inside any component
+
+Set link tags dynamically at runtime to override global `App::link()` or component-level `Component::link()` declarations. Perfect for loading stylesheets, preload assets, or other link tags conditionally.
+
+### Usage
+
+```php
+<?php
+use PhpSPA\DOM;
+
+// Add a stylesheet dynamically
+DOM::link('/assets/dark-theme.css', 'dark-theme', 'text/css', 'stylesheet');
+
+// Add a preload link
+DOM::link('/fonts/custom.woff2', 'custom-font', 'font/woff2', 'preload', [
+    'as' => 'font',
+    'crossorigin' => 'anonymous'
+]);
+
+// Add favicon
+DOM::link('/favicon.ico', 'favicon', 'image/x-icon', 'icon');
+```
+
+### Dynamic Theming Example
+
+```php
+<?php
+use PhpSPA\Component;
+use PhpSPA\DOM;
+use PhpSPA\Http\Request;
+
+$themeComponent = (new Component(function(Request $request) {
+   // Check user preference
+   $theme = $request->cookie('theme') ?? 'light';
+   
+   // Override stylesheet based on preference
+   if ($theme === 'dark') {
+      DOM::link('/assets/dark-theme.css', 'theme', 'text/css', 'stylesheet');
+   } else {
+      DOM::link('/assets/light-theme.css', 'theme', 'text/css', 'stylesheet');
+   }
+   
+   return '<div>Theme applied!</div>';
+}))->route('/');
+```
+
+### Parameters
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `$content` | `callable\|string` | Callable returning link tag HTML, or direct path/URL |
+| `$name` | `?string` | Optional name for override identification |
+| `$type` | `?string` | MIME type (e.g., 'text/css', 'image/x-icon') |
+| `$rel` | `?string` | Relationship attribute (default: 'stylesheet') |
+| `$attributes` | `array` | Additional attributes (e.g., `['crossorigin' => 'anonymous']`) |
+
+### Override Behavior
+
+Links are overridden based on:
+
+1. **Name match** - If `$name` is provided and matches existing link
+2. **href match** - If content is a direct path/URL and matches existing link
+3. **rel+type match** - For unnamed links with same rel and type combination
+
+!!! info "Override Order"
+    App::link() < Component::link() < DOM::link() (highest priority)
+
+### Getting All Links
+
+```php
+<?php
+// Retrieve all dynamically set links
+$links = DOM::link();
+
+foreach ($links as $link) {
+    echo "Name: {$link['name']}, Rel: {$link['rel']}\n";
+}
+```
