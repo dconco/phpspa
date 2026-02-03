@@ -311,12 +311,18 @@ class HttpRequest implements Request
         return rawurldecode($uri);
     }
 
-    public function siteURL(): string {
-        $path = $this->getUri();
+    public function baseURL(): string {
         $scheme = $this->isHttps() ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
-        return "{$scheme}://{$host}{$path}";
+        return "{$scheme}://{$host}";
+    }
+
+    public function siteURL(): string {
+        $path = $this->getUri();
+        $baseURL = $this->baseURL();
+
+        return "{$baseURL}{$path}";
     }
 
     public function origin(): string {

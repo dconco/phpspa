@@ -322,10 +322,21 @@ interface Request {
      * Intended to return the canonical origin/base URL for the active request context
      * (e.g., scheme + host, optionally including the application's base path).
      *
-     * @since v2.0.5
+     * @since v2.0.8
      * @return string The site's base URL.
      */
-    public function siteURL (): string;
+    public function baseURL (): string;
+
+    /**
+     * Get the current site's full URL.
+     *
+     * Intended to return the full URL for the active request context
+     * (e.g., scheme + host + path, optionally including the application's base path).
+     *
+     * @since v2.0.5
+     * @return string The site's full URL.
+     */
+    public function siteURL(): string;
 
     /**
      * Determines if the current HTTP request originates from the same origin as the server.
