@@ -52,30 +52,22 @@ class DOM {
       // Extract href if content is a string (direct path/URL)
       $href = \is_string($content) ? $content : null;
 
-      // Remove any previous link with the same name, href, or rel+type combination (override)
+      // Replace any previous link with the same name or href (override in place)
       foreach (self::$_links as $k => $link) {
-         $shouldOverride = false;
-
-         // Override by name
+         // Override by name (preserves position)
          if ($name !== null && isset($link['name']) && $link['name'] === $name) {
-            $shouldOverride = true;
+            self::$_links[$k] = $entry;
+            return array_values(self::$_links);
          }
 
          // Override by href (if content is a direct path)
          if ($href !== null && isset($link['content']) && \is_string($link['content']) && $link['content'] === $href) {
-            $shouldOverride = true;
-         }
-
-         // Override by rel (for unnamed links - allows changing type/content for same rel)
-         if ($name === null && $rel !== null && isset($link['rel']) && $link['rel'] === $rel) {
-            $shouldOverride = true;
-         }
-
-         if ($shouldOverride) {
-            unset(self::$_links[$k]);
+            self::$_links[$k] = $entry;
+            return array_values(self::$_links);
          }
       }
 
+      // Append if no existing key matched
       self::$_links[] = $entry;
 
       // Always return all links set so far
