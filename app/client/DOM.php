@@ -66,10 +66,8 @@ class DOM {
             $shouldOverride = true;
          }
 
-         // Override by rel+type combination (for unnamed stylesheets/links)
-         if ($name === null && $rel !== null && $type !== null && 
-             isset($link['rel']) && $link['rel'] === $rel &&
-             isset($link['type']) && $link['type'] === $type) {
+         // Override by rel (for unnamed links - allows changing type/content for same rel)
+         if ($name === null && $rel !== null && isset($link['rel']) && $link['rel'] === $rel) {
             $shouldOverride = true;
          }
 

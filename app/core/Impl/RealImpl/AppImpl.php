@@ -589,10 +589,8 @@ abstract class AppImpl implements ApplicationContract {
                      $shouldOverride = true;
                   }
 
-                  // Override by rel+type combination
-                  if ($domName === null && $domRel !== null && $domType !== null &&
-                      isset($link['rel']) && $link['rel'] === $domRel &&
-                      isset($link['type']) && $link['type'] === $domType) {
+                  // Override by rel (allows changing type/content for same rel)
+                  if ($domName === null && $domRel !== null && isset($link['rel']) && $link['rel'] === $domRel) {
                      $shouldOverride = true;
                   }
 
@@ -615,10 +613,8 @@ abstract class AppImpl implements ApplicationContract {
                      $shouldOverride = true;
                   }
 
-                  // Override by rel+type combination
-                  if ($domName === null && $domRel !== null && $domType !== null &&
-                      isset($link['rel']) && $link['rel'] === $domRel &&
-                      isset($link['type']) && $link['type'] === $domType) {
+                  // Override by rel (allows changing type/content for same rel)
+                  if ($domName === null && $domRel !== null && isset($link['rel']) && $link['rel'] === $domRel) {
                      $shouldOverride = true;
                   }
 

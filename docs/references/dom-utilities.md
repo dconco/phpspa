@@ -149,7 +149,20 @@ Links are overridden based on:
 
 1. **Name match** - If `$name` is provided and matches existing link
 2. **href match** - If content is a direct path/URL and matches existing link
-3. **rel+type match** - For unnamed links with same rel and type combination
+3. **rel match** - For unnamed links, matching rel attribute overrides (allows changing type/content for same rel)
+
+This allows you to dynamically change link types for the same relationship:
+
+```php
+<?php
+// Initial setup with standard favicon
+$app->link(content: '/favicon.ico', name: null, type: 'image/x-icon', rel: 'icon');
+
+// Later, override with WebP based on user preference
+DOM::link(content: '/user-avatar.webp', name: null, type: 'image/webp', rel: 'icon');
+
+// The 'icon' rel is the same, but type and content changed
+```
 
 !!! info "Override Order"
     App::link() < Component::link() < DOM::link() (highest priority)
