@@ -52,7 +52,7 @@ class DOM {
       // Extract href if content is a string (direct path/URL)
       $href = \is_string($content) ? $content : null;
 
-      // Replace any previous link with the same name or href (override in place)
+      // Replace any previous link with the same name, or same href+rel (override in place)
       foreach (self::$_links as $k => $link) {
          // Override by name (preserves position)
          if ($name !== null && isset($link['name']) && $link['name'] === $name) {
@@ -60,8 +60,9 @@ class DOM {
             return array_values(self::$_links);
          }
 
-         // Override by href (if content is a direct path)
-         if ($href !== null && isset($link['content']) && \is_string($link['content']) && $link['content'] === $href) {
+         // Override by href only when rel matches (prevents cross-rel overrides)
+         if ($href !== null && isset($link['content']) && \is_string($link['content']) && $link['content'] === $href &&
+             isset($link['rel']) && $rel !== null && $link['rel'] === $rel) {
             self::$_links[$k] = $entry;
             return array_values(self::$_links);
          }

@@ -567,12 +567,13 @@ abstract class AppImpl implements ApplicationContract {
             $metaTags = [...$metaTags, ...$domMeta];
          }
 
-         // Merge DOM link (dynamic, set by user in component) and override any with same name/href
+         // Merge DOM link (dynamic, set by user in component) and override any with same name or rel
          $domLinks = DOM::link();
          if (!empty($domLinks)) {
             foreach ($domLinks as $domLink) {
                $domName = $domLink['name'] ?? null;
                $domHref = \is_string($domLink['content']) ? $domLink['content'] : null;
+               $domRel = $domLink['rel'] ?? null;
                $replaced = false;
 
                foreach ($stylesheets as $k => $link) {
@@ -583,8 +584,8 @@ abstract class AppImpl implements ApplicationContract {
                      break;
                   }
 
-                  // Override by href (if content is a direct path)
-                  if ($domHref !== null && isset($link['content']) && \is_string($link['content']) && $link['content'] === $domHref) {
+                  // Override by rel (preserve position)
+                  if ($domRel !== null && isset($link['rel']) && $link['rel'] === $domRel) {
                      $stylesheets[$k] = $domLink;
                      $replaced = true;
                      break;
@@ -600,8 +601,8 @@ abstract class AppImpl implements ApplicationContract {
                      break;
                   }
 
-                  // Override by href
-                  if ($domHref !== null && isset($link['content']) && \is_string($link['content']) && $link['content'] === $domHref) {
+                  // Override by rel
+                  if ($domRel !== null && isset($link['rel']) && $link['rel'] === $domRel) {
                      $this->stylesheets[$k] = $domLink;
                      $replaced = true;
                      break;
