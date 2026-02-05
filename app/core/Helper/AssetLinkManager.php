@@ -271,7 +271,7 @@ class AssetLinkManager
     private static function getCacheBucketTimestamp(): int
     {
         if (self::$cacheHours === 0) {
-            return 0;
+            return time();
         }
 
         $window = self::$cacheHours * 3600;
