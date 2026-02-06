@@ -26,39 +26,114 @@
         link.addEventListener('load', onLoad, { once: true });
         link.addEventListener('error', onLoad, { once: true });
     });
-    const preloadStylesFromContent = async (content) => {
+    const DEFAULT_SCOPE_KEY = '__phpspa_default__';
+    const scopeToHrefs = new Map();
+    const hrefToScopes = new Map();
+    const ownedLinksByHref = new Map();
+    const normalizeScopeKey = (scopeKey) => {
+        const key = (scopeKey ?? '').trim();
+        return key.length > 0 ? key : DEFAULT_SCOPE_KEY;
+    };
+    const resolveHref = (href) => {
+        try {
+            return new URL(href, location.toString()).href;
+        }
+        catch {
+            return href;
+        }
+    };
+    const getHeadStylesheetLinks = () => Array.from(document.head.querySelectorAll('link[rel="stylesheet"]'));
+    const findExistingHeadLink = (resolvedHref, rawHref, headLinks) => {
+        for (const existing of headLinks) {
+            try {
+                if (existing.href === resolvedHref)
+                    return existing;
+            }
+            catch {
+                // ignore
+            }
+            if (existing.getAttribute('href') === rawHref)
+                return existing;
+        }
+        return null;
+    };
+    const releaseScopeHref = (scopeKey, resolvedHref) => {
+        const scopes = hrefToScopes.get(resolvedHref);
+        if (scopes) {
+            scopes.delete(scopeKey);
+            if (scopes.size === 0) {
+                hrefToScopes.delete(resolvedHref);
+                const owned = ownedLinksByHref.get(resolvedHref);
+                if (owned && owned.isConnected) {
+                    owned.remove();
+                }
+                ownedLinksByHref.delete(resolvedHref);
+            }
+        }
+    };
+    const setScopeStyles = (scopeKey, nextHrefs) => {
+        const previous = scopeToHrefs.get(scopeKey) ?? new Set();
+        // remove old hrefs that are no longer needed by this scope
+        for (const href of previous) {
+            if (!nextHrefs.has(href)) {
+                releaseScopeHref(scopeKey, href);
+            }
+        }
+        // add new hrefs for this scope
+        for (const href of nextHrefs) {
+            if (!previous.has(href)) {
+                let scopes = hrefToScopes.get(href);
+                if (!scopes) {
+                    scopes = new Set();
+                    hrefToScopes.set(href, scopes);
+                }
+                scopes.add(scopeKey);
+            }
+        }
+        scopeToHrefs.set(scopeKey, new Set(nextHrefs));
+    };
+    const clearPreloadedStylesForScope = (scopeKey) => {
+        const key = normalizeScopeKey(scopeKey);
+        setScopeStyles(key, new Set());
+    };
+    const preloadStylesFromContent = async (content, scopeKey) => {
+        const normalizedScopeKey = normalizeScopeKey(scopeKey);
         const tempElem = document.createElement('div');
         tempElem.innerHTML = content;
         const links = Array.from(tempElem.querySelectorAll('link[rel="stylesheet"]'));
+        // even when there are no links, we must clear previously-managed styles for this scope
         if (links.length === 0) {
+            setScopeStyles(normalizedScopeKey, new Set());
             return tempElem;
         }
-        const headLinks = Array.from(document.head.querySelectorAll('link[rel="stylesheet"]'));
-        const loadPromises = links.map((link) => {
+        const headLinks = getHeadStylesheetLinks();
+        const incomingByHref = new Map();
+        for (const link of links) {
             const href = link.getAttribute('href');
             link.remove();
-            if (!href) {
-                return Promise.resolve();
+            if (!href)
+                continue;
+            const resolvedHref = resolveHref(href);
+            if (!incomingByHref.has(resolvedHref)) {
+                incomingByHref.set(resolvedHref, link);
             }
-            let resolvedHref = '';
-            try {
-                resolvedHref = new URL(href, location.toString()).href;
-            }
-            catch {
-                resolvedHref = href;
-            }
-            let headLink = headLinks.find((existing) => {
-                try {
-                    return existing.href === resolvedHref;
-                }
-                catch {
-                    return existing.getAttribute('href') === href;
-                }
-            });
+        }
+        setScopeStyles(normalizedScopeKey, new Set(incomingByHref.keys()));
+        const loadPromises = Array.from(incomingByHref.entries()).map(([resolvedHref, templateLink]) => {
+            const rawHref = templateLink.getAttribute('href') ?? resolvedHref;
+            // prefer a previously-owned managed link if still present
+            const owned = ownedLinksByHref.get(resolvedHref);
+            let headLink = (owned && owned.isConnected) ? owned : null;
             if (!headLink) {
-                headLink = link.cloneNode(true);
+                headLink = findExistingHeadLink(resolvedHref, rawHref, headLinks);
+            }
+            if (!headLink) {
+                headLink = templateLink.cloneNode(true);
+                headLink.setAttribute('data-phpspa-managed', '1');
+                headLink.setAttribute('data-phpspa-scope', normalizedScopeKey);
                 document.head.appendChild(headLink);
                 headLinks.push(headLink);
+                ownedLinksByHref.set(resolvedHref, headLink);
             }
             return waitForStylesheet(headLink);
         });
@@ -1324,14 +1399,16 @@
                                 currentHTML.innerHTML = targetInfo.defaultContent;
                             }
                         }
+                        clearPreloadedStylesForScope(targetID);
                         delete currentRoutes[targetID];
                     }
                 }
                 let tempElem = null;
                 // --- Update content ---
                 const updateDOM = async () => {
+                    const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
                     // --- Preload stylesheets in the new content ---
-                    tempElem = await preloadStylesFromContent(component.content);
+                    tempElem = await preloadStylesFromContent(component.content, styleScopeKey);
                     if (tempElem) {
                         try {
                             morphdom(targetElement, tempElem, {
@@ -1402,8 +1479,7 @@
                     });
                 }
                 else {
-                    updateDOM();
-                    completedDOMUpdate();
+                    updateDOM().then(completedDOMUpdate);
                 }
             }
         }
@@ -1670,7 +1746,8 @@
                     document.getElementById(history.state?.targetID) ??
                     document.body;
                 const updateDOM = async () => {
-                    const tempElem = await preloadStylesFromContent(component.content);
+                    const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
+                    const tempElem = await preloadStylesFromContent(component.content, styleScopeKey);
                     try {
                         morphdom(targetElement, tempElem, {
                             childrenOnly: true
@@ -1694,8 +1771,7 @@
                         setTimeout(AppManager.reloadComponent, component.reloadTime);
                     }
                 };
-                updateDOM();
-                completedDOMUpdate();
+                updateDOM().then(completedDOMUpdate);
             }
         }
         /**
@@ -1894,12 +1970,14 @@
                             currentHTML.innerHTML = targetInfo.defaultContent;
                         }
                     }
+                    clearPreloadedStylesForScope(targetID);
                     delete currentRoutes[targetID];
                 }
             }
             // --- Decode and restore HTML content ---
             const updateDOM = async () => {
-                const tempElem = await preloadStylesFromContent(navigationState.content);
+                const styleScopeKey = navigationState.targetID || targetContainer.id || '__phpspa_body__';
+                const tempElem = await preloadStylesFromContent(navigationState.content, styleScopeKey);
                 try {
                     morphdom(targetContainer, tempElem, {
                         childrenOnly: true
@@ -1937,8 +2015,7 @@
                 });
             }
             else {
-                updateDOM();
-                completedDOMUpdate();
+                updateDOM().then(completedDOMUpdate);
             }
         }
         else {

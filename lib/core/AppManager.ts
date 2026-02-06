@@ -1,6 +1,6 @@
 import { ComponentObject, StateObject, StateValueType } from "../types/StateObjectTypes"
 import { EventObject, EventPayload } from "../types/RuntimeInterfaces"
-import { preloadStylesFromContent } from "../utils/preloadStylesFromContent"
+import { clearPreloadedStylesForScope, preloadStylesFromContent } from "../utils/preloadStylesFromContent"
 import { utf8ToBase64 } from "../utils/baseConverter"
 import { RuntimeManager } from "./RuntimeManager"
 import morphdom from "morphdom"
@@ -165,6 +165,7 @@ export class AppManager {
                   }
                }
 
+               clearPreloadedStylesForScope(targetID)
                delete currentRoutes[targetID]
             }
          }
@@ -174,8 +175,10 @@ export class AppManager {
          // --- Update content ---
          const updateDOM = async () => {
 
+            const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__'
+
             // --- Preload stylesheets in the new content ---
-            tempElem = await preloadStylesFromContent(component.content)
+            tempElem = await preloadStylesFromContent(component.content, styleScopeKey)
 
             if (tempElem) {
                try {
@@ -255,8 +258,7 @@ export class AppManager {
                })
             })
          } else {
-            updateDOM()
-            completedDOMUpdate()
+            updateDOM().then(completedDOMUpdate)
          }
       }
    }
@@ -553,7 +555,8 @@ export class AppManager {
             document.body
 
          const updateDOM = async () => {
-            const tempElem = await preloadStylesFromContent(component.content)
+            const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__'
+            const tempElem = await preloadStylesFromContent(component.content, styleScopeKey)
 
             try {
                morphdom(targetElement, tempElem, {
@@ -584,8 +587,7 @@ export class AppManager {
             }
          }
 
-         updateDOM()
-         completedDOMUpdate()
+         updateDOM().then(completedDOMUpdate)
       }
    }
 
