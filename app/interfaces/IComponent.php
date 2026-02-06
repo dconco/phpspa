@@ -139,9 +139,8 @@ interface  IComponent
      *
      * Signature: `callable(Request $req, Closure $next): mixed`
      * 
-     * Example:
+     * @example
      * ```php
-     * <?php
      * new Component(...)->middleware(function (Request $req, Closure $next) {
      *    if ($req->auth()->bearer) {
      *        return $next();

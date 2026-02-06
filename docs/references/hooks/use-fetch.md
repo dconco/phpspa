@@ -107,27 +107,73 @@
 <?php
 $response = useFetch('https://api.example.com/users')
     ->headers(['Authorization' => 'Bearer token']) // (1)
-    ->timeout(30)              // (2)
-    ->connectTimeout(5)        // (3)
-    ->verifySSL(true)          // (4)
-    ->withCertificate('/path/to/cacert.pem') // (5)
-    ->followRedirects(true, 5) // (6)
-    ->withUserAgent('MyApp/1.0') // (7)
-    ->unixSocket('/var/run/service.sock') // (8)
+    ->query(['page' => 2, 'limit' => 10]) // (2)
+    ->form(['key' => 'value']) // (3)
+    ->timeout(30)              // (4)
+    ->connectTimeout(5)        // (5)
+    ->verifySSL(true)          // (6)
+    ->withCertificate('/path/to/cacert.pem') // (7)
+    ->followRedirects(true, 5) // (8)
+    ->withUserAgent('MyApp/1.0') // (9)
+    ->unixSocket('/var/run/service.sock') // (10)
     ->get();
 ```
 
 </div>
 
 1.  :material-key: **Headers** - Add custom headers (Authorization, API keys, etc.)
-2.  :material-timer: **Timeout** - Request timeout in seconds (supports decimals like `0.5`)
-3.  :material-connection: **Connect Timeout** - Connection timeout (cURL only)
-4.  :material-shield-lock: **SSL Verification** - Enable/disable certificate verification
-5.  :material-certificate: **CA Bundle** - Path to custom certificate bundle
-6.  :material-arrow-right-bold: **Redirects** - Follow redirects with max limit (cURL only)
-7.  :material-account: **User Agent** - Custom User-Agent string
-8.  :material-ethernet: **Unix Socket** - Set the Unix domain socket path to be used for this pending request.
-9.  :material-tune: **Custom cURL Options** - Pass raw `CURLOPT_*` options via `->withOptions([CURLOPT_* => ...])` (cURL only)
+2.  :material-web: **Query Parameters** - Attach query params to any HTTP method
+3.  :material-form-textbox: **Form Data** - Send form-encoded data with automatic Content-Type header
+4.  :material-timer: **Timeout** - Request timeout in seconds (supports decimals like `0.5`)
+5.  :material-connection: **Connect Timeout** - Connection timeout in seconds (cURL only)
+6.  :material-shield-lock: **SSL Verification** - Enable/disable certificate verification
+7.  :material-certificate: **CA Bundle** - Path to custom certificate bundle (PEM format)
+8.  :material-arrow-right-bold: **Redirects** - Follow redirects with max limit (cURL only)
+9.  :material-account: **User Agent** - Custom User-Agent string
+10. :material-ethernet: **Unix Socket** - Connect via Unix domain socket instead of TCP
+11. :material-ip-network: **Resolve IP** - Force request to resolve to a specific IP address
+12. :material-tune: **Custom cURL Options** - Pass raw `CURLOPT_*` options via `->withOptions([CURLOPT_* => ...])` (cURL only)
+
+### Request Body & Query Parameters
+
+#### Query Parameters
+
+Attach query parameters to any HTTP method (not just GET):
+
+```php
+<?php
+
+// Add query params to POST request
+$response = useFetch('https://api.example.com/search')
+                ->query(['page' => 2, 'limit' => 10])
+                ->post(['term' => 'php']);
+
+// Or use query string directly
+$response = useFetch('https://api.example.com/search')
+                ->query('page=2&limit=10')
+                ->post(['term' => 'php']);
+```
+
+#### Form-Encoded Data
+
+Send form-encoded data instead of JSON with automatic `Content-Type` header:
+
+```php
+<?php
+
+// Send form data (sets Content-Type: application/x-www-form-urlencoded)
+$response = useFetch('https://api.example.com/login')
+                ->form(['username' => 'dave', 'password' => 'secret'])
+                ->post();
+
+// Or use pre-encoded string
+$response = useFetch('https://api.example.com/webhook')
+                ->form('event=push&repo=phpspa')
+                ->post();
+```
+
+!!! info "JSON vs Form Data"
+    By default, `->post()`, `->put()`, and `->patch()` send data as JSON. Use `->form()` when the API expects form-encoded data.
 
 ### Custom cURL Options Examples
 
@@ -156,6 +202,92 @@ $res = useFetch('https://api.example.com/users')
     ])
     ->get();
 ```
+
+### Advanced Configuration Methods
+
+#### Unix Socket Connection
+
+Connect to services via Unix domain sockets instead of TCP:
+
+```php
+<?php
+
+// Connect to Docker daemon
+$response = useFetch('http://localhost/containers/json')
+                ->unixSocket('/var/run/docker.sock')
+                ->get();
+
+// Alternative method name
+$response = useFetch('http://localhost/version')
+                ->unixSocketPath('/var/run/docker.sock')
+                ->get();
+```
+
+#### IP Resolution Override
+
+Force requests to resolve to a specific IP address:
+
+```php
+<?php
+
+// Force example.com to resolve to specific IP
+$response = useFetch('https://example.com/api')
+                ->resolveIP('192.168.1.100')
+                ->get();
+```
+
+#### Custom Certificate
+
+Use a custom CA certificate bundle:
+
+```php
+<?php
+
+$response = useFetch('https://self-signed.example.com')
+                ->withCertificate('/path/to/cacert.pem')
+                ->get();
+```
+
+#### Custom User Agent
+
+Set a custom User-Agent header:
+
+```php
+<?php
+
+$response = useFetch('https://api.example.com')
+                ->withUserAgent('MyApp/2.0 (PHP)')
+                ->get();
+```
+
+#### Redirect Control
+
+Control redirect behavior (cURL only):
+
+```php
+<?php
+
+// Follow up to 5 redirects
+$response = useFetch('https://api.example.com')
+                ->followRedirects(true, 5)
+                ->get();
+
+// Disable redirects
+$response = useFetch('https://api.example.com')
+                ->followRedirects(false)
+                ->get();
+```
+
+**API Reference:**
+
+| Method | Parameters | Description |
+| :--- | :--- | :--- |
+| `unixSocket(string $path)` | Socket path | Connect via Unix domain socket |
+| `unixSocketPath(string $path)` | Socket path | Alias for `unixSocket()` |
+| `resolveIP(string $ip)` | IP address | Force hostname to resolve to specific IP |
+| `withCertificate(string $path)` | PEM file path | Use custom CA certificate bundle |
+| `withUserAgent(string $ua)` | User agent string | Set custom User-Agent header |
+| `followRedirects(bool, int)` | Follow, Max count | Control redirect behavior (cURL only) |
 
 ---
 

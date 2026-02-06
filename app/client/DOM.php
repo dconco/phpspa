@@ -8,6 +8,72 @@ class DOM {
    private static ?array $_currentComponents = [];
 
    private static array $_meta = [];
+   private static array $_links = [];
+
+   /**
+    * Set or get link tags dynamically.
+    * Signature matches App::link() and Component::link().
+    * 
+    * When called inside a component, these links merge with and override:
+    * - Global App::link() declarations
+    * - Component::link() declarations
+    * 
+    * Links with matching name, href, or rel+type combinations will be overridden.
+    *
+    * @param callable|string|null $content The callable that returns the CSS/link tag, or direct path/URL
+    * @param string|null $name Optional name for the link asset (for overriding)
+    * @param string|null $type The type attribute (e.g., 'text/css')
+    * @param string|null $rel The relationship attribute (e.g., 'stylesheet', 'preload')
+    * @param array $attributes Optional additional attributes as key => value pairs
+    * @return array Returns all dynamically set links
+    * @since v2.0.8
+    * @see https://phpspa.tech/references/dom-utilities/#domlink
+    */
+   public static function link(
+      callable|string|null $content = null,
+      ?string $name = null,
+      ?string $type = null,
+      ?string $rel = 'stylesheet',
+      array $attributes = []
+   ): array {
+      // If called with no arguments, return all links
+      if ($content === null) {
+         return array_values(self::$_links);
+      }
+
+      $entry = [
+         'content' => $content,
+         'name' => $name,
+         'type' => $type,
+         'rel' => $rel,
+         'attributes' => $attributes
+      ];
+
+      // Extract href if content is a string (direct path/URL)
+      $href = \is_string($content) ? $content : null;
+
+      // Replace any previous link with the same name, or same href+rel (override in place)
+      foreach (self::$_links as $k => $link) {
+         // Override by name (preserves position)
+         if ($name !== null && isset($link['name']) && $link['name'] === $name) {
+            self::$_links[$k] = $entry;
+            return array_values(self::$_links);
+         }
+
+         // Override by href only when rel matches (prevents cross-rel overrides)
+         if ($href !== null && isset($link['content']) && \is_string($link['content']) && $link['content'] === $href &&
+             isset($link['rel']) && $rel !== null && $link['rel'] === $rel) {
+            self::$_links[$k] = $entry;
+            return array_values(self::$_links);
+         }
+      }
+
+      // Append if no existing key matched
+      self::$_links[] = $entry;
+
+      // Always return all links set so far
+      return array_values(self::$_links);
+   }
 
    /**
     * Set or get meta tags dynamically.

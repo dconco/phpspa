@@ -96,6 +96,88 @@ class PendingRequest implements \ArrayAccess {
    }
 
    /**
+    * Attach query parameters to the request URL.
+    *
+    * Useful when sending query params with non-GET methods (e.g. POST).
+    *
+    * @param array|string $query Query parameters as array or query string.
+    * @return PendingRequest
+    */
+   public function query(array|string $query): PendingRequest
+   {
+      $this->buildQueryParams([$query]);
+      return $this;
+   }
+
+   /**
+    * Send form-encoded data instead of JSON.
+    *
+    * @param array|string $data Form data as array or pre-encoded string.
+    * @return PendingRequest
+    */
+   public function form(array|string $data): PendingRequest
+   {
+      if (\is_array($data)) {
+         $this->data = http_build_query($data);
+      } else {
+         $this->data = $data;
+      }
+
+      $this->headers['Content-Type'] = 'application/x-www-form-urlencoded';
+      return $this;
+   }
+
+   /**
+    * Send multipart/form-data payload (supports simple files).
+    *
+    * File values can be provided as:
+    * - \CURLFile
+    * - \SplFileInfo
+    * - array with keys: path, filename (optional), type (optional)
+    *
+    * @param array{
+    *    title: string,
+    *    file: \CURLFile|\SplFileInfo|array{
+    *       path: string,
+    *       filename?: string,
+    *       type?: string,
+    *    },
+    *    files: array<\CURLFile|\SplFileInfo|array{
+    *       path: string,
+    *       filename?: string,
+    *       type?: string,
+    *    }>,
+    * } $data Multipart fields and files.
+    * @example
+    * ```php
+    * $response = (new PendingRequest('https://example.com/upload'))
+    *    ->multipart([
+    *       'title' => 'Report',
+    *       'file' => ['path' => '/path/to/report.pdf', 'filename' => 'report.pdf', 'type' => 'application/pdf'],
+    *    ])
+    *    ->post();
+    *
+    * $response = (new PendingRequest('https://example.com/upload-many'))
+    *    ->multipart([
+    *       'files' => [
+    *          ['path' => '/path/to/a.png'],
+    *          ['path' => '/path/to/b.png'],
+    *       ],
+    *    ])
+    *    ->post();
+    * ```
+    *
+    * @return PendingRequest
+    */
+   public function multipart(array $data): PendingRequest
+   {
+      $boundary = '----phpspa-' . bin2hex(random_bytes(12));
+      $this->data = $this->buildMultipartBody($data, $boundary);
+      $this->headers['Content-Type'] = "multipart/form-data; boundary={$boundary}";
+      return $this;
+   }
+
+   /**
     * Set request timeout in seconds.
     *
     * @param int $seconds Timeout in seconds
@@ -121,6 +203,11 @@ class PendingRequest implements \ArrayAccess {
       return $this;
    }
 
+   /**
+    * Set the Unix domain socket path to be used for this pending request.
+    * @alias unixSocket
+    * @see PendingRequest::unixSocket()
+    */
    public function unixSocketPath(string $path): PendingRequest
    {
       $this->options['unix_socket_path'] = $path;
@@ -308,7 +395,16 @@ class PendingRequest implements \ArrayAccess {
          // POST, PUT, and PATCH use a data body
          RequestMethod::POST,
          RequestMethod::PUT,
-         RequestMethod::PATCH => $this->data = \is_array($args[0]) ? json_encode($args[0]) : ($args[0] ?? null),
+         RequestMethod::PATCH => array_key_exists(0, $args)
+            ? $this->data = \is_array($args[0])
+               ? (function () use ($args) {
+                  if (!isset($this->headers['Content-Type'])) {
+                     $this->headers['Content-Type'] = 'application/json';
+                  }
+                  return json_encode($args[0]);
+               })()
+               : ($args[0] ?? null)
+            : null,
          default => throw new BadMethodCallException("Method $method does not exist.")
       };
 
@@ -366,7 +462,7 @@ class PendingRequest implements \ArrayAccess {
       $this->fetchDataIfNeeded();
       return isset($this->responseData[$name]);
    }
-   
+
    public function __get($name): mixed
    {
       $this->fetchDataIfNeeded();
@@ -451,6 +547,125 @@ class PendingRequest implements \ArrayAccess {
          $separator = strpos($this->url, '?') === false ? '?' : '&';
          $this->url .= $separator . $queryString;
       }
+   }
+
+   /**
+    * Build multipart body content.
+    *
+    * @param array $data
+    * @param string $boundary
+    * @return string
+    */
+   private function buildMultipartBody(array $data, string $boundary): string
+   {
+      $eol = "\r\n";
+      $body = '';
+
+      foreach ($data as $name => $value) {
+         $body .= $this->appendMultipartField($boundary, (string) $name, $value);
+      }
+
+      $body .= "--{$boundary}--{$eol}";
+      return $body;
+   }
+
+   /**
+    * Append a field (or nested fields) to multipart body.
+    *
+    * @param string $boundary
+    * @param string $name
+    * @param mixed $value
+    * @return string
+    */
+   private function appendMultipartField(string $boundary, string $name, mixed $value): string
+   {
+      $eol = "\r\n";
+
+      if (is_array($value) && $this->isFileDescriptor($value)) {
+         $filePath = $value['path'] ?? '';
+         $filename = $value['filename'] ?? basename($filePath);
+         $mime = $value['type'] ?? $this->guessMimeType($filePath);
+         $contents = $this->readFileContents($filePath);
+
+         return "--{$boundary}{$eol}"
+            . "Content-Disposition: form-data; name=\"{$name}\"; filename=\"{$filename}\"{$eol}"
+            . "Content-Type: {$mime}{$eol}{$eol}"
+            . $contents . $eol;
+      }
+
+      if ($value instanceof \CURLFile) {
+         $filePath = $value->getFilename();
+         $filename = $value->getPostFilename() ?: basename($filePath);
+         $mime = $value->getMimeType() ?: $this->guessMimeType($filePath);
+         $contents = $this->readFileContents($filePath);
+
+         return "--{$boundary}{$eol}"
+            . "Content-Disposition: form-data; name=\"{$name}\"; filename=\"{$filename}\"{$eol}"
+            . "Content-Type: {$mime}{$eol}{$eol}"
+            . $contents . $eol;
+      }
+
+      if ($value instanceof \SplFileInfo) {
+         $filePath = $value->getPathname();
+         $filename = $value->getBasename();
+         $mime = $this->guessMimeType($filePath);
+         $contents = $this->readFileContents($filePath);
+
+         return "--{$boundary}{$eol}"
+            . "Content-Disposition: form-data; name=\"{$name}\"; filename=\"{$filename}\"{$eol}"
+            . "Content-Type: {$mime}{$eol}{$eol}"
+            . $contents . $eol;
+      }
+
+      if (is_array($value)) {
+         $output = '';
+         foreach ($value as $key => $item) {
+            $output .= $this->appendMultipartField($boundary, "{$name}[{$key}]", $item);
+         }
+         return $output;
+      }
+
+      $stringValue = is_bool($value) ? ($value ? '1' : '0') : (string) $value;
+
+      return "--{$boundary}{$eol}"
+         . "Content-Disposition: form-data; name=\"{$name}\"{$eol}{$eol}"
+         . $stringValue . $eol;
+   }
+
+   /**
+    * Determine if an array looks like a file descriptor.
+    */
+   private function isFileDescriptor(array $value): bool
+   {
+      return isset($value['path']) && is_string($value['path']);
+   }
+
+   /**
+    * Guess MIME type for a file path.
+    */
+   private function guessMimeType(string $path): string
+   {
+      if (function_exists('mime_content_type') && is_file($path)) {
+         $mime = @mime_content_type($path);
+         if ($mime) {
+            return $mime;
+         }
+      }
+
+      return 'application/octet-stream';
+   }
+
+   /**
+    * Read file contents safely for multipart uploads.
+    */
+   private function readFileContents(string $path): string
+   {
+      if (!is_file($path) || !is_readable($path)) {
+         return '';
+      }
+
+      $contents = @file_get_contents($path);
+      return $contents === false ? '' : $contents;
    }
 
 

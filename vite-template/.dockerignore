@@ -1,0 +1,20 @@
+# dependencies
+node_modules
+vendor
+
+# build output (rebuilt in image)
+public/assets
+
+# Vercel/Node tooling
+.vercel
+npm-debug.log*
+pnpm-debug.log*
+
+# VCS
+.git
+.gitignore
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode

@@ -154,12 +154,82 @@ The `Router` instance supports standard HTTP verbs.
 | `patch($route, ...$handlers)` | Register a PATCH route |
 | `delete($route, ...$handlers)` | Register a DELETE route |
 | `head($route, ...$handlers)` | Register a HEAD route |
+| `methods($methods, $route, ...$handlers)` | Register a route for multiple HTTP methods |
 
-**Example:**
+### **Single Method Routes**
+
 ```php
 <?php
 
 $router->post('/users', $validatorMiddleware, function ($req, $res) {
     return $res->created(null, 'User created');
 });
+```
+
+### **Multi-Method Routes**
+
+!!! success "New in v2.0.8"
+    The `methods()` API allows a single route to handle multiple HTTP methods.
+
+=== "Array Syntax"
+    ```php
+    <?php
+    
+    $router->methods(['GET', 'POST'], '/data', function (Request $req, Response $res) {
+        if ($req->method() === 'GET') {
+            return $res->json(['data' => 'fetched']);
+        }
+        return $res->json(['data' => 'created']);
+    });
+    ```
+
+=== "Pipe-Separated String"
+    ```php
+    <?php
+    
+    $router->methods('GET|POST|PUT', '/resource', function (Request $req, Response $res) {
+        return $res->success("Handled {$req->method()} request");
+    });
+    ```
+
+---
+
+## **Standalone Router**
+
+!!! tip "Multiple Applications"
+    PhpSPA allows multiple router instances. `$app->run()` only exits if a route matches, enabling fallback routing.
+
+You can create standalone `Router` instances for modular routing:
+
+```php
+<?php
+
+use PhpSPA\App;
+use PhpSPA\Http\Router;
+
+$app = new App();
+$app->prefix('/api/v1', function (Router $router) {
+    $router->get('/users', fn($req, $res) => $res->success('v1 users'));
+});
+
+$app->run(); // Only exits if a route matches
+
+// Fallback router for different paths
+$router = new Router('/api/v2', false, []);
+
+$router->get('/status', function(Request $req, Response $res) {
+    return $res->json(['status' => 'v2 API is running']);
+});
+
+echo '404'; // Final fallback if nothing matched
+```
+
+**Constructor:**
+
+```php
+new Router(
+    string $prefix,           // Base path for the router
+    bool $caseSensitive,      // Whether routes are case sensitive
+    array $middlewares        // Global middlewares for this router
+);
 ```

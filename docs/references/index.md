@@ -40,7 +40,7 @@
 
     Learn how the `@dconco/phpspa` package bootstraps navigation, state sync, and client helpers.
 
-    [:octicons-arrow-right-24: Open guide](https://phpspa-client.up.railway.app)
+    [:octicons-arrow-right-24: Open guide](https://phpspa-client.onrender.com)
 
 </div>
 

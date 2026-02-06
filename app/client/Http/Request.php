@@ -48,10 +48,21 @@ interface Request {
      * Retrieves file data from the request by name.
      *
      * This method retrieves file data from the request. If a name is provided, it returns the file data for that specific
-     * input field; otherwise, it returns all file data as an object.
+     * input field; otherwise, it returns all file data as an array of file information arrays.
      *
      * @param ?string $name The name of the file input.
-     * @return ?array File data, or null if not set.
+     * @return ?array{
+     *   name: string,
+     *   type: string,
+     *   size: int,
+     *   tmp_name: string,
+     *   error: UPLOAD_ERR_*
+     * } File data array containing upload information, or null if not set. Each file contains:
+     *   - name: Original filename on the client machine
+     *   - type: MIME type of the file (e.g., 'image/jpeg')
+     *   - size: Size of uploaded file in bytes
+     *   - tmp_name: Temporary path where the file is stored on the server
+     *   - error: Upload error code (UPLOAD_ERR_OK = 0 for success)
      */
     public function files (?string $name = null): ?array;
 
@@ -59,7 +70,7 @@ interface Request {
      * Validates the API key from the request headers.
      *
      * @param string $key The name of the header containing the API key. Default is 'Api-Key'.
-     * @return bool Returns true if the API key is valid, false otherwise.
+     * @return mixed Returns true if the API key is valid, false otherwise.
      */
     public function apiKey (string $key = 'Api-Key');
 
@@ -136,6 +147,23 @@ interface Request {
      * @return mixed The parameter value, or null if not set.
      */
     public function post (?string $key = null);
+
+    /**
+     * Retrieves form data (POST + FILES).
+     *
+     * If a key is provided, it returns that value from POST or FILES.
+     *
+     * @param ?string $key The key of the form field or file.
+     * @return mixed The form field, file info, or null if not set.
+     */
+    public function form (?string $key = null);
+
+    /**
+     * Retrieves all input data merged from query, POST, and JSON body.
+     *
+     * @return array The merged input data.
+     */
+    public function all (): array;
 
     /**
      * Retrieves a cookie value by key, or all cookies if no key is provided.
@@ -294,10 +322,21 @@ interface Request {
      * Intended to return the canonical origin/base URL for the active request context
      * (e.g., scheme + host, optionally including the application's base path).
      *
-     * @since v2.0.5
+     * @since v2.0.8
      * @return string The site's base URL.
      */
-    public function siteURL (): string;
+    public function baseURL (): string;
+
+    /**
+     * Get the current site's full URL.
+     *
+     * Intended to return the full URL for the active request context
+     * (e.g., scheme + host + path, optionally including the application's base path).
+     *
+     * @since v2.0.5
+     * @return string The site's full URL.
+     */
+    public function siteURL(): string;
 
     /**
      * Determines if the current HTTP request originates from the same origin as the server.

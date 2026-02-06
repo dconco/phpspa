@@ -80,4 +80,12 @@ $app->prefix('/api', function (Router $router) {
 
 $app->run();
 
+
+$router = new Router('/api', false, []);
+
+$router->get('/status', function(Request $request, Response $response) {
+   return $response->json(['status' => 'v2 API is running']);
+});
+
+
 echo '404';

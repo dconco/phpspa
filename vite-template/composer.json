@@ -10,7 +10,7 @@
       "spa",
       "php"
    ],
-   "homepage": "https://phpspa-client.up.railway.app",
+   "homepage": "https://phpspa-client.onrender.com",
    "authors": [
       {
          "name": "Dave Conco",
@@ -18,7 +18,7 @@
       }
    ],
    "require": {
-      "dconco/phpspa": "v2.0.5.x-dev"
+      "dconco/phpspa": "^2.0"
    },
    "post-create-project-cmd": [
       "command -v pnpm && (pnpm install && pnpm build) || (npm install && npm run build)"

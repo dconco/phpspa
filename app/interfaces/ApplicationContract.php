@@ -173,10 +173,8 @@ interface ApplicationContract {
      *
      * Signature: `callable(Request $req, Closure $next): mixed`
      *
-     * Example:
-     * 
+     * @example
      * ```php
-     * <?php
      * new App()->middleware(function (Request $req, Closure $next) {
      *    if ($req->auth()->bearer) {
      *        return $next();
@@ -226,6 +224,20 @@ interface ApplicationContract {
      * @since v2.0.7
      */
     public function randomizeAssetName(): self;
+
+    /**
+     * Sets the directory path for generated assets cache files.
+     *
+     * This method allows you to specify a custom directory where
+     * the application will store generated cache files, such as compiled assets
+     * or pre-rendered components. By setting this path, you can control
+     * where cache files are saved, which can be useful for organizing
+     * your application's file structure or optimizing performance.
+     *
+     * @param string $path The directory path for generated cache files.
+     * @since v2.0.8
+     */
+    public function setGeneratedCacheDirectory(string $path): self;
 
     /**
      * Configure CORS (Cross-Origin Resource Sharing) settings for the application.

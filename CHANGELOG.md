@@ -1,10 +1,118 @@
 # CHANGELOG
 
-## v2.0.7 (Unreleased) (PHP 8.4)
+## v2.0.8 (Unreleased) (PHP 8.4)
 
 **Installation:**
 ```bash
 composer require dconco/phpspa:dev-support/php-8.4
+```
+
+### ✨ New Features
+
+#### **Multi-Method Routing** 🛣️
+
+Added `Router::methods()` to handle multiple HTTP methods on a single route:
+
+```php
+// Accept both GET and POST on the same route
+$router->methods(['GET', 'POST'], '/data', function (Request $req, Response $res) {
+   if ($req->method() === 'GET') {
+      return $res->json(['data' => 'fetched']);
+   }
+   return $res->json(['data' => 'created']);
+});
+
+// Or use pipe-separated string
+$router->methods('GET|POST|PUT', '/resource', fn($req, $res) => $res->success('OK'));
+```
+
+#### **Custom Cache Directory Configuration** 📁
+
+Added `App::setGeneratedCacheDirectory()` to customize where generated asset cache files are stored:
+
+```php
+// Set custom directory for generated cache files
+$app->setGeneratedCacheDirectory(__DIR__ . '/cache/phpspa');
+
+// Useful for organizing your project structure
+$app->setGeneratedCacheDirectory('/tmp/app-cache');
+```
+
+This allows you to:
+- Organize cache files in a centralized location
+- Use different cache directories per environment
+- Store cache on faster storage (e.g., tmpfs, RAM disk)
+- Simplify cache cleanup and management
+
+**Documentation:** [performance/assets-caching#custom-cache-directory](https://phpspa.tech/performance/assets-caching/#custom-cache-directory)
+
+#### **Dynamic Link Tags with DOM::link()** 🔗
+
+Added `DOM::link()` for setting or overriding link tags dynamically at runtime from inside components:
+
+```php
+use PhpSPA\DOM;
+
+// Override stylesheet based on user preference
+$theme = $request->cookie('theme') ?? 'light';
+DOM::link("/assets/{$theme}-theme.css", 'theme', 'text/css', 'stylesheet');
+
+// Add preload links conditionally
+DOM::link('/fonts/custom.woff2', 'custom-font', 'font/woff2', 'preload', [
+    'as' => 'font',
+    'crossorigin' => 'anonymous'
+]);
+
+// Dynamic favicon
+DOM::link('/favicon-dark.ico', 'favicon', 'image/x-icon', 'icon');
+```
+
+**Features:**
+- Merges with and overrides `App::link()` and `Component::link()` declarations
+- Perfect for dynamic theming, conditional resource loading, and per-route assets
+- Override by name, href, or rel+type combination
+
+**Documentation:** [references/dom-utilities#domlink](https://phpspa.tech/references/dom-utilities/#domlink)
+
+
+#### **Enhanced HTTP Client Methods** 🌐
+
+Added `query()` and `form()` methods to `useFetch()` for better request body control:
+
+- **`query()`** - Attach query parameters to any HTTP method (not just GET)
+- **`form()`** - Send form-encoded data with automatic `Content-Type: application/x-www-form-urlencoded` header
+
+```php
+// Add query params to POST request
+$response = useFetch('https://api.example.com/search')
+               ->query(['page' => 2, 'limit' => 10])
+               ->post(['term' => 'php']);
+
+// Send form-encoded data instead of JSON
+$response = useFetch('https://api.example.com/login')
+               ->form(['username' => 'dave', 'password' => 'secret'])
+               ->post();
+
+// Or use pre-encoded string
+$response = useFetch('https://api.example.com/webhook')
+               ->form('event=push&repo=phpspa')
+               ->post();-
+```
+
+**Documentation:** [references/hooks/use-fetch#configuration-options](https://phpspa.tech/references/hooks/use-fetch/#configuration-options)
+
+
+
+
+---
+
+
+
+## v2.0.7 (Stable) (Latest) (PHP 8.4)
+
+**Installation:**
+```bash
+composer require dconco/phpspa:v2.0.7
 ```
 
 ### ✨ New Features

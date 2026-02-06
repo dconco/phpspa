@@ -1,5 +1,5 @@
 import morphdom from "morphdom"
-import { preloadStylesFromContent } from "../utils/preloadStylesFromContent"
+import { clearPreloadedStylesForScope, preloadStylesFromContent } from "../utils/preloadStylesFromContent"
 import { RuntimeManager } from "../core/RuntimeManager"
 import { StateObject } from "../types/StateObjectTypes"
 import { AppManager } from "../core/AppManager"
@@ -57,6 +57,7 @@ export const navigateHistory = (event: PopStateEvent) => {
                }
             }
 
+            clearPreloadedStylesForScope(targetID)
             delete currentRoutes[targetID]
          }
       }
@@ -64,7 +65,8 @@ export const navigateHistory = (event: PopStateEvent) => {
 
       // --- Decode and restore HTML content ---
       const updateDOM = async () => {
-         const tempElem = await preloadStylesFromContent(navigationState.content)
+         const styleScopeKey = navigationState.targetID || targetContainer.id || '__phpspa_body__'
+         const tempElem = await preloadStylesFromContent(navigationState.content, styleScopeKey)
 
          try {
             morphdom(targetContainer, tempElem, {
@@ -108,8 +110,7 @@ export const navigateHistory = (event: PopStateEvent) => {
             })
          })
       } else {
-         updateDOM()
-         completedDOMUpdate()
+         updateDOM().then(completedDOMUpdate)
       }
 
    } else {

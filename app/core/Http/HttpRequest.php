@@ -2,7 +2,6 @@
 
 namespace PhpSPA\Core\Http;
 
-use PhpSPA\Core\Utils\Validate;
 use PhpSPA\Http\Request;
 use PhpSPA\Http\Session;
 use stdClass;
@@ -20,7 +19,7 @@ class HttpRequest implements Request
     public function __invoke(string $key, ?string $default = null): mixed
     {
         if (isset($_REQUEST[$key])) {
-            return Validate::validate($_REQUEST[$key]);
+            return $_REQUEST[$key];
         }
 
         return $default;
@@ -50,7 +49,7 @@ class HttpRequest implements Request
 
     public function apiKey(string $key = 'Api-Key')
     {
-        return Validate::validate(self::RequestApiKey($key));
+        return self::RequestApiKey($key);
     }
 
     public function auth(): stdClass
@@ -77,7 +76,7 @@ class HttpRequest implements Request
         while ($i < \count($parsed)) {
             $p = mb_split('=', $parsed[$i]);
             $key = $p[0];
-            $value = $p[1] ? Validate::validate($p[1]) : null;
+            $value = $p[1] ? $p[1] : null;
 
             $cl->$key = $value;
             $i++;
@@ -92,9 +91,9 @@ class HttpRequest implements Request
     public function urlParams(?string $name = null)
     {
         if (!$name) {
-            return Validate::validate($this->params);
+            return $this->params;
         }
-        return Validate::validate($this->params[$name] ?? null);
+        return $this->params[$name] ?? null;
     }
 
     public function header(?string $name = null)
@@ -116,9 +115,9 @@ class HttpRequest implements Request
         }
 
         if (!$name) {
-            return Validate::validate($headers);
+            return $headers;
         }
-        return Validate::validate($headers[$name] ?? null);
+        return $headers[$name] ?? null;
     }
 
     public function json(?string $name = null)
@@ -130,41 +129,78 @@ class HttpRequest implements Request
         }
 
         if ($name !== null) {
-            return Validate::validate($data[$name] ?? null);
+            return $data[$name] ?? null;
         }
-        return Validate::validate($data);
+        return $data;
     }
 
     public function get(?string $key = null)
     {
         if (!$key) {
-            return Validate::validate($_GET);
+            return $_GET;
         }
         if (!isset($_GET[$key])) {
             return null;
         }
-        return Validate::validate($_GET[$key] ?? null);
+        return $_GET[$key] ?? null;
     }
 
     public function post(?string $key = null)
     {
         if (!$key) {
-            return Validate::validate($_POST);
+            return $_POST;
         }
         if (!isset($_POST[$key])) {
             return null;
         }
 
-        $data = Validate::validate($_POST[$key]);
+        $data = $_POST[$key];
+        return $data;
+    }
+
+    public function form(?string $key = null)
+    {
+        if ($key === null) {
+            return [...$_POST ?? [], ...$_FILES ?? []];
+        }
+
+        if (isset($_POST[$key])) {
+            return $_POST[$key];
+        }
+
+        if (isset($_FILES[$key])) {
+            return $_FILES[$key];
+        }
+
+        return null;
+    }
+
+    public function all(): array
+    {
+        $data = [];
+
+        if (\is_array($_GET ?? null)) {
+            $data = [...$data, ...$_GET];
+        }
+
+        if (\is_array($_POST ?? null)) {
+            $data = [...$data, ...$_POST];
+        }
+
+        $json = $this->json();
+        if (\is_array($json)) {
+            $data = [...$data, ...$json];
+        }
+
         return $data;
     }
 
     public function cookie(?string $key = null)
     {
         if (!$key) {
-            return Validate::validate($_COOKIE);
+            return $_COOKIE;
         }
-        return isset($_COOKIE[$key]) ? Validate::validate($_COOKIE[$key]) : null;
+        return $_COOKIE[$key] ?? null;
     }
 
     public function session(?string $key = null)
@@ -172,10 +208,10 @@ class HttpRequest implements Request
         Session::start();
 
         if (!$key) {
-            return Validate::validate($_SESSION);
+            return $_SESSION;
         }
 
-        return Validate::validate(Session::get($key));
+        return Session::get($key);
     }
 
     public function method(): string
@@ -275,12 +311,18 @@ class HttpRequest implements Request
         return rawurldecode($uri);
     }
 
-    public function siteURL(): string {
-        $path = $this->getUri();
+    public function baseURL(): string {
         $scheme = $this->isHttps() ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
-        return "{$scheme}://{$host}{$path}";
+        return "{$scheme}://{$host}";
+    }
+
+    public function siteURL(): string {
+        $path = $this->getUri();
+        $baseURL = $this->baseURL();
+
+        return "{$baseURL}{$path}";
     }
 
     public function origin(): string {
@@ -301,18 +343,38 @@ class HttpRequest implements Request
     }
 
     public function isSameOrigin(): bool {
-        $host = parse_url($_SERVER['HTTP_HOST'] ?? '', PHP_URL_HOST);
         $origin = $_SERVER['HTTP_ORIGIN'] ?? null;
         $pathIsRelative = str_starts_with($this->getUri(), '/');
 
+        $rawHost = $_SERVER['HTTP_HOST'] ?? '';
+        $host = parse_url($rawHost, PHP_URL_HOST) ?: $rawHost;
+        $port = parse_url($rawHost, PHP_URL_PORT);
+        $serverName = $_SERVER['SERVER_NAME'] ?? '';
+        $serverPort = $_SERVER['SERVER_PORT'] ?? null;
+        $expectedHost = $host ?: $serverName;
+        $expectedPort = $port ?? $serverPort;
+
         // Case 1: Browser explicitly sent Origin header
         if ($origin !== null) {
-            $parsed = parse_url($origin, PHP_URL_HOST);
-            return ($parsed === $host) || $pathIsRelative;
+            $parsedHost = parse_url($origin, PHP_URL_HOST);
+            $parsedPort = parse_url($origin, PHP_URL_PORT);
+
+            if (!$parsedHost) {
+                return false;
+            }
+
+            if ($parsedHost !== $expectedHost) {
+                return false;
+            }
+
+            if ($parsedPort !== null && $expectedPort !== null) {
+                return (string) $parsedPort === (string) $expectedPort;
+            }
+
+            return true;
         }
 
-        // Case 2: No Origin -> verify Host matches server or path is relative
-        $serverHost = $_SERVER['SERVER_NAME'] ?? '';
-        return ($host === $serverHost) || $pathIsRelative;
+        // Case 2: No Origin -> allow same-site relative paths
+        return $pathIsRelative;
     }
 }

@@ -110,22 +110,28 @@ When you enable compression, PhpSPA generates cached files alongside your compon
 examples/components/
 ├── Counter.php
 └── generated/
-    ├── Counter-0.js.generated.php       # Cached compressed JS
-    ├── Counter-0.js.generated.php.map   # Cache validation map
-    └── Counter-0.css.generated.php      # Cached compressed CSS
-    └── Counter-0.css.generated.php.map  # Cache validation map
+    ├── a3f8b2c1d5e9f7a4b2c8d1e6f9a3b7c2.generated.php       # Cached compressed JS
+    └── d4e7a1b8c5f2e9d6a3b7c1f4e8a2d5b9.generated.php       # Cached compressed CSS
 ```
 
-**Smart Cache Invalidation:** PhpSPA automatically detects when source files change by tracking file sizes in `.map` files. When a change is detected:
+!!! info "Smart Cache Invalidation"
+    Cache filenames are MD5 hashes of the original filename and file modification time. When a source file changes, its modification time updates, generating a new hash and automatically creating a fresh cache file.
 
-1. The cached `.generated.php` file is regenerated
-2. The `.map` file is updated with the new file size
-3. Fresh compressed content is served
+!!! tip "Custom Cache Location"
+    You can customize where cache files are stored using `setGeneratedCacheDirectory()`. See [Asset Caching: Custom Cache Directory](assets-caching.md#custom-cache-directory) for details.
+
+**Smart Cache Invalidation:** PhpSPA automatically detects when source files change by using file modification timestamps. When a file changes:
+
+1. The file's modification time updates
+2. A new cache hash is generated (based on filename + modification time)
+3. The new cache file is created with fresh compressed content
+4. Old cache files naturally expire (can be cleaned up periodically)
 
 This means:
 
 - ✅ **Production**: Excellent performance - compressed content is reused when unchanged
-- ✅ **Development**: Always fresh - changes are automatically detected and cache is rebuilt
+- ✅ **Development**: Always fresh - file changes automatically generate new cache files
+- ✅ **No manual tracking**: File system timestamps handle everything automatically
 
 ### Recommended Environment Setup
 
@@ -172,8 +178,11 @@ Then configure your `.env` file:
 The cache is automatically managed, but you can manually clear it if needed:
 
 ```bash
-# Delete all generated cache files and maps
-find . -name "*.generated.php*" -type f -delete
+# Delete all generated cache files
+find . -name "*.generated.php" -type f -delete
+
+# Or clean up a specific directory
+rm -rf /path/to/cache/directory/*.generated.php
 ```
 
 Or temporarily disable compression to bypass the cache entirely:
@@ -184,8 +193,8 @@ Or temporarily disable compression to bypass the cache entirely:
 $app->compression(Compressor::LEVEL_NONE);
 ```
 
-!!! tip "Automatic Cache Validation"
-    PhpSPA tracks file sizes in `.map` files and automatically regenerates cached assets when source files change. You typically don't need to manually clear the cache!
+!!! tip "Automatic Cache Invalidation"
+    PhpSPA uses file modification timestamps to automatically invalidate cache. When you edit a source file, a new cache file is generated on the next request. Old cache files can be periodically cleaned up, but they won't be served since the hash no longer matches.
 
 ### IIFE Wrapping for Component Scripts
 

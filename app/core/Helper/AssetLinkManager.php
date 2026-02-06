@@ -51,7 +51,7 @@ class AssetLinkManager
             'assetType' => 'css',
             'assetIndex' => $stylesheetIndex,
             'name' => $name,
-            'created' => time(),
+            'created' => self::getCacheBucketTimestamp(),
             'scriptType' => 'text/css',
             'version' => $filemtime
         ];
@@ -77,7 +77,7 @@ class AssetLinkManager
             'assetType' => 'js',
             'assetIndex' => $scriptIndex,
             'name' => $name,
-            'created' => time(),
+            'created' => self::getCacheBucketTimestamp(),
             'scriptType' => $type,
             'version' => $filemtime
         ];
@@ -260,6 +260,22 @@ class AssetLinkManager
 
         $expireTime = $created + (self::$cacheHours * 3600);
         return time() > $expireTime;
+    }
+
+    /**
+     * Get a stable timestamp bucket for cache windows.
+     *
+     * This prevents new asset URLs from being generated on every request while
+     * still allowing periodic rotation when cacheHours > 0.
+     */
+    private static function getCacheBucketTimestamp(): int
+    {
+        if (self::$cacheHours === 0) {
+            return time();
+        }
+
+        $window = self::$cacheHours * 3600;
+        return (int) (floor(time() / $window) * $window);
     }
 
 }

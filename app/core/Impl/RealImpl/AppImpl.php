@@ -125,7 +125,10 @@ abstract class AppImpl implements ApplicationContract {
    protected array $prefix = [];
 
    private bool $module = false;
+
    private bool $randomizeAssetName = false;
+
+   private ?string $generatedCacheDirectory = null;
 
    public function defaultTargetID (string $targetID): ApplicationContract
    {
@@ -311,6 +314,11 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
+   public function setGeneratedCacheDirectory(string $path): ApplicationContract {
+      $this->generatedCacheDirectory = $path;
+      return $this;
+   }
+
    public function run (bool $return = false)
    {
       $request = new HttpRequest();
@@ -382,7 +390,6 @@ abstract class AppImpl implements ApplicationContract {
    private function handlePhpSPARequest(Request $request) {
       if ($request->requestedWith() === 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
          $data = json_decode(base64_decode($request->auth()->bearer ?? ''), true);
-         $data = Validate::validate($data);
 
          if (isset($data['state']) && $request->isSameOrigin()) {
             $state = $data['state'];
@@ -557,7 +564,56 @@ abstract class AppImpl implements ApplicationContract {
                   }
                }
             }
-            $metaTags = array_merge($metaTags, $domMeta);
+            $metaTags = [...$metaTags, ...$domMeta];
+         }
+
+         // Merge DOM link (dynamic, set by user in component) and override any with same name or rel
+         $domLinks = DOM::link();
+         if (!empty($domLinks)) {
+            foreach ($domLinks as $domLink) {
+               $domName = $domLink['name'] ?? null;
+               $domHref = \is_string($domLink['content']) ? $domLink['content'] : null;
+               $domRel = $domLink['rel'] ?? null;
+               $replaced = false;
+
+               foreach ($stylesheets as $k => $link) {
+                  // Override by name (preserve position)
+                  if ($domName !== null && isset($link['name']) && $link['name'] === $domName) {
+                     $stylesheets[$k] = $domLink;
+                     $replaced = true;
+                     break;
+                  }
+
+                  // Override by rel (preserve position)
+                  if ($domRel !== null && isset($link['rel']) && $link['rel'] === $domRel) {
+                     $stylesheets[$k] = $domLink;
+                     $replaced = true;
+                     break;
+                  }
+               }
+
+               // Also check global stylesheets
+               foreach ($this->stylesheets as $k => $link) {
+                  // Override by name
+                  if ($domName !== null && isset($link['name']) && $link['name'] === $domName) {
+                     $this->stylesheets[$k] = $domLink;
+                     $replaced = true;
+                     break;
+                  }
+
+                  // Override by rel
+                  if ($domRel !== null && isset($link['rel']) && $link['rel'] === $domRel) {
+                     $this->stylesheets[$k] = $domLink;
+                     $replaced = true;
+                     break;
+                  }
+               }
+
+               // Append only if no existing link was replaced
+               if (!$replaced) {
+                  $stylesheets[] = $domLink;
+               }
+            }
          }
 
          if ($request->requestedWith() !== 'PHPSPA_REQUEST' && !empty($metaTags)) {
@@ -988,7 +1044,7 @@ abstract class AppImpl implements ApplicationContract {
 
          if ($fileName) {
             $hashed = md5($assetInfo['componentRoute'] . $assetInfo['assetIndex'] . $fileModifyTime . $assetInfo['assetType']);
-            $fileDir = pathinfo($fileName, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 'generated';
+            $fileDir = $this->generatedCacheDirectory ?? (pathinfo($fileName, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 'generated');
             $newName = $fileDir . DIRECTORY_SEPARATOR . $hashed . ".generated.php";
 
             if (file_exists($newName)) {
