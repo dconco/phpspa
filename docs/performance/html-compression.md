@@ -201,10 +201,10 @@ $app->compression(Compressor::LEVEL_NONE);
 PhpSPA automatically wraps component JavaScript in Immediately Invoked Function Expressions (IIFE) for scope isolation:
 
 - **Component JS**: Always wrapped in IIFE `(()=>{/* your code */})()`
-- **Global JS**: Only wrapped when requested via PHPSPA (SPA navigation) to execute in isolation
+- **Global JS**: Never wrapped to prevent duplicate execution and to allow global functions to be reused
 - **External script links**: Never wrapped (assumed pre-bundled)
 
 This ensures:
 - Component scripts don't pollute the global scope
 - Variables and functions are properly isolated
-- Global scripts can re-execute during SPA navigation
+- Global scripts are not wrapped to allow other scripts (global and components) to reuse variables, functions and classes.

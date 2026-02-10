@@ -877,7 +877,7 @@ abstract class AppImpl implements ApplicationContract {
       $primaryRoute = \is_array($route) ? $route[0] ?? null : $route;
 
       // --- Generate global stylesheet links ---
-      if (!empty($globalStylesheets)) {
+      if (!empty($globalStylesheets) && !$isPhpSpaRequest) {
          foreach ($globalStylesheets as $index => $stylesheet) {
             $stylesheet = (array) Validate::validate($stylesheet);
 
@@ -918,7 +918,7 @@ abstract class AppImpl implements ApplicationContract {
             unset($stylesheet['name']);
             unset($stylesheet['content']);
 
-            if ($stylesheet['rel'] === 'stylesheet') {
+            if ($stylesheet['rel'] === 'stylesheet' && !$isPhpSpaRequest) {
                $preloadStylesheet = $stylesheet;
 
                unset($preloadStylesheet['name']);
@@ -946,7 +946,7 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       // --- Generate global script links ---
-      if (!empty($globalScripts)) {
+      if (!empty($globalScripts) && !$isPhpSpaRequest) {
          foreach ($globalScripts as $index => $script) {
             $script = (array) Validate::validate($script);
             $isLink = false;
@@ -963,9 +963,7 @@ abstract class AppImpl implements ApplicationContract {
             unset($script['content']);
             $attributes = HTMLAttrInArrayToString($script);
 
-            $result['global']['scripts'] .= $isPhpSpaRequest && !$isLink
-               ? "\n      <script data-type=\"phpspa/script\" $attributes></script>"
-               : "\n      <script $attributes></script>";
+            $result['global']['scripts'] .= "\n      <script $attributes></script>";
          }
       }
 
