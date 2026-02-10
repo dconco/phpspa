@@ -191,7 +191,7 @@ export class AppManager {
             }
 
             // --- Execute any inline styles in the new content ---
-            RuntimeManager.runStyles()
+               RuntimeManager.runStylesForElement(targetElement)
          }
 
 
@@ -222,7 +222,7 @@ export class AppManager {
             RuntimeManager.clearExecutedScripts()
 
             // --- Execute any inline scripts in the new content ---
-            RuntimeManager.runScripts()
+               RuntimeManager.runScriptsForElement(targetElement)
 
             // --- Handle URL fragments (hash navigation) ---
             const hashElement = document.getElementById(newUrl.hash.substring(1))
@@ -567,7 +567,7 @@ export class AppManager {
             }
 
             // --- Execute any inline styles in the new content ---
-            RuntimeManager.runStyles()
+               RuntimeManager.runStylesForElement(targetElement)
          }
 
          const completedDOMUpdate = () => {
@@ -579,7 +579,7 @@ export class AppManager {
             RuntimeManager.clearExecutedScripts()
 
             // --- Execute any inline scripts in the new content ---
-            RuntimeManager.runScripts()
+               RuntimeManager.runScriptsForElement(targetElement)
 
             // --- Set up next auto-reload if specified ---
             if (component?.reloadTime) {

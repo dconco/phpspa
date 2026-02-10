@@ -150,8 +150,7 @@ export class RuntimeManager {
          const element = document.getElementById(targetID)
 
          if (element) {
-            this.runInlineScripts(element)
-            this.runPhpSpaScripts(element)
+            this.runScriptsForElement(element)
          }
       }
    }
@@ -161,9 +160,18 @@ export class RuntimeManager {
          const element = document.getElementById(targetID)
 
          if (element) {
-            this.runInlineStyles(element)
+            this.runStylesForElement(element)
          }
       }
+   }
+
+   public static runScriptsForElement(element: HTMLElement): void {
+      this.runInlineScripts(element)
+      this.runPhpSpaScripts(element)
+   }
+
+   public static runStylesForElement(element: HTMLElement): void {
+      this.runInlineStyles(element)
    }
 
    /**
@@ -175,8 +183,40 @@ export class RuntimeManager {
       const nonce = document.head.getAttribute('x-phpspa')
 
       scripts.forEach((script: HTMLScriptElement) => {
+         const src = script.getAttribute('src')
+         const typeAttr = (script.getAttribute('type') ?? '').trim().toLowerCase()
+         const isModule = typeAttr === 'module'
+         const isExecutable =
+            typeAttr === '' ||
+            typeAttr === 'text/javascript' ||
+            typeAttr === 'application/javascript' ||
+            typeAttr === 'application/ecmascript' ||
+            typeAttr === 'text/ecmascript' ||
+            isModule
+
+         if (src) {
+            if (!this.executedScripts.has(src)) {
+               this.executedScripts.add(src)
+
+               const newScript = document.createElement("script")
+               newScript.nonce = nonce ?? undefined
+
+               for (const attribute of Array.from(script.attributes)) {
+                  newScript.setAttribute(attribute.name, attribute.value)
+               }
+
+               document.head.appendChild(newScript)
+            }
+
+            return
+         }
+
+         if (!isExecutable) {
+            return
+         }
+
          // --- Use base64 encoded content as unique identifier ---
-         const contentHash = utf8ToBase64(script.textContent.trim())
+         const contentHash = utf8ToBase64(`${typeAttr}:${script.textContent.trim()}`)
 
          // --- Skip if this script has already been executed ---
          if (!this.executedScripts.has(contentHash) && script.textContent.trim() !== "") {
@@ -192,7 +232,9 @@ export class RuntimeManager {
                newScript.setAttribute(attribute.name, attribute.value)
             }
 
-            newScript.textContent = `(()=>{\n${script.textContent}\n})()`;
+            newScript.textContent = isModule
+               ? script.textContent
+               : `(()=>{\n${script.textContent}\n})()`
 
             // --- Execute and immediately remove from DOM ---
             document.head.appendChild(newScript).remove()

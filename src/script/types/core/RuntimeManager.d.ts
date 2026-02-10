@@ -58,6 +58,8 @@ export declare class RuntimeManager {
     private static invokeEffect;
     static runScripts(): void;
     static runStyles(): void;
+    static runScriptsForElement(element: HTMLElement): void;
+    static runStylesForElement(element: HTMLElement): void;
     /**
      * Processes and executes inline scripts within a container
      * Creates isolated scopes using IIFE to prevent variable conflicts
