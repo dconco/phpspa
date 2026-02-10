@@ -232,9 +232,7 @@ export class RuntimeManager {
                newScript.setAttribute(attribute.name, attribute.value)
             }
 
-            newScript.textContent = isModule
-               ? script.textContent
-               : `(()=>{\n${script.textContent}\n})()`
+            newScript.textContent = script.textContent
 
             // --- Execute and immediately remove from DOM ---
             document.head.appendChild(newScript).remove()

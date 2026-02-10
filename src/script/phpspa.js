@@ -1,5 +1,5 @@
 /*!
- * PhpSPA Client Runtime v2.0.11
+ * PhpSPA Client Runtime v2.0.12
  * Docs: https://phpspa.tech | Package: @dconco/phpspa
  * License: MIT
  */
@@ -372,9 +372,7 @@
                     for (const attribute of Array.from(script.attributes)) {
                         newScript.setAttribute(attribute.name, attribute.value);
                     }
-                    newScript.textContent = isModule
-                        ? script.textContent
-                        : `(()=>{\n${script.textContent}\n})()`;
+                    newScript.textContent = script.textContent;
                     // --- Execute and immediately remove from DOM ---
                     document.head.appendChild(newScript).remove();
                 }
