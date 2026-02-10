@@ -344,7 +344,7 @@ class HttpRequest implements Request
 
     public function isSameOrigin(): bool {
         $origin = $_SERVER['HTTP_ORIGIN'] ?? null;
-        $pathIsRelative = str_starts_with($this->getUri(), '/');
+        $referer = $_SERVER['HTTP_REFERER'] ?? null;
 
         $rawHost = $_SERVER['HTTP_HOST'] ?? '';
         $host = parse_url($rawHost, PHP_URL_HOST) ?: $rawHost;
@@ -374,7 +374,27 @@ class HttpRequest implements Request
             return true;
         }
 
-        // Case 2: No Origin -> allow same-site relative paths
-        return $pathIsRelative;
+        // Case 2: No Origin -> check Referer header
+        if ($referer !== null) {
+            $parsedHost = parse_url($referer, PHP_URL_HOST);
+            $parsedPort = parse_url($referer, PHP_URL_PORT);
+
+            if (!$parsedHost) {
+                return false;
+            }
+
+            if ($parsedHost !== $expectedHost) {
+                return false;
+            }
+
+            if ($parsedPort !== null && $expectedPort !== null) {
+                return (string) $parsedPort === (string) $expectedPort;
+            }
+
+            return true;
+        }
+
+        // Case 3: No Origin or Referer -> reject for security
+        return false;
     }
 }
