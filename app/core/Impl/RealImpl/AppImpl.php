@@ -322,8 +322,12 @@ abstract class AppImpl implements ApplicationContract {
    public function run (bool $return = false)
    {
       $request = new HttpRequest();
+      static::$request_uri = $request->getUri();
+      $this->renderedData = null;
 
-      $this->resolveStaticPath();
+      $staticFileOutput = $this->resolveStaticPath($return);
+      if (!empty($staticFileOutput)) return $staticFileOutput;
+
       $this->resolveCors($request);
       $this->handlePhpSPARequest($request);
 
@@ -351,7 +355,7 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       if ($success === true) {
-         $compressedOutput = Compressor::compress($this->renderedData, 'text/html');
+         $compressedOutput = Compressor::compress((string) $this->renderedData, 'text/html');
 
          if ($return) return $compressedOutput;
 
@@ -360,7 +364,8 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       foreach ($this->prefix as $prefix) {
-         $this->handlePrefix($prefix);
+         $output = $this->handlePrefix($prefix, [], $return);
+         if (isset($output)) return $output;
       }
    }
 
@@ -693,6 +698,19 @@ abstract class AppImpl implements ApplicationContract {
 
       // --- This remain static for all components ---
       static $isFirstComponent = null;
+
+      // --- Reset static state between worker requests ---
+      static $lastRequestTime = null;
+      $currentRequestTime = $_SERVER['REQUEST_TIME_FLOAT'] ?? null;
+      if ($currentRequestTime !== null && $lastRequestTime !== $currentRequestTime) {
+         $targetInformation = [];
+         $isFirstComponent = null;
+         $lastRequestTime = $currentRequestTime;
+      }
+
+      if (!\is_array($targetInformation)) {
+         $targetInformation = [];
+      }
 
       $isFirstComponent = $isFirstComponent === null ? true : false;
 

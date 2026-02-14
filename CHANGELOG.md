@@ -7,6 +7,38 @@
 composer require dconco/phpspa:dev-support/php-8.4
 ```
 
+**Added FrankenPHP worker-mode compatibility:** request URI and DOM/router state now reset per request to avoid stale routing and duplicated output in long-running processes.
+Worker Loop Snippet
+
+Example:
+
+```php
+<?php
+
+use PhpSPA\App;
+use PhpSPA\DOM;
+use PhpSPA\Http\Response;
+
+$app = new App(require 'layout/Layout.php');
+// attach pages, middleware, assets...
+
+while (frankenphp_handle_request(function () use (&$app) {
+   DOM::reset(); // Reset every static DOM calls you made
+
+   $output = $app->run(true); // pass true to the argument to return the output instead of outputing it directly
+
+   if (!empty($output)) {
+      echo $output;
+      return; // return not to continue further after outputing, and never exit in the middle of the worker loop
+   }
+
+   echo new Response()->status(Response::StatusNotFound)->error('404 Not Found');
+})) {
+   // next request
+}
+```
+
+
 ### ✨ New Features
 
 #### **Multi-Method Routing** 🛣️
@@ -104,7 +136,13 @@ $response = useFetch('https://api.example.com/webhook')
 
 
 
+
+
+
 ---
+
+
+
 
 
 

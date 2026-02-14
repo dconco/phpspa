@@ -353,6 +353,7 @@ class HttpRequest implements Request
         $serverPort = $_SERVER['SERVER_PORT'] ?? null;
         $expectedHost = $host ?: $serverName;
         $expectedPort = $port ?? $serverPort;
+        $hasExplicitPort = $port !== null;
 
         // Case 1: Browser explicitly sent Origin header
         if ($origin !== null) {
@@ -387,14 +388,15 @@ class HttpRequest implements Request
                 return false;
             }
 
-            if ($parsedPort !== null && $expectedPort !== null) {
+            if ($hasExplicitPort && $parsedPort !== null && $expectedPort !== null) {
                 return (string) $parsedPort === (string) $expectedPort;
             }
 
             return true;
         }
 
-        // Case 3: No Origin or Referer -> reject for security
-        return false;
+        // Case 3: No Origin or Referer -> allow internal requests with a relative URI
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        return $expectedHost !== '' && $uri !== '' && str_starts_with($uri, '/');
     }
 }
