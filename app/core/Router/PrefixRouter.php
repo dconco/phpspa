@@ -37,7 +37,7 @@ trait PrefixRouter {
    */
    protected function handlePrefix(array $prefix, array $middlewares = [], bool $return = false) {
       // --- Replacing first and last forward slashes, $request_uri will be empty if req uri is / ---
-      static $request_uri = trim(static::$request_uri, '/');
+      $request_uri = trim(static::$request_uri, '/');
       $prefixPath = trim($prefix['path'], '/');
 
       if (!$this->defaultCaseSensitive) {
@@ -56,14 +56,23 @@ trait PrefixRouter {
          );
 
          if ($return) {
-            return \call_user_func($prefix['handler'], $router);
+            $result = \call_user_func($prefix['handler'], $router);
+            if ($result !== null) {
+               return $result;
+            }
+
+            if (method_exists($router, 'getMatchedOutput')) {
+               return $router->getMatchedOutput();
+            }
+
+            return null;
          }
          \call_user_func($prefix['handler'], $router);
       }
    }
 
    protected function resolveStaticPath(bool $return) {
-      static $request_uri = trim(static::$request_uri, '/');
+      $request_uri = trim(static::$request_uri, '/');
 
       foreach ($this->static as $static) {
          $route = trim($static['route'], '/');
