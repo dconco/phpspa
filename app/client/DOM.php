@@ -157,4 +157,16 @@ class DOM {
 
       return static::$_currentComponents;
    }
+
+   /**
+    * Reset all static state for frankenphp worker mode compatibility.
+    * Call this at the start of each request in worker mode.
+    */
+   public static function reset(): void {
+      static::$_title = null;
+      static::$_currentRoutes = [];
+      static::$_currentComponents = [];
+      static::$_meta = [];
+      static::$_links = [];
+   }
 }
