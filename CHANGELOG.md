@@ -22,9 +22,9 @@ use PhpSPA\Http\Response;
 $app = new App(require 'layout/Layout.php');
 // attach pages, middleware, assets...
 
-while (frankenphp_handle_request(function () use (&$app) {
-   DOM::reset(); // Reset every static DOM calls you made
-
+function handleRequest() {
+   global $app;
+   
    $output = $app->run(true); // pass true to the argument to return the output instead of outputing it directly
 
    if (!empty($output)) {
@@ -33,9 +33,10 @@ while (frankenphp_handle_request(function () use (&$app) {
    }
 
    echo new Response()->status(Response::StatusNotFound)->error('404 Not Found');
-})) {
-   // next request
 }
+
+// --- START FRANKENPHP WORKER LOOP ---
+while(frankenphp_handle_request('handleRequest'); // pass the function name as string
 ```
 
 
