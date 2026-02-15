@@ -86,7 +86,15 @@ class Router
       $prefix = ['path' => rtrim($this->prefix, '/') . '/' . ltrim($path, '/'), 'handler' => $handler];
 
       if ($this->return) {
-         return $this->handlePrefix($prefix, $this->middlewares, true);
+         $output = $this->handlePrefix($prefix, $this->middlewares, true);
+
+         if ($output !== null) {
+            $this->matched = true;
+            $this->matchedOutput = $output;
+            return $output;
+         }
+
+         return null;
       }
 
       $this->handlePrefix($prefix, $this->middlewares, false);
@@ -114,7 +122,7 @@ class Router
 
    public function __call($method, $args)
    {
-      $routes = !\is_array($args[0]) ? [$args[0]] : [$args[0]];
+      $routes = !\is_array($args[0]) ? [$args[0]] : $args[0];
       unset($args[0]);
 
       $handlers = [...$this->middlewares, ...$args];
