@@ -40,6 +40,8 @@ class Router
    public function __construct(readonly private string $prefix, private bool $caseSensitive, private array $middlewares, private bool $return = false)
    {
       static::$request_uri = new HttpRequest()->getUri();
+      $this->matched = false;
+      $this->matchedOutput = null;
    }
 
    public function getMatchedOutput(): mixed
