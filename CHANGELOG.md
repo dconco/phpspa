@@ -18,13 +18,16 @@ Example:
 use PhpSPA\App;
 use PhpSPA\DOM;
 use PhpSPA\Http\Response;
+use PhpSPA\Http\Security\Nonce;
 
 $app = new App(require 'layout/Layout.php');
 // attach pages, middleware, assets...
 
 function handleRequest() {
    global $app;
-   
+
+   Nonce::reset() // reset nonce on each request, so every request has a unique token
+
    $output = $app->run(true); // pass true to the argument to return the output instead of outputing it directly
 
    if (!empty($output)) {

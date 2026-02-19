@@ -61,10 +61,15 @@ class Nonce {
       // Merge custom sources with defaults (prevent duplicates)
       foreach ($sources as $directive => $values) {
          $existing = self::$directives[$directive] ?? [];
-         self::$directives[$directive] = array_unique(array_merge($existing, $values));
+         self::$directives[$directive] = array_unique([...$existing, ...$values]);
       }
 
       self::sendHeader();
+   }
+
+   public static function reset (): void
+   {
+      self::$nonce = null;
    }
 
    /**
@@ -97,17 +102,17 @@ class Nonce {
       // Ensure script-src and style-src get the nonce automatically
       // Only add nonce if 'unsafe-inline' or 'unsafe-hashes' is not present
       if (isset(self::$directives['script-src'])) {
-         $hasUnsafeInline = in_array("'unsafe-inline'", self::$directives['script-src']);
-         $hasUnsafeHashes = in_array("'unsafe-hashes'", self::$directives['script-src']);
-         
+         $hasUnsafeInline = \in_array("'unsafe-inline'", self::$directives['script-src']);
+         $hasUnsafeHashes = \in_array("'unsafe-hashes'", self::$directives['script-src']);
+
          if (!$hasUnsafeInline && !$hasUnsafeHashes) {
             self::$directives['script-src'][] = "'nonce-$nonce'";
          }
       }
       
       if (isset(self::$directives['style-src'])) {
-         $hasUnsafeInline = in_array("'unsafe-inline'", self::$directives['style-src']);
-         $hasUnsafeHashes = in_array("'unsafe-hashes'", self::$directives['style-src']);
+         $hasUnsafeInline = \in_array("'unsafe-inline'", self::$directives['style-src']);
+         $hasUnsafeHashes = \in_array("'unsafe-hashes'", self::$directives['style-src']);
          
          if (!$hasUnsafeInline && !$hasUnsafeHashes) {
             self::$directives['style-src'][] = "'nonce-$nonce'";
