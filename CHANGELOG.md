@@ -1,10 +1,10 @@
 # CHANGELOG
 
-## v2.0.8 (Unreleased) (PHP 8.4)
+## v2.0.8 (Stable) (Latest) (PHP 8.4)
 
 **Installation:**
 ```bash
-composer require dconco/phpspa:dev-support/php-8.4
+composer require dconco/phpspa:v2.0.8
 ```
 
 **Added FrankenPHP worker-mode compatibility:** request URI and DOM/router state now reset per request to avoid stale routing and duplicated output in long-running processes.
@@ -150,7 +150,7 @@ $response = useFetch('https://api.example.com/webhook')
 
 
 
-## v2.0.7 (Stable) (Latest) (PHP 8.4)
+## v2.0.7 (Stable) (PHP 8.4)
 
 **Installation:**
 ```bash
