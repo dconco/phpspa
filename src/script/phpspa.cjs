@@ -1,5 +1,5 @@
 /*!
- * PhpSPA Client Runtime v2.0.10
+ * PhpSPA Client Runtime v2.0.12
  * Docs: https://phpspa.tech | Package: @dconco/phpspa
  * License: MIT
  */
@@ -307,8 +307,7 @@ class RuntimeManager {
         for (const targetID in RuntimeManager.currentRoutes) {
             const element = document.getElementById(targetID);
             if (element) {
-                this.runInlineScripts(element);
-                this.runPhpSpaScripts(element);
+                this.runScriptsForElement(element);
             }
         }
     }
@@ -316,9 +315,16 @@ class RuntimeManager {
         for (const targetID in RuntimeManager.currentRoutes) {
             const element = document.getElementById(targetID);
             if (element) {
-                this.runInlineStyles(element);
+                this.runStylesForElement(element);
             }
         }
+    }
+    static runScriptsForElement(element) {
+        this.runInlineScripts(element);
+        this.runPhpSpaScripts(element);
+    }
+    static runStylesForElement(element) {
+        this.runInlineStyles(element);
     }
     /**
      * Processes and executes inline scripts within a container
@@ -328,8 +334,32 @@ class RuntimeManager {
         const scripts = container.querySelectorAll("script");
         const nonce = document.head.getAttribute('x-phpspa');
         scripts.forEach((script) => {
+            const src = script.getAttribute('src');
+            const typeAttr = (script.getAttribute('type') ?? '').trim().toLowerCase();
+            const isModule = typeAttr === 'module';
+            const isExecutable = typeAttr === '' ||
+                typeAttr === 'text/javascript' ||
+                typeAttr === 'application/javascript' ||
+                typeAttr === 'application/ecmascript' ||
+                typeAttr === 'text/ecmascript' ||
+                isModule;
+            if (src) {
+                if (!this.executedScripts.has(src)) {
+                    this.executedScripts.add(src);
+                    const newScript = document.createElement("script");
+                    newScript.nonce = nonce ?? undefined;
+                    for (const attribute of Array.from(script.attributes)) {
+                        newScript.setAttribute(attribute.name, attribute.value);
+                    }
+                    document.head.appendChild(newScript);
+                }
+                return;
+            }
+            if (!isExecutable) {
+                return;
+            }
             // --- Use base64 encoded content as unique identifier ---
-            const contentHash = utf8ToBase64(script.textContent.trim());
+            const contentHash = utf8ToBase64(`${typeAttr}:${script.textContent.trim()}`);
             // --- Skip if this script has already been executed ---
             if (!this.executedScripts.has(contentHash) && script.textContent.trim() !== "") {
                 this.executedScripts.add(contentHash);
@@ -340,7 +370,7 @@ class RuntimeManager {
                 for (const attribute of Array.from(script.attributes)) {
                     newScript.setAttribute(attribute.name, attribute.value);
                 }
-                newScript.textContent = `(()=>{\n${script.textContent}\n})()`;
+                newScript.textContent = script.textContent;
                 // --- Execute and immediately remove from DOM ---
                 document.head.appendChild(newScript).remove();
             }
@@ -1418,7 +1448,7 @@ class AppManager {
                     }
                 }
                 // --- Execute any inline styles in the new content ---
-                RuntimeManager.runStyles();
+                RuntimeManager.runStylesForElement(targetElement);
             };
             const stateData = {
                 url: newUrl.toString(),
@@ -1444,7 +1474,7 @@ class AppManager {
                 RuntimeManager.clearEffects();
                 RuntimeManager.clearExecutedScripts();
                 // --- Execute any inline scripts in the new content ---
-                RuntimeManager.runScripts();
+                RuntimeManager.runScriptsForElement(targetElement);
                 // --- Handle URL fragments (hash navigation) ---
                 const hashElement = document.getElementById(newUrl.hash.substring(1));
                 if (hashElement) {
@@ -1755,7 +1785,7 @@ class AppManager {
                     targetElement.innerHTML = tempElem.innerHTML;
                 }
                 // --- Execute any inline styles in the new content ---
-                RuntimeManager.runStyles();
+                RuntimeManager.runStylesForElement(targetElement);
             };
             const completedDOMUpdate = () => {
                 // Clean up temp element
@@ -1763,7 +1793,7 @@ class AppManager {
                 RuntimeManager.clearEffects();
                 RuntimeManager.clearExecutedScripts();
                 // --- Execute any inline scripts in the new content ---
-                RuntimeManager.runScripts();
+                RuntimeManager.runScriptsForElement(targetElement);
                 // --- Set up next auto-reload if specified ---
                 if (component?.reloadTime) {
                     setTimeout(AppManager.reloadComponent, component.reloadTime);
@@ -1985,14 +2015,14 @@ const navigateHistory = (event) => {
                 targetContainer.innerHTML = tempElem.innerHTML;
             }
             // --- Execute any inline styles in the new content ---
-            RuntimeManager.runStyles();
+            RuntimeManager.runStylesForElement(targetContainer);
         };
         const completedDOMUpdate = async () => {
             // --- Clear old executed scripts cache ---
             RuntimeManager.clearEffects();
             RuntimeManager.clearExecutedScripts();
             // --- Execute any inline scripts in the restored content ---
-            RuntimeManager.runScripts();
+            RuntimeManager.runScriptsForElement(targetContainer);
             // --- Restart auto-reload timer if needed ---
             if (navigationState?.reloadTime) {
                 setTimeout(AppManager.reloadComponent, navigationState.reloadTime);

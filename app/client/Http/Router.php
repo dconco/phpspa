@@ -29,14 +29,28 @@ class Router
 {
    use PrefixRouter;
 
+   private bool $matched = false;
+   private mixed $matchedOutput = null;
+
    /**
     * @param bool $caseSensitive Whether routes are case sensitive
     * @param string $prefix Base path for the router
     * @param array<callable|string> $middlewares
     */
-   public function __construct(readonly private string $prefix, private bool $caseSensitive, private array $middlewares)
+   public function __construct(readonly private string $prefix, private bool $caseSensitive, private array $middlewares, private bool $return = false)
    {
-      static::$request_uri ??= new HttpRequest()->getUri();
+      static::$request_uri = new HttpRequest()->getUri();
+      $this->matched = false;
+      $this->matchedOutput = null;
+   }
+
+   public function getMatchedOutput(): mixed
+   {
+      if (!$this->matched) {
+         return null;
+      }
+
+      return $this->matchedOutput ?? '';
    }
 
    /**
@@ -70,7 +84,20 @@ class Router
     */
    public function prefix(string $path, callable|string $handler) {
       $prefix = ['path' => rtrim($this->prefix, '/') . '/' . ltrim($path, '/'), 'handler' => $handler];
-      $this->handlePrefix($prefix, $this->middlewares);
+
+      if ($this->return) {
+         $output = $this->handlePrefix($prefix, $this->middlewares, true);
+
+         if ($output !== null) {
+            $this->matched = true;
+            $this->matchedOutput = $output;
+            return $output;
+         }
+
+         return null;
+      }
+
+      $this->handlePrefix($prefix, $this->middlewares, false);
    }
 
    /**
@@ -80,7 +107,7 @@ class Router
     * @param string|array $route Route pattern(s).
     * @param callable|string ...$handlers Route handlers.
     */
-   public function methods(string|array $methods, string|array $route, callable|string ...$handlers): void
+   public function methods(string|array $methods, string|array $route, callable|string ...$handlers)
    {
       $routes = 
          !\is_array($route)
@@ -90,18 +117,18 @@ class Router
       $handlers = [...$this->middlewares, ...$handlers];
       $routes = array_map(fn($route) => rtrim($this->prefix, '/') . '/' . ltrim($route, '/'), $routes);
 
-      $this->handle($this->normalizeMethods($methods), $routes, ...$handlers);
+      return $this->handle($this->normalizeMethods($methods), $routes, ...$handlers);
    }
 
    public function __call($method, $args)
    {
-      $routes = !\is_array($args[0]) ? [$args[0]] : [$args[0]];
+      $routes = !\is_array($args[0]) ? [$args[0]] : $args[0];
       unset($args[0]);
 
       $handlers = [...$this->middlewares, ...$args];
       $routes = array_map(fn($route) => rtrim($this->prefix, '/') . '/' . ltrim($route, '/'), $routes);
 
-      match ($method) {
+      return match ($method) {
          'get',
          'put',
          'post',
@@ -128,7 +155,7 @@ class Router
       return strtoupper($methods);
    }
 
-   private function handle(string $method, array $route, callable|string ...$handlers): void
+   private function handle(string $method, array $route, callable|string ...$handlers)
    {
       $response = new Response();
       $iterator = 0;
@@ -136,6 +163,7 @@ class Router
       $map = new MapRoute($method, $route, $this->caseSensitive)->match();
 
       if ($map) {
+         $this->matched = true;
          $request = new HttpRequest($map['params'] ?? []);
 
          $next = function() use (&$iterator, $handlers, &$request, $response, &$next) {
@@ -145,14 +173,26 @@ class Router
 
          $output = $this->handleHandler($handlers[$iterator], $request, $response, $next);
 
-			if ($output) {
+			if ($output !== null) {
             if ($output instanceof Response) {
+               if ($this->return) {
+                  $this->matchedOutput = $output->__toString();
+                  return $this->matchedOutput;
+               }
                $output->send();
             }
 
+				if ($this->return) {
+               $this->matchedOutput = $output;
+               return $output;
+            }
 				echo $output;
 				exit;
 			}
+
+         if ($this->return) {
+            return $this->matchedOutput = '';
+         }
       }
    }
 }

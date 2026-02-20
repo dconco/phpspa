@@ -321,9 +321,16 @@ abstract class AppImpl implements ApplicationContract {
 
    public function run (bool $return = false)
    {
-      $request = new HttpRequest();
+      // --- Reset DOM static state for worker mode compatibility ---
+      DOM::reset();
 
-      $this->resolveStaticPath();
+      $request = new HttpRequest();
+      static::$request_uri = $request->path();
+      $this->renderedData = null;
+
+      $staticFileOutput = $this->resolveStaticPath($return);
+      if (!empty($staticFileOutput)) return $staticFileOutput;
+
       $this->resolveCors($request);
       $this->handlePhpSPARequest($request);
 
@@ -351,7 +358,7 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       if ($success === true) {
-         $compressedOutput = Compressor::compress($this->renderedData, 'text/html');
+         $compressedOutput = Compressor::compress((string) $this->renderedData, 'text/html');
 
          if ($return) return $compressedOutput;
 
@@ -360,7 +367,8 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       foreach ($this->prefix as $prefix) {
-         $this->handlePrefix($prefix);
+         $output = $this->handlePrefix($prefix, [], $return);
+         if (isset($output)) return $output;
       }
    }
 
@@ -694,6 +702,19 @@ abstract class AppImpl implements ApplicationContract {
       // --- This remain static for all components ---
       static $isFirstComponent = null;
 
+      // --- Reset static state between worker requests ---
+      static $lastRequestTime = null;
+      $currentRequestTime = $_SERVER['REQUEST_TIME_FLOAT'] ?? null;
+      if ($currentRequestTime !== null && $lastRequestTime !== $currentRequestTime) {
+         $targetInformation = [];
+         $isFirstComponent = null;
+         $lastRequestTime = $currentRequestTime;
+      }
+
+      if (!\is_array($targetInformation)) {
+         $targetInformation = [];
+      }
+
       $isFirstComponent = $isFirstComponent === null ? true : false;
 
       if (!$isPreloadingComponent) {
@@ -877,7 +898,7 @@ abstract class AppImpl implements ApplicationContract {
       $primaryRoute = \is_array($route) ? $route[0] ?? null : $route;
 
       // --- Generate global stylesheet links ---
-      if (!empty($globalStylesheets)) {
+      if (!empty($globalStylesheets) && !$isPhpSpaRequest) {
          foreach ($globalStylesheets as $index => $stylesheet) {
             $stylesheet = (array) Validate::validate($stylesheet);
 
@@ -918,7 +939,7 @@ abstract class AppImpl implements ApplicationContract {
             unset($stylesheet['name']);
             unset($stylesheet['content']);
 
-            if ($stylesheet['rel'] === 'stylesheet') {
+            if ($stylesheet['rel'] === 'stylesheet' && !$isPhpSpaRequest) {
                $preloadStylesheet = $stylesheet;
 
                unset($preloadStylesheet['name']);
@@ -946,7 +967,7 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       // --- Generate global script links ---
-      if (!empty($globalScripts)) {
+      if (!empty($globalScripts) && !$isPhpSpaRequest) {
          foreach ($globalScripts as $index => $script) {
             $script = (array) Validate::validate($script);
             $isLink = false;
@@ -963,9 +984,7 @@ abstract class AppImpl implements ApplicationContract {
             unset($script['content']);
             $attributes = HTMLAttrInArrayToString($script);
 
-            $result['global']['scripts'] .= $isPhpSpaRequest && !$isLink
-               ? "\n      <script data-type=\"phpspa/script\" $attributes></script>"
-               : "\n      <script $attributes></script>";
+            $result['global']['scripts'] .= "\n      <script $attributes></script>";
          }
       }
 

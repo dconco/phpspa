@@ -77,7 +77,7 @@ export const navigateHistory = (event: PopStateEvent) => {
          }
 
          // --- Execute any inline styles in the new content ---
-         RuntimeManager.runStyles()
+         RuntimeManager.runStylesForElement(targetContainer)
       }
 
       const completedDOMUpdate = async () => {
@@ -87,7 +87,7 @@ export const navigateHistory = (event: PopStateEvent) => {
          RuntimeManager.clearExecutedScripts()
 
          // --- Execute any inline scripts in the restored content ---
-         RuntimeManager.runScripts()
+         RuntimeManager.runScriptsForElement(targetContainer)
 
          // --- Restart auto-reload timer if needed ---
          if (navigationState?.reloadTime) {
