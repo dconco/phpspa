@@ -562,6 +562,7 @@ abstract class AppImpl implements ApplicationContract {
 
          // Merge DOM meta (dynamic, set by user in component) and override any with same name/property/charset
          $domMeta = DOM::meta();
+
          if (!empty($domMeta)) {
             foreach ($domMeta as $domEntry) {
                foreach ($metaTags as $k => $meta) {
@@ -577,6 +578,7 @@ abstract class AppImpl implements ApplicationContract {
 
          // Merge DOM link (dynamic, set by user in component) and override any with same name or rel
          $domLinks = DOM::link();
+
          if (!empty($domLinks)) {
             foreach ($domLinks as $domLink) {
                $domName = $domLink['name'] ?? null;
@@ -626,6 +628,7 @@ abstract class AppImpl implements ApplicationContract {
 
          if ($request->requestedWith() !== 'PHPSPA_REQUEST' && !empty($metaTags)) {
             $metaMarkup = $this->buildMetaTagMarkup($metaTags);
+
             if ($metaMarkup !== '') {
                $layoutOutput = $this->injectMetaTags($layoutOutput, $metaMarkup);
             }
@@ -720,14 +723,21 @@ abstract class AppImpl implements ApplicationContract {
       if (!$isPreloadingComponent) {
          if ($title) {
             $count = 0;
+
             $layoutOutput = preg_replace_callback(
-               pattern: '/<title\b([^>]*)>.*?<\/title>/si',
-               callback: fn ($matches) =>
-                  // --- $matches[1] contains any attributes inside the <title> tag ---
-                  "\n      <title" . ($matches[1] ?? null) . '>' . $title . '</title>',
-               subject: $layoutOutput,
-               limit: -1,
-               count: $count,
+               '/(<head\b[^>]*>)(.*?)(<\/head>)/is',
+               function ($headMatches) use ($title, &$count) {
+                  $headContent = preg_replace_callback(
+                     '/<title\b([^>]*)>.*?<\/title>/si',
+                     fn ($matches) => "\n      <title" . ($matches[1] ?? null) . '>' . $title . '</title>',
+                     $headMatches[2],
+                     1,
+                     $count
+                  );
+                  return $headMatches[1] . $headContent . $headMatches[3];
+               },
+               $layoutOutput,
+               1
             );
 
             if ($count === 0) {
