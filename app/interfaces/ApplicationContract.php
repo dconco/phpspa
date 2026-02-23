@@ -211,6 +211,13 @@ interface ApplicationContract {
     public function useModule(): self;
 
     /**
+     * Use esbuild for minification
+     * 
+     * @since v2.0.5
+     */
+    public function useEsbuild(): self;
+
+    /**
      * Overrides custom asset names and randomizes them, typically used for cache busting in production.
      *
      * This method modifies the internal representation of an asset's name

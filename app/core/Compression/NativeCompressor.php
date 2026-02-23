@@ -35,9 +35,10 @@ final class NativeCompressor
     * @param int $nativeLevel Native compressor level (1-3)
     * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @param string $scope Compression scope enum['GLOBAL', 'SCOPED']
+    * @param bool $useEsbuild Use esbuild for minification
     * @return string
     */
-   public static function compress(string $content, int $nativeLevel, string $type, string $scope): string
+   public static function compress(string $content, int $nativeLevel, string $type, string $scope, bool $useEsbuild): string
    {
       if (!self::initialize()) {
          throw new \RuntimeException('Native compressor is unavailable.');
@@ -47,12 +48,12 @@ final class NativeCompressor
       $outLen = self::$ffi->new('size_t');
       $debugOutput = self::$ffi->new('char[1024]');
 
-      $resultPointer = self::invoke('phpspa_compress_html_esbuild', $content, $level, $type, $scope, $debugOutput, \FFI::addr($outLen));
+      $resultPointer = self::invoke($useEsbuild ? 'phpspa_compress_html_esbuild' : 'phpspa_compress_html', $content, $level, $type, $scope, $debugOutput, \FFI::addr($outLen));
 
       if ($resultPointer === null || \FFI::isNull($resultPointer)) {
          throw new \RuntimeException('Native compressor returned a null pointer.');
       }
-      var_dump(\FFI::string($debugOutput)); exit;
+      error_log(\FFI::string($debugOutput));
 
       try {
          return \FFI::string($resultPointer, $outLen->cdata ?? 0);

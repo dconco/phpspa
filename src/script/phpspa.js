@@ -390,7 +390,7 @@
                     // --- Check cache first ---
                     if (this.ScriptsCachedContent[scriptUrl]) {
                         const newScript = document.createElement("script");
-                        newScript.textContent = `(()=>{\n${this.ScriptsCachedContent[scriptUrl]}\n})()`;
+                        newScript.textContent = this.ScriptsCachedContent[scriptUrl];
                         newScript.nonce = nonce ?? undefined;
                         newScript.type = scriptType;
                         // --- Execute and immediately remove from DOM ---
@@ -406,7 +406,7 @@
                         const scriptContent = await response.text();
                         // --- Create new script element ---
                         const newScript = document.createElement("script");
-                        newScript.textContent = `(()=>{\n${scriptContent}\n})()`;
+                        newScript.textContent = scriptContent;
                         newScript.nonce = nonce ?? undefined;
                         newScript.type = scriptType;
                         // --- Execute and immediately remove from DOM ---

@@ -112,7 +112,7 @@ namespace {
       size_t currentLen = strlen(buffer);
       if (currentLen >= 1023) return;
 
-      std::string formatted = (currentLen == 0 ? "" : " | ") + message;
+      std::string formatted = (currentLen == 0 ? "" : "\n") + message;
       strncat(buffer, formatted.c_str(), 1023 - currentLen);
       buffer[1023] = '\0';
    }

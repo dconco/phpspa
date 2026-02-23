@@ -113,7 +113,7 @@ trait HtmlCompressor
     * @param string $scope Compression scope enum['GLOBAL', 'SCOPED']
     * @return string Minified HTML
     */
-   private static function minify(string $content, $type, int $level, string $scope = 'global'): string
+   private static function minify(string $content, $type, int $level, string $scope = 'global', bool $useEsbuild = false): string
    {
       if ($level === Compressor::LEVEL_NONE) return $content;
 
@@ -127,7 +127,7 @@ trait HtmlCompressor
       }
 
       if (self::isNativeCompressorAvailable()) {
-         $result = self::compressWithNative($content, $level, $type, $scope);
+         $result = self::compressWithNative($content, $level, $type, $scope, $useEsbuild);
       } else {
          // Fallback to PHP implementation
          $result = self::compressWithFallback($content, $level, $type, $scope);
@@ -208,7 +208,7 @@ trait HtmlCompressor
    /**
     * Compress using the native shared library via FFI
     */
-   private static function compressWithNative(string $html, int $level, string $type, string $scope): string
+   private static function compressWithNative(string $html, int $level, string $type, string $scope, bool $useEsbuild): string
    {
 		$nativeLevel = match ($level) {
          Compressor::LEVEL_AGGRESSIVE => 2,
@@ -216,7 +216,7 @@ trait HtmlCompressor
          default => 1,
       };
 
-      return NativeCompressor::compress($html, $nativeLevel, $type, $scope);
+      return NativeCompressor::compress($html, $nativeLevel, $type, $scope, $useEsbuild);
    }
 
    /**
@@ -243,9 +243,9 @@ trait HtmlCompressor
       if ($type === 'JS') {
          $result = substr($result, 8, -9); // Extract content inside <script> tags
 
-         if ($scope === 'scoped') {
-            // For scoped JS, we can add a simple wrapper to prevent global scope pollution
-            $result = "(()=>{$result})();";
+         if ($scope === 'scoped' && !empty($result)) {
+            $result = rtrim($result, "; \t\n\r\0\x0B");
+            $result = "(()=>{{$result};})();";
          }
       }
       elseif ($type === 'CSS') $result = substr($result, 7, -8); // Extract content inside <style> tags
@@ -401,11 +401,12 @@ trait HtmlCompressor
     * @param int $level Compression level
     * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @param string $scope Compression scope enum['GLOBAL', 'SCOPED']
+    * @param bool $useEsbuild Use esbuild for minification
     * @return string Compressed content
     */
-   public static function compressWithLevel(string $content, int $level, string $type = 'HTML', string $scope = 'global'): string
+   public static function compressWithLevel(string $content, int $level, string $type = 'HTML', string $scope = 'global', bool $useEsbuild = false): string
    {
-      return self::minify($content, $type, $level, $scope);
+      return self::minify($content, $type, $level, $scope, $useEsbuild);
    }
 
    public static function getCompressionEngine(): string
