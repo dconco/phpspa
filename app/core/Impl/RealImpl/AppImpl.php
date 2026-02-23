@@ -1248,9 +1248,9 @@ abstract class AppImpl implements ApplicationContract {
       if ($type === 'css')
          return Compressor::compressWithLevel($content, $level, 'CSS', $scope);
       elseif ($type === 'js')
-         return Compressor::compressWithLevel($content, $level, 'JS', $scope);
-
-      return Compressor::compressWithLevel($content, $level, 'HTML', $scope);
+         return Compressor::compressWithLevel($content, $level, 'JS', $scope, $this->useEsbuild);
+      else
+         return Compressor::compressWithLevel($content, $level, 'HTML', $scope);
    }
 
    /**

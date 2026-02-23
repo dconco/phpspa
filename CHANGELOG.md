@@ -2,6 +2,41 @@
 
 ## v2.0.9 (Development) (PHP 8.4)
 
+**Installation:**
+```bash
+composer require dconco/phpspa:v2.0.9
+```
+
+### ✨ New Features
+
+#### **Native Compressor with esbuild** 🚀
+- Added support for JavaScript minification using the professional `esbuild` bundler.
+- Users can enable esbuild by calling `App::useEsbuild()`.
+- Requires `esbuild` to be installed globally: `npm install --global esbuild`.
+- Provides advanced minification and bundling capabilities for JavaScript assets.
+
+### 🐛 Fixes
+- Resolved potential deadlock in `phpspa_compress_html_esbuild`.
+- Fixed issues with `--keep-names` flag in global scope compression.
+
+
+```php
+use PhpSPA\App;
+
+$app = new App(...);
+$app->useEsbuild();
+$app->run();
+```
+
+
+
+
+
+---
+
+
+
+
 
 ## v2.0.8 (Stable) (Latest) (PHP 8.4)
 

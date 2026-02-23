@@ -48,7 +48,10 @@ final class NativeCompressor
       $outLen = self::$ffi->new('size_t');
       $debugOutput = self::$ffi->new('char[1024]');
 
-      $resultPointer = self::invoke($useEsbuild ? 'phpspa_compress_html_esbuild' : 'phpspa_compress_html', $content, $level, $type, $scope, $debugOutput, \FFI::addr($outLen));
+      if ($useEsbuild)
+         $resultPointer = self::invoke('phpspa_compress_html_esbuild', $content, $level, $type, $scope, $debugOutput, \FFI::addr($outLen));
+      else
+         $resultPointer = self::invoke('phpspa_compress_html', $content, $level, $type, \FFI::addr($outLen));
 
       if ($resultPointer === null || \FFI::isNull($resultPointer)) {
          throw new \RuntimeException('Native compressor returned a null pointer.');

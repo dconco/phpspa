@@ -43,6 +43,7 @@ new App(require 'layout/Layout.php')
     ->cors()
 
     ->assetCacheHours(0)
+    ->useEsbuild()
 
     ->meta(charset: 'utf-8')
     ->meta(name: 'viewport', content: 'from App')
