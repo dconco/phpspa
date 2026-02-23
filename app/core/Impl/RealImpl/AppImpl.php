@@ -1084,9 +1084,9 @@ abstract class AppImpl implements ApplicationContract {
                   $content = require $newName;
 
                   // --- Wrap component requested by initial page load in IIFE ---
-                  if (!$isGlobalAsset && !$isPhpSpaRequest && $isJS) {
-                     $content = "(()=>{{$content}})()";
-                  }
+                  // if (!$isGlobalAsset && !$isPhpSpaRequest && $isJS) {
+                  //    $content = "(()=>{{$content}})()";
+                  // }
                   $content = Compressor::gzipCompress($content);
                   $this->setAssetHeaders($assetInfo['type']);
                   echo $content;
@@ -1117,7 +1117,7 @@ abstract class AppImpl implements ApplicationContract {
          $content = $content[0];
       } else {
          // --- Compress the content ---
-         $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type']);
+         $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type'], $isGlobalAsset ? 'global' : 'scoped');
 
          if ($currentLevel > Compressor::LEVEL_NONE && !$isPhpSpaRequest) {
             if (!is_dir($fileDir)) mkdir($fileDir);
@@ -1129,9 +1129,9 @@ abstract class AppImpl implements ApplicationContract {
          }
 
          // --- Wrap component requested by initial page load in IIFE ---
-         if (!$isGlobalAsset && !$isPhpSpaRequest && $isJS) {
-            $content = "(()=>{{$content}})()";
-         }
+         // if (!$isGlobalAsset && !$isPhpSpaRequest && $isJS) {
+         //    $content = "(()=>{{$content}})()";
+         // }
       }
 
       // --- Set appropriate headers ---
@@ -1233,16 +1233,17 @@ abstract class AppImpl implements ApplicationContract {
     * @param string $content The content to compress
     * @param int $level Compression level
     * @param string $type Asset type ('css' or 'js')
+    * @param string $scope Compression scope ('global' or 'scoped')
     * @return string Compressed content
     */
-   private function compressAssetContent (string $content, int $level, string $type): string
+   private function compressAssetContent (string $content, int $level, string $type, string $scope): string
    {
       if ($type === 'css')
-         return Compressor::compressWithLevel($content, $level, 'CSS');
+         return Compressor::compressWithLevel($content, $level, 'CSS', $scope);
       elseif ($type === 'js')
-         return Compressor::compressWithLevel($content, $level, 'JS');
+         return Compressor::compressWithLevel($content, $level, 'JS', $scope);
 
-      return Compressor::compressWithLevel($content, $level, 'HTML');
+      return Compressor::compressWithLevel($content, $level, 'HTML', $scope);
    }
 
    /**

@@ -81,7 +81,7 @@ return new Component(function (): string
          btn.addEventListener('click', handleClick)
       }, []);
 
-   JS)
+   JS, 'counter-script')
 
   ->name('counter')
   ->targetID('counter')

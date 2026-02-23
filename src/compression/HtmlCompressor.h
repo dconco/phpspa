@@ -27,6 +27,9 @@ class HtmlCompressor {
       // --- Minify inline JavaScript content ---
       static void minifyJS(std::string& js);
 
+      // --- Minify JavaScript content with scope (global|scoped) ---
+      static void minifyJS(std::string& js, const std::string& scope);
+
    private:
 
       // --- Remove HTML comments (<!-- -->) ---

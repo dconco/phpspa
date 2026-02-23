@@ -110,9 +110,10 @@ trait HtmlCompressor
     * @param string $content HTML content
     * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @param int $level Compression level
+    * @param string $scope Compression scope enum['GLOBAL', 'SCOPED']
     * @return string Minified HTML
     */
-   private static function minify(string $content, $type, int $level): string
+   private static function minify(string $content, $type, int $level, string $scope = 'global'): string
    {
       if ($level === Compressor::LEVEL_NONE) return $content;
 
@@ -126,10 +127,10 @@ trait HtmlCompressor
       }
 
       if (self::isNativeCompressorAvailable()) {
-         $result = self::compressWithNative($content, $level, $type);
+         $result = self::compressWithNative($content, $level, $type, $scope);
       } else {
          // Fallback to PHP implementation
-         $result = self::compressWithFallback($content, $level, $type);
+         $result = self::compressWithFallback($content, $level, $type, $scope);
       }
 
       if ($type === 'HTML' && \is_array($preservedBlocks) && $preservedBlocks !== []) {
@@ -207,7 +208,7 @@ trait HtmlCompressor
    /**
     * Compress using the native shared library via FFI
     */
-   private static function compressWithNative(string $html, int $level, string $type): string
+   private static function compressWithNative(string $html, int $level, string $type, string $scope): string
    {
 		$nativeLevel = match ($level) {
          Compressor::LEVEL_AGGRESSIVE => 2,
@@ -215,7 +216,7 @@ trait HtmlCompressor
          default => 1,
       };
 
-      return NativeCompressor::compress($html, $nativeLevel, $type);
+      return NativeCompressor::compress($html, $nativeLevel, $type, $scope);
    }
 
    /**
@@ -226,7 +227,7 @@ trait HtmlCompressor
     * @param int $level Compression level
     * @return string Compressed HTML
     */
-   private static function compressWithFallback(string $content, int $level, string $type): string
+   private static function compressWithFallback(string $content, int $level, string $type, string $scope = 'global'): string
    {
       if ($type === 'JS') $content = "<script>$content</script>";
       elseif ($type === 'CSS') $content = "<style>$content</style>";
@@ -239,7 +240,14 @@ trait HtmlCompressor
       };
       $result = trim($result);
 
-      if ($type === 'JS') $result = substr($result, 8, -9); // Extract content inside <script> tags
+      if ($type === 'JS') {
+         $result = substr($result, 8, -9); // Extract content inside <script> tags
+
+         if ($scope === 'scoped') {
+            // For scoped JS, we can add a simple wrapper to prevent global scope pollution
+            $result = "(()=>{$result})();";
+         }
+      }
       elseif ($type === 'CSS') $result = substr($result, 7, -8); // Extract content inside <style> tags
 
       return $result;
@@ -346,7 +354,7 @@ trait HtmlCompressor
     * @param string $type Content type enum['HTML', 'JS', 'CSS'] 
     * @return string Base64 encoded compressed content
     */
-   public static function compressComponent(string $content, $type = 'HTML'): string
+   public static function compressComponent(string $content, string $type = 'HTML'): string
    {
       // Apply minification based on compression level
       return self::minify($content, $type, Compressor::LEVEL_EXTREME);
@@ -390,13 +398,14 @@ trait HtmlCompressor
     * Compress content with specific level
     *
     * @param string $content Content to compress
-    * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @param int $level Compression level
+    * @param string $type Content type enum['HTML', 'JS', 'CSS']
+    * @param string $scope Compression scope enum['GLOBAL', 'SCOPED']
     * @return string Compressed content
     */
-   public static function compressWithLevel(string $content, int $level, $type = 'HTML'): string
+   public static function compressWithLevel(string $content, int $level, string $type = 'HTML', string $scope = 'global'): string
    {
-      return self::minify($content, $type, $level);
+      return self::minify($content, $type, $level, $scope);
    }
 
    public static function getCompressionEngine(): string

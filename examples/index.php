@@ -105,7 +105,7 @@ new App(require 'layout/Layout.php')
     ->script(fn() => <<<JS
         const sure = 'Making sure'
         console.log(sure);
-    JS)
+    JS, 'global-js-2')
 
     ->run();
 

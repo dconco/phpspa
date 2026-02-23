@@ -6,7 +6,7 @@ namespace PhpSPA\Core\Compression;
 
 final class NativeCompressor
 {
-   private const ENV_LIBRARY_PATH = 'PHPSPA_COMPRESSOR_LIB';
+   private const string ENV_LIBRARY_PATH = 'PHPSPA_COMPRESSOR_LIB';
 
    private static ?bool $available = null;
 
@@ -34,9 +34,10 @@ final class NativeCompressor
     * @param string $content Content payload to compress
     * @param int $nativeLevel Native compressor level (1-3)
     * @param string $type Content type enum['HTML', 'JS', 'CSS']
+    * @param string $scope Compression scope enum['GLOBAL', 'SCOPED']
     * @return string
     */
-   public static function compress(string $content, int $nativeLevel, string $type): string
+   public static function compress(string $content, int $nativeLevel, string $type, string $scope): string
    {
       if (!self::initialize()) {
          throw new \RuntimeException('Native compressor is unavailable.');
@@ -44,15 +45,16 @@ final class NativeCompressor
 
       $level = max(1, min(3, $nativeLevel));
       $outLen = self::$ffi->new('size_t');
+      // var_dump("Compressing with native library at level $level for type $type and scope $scope..."); exit;
 
-      $resultPointer = self::invoke('phpspa_compress_html', $content, $level, $type, \FFI::addr($outLen));
+      $resultPointer = self::invoke('phpspa_compress_html_esbuild', $content, $level, $type, $scope, \FFI::addr($outLen));
 
       if ($resultPointer === null || \FFI::isNull($resultPointer)) {
          throw new \RuntimeException('Native compressor returned a null pointer.');
       }
 
       try {
-         return \FFI::string($resultPointer, $outLen->cdata);
+         return \FFI::string($resultPointer, $outLen->cdata ?? 0);
       } finally {
          self::invoke('phpspa_free_string', $resultPointer);
       }
@@ -145,6 +147,7 @@ final class NativeCompressor
    {
       return <<<'CDEF'
 char* phpspa_compress_html(const char* input, int level, const char* type, size_t* out_len);
+char* phpspa_compress_html_esbuild(const char* input, int level, const char* type, const char* scope, size_t* out_len);
 void phpspa_free_string(char* buffer);
 CDEF;
    }
