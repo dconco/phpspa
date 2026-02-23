@@ -50,12 +50,13 @@ extern "C" {
       return buffer;
    }
 
-   PHPSPA_EXPORT char* phpspa_compress_html_esbuild(const char* input, int level, const char* type, const char* scope, size_t* out_len) {
+   PHPSPA_EXPORT char* phpspa_compress_html_esbuild(const char* input, int level, const char* type, const char* scope, char* debugOutput, size_t* out_len) {
       if (!input || !out_len) return nullptr;
 
       HtmlCompressor::currentLevel = static_cast<HtmlCompressor::Level>(level);
 
       std::string result;
+      std::string scopeValue = (scope == nullptr || scope[0] == '\0') ? "global" : std::string(scope);
       result.reserve(strlen(input));
 
       try {
@@ -68,9 +69,7 @@ extern "C" {
             if (strcmp(type, "CSS") == 0) {
                HtmlCompressor::minifyCSS(content);
             } else if (strcmp(type, "JS") == 0) {
-               result = scope;
-               std::string scopeValue = (scope == nullptr || scope[0] == '\0') ? "global" : scope;
-               HtmlCompressor::minifyJS(content, scopeValue);
+               HtmlCompressor::minifyJS(content, scopeValue, debugOutput);
             }
 
             result = content;
@@ -80,6 +79,12 @@ extern "C" {
       }
 
       *out_len = result.size();
+      // if (debugOutput) {
+      //    std::string debugStr = "Compressing with native library at level " + std::to_string(level) + 
+      //                          " for type " + std::string(type) + " and scope " + scopeValue;
+      //    strncpy(debugOutput, debugStr.c_str(), 1023);
+      //    debugOutput[1023] = '\0';
+      // }
 
       char* buffer = (char*) malloc(result.size() + 1);
       if (!buffer) return nullptr;

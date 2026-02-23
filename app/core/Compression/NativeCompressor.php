@@ -45,13 +45,14 @@ final class NativeCompressor
 
       $level = max(1, min(3, $nativeLevel));
       $outLen = self::$ffi->new('size_t');
-      // var_dump("Compressing with native library at level $level for type $type and scope $scope..."); exit;
+      $debugOutput = self::$ffi->new('char[1024]');
 
-      $resultPointer = self::invoke('phpspa_compress_html_esbuild', $content, $level, $type, $scope, \FFI::addr($outLen));
+      $resultPointer = self::invoke('phpspa_compress_html_esbuild', $content, $level, $type, $scope, $debugOutput, \FFI::addr($outLen));
 
       if ($resultPointer === null || \FFI::isNull($resultPointer)) {
          throw new \RuntimeException('Native compressor returned a null pointer.');
       }
+      var_dump(\FFI::string($debugOutput)); exit;
 
       try {
          return \FFI::string($resultPointer, $outLen->cdata ?? 0);
@@ -147,7 +148,7 @@ final class NativeCompressor
    {
       return <<<'CDEF'
 char* phpspa_compress_html(const char* input, int level, const char* type, size_t* out_len);
-char* phpspa_compress_html_esbuild(const char* input, int level, const char* type, const char* scope, size_t* out_len);
+char* phpspa_compress_html_esbuild(const char* input, int level, const char* type, const char* scope, char* debugOutput, size_t* out_len);
 void phpspa_free_string(char* buffer);
 CDEF;
    }

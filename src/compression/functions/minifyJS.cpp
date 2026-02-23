@@ -13,7 +13,7 @@
 namespace {
 
 #ifdef _WIN32
-   int runCommandHiddenWindows(const std::string& command) {
+   int runCommandHiddenWindows(const std::string& command, DWORD timeoutMillis = 20000) {
       std::string cmdLine = "cmd.exe /C " + command;
       std::vector<char> buffer(cmdLine.begin(), cmdLine.end());
       buffer.push_back('\0');
@@ -43,7 +43,14 @@ namespace {
          return -1;
       }
 
-      WaitForSingleObject(pi.hProcess, INFINITE);
+      DWORD waitResult = WaitForSingleObject(pi.hProcess, timeoutMillis);
+      
+      if (waitResult == WAIT_TIMEOUT) {
+         TerminateProcess(pi.hProcess, 1);
+         CloseHandle(pi.hProcess);
+         CloseHandle(pi.hThread);
+         return -2; // Signal timeout
+      }
 
       DWORD exitCode = 0;
       GetExitCodeProcess(pi.hProcess, &exitCode);
@@ -95,21 +102,31 @@ namespace {
       }
       return value;
    }
-
    std::string makeTempFilename(const std::string& prefix, const std::string& extension) {
       const auto now = std::chrono::high_resolution_clock::now().time_since_epoch().count();
       return prefix + std::to_string(now) + extension;
    }
 
+   void appendDebug(char* buffer, const std::string& message) {
+      if (!buffer) return;
+      size_t currentLen = strlen(buffer);
+      if (currentLen >= 1023) return;
 
+      std::string formatted = (currentLen == 0 ? "" : " | ") + message;
+      strncat(buffer, formatted.c_str(), 1023 - currentLen);
+      buffer[1023] = '\0';
+   }
 
-   std::string getBundlerPath() {
+   std::string getBundlerPath(char* debugOutput) {
       #if defined(_WIN32)
             char* envPath = nullptr;
             size_t length = 0;
             if (_dupenv_s(&envPath, &length, "PHPSPA_JS_BUNDLER") == 0 && envPath != nullptr && envPath[0] != '\0') {
                std::string value = envPath;
                free(envPath);
+               if (debugOutput) {
+                  appendDebug(debugOutput, "Using env: " + value);
+               }
                return value;
             }
             if (envPath != nullptr) {
@@ -118,18 +135,37 @@ namespace {
       #else
             const char* envPath = std::getenv("PHPSPA_JS_BUNDLER");
             if (envPath != nullptr && envPath[0] != '\0') {
+               if (debugOutput) {
+                  appendDebug(debugOutput, "Using env: " + std::string(envPath));
+               }
                return envPath;
             }
       #endif
 
-      return "npx esbuild";
+      // Try global esbuild
+      #ifdef _WIN32
+         if (runCommandHiddenWindows("esbuild --version", 2000) == 0) {
+            appendDebug(debugOutput, "Using global: esbuild");
+            return "esbuild";
+         }
+      #else
+         if (std::system("esbuild --version > /dev/null 2>&1") == 0) {
+            appendDebug(debugOutput, "Using global: esbuild");
+            return "esbuild";
+         }
+      #endif
+
+      appendDebug(debugOutput, "Using fallback: npx esbuild, consider installing esbuild globally for better performance");
+      return "npx --yes esbuild";
    }
 
 
-   bool runBundler(const std::string& input, const std::string& scope, int level, std::string& output) {
+   bool runBundler(const std::string& input, const std::string& scope, int level, std::string& output, char* debugOutput) {
       std::filesystem::path tempDir = std::filesystem::temp_directory_path();
       std::filesystem::path inputPath = tempDir / makeTempFilename("phpspa_js_", ".js");
       std::filesystem::path outputPath = tempDir / makeTempFilename("phpspa_js_out_", ".js");
+
+      appendDebug(debugOutput, "Input: " + inputPath.string());
 
       {
          std::ofstream out(inputPath, std::ios::binary);
@@ -137,9 +173,11 @@ namespace {
             return false;
          }
          out << input;
+         out.flush();
+         out.close();
       }
 
-      const std::string bundler = getBundlerPath();
+      const std::string bundler = getBundlerPath(debugOutput);
       const std::string normalizedScope = toLower(scope);
 
       std::string command = bundler;
@@ -161,21 +199,40 @@ namespace {
          }
       }
 
-            // Run bundler silently
-         #ifdef _WIN32
-            command += " 2>nul";
-            int status = runCommandHiddenWindows(command);
-         #else
-            command += " 2>/dev/null";
-            int status = std::system(command.c_str());
-         #endif
-      
+      appendDebug(debugOutput, "Running: " + command);
+
+      std::filesystem::path errorPath = tempDir / makeTempFilename("phpspa_js_err_", ".txt");
+
+      // Run bundler
+      #ifdef _WIN32
+         command += " 2>\"" + errorPath.string() + "\"";
+         int status = runCommandHiddenWindows(command, 20000); // 20 second timeout
+      #else
+         command = "timeout 20s " + command + " 2>\"" + errorPath.string() + "\"";
+         int status = std::system(command.c_str());
+      #endif
+
       if (status != 0 || !std::filesystem::exists(outputPath)) {
+         std::string errorMsg;
+         if (std::filesystem::exists(errorPath)) {
+            std::ifstream errFile(errorPath, std::ios::binary);
+            if (errFile.is_open()) {
+               errorMsg = std::string((std::istreambuf_iterator<char>(errFile)), std::istreambuf_iterator<char>());
+               errFile.close();
+            }
+         }
+         std::string reason = (status != 0) ? "Status code: " + std::to_string(status) : "Output file not found";
+         appendDebug(debugOutput, "Bundler failed! " + reason + ". Error: " + errorMsg);
+
          std::error_code ec;
          std::filesystem::remove(inputPath, ec);
          std::filesystem::remove(outputPath, ec);
+         std::filesystem::remove(errorPath, ec);
          return false;
       }
+
+      std::error_code ec_clean;
+      std::filesystem::remove(errorPath, ec_clean);
 
       std::ifstream in(outputPath, std::ios::binary);
       if (!in.is_open()) {
@@ -199,11 +256,7 @@ namespace {
 
 } // namespace
 
-void HtmlCompressor::minifyJS(std::string& js) {
-   if (currentLevel < AGGRESSIVE) {
-      return;
-   }
-
+void HtmlCompressor::minifyJS(std::string& js, const std::string& scope) {
    std::string result;
    result.reserve(js.length());
 
@@ -372,27 +425,45 @@ void HtmlCompressor::minifyJS(std::string& js) {
       ++i;
    }
 
+
+   if (scope == "scoped" && !result.empty()) {
+      // trim the trailing ";" and whitespace
+      while (!result.empty() && (std::isspace(static_cast<unsigned char>(result.back())) || result.back() == ';')) {
+         result.pop_back();
+      }
+      result = "(()=>{" + result + ";})();";
+   }
    js = result;
 }
 
-void HtmlCompressor::minifyJS(std::string& js, const std::string& scope) {
-   if (currentLevel < AGGRESSIVE) {
+void HtmlCompressor::minifyJS(std::string& js, const std::string& scope, char* debugOutput) {
+   // BASIC level: use internal minifier only
+   if (currentLevel == BASIC) {
+      if (debugOutput) {
+         std::string debugStr = "Using internal minifier for " + scope + " (Level: BASIC)";
+         strncpy(debugOutput, debugStr.c_str(), 1023);
+         debugOutput[1023] = '\0';
+      }
+      minifyJS(js, scope);
       return;
    }
 
-   // BASIC level: use internal minifier only
-   if (currentLevel == BASIC) {
-      minifyJS(js);
-      return;
+   if (debugOutput) {
+      debugOutput[0] = '\0';
    }
 
    // AGGRESSIVE and EXTREME: use esbuild bundler
    std::string bundled;
-   if (runBundler(js, scope, currentLevel, bundled)) {
+   if (runBundler(js, scope, currentLevel, bundled, debugOutput)) {
       js = bundled;
       return;
    }
 
    // fallback to internal minifier if bundler fails
-   minifyJS(js);
+   if (debugOutput && debugOutput[0] == '\0') {
+      std::string debugStr = "Esbuild failed (no info), falling back to internal minifier for " + scope;
+      strncpy(debugOutput, debugStr.c_str(), 1023);
+      debugOutput[1023] = '\0';
+   }
+   minifyJS(js, scope);
 }

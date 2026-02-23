@@ -54,7 +54,7 @@
 		"test:async": "php tests/Test.php --async",
 		"start": [
 			"Composer\\Config::disableProcessTimeout",
-			"php -S localhost:8000 -t examples"
+			"php -S localhost:8080 -t examples"
 		],
 		"serve-api": [
 			"Composer\\Config::disableProcessTimeout",
