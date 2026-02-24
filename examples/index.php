@@ -9,9 +9,6 @@ use PhpSPA\App;
 use PhpSPA\DOM;
 use PhpSPA\Compression\Compressor;
 
-putenv('PHPSPA_COMPRESSION_STRATEGY=native');
-putenv('PHPSPA_COMPRESSOR_LIB=' . dirname(__DIR__, 1) . '/src/bin/libcompressor-wsl.so');
-
 // --- Initialize a new Application ---
 new App(require 'layout/Layout.php')
 
@@ -45,7 +42,7 @@ new App(require 'layout/Layout.php')
 
     ->assetCacheHours(0)
     ->forceNativeCompression()
-    ->setCustomCompressorLibraryPath(dirname(__DIR__, 1) . '/src/bin/libcompressor-wsl.so')
+    // ->setCustomCompressorLibraryPath(dirname(__DIR__, 1) . '/src/bin/libcompressor-wsl.so')
 
     ->meta(charset: 'utf-8')
     ->meta(name: 'viewport', content: 'from App')

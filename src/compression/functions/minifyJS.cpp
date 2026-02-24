@@ -192,9 +192,9 @@ namespace {
          }
       } else { // global
          if (level == 3) { // EXTREME
-            command += " --minify-syntax --minify-whitespace --keep-names --tree-shaking=false";
+            command += " --minify-syntax --minify-whitespace --minify-identifiers --keep-names --tree-shaking=false";
          } else { // AGGRESSIVE
-            command += " --minify-whitespace --keep-names --tree-shaking=false";
+            command += " --minify-whitespace --minify-identifiers --keep-names --tree-shaking=false";
          }
       }
 
