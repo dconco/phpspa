@@ -207,6 +207,18 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
+   public function setCustomCompressorLibraryPath(string $path): ApplicationContract
+   {
+      putenv("PHPSPA_COMPRESSOR_LIB=$path");
+      return $this;
+   }
+
+   public function forceNativeCompression(): ApplicationContract
+   {
+      putenv("PHPSPA_COMPRESSION_STRATEGY=native");
+      return $this;
+   }
+
    public function script (callable|string $content, ?string $name = null, ?string $type = 'text/javascript', array $attributes = []): ApplicationContract
    {
       $scripts = [

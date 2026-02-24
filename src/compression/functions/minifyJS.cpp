@@ -166,8 +166,6 @@ namespace {
       std::filesystem::path inputPath = tempDir / makeTempFilename("phpspa_js_", ".js");
       std::filesystem::path outputPath = tempDir / makeTempFilename("phpspa_js_out_", ".js");
 
-      appendDebug(debugOutput, "Input: " + inputPath.string());
-
       {
          std::ofstream out(inputPath, std::ios::binary);
          if (!out.is_open()) {

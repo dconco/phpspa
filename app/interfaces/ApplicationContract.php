@@ -247,6 +247,27 @@ interface ApplicationContract {
     public function setGeneratedCacheDirectory(string $path): self;
 
     /**
+     * Sets a custom path for the native compressor shared library.
+     *
+     * This method allows you to specify an absolute path to the native compressor
+     * shared library (e.g., compressor.dll, libcompressor.so, libcompressor.dylib).
+     * This is useful if the library is located in a non-standard directory or if you
+     * want to use a specific version of the compressor.
+     *
+     * @param string $path Absolute path to the native compressor shared library.
+     * @return self
+     * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
+     */
+    public function setCustomCompressorLibraryPath(string $path): self;
+
+    /**
+     * Forces the application to use native (C++) compression instead of the default PHP minification.
+     *
+     * @return self
+     */
+    public function forceNativeCompression(): self;
+
+    /**
      * Configure CORS (Cross-Origin Resource Sharing) settings for the application.
      *
      * Loads default CORS configuration from the config file and optionally merges

@@ -91,7 +91,6 @@ final class NativeCompressor
 
       try {
          self::$ffi = \FFI::cdef(self::cDefinition(), $libraryPath);
-         error_log('Successfully loaded native compressor library: ' . print_r(self::$ffi, true));
          self::$libraryPath = $libraryPath;
          return true;
       } catch (\Throwable $e) {
