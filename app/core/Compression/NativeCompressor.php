@@ -91,6 +91,7 @@ final class NativeCompressor
 
       try {
          self::$ffi = \FFI::cdef(self::cDefinition(), $libraryPath);
+         error_log('Successfully loaded native compressor library: ' . print_r(self::$ffi, true));
          self::$libraryPath = $libraryPath;
          return true;
       } catch (\Throwable $e) {
@@ -104,6 +105,7 @@ final class NativeCompressor
    {
       $envPath = \getenv(self::ENV_LIBRARY_PATH);
       if (\is_string($envPath) && $envPath !== '' && \is_file($envPath)) {
+         error_log("Using native compressor library from environment variable: $envPath");
          return $envPath;
       }
 
@@ -121,6 +123,7 @@ final class NativeCompressor
          foreach (self::libraryFilenames() as $filename) {
             $candidate = $directory . '/' . $filename;
             if (\is_file($candidate)) {
+               error_log('Found native compressor library: ' . $candidate);
                return $candidate;
             }
          }

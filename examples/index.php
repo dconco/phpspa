@@ -10,6 +10,7 @@ use PhpSPA\DOM;
 use PhpSPA\Compression\Compressor;
 
 putenv('PHPSPA_COMPRESSION_STRATEGY=native');
+putenv('PHPSPA_COMPRESSOR_LIB=' . dirname(__DIR__, 1) . '/src/bin/libcompressor-wsl.so');
 
 // --- Initialize a new Application ---
 new App(require 'layout/Layout.php')
