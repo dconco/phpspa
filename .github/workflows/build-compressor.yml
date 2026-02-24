@@ -48,11 +48,39 @@ jobs:
         with:
           name: macos-compressor
           path: build/libcompressor.dylib
+  
+  wsl-build:
+    name: WSL Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker for WSL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io upx
+          sudo systemctl start docker
+          sudo systemctl enable docker
+
+      - name: Run WSL-like environment in Docker
+        run: |
+          docker run --rm -v $(pwd):/workspace -w /workspace ubuntu:20.04 bash -c "\
+            apt-get update && \
+            apt-get install -y build-essential cmake && \
+            cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && \
+            cmake --build build --target compressor -j 8"
+
+      - name: Upload WSL compressor shared library
+        uses: actions/upload-artifact@v4
+        with:
+          name: wsl-compressor
+          path: build/libcompressor.so
 
   linux-build:
     name: Linux Release & UPX pack
     runs-on: ubuntu-latest
-    needs: [windows-build, macos-build]
+    needs: [windows-build, macos-build, wsl-build]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -69,6 +97,12 @@ jobs:
           name: macos-compressor
           path: artifacts/macos
 
+      - name: Download WSL shared library artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wsl-compressor
+          path: artifacts/wsl
+
       - name: Configure (Release)
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
@@ -82,8 +116,10 @@ jobs:
         run: |
           cp artifacts/windows/compressor.dll build/compressor.dll
           cp artifacts/macos/libcompressor.dylib build/libcompressor.dylib
+          cp artifacts/wsl/libcompressor.so build/libcompressor-wsl.so
           upx --best --lzma build/compressor.dll
           upx --best --lzma build/libcompressor.so
+          upx --best --lzma build/libcompressor-wsl.so
 
       - name: Copy compressed shared libraries to src/bin
         run: |
@@ -100,9 +136,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin ${GITHUB_REF#refs/heads/}
           git reset --hard origin/${GITHUB_REF#refs/heads/}
-          mkdir -p src/bin
-          cp build/libcompressor.so src/bin/libcompressor.so
-          cp build/compressor.dll src/bin/compressor.dll
           git add src/bin/libcompressor.so src/bin/compressor.dll
           if git diff --cached --quiet; then
             echo "No shared library updates to commit"
@@ -118,7 +151,8 @@ jobs:
           path: |
             src/bin/libcompressor.so
             src/bin/compressor.dll
-            artifacts/macos/libcompressor.dylib
+            build/libcompressor.dylib
+            build/libcompressor-wsl.so
 
       - name: Attach shared libraries to release
         if: github.event_name == 'release' && github.event.action == 'published'
@@ -129,4 +163,5 @@ jobs:
           files: |
             build/libcompressor.so
             build/compressor.dll
-            artifacts/macos/libcompressor.dylib
+            build/libcompressor.dylib
+            build/libcompressor-wsl.so
