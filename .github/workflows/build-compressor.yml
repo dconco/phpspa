@@ -111,6 +111,8 @@ jobs:
           cp artifacts/windows/compressor.dll build/compressor.dll
           cp artifacts/macos/libcompressor.dylib build/libcompressor.dylib
           cp artifacts/wsl/libcompressor.so build/libcompressor-wsl.so
+          chmod +x build/libcompressor.so
+          chmod +x build/libcompressor-wsl.so
           upx --best --lzma build/compressor.dll
           upx --best --lzma build/libcompressor.so
           upx --best --lzma build/libcompressor-wsl.so
