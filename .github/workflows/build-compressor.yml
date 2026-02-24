@@ -59,7 +59,7 @@ jobs:
 
       - name: Run WSL-like environment in Docker
         run: |
-          docker run --rm -v $(pwd):/workspace -w /workspace ubuntu:20.04 bash -c "\
+          docker run --rm -v $(pwd):/workspace -w /workspace -e DEBIAN_FRONTEND=noninteractive ubuntu:20.04 bash -c "\
             apt-get update && \
             apt-get install -y build-essential cmake && \
             cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && \
