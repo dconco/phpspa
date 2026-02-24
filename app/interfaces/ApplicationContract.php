@@ -211,13 +211,6 @@ interface ApplicationContract {
     public function useModule(): self;
 
     /**
-     * Use esbuild for minification
-     * 
-     * @since v2.0.5
-     */
-    public function useEsbuild(): self;
-
-    /**
      * Overrides custom asset names and randomizes them, typically used for cache busting in production.
      *
      * This method modifies the internal representation of an asset's name
@@ -247,6 +240,16 @@ interface ApplicationContract {
     public function setGeneratedCacheDirectory(string $path): self;
 
     /**
+     * Disables esbuild for JS minification. When called, the application will use the default C++ minification method instead of esbuild for JavaScript assets.
+     * Disable this if you want want a faster compression time and are okay with less aggressive minification, or if you encounter any issues with esbuild minification in your environment.
+     * The default C++ and PHP minification for JS isn't good yet, so it's recommended to keep esbuild enabled for production use until the native compressor's JS minification is improved in a future release.
+     * 
+     * @since v2.0.9
+     * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
+     */
+    public function disableMinificationWithEsbuild(): self;
+
+    /**
      * Sets a custom path for the native compressor shared library.
      *
      * This method allows you to specify an absolute path to the native compressor
@@ -256,6 +259,7 @@ interface ApplicationContract {
      *
      * @param string $path Absolute path to the native compressor shared library.
      * @return self
+     * @since v2.0.9
      * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
      */
     public function setCustomCompressorLibraryPath(string $path): self;
@@ -264,6 +268,8 @@ interface ApplicationContract {
      * Forces the application to use native (C++) compression instead of the default PHP minification.
      *
      * @return self
+     * @since v2.0.9
+     * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
      */
     public function forceNativeCompression(): self;
 

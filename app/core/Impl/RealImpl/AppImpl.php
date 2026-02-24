@@ -130,7 +130,7 @@ abstract class AppImpl implements ApplicationContract {
 
    private ?string $generatedCacheDirectory = null;
 
-   private bool $useEsbuild = false;
+   private bool $useEsbuild = true;
 
    public function defaultTargetID (string $targetID): ApplicationContract
    {
@@ -323,8 +323,8 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
-   public function useEsbuild(): ApplicationContract {
-      $this->useEsbuild = true;
+   public function disableMinificationWithEsbuild(): ApplicationContract {
+      $this->useEsbuild = false;
       return $this;
    }
 

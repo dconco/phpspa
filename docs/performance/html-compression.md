@@ -208,3 +208,153 @@ This ensures:
 - Component scripts don't pollute the global scope
 - Variables and functions are properly isolated
 - Global scripts are not wrapped to allow other scripts (global and components) to reuse variables, functions and classes.
+
+---
+
+## ⚙️ Native Compressor Configuration { #native-compressor-configuration }
+
+!!! success "New in v2.0.9"
+    :material-new-box: Three new methods give you full control over the native compressor and esbuild behavior.
+
+---
+
+### 🚀 JavaScript Minification with esbuild
+
+Starting from **v2.0.9**, PhpSPA uses the professional [`esbuild`](https://esbuild.github.io/) bundler **by default** for JavaScript minification. Esbuild provides superior minification, bundling, and tree-shaking compared to the built-in C++/PHP minifier.
+
+!!! info "Installing esbuild"
+    For best performance, install esbuild globally:
+
+    ```bash
+    npm install --global esbuild
+    ```
+
+    If esbuild is not found globally, PhpSPA falls back to `npx` which will download it automatically (slower on first run).
+
+#### Disabling esbuild
+
+If you prefer faster compression time with less aggressive minification, or if you encounter issues with esbuild in your environment, you can disable it:
+
+```php
+<?php
+use PhpSPA\App;
+
+$app = new App($layout);
+$app->disableMinificationWithEsbuild();
+```
+
+!!! warning "Trade-off"
+    Disabling esbuild means JavaScript will be minified using the built-in C++/PHP minifier, which currently provides less compression. It is recommended to keep esbuild enabled for production use.
+
+| Minifier | Speed | Compression Quality | Tree-Shaking | Bundling |
+|----------|-------|---------------------|--------------|----------|
+| **esbuild** (default) | Fast | ⭐⭐⭐ Excellent | ✅ Yes | ✅ Yes |
+| **Built-in C++/PHP** | Faster | ⭐ Basic | ❌ No | ❌ No |
+
+---
+
+### 📂 Custom Compressor Library Path
+
+You can specify an absolute path to the native compressor shared library. This is useful if the library is in a non-standard location or you want to use a specific version.
+
+=== "Using the method (recommended)"
+
+    ```php
+    <?php
+    use PhpSPA\App;
+
+    $app = new App($layout);
+    $app->setCustomCompressorLibraryPath('/path/to/libcompressor.so');
+    ```
+
+=== "Using environment variable"
+
+    ```bash
+    export PHPSPA_COMPRESSOR_LIB="/path/to/libcompressor.so"
+    ```
+
+    ```php
+    <?php
+    // Or set it in PHP before creating the App
+    putenv("PHPSPA_COMPRESSOR_LIB=/path/to/libcompressor.so");
+
+    $app = new \PhpSPA\App($layout);
+    ```
+
+!!! tip "Platform-specific library names"
+    | Platform | Library File |
+    |----------|-------------|
+    | :fontawesome-brands-windows: Windows | `compressor.dll` |
+    | :fontawesome-brands-linux: Linux | `libcompressor.so` |
+    | :fontawesome-brands-linux: WSL | `libcompressor-wsl.so` |
+    | :fontawesome-brands-apple: macOS | `libcompressor.dylib` |
+
+---
+
+### 🔒 Force Native Compression
+
+By default, PhpSPA automatically falls back to PHP compression if the native library is unavailable. Use `forceNativeCompression()` to enforce native-only mode — the app will throw an exception if the library cannot be loaded.
+
+```php
+<?php
+use PhpSPA\App;
+
+$app = new App($layout);
+$app->forceNativeCompression();
+```
+
+!!! warning "Use with caution"
+    Only enable this in environments where you are certain the native library is available. If the library fails to load, your application will throw a `RuntimeException` instead of falling back to PHP compression.
+
+=== "Recommended: Production"
+
+    ```php
+    <?php
+    $app->forceNativeCompression();
+    $app->setCustomCompressorLibraryPath('/opt/phpspa/libcompressor.so');
+    ```
+
+=== "Recommended: Development"
+
+    ```php
+    <?php
+    // Let PhpSPA auto-detect and fallback gracefully
+    // No need to call forceNativeCompression()
+    ```
+
+---
+
+### 🧩 Complete Configuration Example
+
+```php
+<?php
+use PhpSPA\App;
+use PhpSPA\Compression\Compressor;
+
+$app = new App($layout);
+
+// Force native compression (no PHP fallback)
+$app->forceNativeCompression();
+
+// Point to a specific library build
+$app->setCustomCompressorLibraryPath(__DIR__ . '/bin/libcompressor.so');
+
+// Use extreme compression with Gzip
+$app->compression(Compressor::LEVEL_EXTREME, true);
+
+// esbuild is enabled by default, but you can disable it:
+// $app->disableMinificationWithEsbuild();
+
+$app->run();
+```
+
+!!! info "Method Chaining"
+    All configuration methods return `$this`, so you can chain them:
+
+    ```php
+    <?php
+    $app->forceNativeCompression()
+        ->setCustomCompressorLibraryPath('/path/to/lib.so')
+        ->compression(Compressor::LEVEL_EXTREME, true)
+        ->run();
+    ```

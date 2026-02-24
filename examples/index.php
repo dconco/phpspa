@@ -44,7 +44,8 @@ new App(require 'layout/Layout.php')
     ->cors()
 
     ->assetCacheHours(0)
-    ->useEsbuild()
+    ->forceNativeCompression()
+    ->setCustomCompressorLibraryPath(dirname(__DIR__, 1) . '/src/bin/libcompressor-wsl.so')
 
     ->meta(charset: 'utf-8')
     ->meta(name: 'viewport', content: 'from App')

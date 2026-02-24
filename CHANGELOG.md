@@ -4,27 +4,40 @@
 
 **Installation:**
 ```bash
-composer require dconco/phpspa:v2.0.9
+composer require dconco/phpspa:dev-support/php-8.4
 ```
 
 ### ✨ New Features
 
-#### **Native Compressor with esbuild** 🚀
-- Added support for JavaScript minification using the professional `esbuild` bundler.
-- Users can enable esbuild by calling `App::useEsbuild()`.
-- Requires `esbuild` to be installed globally: `npm install --global esbuild`.
-- Provides advanced minification and bundling capabilities for JavaScript assets.
+#### **esbuild as Default JS Minifier** 🚀
 
-### 🐛 Fixes
-- Resolved potential deadlock in `phpspa_compress_html_esbuild`.
-- Fixed issues with `--keep-names` flag in global scope compression.
+- JavaScript minification now uses the professional `esbuild` bundler **by default**.
+- Esbuild provides superior minification, bundling, and tree-shaking compared to the built-in C++/PHP minifier.
+- For best performance, install `esbuild` globally: `npm install --global esbuild`. Falls back to `npx` if not found.
+- To disable esbuild and use the internal minifier instead, call `disableMinificationWithEsbuild()`. This gives you faster minification but with less compression.
+
+#### **Custom Compressor Library Path**
+- Added `setCustomCompressorLibraryPath(string $path)` to specify a custom path to the native compressor shared library.
+
+#### **Force Native Compression**
+- Added `forceNativeCompression()` to force the use of native (C++) compression over the PHP fallback.
 
 
 ```php
 use PhpSPA\App;
 
 $app = new App(...);
-$app->useEsbuild();
+// esbuild is enabled by default, no need to call anything
+
+// --- To disable esbuild: ---
+$app->disableMinificationWithEsbuild();
+
+// --- To force native compression: ---
+$app->forceNativeCompression();
+
+// --- To set a custom path to the native compressor library: ---
+$app->setCustomCompressorLibraryPath(dirname(__DIR__, 1) . '/src/bin/libcompressor-wsl.so');
+
 $app->run();
 ```
 
