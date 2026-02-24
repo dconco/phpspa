@@ -14,8 +14,8 @@ putenv('PHPSPA_COMPRESSOR_LIB=' . dirname(__DIR__, 1) . '/src/bin/libcompressor-
 
 // --- Initialize a new Application ---
 new App(require 'layout/Layout.php')
-    // --- Attach and Run Application ---
 
+    // --- Attach and Run Application ---
     ->attach(require 'components/Login.php')
     ->attach(require 'components/Timer.php')
     ->attach(require 'components/Counter.php')
