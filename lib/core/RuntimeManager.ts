@@ -18,7 +18,7 @@ export class RuntimeManager {
    /**
     * Tracks executed styles to prevent duplicates
     */
-   private static executedStyles: Set<string> = new Set()
+   public static executedStyles: Set<string> = new Set()
 
    /**
     * A static cache object that stores processed script content to avoid redundant processing.

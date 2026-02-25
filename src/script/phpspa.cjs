@@ -7,139 +7,6 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-const waitForNextPaint = () => new Promise((resolve) => {
-    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-});
-const waitForStylesheet = (link) => new Promise((resolve) => {
-    if (link.sheet) {
-        waitForNextPaint().then(resolve);
-        return;
-    }
-    const cleanup = () => {
-        link.removeEventListener('load', onLoad);
-        link.removeEventListener('error', onLoad);
-        resolve();
-    };
-    const onLoad = () => cleanup();
-    link.addEventListener('load', onLoad, { once: true });
-    link.addEventListener('error', onLoad, { once: true });
-});
-const DEFAULT_SCOPE_KEY = '__phpspa_default__';
-const scopeToHrefs = new Map();
-const hrefToScopes = new Map();
-const ownedLinksByHref = new Map();
-const normalizeScopeKey = (scopeKey) => {
-    const key = (scopeKey ?? '').trim();
-    return key.length > 0 ? key : DEFAULT_SCOPE_KEY;
-};
-const resolveHref = (href) => {
-    try {
-        return new URL(href, location.toString()).href;
-    }
-    catch {
-        return href;
-    }
-};
-const getHeadStylesheetLinks = () => Array.from(document.head.querySelectorAll('link[rel="stylesheet"]'));
-const findExistingHeadLink = (resolvedHref, rawHref, headLinks) => {
-    for (const existing of headLinks) {
-        try {
-            if (existing.href === resolvedHref)
-                return existing;
-        }
-        catch {
-            // ignore
-        }
-        if (existing.getAttribute('href') === rawHref)
-            return existing;
-    }
-    return null;
-};
-const releaseScopeHref = (scopeKey, resolvedHref) => {
-    const scopes = hrefToScopes.get(resolvedHref);
-    if (scopes) {
-        scopes.delete(scopeKey);
-        if (scopes.size === 0) {
-            hrefToScopes.delete(resolvedHref);
-            const owned = ownedLinksByHref.get(resolvedHref);
-            if (owned && owned.isConnected) {
-                owned.remove();
-            }
-            ownedLinksByHref.delete(resolvedHref);
-        }
-    }
-};
-const setScopeStyles = (scopeKey, nextHrefs) => {
-    const previous = scopeToHrefs.get(scopeKey) ?? new Set();
-    // remove old hrefs that are no longer needed by this scope
-    for (const href of previous) {
-        if (!nextHrefs.has(href)) {
-            releaseScopeHref(scopeKey, href);
-        }
-    }
-    // add new hrefs for this scope
-    for (const href of nextHrefs) {
-        if (!previous.has(href)) {
-            let scopes = hrefToScopes.get(href);
-            if (!scopes) {
-                scopes = new Set();
-                hrefToScopes.set(href, scopes);
-            }
-            scopes.add(scopeKey);
-        }
-    }
-    scopeToHrefs.set(scopeKey, new Set(nextHrefs));
-};
-const clearPreloadedStylesForScope = (scopeKey) => {
-    const key = normalizeScopeKey(scopeKey);
-    setScopeStyles(key, new Set());
-};
-const preloadStylesFromContent = async (content, scopeKey) => {
-    const normalizedScopeKey = normalizeScopeKey(scopeKey);
-    const tempElem = document.createElement('div');
-    tempElem.innerHTML = content;
-    const links = Array.from(tempElem.querySelectorAll('link[rel="stylesheet"]'));
-    // even when there are no links, we must clear previously-managed styles for this scope
-    if (links.length === 0) {
-        setScopeStyles(normalizedScopeKey, new Set());
-        return tempElem;
-    }
-    const headLinks = getHeadStylesheetLinks();
-    const incomingByHref = new Map();
-    for (const link of links) {
-        const href = link.getAttribute('href');
-        link.remove();
-        if (!href)
-            continue;
-        const resolvedHref = resolveHref(href);
-        if (!incomingByHref.has(resolvedHref)) {
-            incomingByHref.set(resolvedHref, link);
-        }
-    }
-    setScopeStyles(normalizedScopeKey, new Set(incomingByHref.keys()));
-    const loadPromises = Array.from(incomingByHref.entries()).map(([resolvedHref, templateLink]) => {
-        const rawHref = templateLink.getAttribute('href') ?? resolvedHref;
-        // prefer a previously-owned managed link if still present
-        const owned = ownedLinksByHref.get(resolvedHref);
-        let headLink = (owned && owned.isConnected) ? owned : null;
-        if (!headLink) {
-            headLink = findExistingHeadLink(resolvedHref, rawHref, headLinks);
-        }
-        if (!headLink) {
-            headLink = templateLink.cloneNode(true);
-            headLink.setAttribute('data-phpspa-managed', '1');
-            headLink.setAttribute('data-phpspa-scope', normalizedScopeKey);
-            document.head.appendChild(headLink);
-            headLinks.push(headLink);
-            ownedLinksByHref.set(resolvedHref, headLink);
-        }
-        return waitForStylesheet(headLink);
-    });
-    await Promise.all(loadPromises);
-    await waitForNextPaint();
-    return tempElem;
-};
-
 /**
  * UTF-8 safe base64 encoding function
  * Handles Unicode characters that btoa cannot process
@@ -511,6 +378,155 @@ class RuntimeManager {
         }
     }
 }
+
+const waitForNextPaint = () => new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+});
+const waitForStylesheet = (link) => new Promise((resolve) => {
+    if (link.sheet) {
+        waitForNextPaint().then(resolve);
+        return;
+    }
+    const cleanup = () => {
+        link.removeEventListener('load', onLoad);
+        link.removeEventListener('error', onLoad);
+        resolve();
+    };
+    const onLoad = () => cleanup();
+    link.addEventListener('load', onLoad, { once: true });
+    link.addEventListener('error', onLoad, { once: true });
+});
+const DEFAULT_SCOPE_KEY = '__phpspa_default__';
+const scopeToHrefs = new Map();
+const hrefToScopes = new Map();
+const ownedLinksByHref = new Map();
+const normalizeScopeKey = (scopeKey) => {
+    const key = (scopeKey ?? '').trim();
+    return key.length > 0 ? key : DEFAULT_SCOPE_KEY;
+};
+const resolveHref = (href) => {
+    try {
+        // Use origin + pathname as base to stabilize resolution regardless of current query/hash
+        const base = location.origin + location.pathname;
+        return new URL(href, base).href;
+    }
+    catch {
+        return href;
+    }
+};
+const getHeadStylesheetLinks = () => Array.from(document.head.querySelectorAll('link[rel="stylesheet"]'));
+const findExistingHeadLink = (resolvedHref, rawHref, headLinks) => {
+    for (const existing of headLinks) {
+        try {
+            if (existing.href === resolvedHref)
+                return existing;
+        }
+        catch {
+            // ignore
+        }
+        if (existing.getAttribute('href') === rawHref)
+            return existing;
+    }
+    return null;
+};
+const releaseScopeHref = (scopeKey, resolvedHref) => {
+    const scopes = hrefToScopes.get(resolvedHref);
+    if (scopes) {
+        scopes.delete(scopeKey);
+        if (scopes.size === 0) {
+            hrefToScopes.delete(resolvedHref);
+            const owned = ownedLinksByHref.get(resolvedHref);
+            if (owned && owned.isConnected) {
+                owned.remove();
+            }
+            ownedLinksByHref.delete(resolvedHref);
+        }
+    }
+};
+const setScopeStyles = (scopeKey, nextHrefs) => {
+    const previous = scopeToHrefs.get(scopeKey) ?? new Set();
+    // remove old hrefs that are no longer needed by this scope
+    for (const href of previous) {
+        if (!nextHrefs.has(href)) {
+            releaseScopeHref(scopeKey, href);
+        }
+    }
+    // add new hrefs for this scope
+    for (const href of nextHrefs) {
+        if (!previous.has(href)) {
+            let scopes = hrefToScopes.get(href);
+            if (!scopes) {
+                scopes = new Set();
+                hrefToScopes.set(href, scopes);
+            }
+            scopes.add(scopeKey);
+        }
+    }
+    scopeToHrefs.set(scopeKey, new Set(nextHrefs));
+};
+const clearPreloadedStylesForScope = (scopeKey) => {
+    const key = normalizeScopeKey(scopeKey);
+    setScopeStyles(key, new Set());
+};
+const preloadStylesFromContent = async (content, scopeKey) => {
+    const normalizedScopeKey = normalizeScopeKey(scopeKey);
+    const nextHrefs = new Set();
+    const toLoad = new Map();
+    // --- Use regex to extract stylesheet links before DOM parsing triggers loads ---
+    const linkRegex = /<link[^>]+rel=["']stylesheet["'][^>]*>/gi;
+    const hrefRegex = /href=["']([^"']+)["']/i;
+    const strippedContent = content.replace(linkRegex, (match) => {
+        const hrefMatch = match.match(hrefRegex);
+        if (hrefMatch && hrefMatch[1]) {
+            const rawHref = hrefMatch[1];
+            const resolvedHref = resolveHref(rawHref);
+            nextHrefs.add(resolvedHref);
+            if (!RuntimeManager.executedStyles.has(resolvedHref)) {
+                toLoad.set(resolvedHref, rawHref);
+            }
+        }
+        return ''; // Remove the link from content
+    });
+    // --- Update tracking for this scope ---
+    setScopeStyles(normalizedScopeKey, nextHrefs);
+    // --- If no new styles to load, return immediately to maximize speed ---
+    if (toLoad.size === 0) {
+        const tempElem = document.createElement('div');
+        tempElem.innerHTML = strippedContent;
+        return tempElem;
+    }
+    const headLinks = getHeadStylesheetLinks();
+    const loadPromises = Array.from(toLoad.entries()).map(([resolvedHref, rawHref]) => {
+        // --- Double-check cache (race condition safety) ---
+        if (RuntimeManager.executedStyles.has(resolvedHref)) {
+            return Promise.resolve();
+        }
+        // --- Mark as loaded immediately to prevent future redundant loads ---
+        RuntimeManager.executedStyles.add(resolvedHref);
+        // prefer a previously-owned managed link if still present
+        const owned = ownedLinksByHref.get(resolvedHref);
+        let headLink = (owned && owned.isConnected) ? owned : null;
+        if (!headLink) {
+            headLink = findExistingHeadLink(resolvedHref, rawHref, headLinks);
+        }
+        if (!headLink) {
+            headLink = document.createElement('link');
+            headLink.rel = 'stylesheet';
+            headLink.href = rawHref;
+            headLink.setAttribute('data-phpspa-managed', '1');
+            headLink.setAttribute('data-phpspa-scope', normalizedScopeKey);
+            document.head.appendChild(headLink);
+            headLinks.push(headLink);
+            ownedLinksByHref.set(resolvedHref, headLink);
+        }
+        return waitForStylesheet(headLink);
+    });
+    await Promise.all(loadPromises);
+    await waitForNextPaint();
+    const tempElem = document.createElement('div');
+    tempElem.innerHTML = strippedContent;
+    return tempElem;
+};
 
 var DOCUMENT_FRAGMENT_NODE = 11;
 
@@ -1434,17 +1450,29 @@ class AppManager {
             let tempElem = null;
             // --- Update content ---
             const updateDOM = async () => {
-                const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
-                // --- Preload stylesheets in the new content ---
-                tempElem = await preloadStylesFromContent(component.content, styleScopeKey);
-                if (tempElem) {
+                if (window.WAIT_FOR_STYLES) {
+                    const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
+                    // --- Preload stylesheets in the new content ---
+                    tempElem = await preloadStylesFromContent(component.content, styleScopeKey);
+                    if (tempElem) {
+                        try {
+                            morphdom(targetElement, tempElem, {
+                                childrenOnly: true
+                            });
+                        }
+                        catch {
+                            targetElement.innerHTML = tempElem.innerHTML;
+                        }
+                    }
+                }
+                else {
                     try {
-                        morphdom(targetElement, tempElem, {
+                        morphdom(targetElement, `<div>${component.content}</div>`, {
                             childrenOnly: true
                         });
                     }
                     catch {
-                        targetElement.innerHTML = tempElem.innerHTML;
+                        targetElement.innerHTML = component.content;
                     }
                 }
                 // --- Execute any inline styles in the new content ---
@@ -1774,15 +1802,27 @@ class AppManager {
                 document.getElementById(history.state?.targetID) ??
                 document.body;
             const updateDOM = async () => {
-                const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
-                const tempElem = await preloadStylesFromContent(component.content, styleScopeKey);
-                try {
-                    morphdom(targetElement, tempElem, {
-                        childrenOnly: true
-                    });
+                if (window.WAIT_FOR_STYLES) {
+                    const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
+                    const tempElem = await preloadStylesFromContent(component.content, styleScopeKey);
+                    try {
+                        morphdom(targetElement, tempElem, {
+                            childrenOnly: true
+                        });
+                    }
+                    catch {
+                        targetElement.innerHTML = tempElem.innerHTML;
+                    }
                 }
-                catch {
-                    targetElement.innerHTML = tempElem.innerHTML;
+                else {
+                    try {
+                        morphdom(targetElement, `<div>${component.content}</div>`, {
+                            childrenOnly: true
+                        });
+                    }
+                    catch {
+                        targetElement.innerHTML = component.content;
+                    }
                 }
                 // --- Execute any inline styles in the new content ---
                 RuntimeManager.runStylesForElement(targetElement);
@@ -2075,6 +2115,8 @@ if (typeof window !== "undefined") {
         window.useEffect = phpspa.useEffect;
     if (window.useCallback !== phpspa.useCallback)
         window.useCallback = phpspa.useCallback;
+    if (typeof window.WAIT_FOR_STYLES === 'undefined')
+        window.WAIT_FOR_STYLES = false;
 }
 const setState = phpspa.setState.bind(phpspa);
 const useEffect = phpspa.useEffect.bind(phpspa);

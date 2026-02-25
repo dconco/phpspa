@@ -175,23 +175,33 @@ export class AppManager {
          // --- Update content ---
          const updateDOM = async () => {
 
-            const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__'
+            if (window.WAIT_FOR_STYLES) {
+               const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__'
 
-            // --- Preload stylesheets in the new content ---
-            tempElem = await preloadStylesFromContent(component.content, styleScopeKey)
+               // --- Preload stylesheets in the new content ---
+               tempElem = await preloadStylesFromContent(component.content, styleScopeKey)
 
-            if (tempElem) {
+               if (tempElem) {
+                  try {
+                     morphdom(targetElement, tempElem, {
+                        childrenOnly: true
+                     })
+                  } catch {
+                     targetElement.innerHTML = tempElem.innerHTML
+                  }
+               }
+            } else {
                try {
-                  morphdom(targetElement, tempElem, {
+                  morphdom(targetElement, `<div>${component.content}</div>`, {
                      childrenOnly: true
                   })
                } catch {
-                  targetElement.innerHTML = tempElem.innerHTML
+                  targetElement.innerHTML = component.content
                }
             }
 
             // --- Execute any inline styles in the new content ---
-               RuntimeManager.runStylesForElement(targetElement)
+            RuntimeManager.runStylesForElement(targetElement)
          }
 
 
@@ -555,19 +565,29 @@ export class AppManager {
             document.body
 
          const updateDOM = async () => {
-            const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__'
-            const tempElem = await preloadStylesFromContent(component.content, styleScopeKey)
+            if (window.WAIT_FOR_STYLES) {
+               const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__'
+               const tempElem = await preloadStylesFromContent(component.content, styleScopeKey)
 
-            try {
-               morphdom(targetElement, tempElem, {
-                  childrenOnly: true
-               })
-            } catch {
-               targetElement.innerHTML = tempElem.innerHTML
+               try {
+                  morphdom(targetElement, tempElem, {
+                     childrenOnly: true
+                  })
+               } catch {
+                  targetElement.innerHTML = tempElem.innerHTML
+               }
+            } else {
+               try {
+                  morphdom(targetElement, `<div>${component.content}</div>`, {
+                     childrenOnly: true
+                  })
+               } catch {
+                  targetElement.innerHTML = component.content
+               }
             }
 
             // --- Execute any inline styles in the new content ---
-               RuntimeManager.runStylesForElement(targetElement)
+            RuntimeManager.runStylesForElement(targetElement)
          }
 
          const completedDOMUpdate = () => {

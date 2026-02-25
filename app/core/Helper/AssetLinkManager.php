@@ -57,7 +57,8 @@ class AssetLinkManager
         ];
 
         $encoded = self::encodeAssetData($data);
-        return self::buildAssetUrl($encoded, 'css', $name);
+        $id = substr(md5($componentRoute . $stylesheetIndex), 0, 8);
+        return self::buildAssetUrl($encoded, 'css', $name, $id);
     }
 
     /**
@@ -83,7 +84,8 @@ class AssetLinkManager
         ];
 
         $encoded = self::encodeAssetData($data);
-        return self::buildAssetUrl($encoded, 'js', $name);
+        $id = substr(md5($componentRoute . $scriptIndex), 0, 8);
+        return self::buildAssetUrl($encoded, 'js', $name, $id);
     }
 
     /**
@@ -94,7 +96,8 @@ class AssetLinkManager
      */
     public static function resolveAssetRequest(string $requestUri): ?array
     {
-        if (!preg_match('/\/phpspa\/assets\/(?:([^\/]+)-)?([^\/]+)\.(css|js)$/', $requestUri, $matches)) {
+        // Matches one or more directory levels under /phpspa/assets/
+        if (!preg_match('/\/phpspa\/assets\/(?:[^\/]+\/)+(?:([^\/]+)-)?([^\/]+)\.(css|js)$/', $requestUri, $matches)) {
             return null;
         }
 
@@ -212,7 +215,7 @@ class AssetLinkManager
      * @param string|null $name Optional name for the asset
      * @return string The complete asset URL (absolute if base path exists, relative otherwise)
      */
-    private static function buildAssetUrl(string $hash, string $type, ?string $name = null): string
+    private static function buildAssetUrl(string $hash, string $type, ?string $name = null, ?string $id = null): string
     {
         // Auto-detect base path if not set
         if (empty(PathResolver::getBasePath())) {
@@ -220,8 +223,19 @@ class AssetLinkManager
         }
 
         $basePath = PathResolver::getBasePath();
+        $id = $id ?: 'default';
+
+        $folders = "";
+        if ($id !== 'default') {
+            // Create a deep directory structure using the first 4 characters of the ID
+            // e.g., a8b2c3d4 -> a/8/b/2/a8b2c3d4/
+            foreach (str_split(substr($id, 0, 4)) as $char) {
+                $folders .= $char . "/";
+            }
+        }
+
         $filename = $name ? "{$name}-{$hash}" : $hash;
-        $assetPath = "phpspa/assets/{$filename}.{$type}";
+        $assetPath = "phpspa/assets/{$folders}{$id}/{$filename}.{$type}";
         
         // If there's a base path (server started from nested directory), use absolute URL
         if (!empty($basePath)) {

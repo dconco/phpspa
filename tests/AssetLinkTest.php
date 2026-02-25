@@ -25,7 +25,7 @@ function testAssetLinkGeneration()
     $total++;
     echo "\n=== Test: CSS Link Generation ===\n";
     $cssLink = AssetLinkManager::generateCssLink('/test', 0, 0);
-    if (preg_match('/\/phpspa\/assets\/[^\/]+\.css$/', parse_url($cssLink, PHP_URL_PATH))) {
+    if (preg_match('/\/phpspa\/assets\/(?:[^\/]+\/)+[^\/]+\.css$/', parse_url($cssLink, PHP_URL_PATH))) {
         echo "PASS\n";
         $passed++;
     } else {
@@ -36,7 +36,7 @@ function testAssetLinkGeneration()
     $total++;
     echo "\n=== Test: JS Link Generation ===\n";
     $jsLink = AssetLinkManager::generateJsLink('/test', 1, 0, null, 'application/js');
-    if (preg_match('/\/phpspa\/assets\/[^\/]+\.js$/', parse_url($jsLink, PHP_URL_PATH))) {
+    if (preg_match('/\/phpspa\/assets\/(?:[^\/]+\/)+[^\/]+\.js$/', parse_url($jsLink, PHP_URL_PATH))) {
         echo "PASS\n";
         $passed++;
     } else {
@@ -272,7 +272,7 @@ function testAssetEncodingAndSecurity()
     echo "\n=== Test: Tilde Separator in URLs ===\n";
     $link = AssetLinkManager::generateCssLink('/test', 0, 0);
     $path = parse_url($link, PHP_URL_PATH);
-    if (preg_match('/\/phpspa\/assets\/(.+)\.css$/', $path, $matches)) {
+    if (preg_match('/\/phpspa\/assets\/(?:[^\/]+\/)+(.+)\.css$/', $path, $matches)) {
         $encodedPart = $matches[1];
         if (strpos($encodedPart, '~') !== false) {
             echo "PASS: Tilde separator found\n";
@@ -299,7 +299,7 @@ function testAssetEncodingAndSecurity()
     $total++;
     echo "\n=== Test: Tamper Detection ===\n";
     // Get the encoded part from the path
-    if (preg_match('/\/phpspa\/assets\/(.+)\.css$/', $path, $matches)) {
+    if (preg_match('/\/phpspa\/assets\/(?:[^\/]+\/)+(.+)\.css$/', $path, $matches)) {
         $encodedWithSig = $matches[1];
         // Tamper by changing one character
         $tampered = $encodedWithSig;

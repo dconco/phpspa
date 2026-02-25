@@ -14,7 +14,7 @@ export declare class RuntimeManager {
     /**
      * Tracks executed styles to prevent duplicates
      */
-    private static executedStyles;
+    static executedStyles: Set<string>;
     /**
      * A static cache object that stores processed script content to avoid redundant processing.
      * Used to improve performance by caching scripts that have already been processed or compiled.
