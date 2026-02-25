@@ -1986,7 +1986,7 @@ const navigateHistory = (event) => {
                 let currentHTML = document.getElementById(targetID);
                 if (currentHTML) {
                     try {
-                        morphdom(currentHTML, '<div>' + targetInfo.defaultContent + '</div>', {
+                        morphdom(currentHTML, `<div>${targetInfo.defaultContent}</div>`, {
                             childrenOnly: true
                         });
                     }
@@ -2000,18 +2000,18 @@ const navigateHistory = (event) => {
         }
         // --- Decode and restore HTML content ---
         const updateDOM = async () => {
-            const styleScopeKey = navigationState.targetID || targetContainer.id || '__phpspa_body__';
-            const tempElem = await preloadStylesFromContent(navigationState.content, styleScopeKey);
+            // const styleScopeKey = navigationState.targetID || targetContainer.id || '__phpspa_body__'
+            // const tempElem = await preloadStylesFromContent(navigationState.content, styleScopeKey)
             try {
-                morphdom(targetContainer, tempElem, {
+                morphdom(targetContainer, `<div>${navigationState.content}</div>`, {
                     childrenOnly: true
                 });
             }
             catch {
-                targetContainer.innerHTML = tempElem.innerHTML;
+                targetContainer.innerHTML = navigationState.content;
             }
             // --- Execute any inline styles in the new content ---
-            RuntimeManager.runStylesForElement(targetContainer);
+            // RuntimeManager.runStylesForElement(targetContainer)
         };
         const completedDOMUpdate = async () => {
             // --- Clear old executed scripts cache ---

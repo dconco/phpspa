@@ -1102,10 +1102,6 @@ abstract class AppImpl implements ApplicationContract {
                else {
                   $content = require $newName;
 
-                  // --- Wrap component requested by initial page load in IIFE ---
-                  // if (!$isGlobalAsset && !$isPhpSpaRequest && $isJS) {
-                  //    $content = "(()=>{{$content}})()";
-                  // }
                   $content = Compressor::gzipCompress($content);
                   $this->setAssetHeaders($assetInfo['type']);
                   echo $content;
@@ -1135,22 +1131,24 @@ abstract class AppImpl implements ApplicationContract {
       if (\is_array($content)) {
          $content = $content[0];
       } else {
-         // --- Compress the content ---
-         $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type'], $isGlobalAsset ? 'global' : 'scoped');
+         if ($currentLevel > Compressor::LEVEL_NONE) {
+            // --- Compress the content ---
+            $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type'], $isGlobalAsset ? 'global' : 'scoped');
 
-         if ($currentLevel > Compressor::LEVEL_NONE && !$isPhpSpaRequest) {
-            if (!is_dir($fileDir)) mkdir($fileDir);
+            if (!$isPhpSpaRequest) {
+               if (!is_dir($fileDir)) mkdir($fileDir);
 
-            if ($fileName) {
-               $assetType = strtoupper($assetInfo['assetType']);
-               @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
+               if ($fileName) {
+                  $assetType = strtoupper($assetInfo['assetType']);
+                  @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
+               }
+            }
+         } else {
+            // --- Wrap component in IIFE ---
+            if (!$isGlobalAsset && $isJS) {
+               $content = "(()=>{{$content}})()";
             }
          }
-
-         // --- Wrap component requested by initial page load in IIFE ---
-         // if (!$isGlobalAsset && !$isPhpSpaRequest && $isJS) {
-         //    $content = "(()=>{{$content}})()";
-         // }
       }
 
       // --- Set appropriate headers ---
