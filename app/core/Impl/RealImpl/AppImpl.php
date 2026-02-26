@@ -1102,7 +1102,7 @@ abstract class AppImpl implements ApplicationContract {
                else {
                   $content = require $newName;
 
-                  $content = Compressor::gzipCompress($content);
+                  $content = Compressor::applyBinaryCompression($content);
                   $this->setAssetHeaders($assetInfo['type']);
                   echo $content;
                   exit(0);

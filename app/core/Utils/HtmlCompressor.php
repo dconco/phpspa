@@ -98,8 +98,8 @@ trait HtmlCompressor
       // Append Comments
       $html = $comment . $html;
 
-      // Apply gzip compression if enabled and supported
-      $html = self::gzipCompress($html, $contentType);
+      // Apply binary compression (Zstd, Brotli, or Gzip) if enabled and supported
+      $html = self::applyBinaryCompression($html, $contentType);
 
       return $html;
    }
@@ -288,22 +288,48 @@ trait HtmlCompressor
    }
 
 
-   /**
-    * Apply gzip compression
-    *
-    * @param string $content Content to compress
-    * @return string Compressed content
-    */
-   public static function gzipCompress(
+    /**
+     * Apply binary compression based on content negotiation and server support.
+     * Tiered priority: Zstd > Brotli > Gzip
+     *
+     * @param string $content Content to compress
+     * @param string|null $contentType Optional content type header
+     * @return string Compressed content
+     */
+   public static function applyBinaryCompression(
       string $content,
       ?string $contentType = null,
    ): string {
-      if (self::supportsGzip() && self::$useGzip) {
-         $compressed = gzencode($content, 9); // Maximum compression level
+      if (!self::$useGzip) {
+         if (!headers_sent() && $contentType !== null) {
+            header("Content-Type: $contentType; charset=UTF-8");
+         }
+         return $content;
+      }
 
-         // Set appropriate headers for gzip compression
+      $acceptEncoding = $_SERVER['HTTP_ACCEPT_ENCODING'] ?? '';
+      $compressed = null;
+      $encoding = null;
+
+      // 1. Check Zstd (Priority 1)
+      if (function_exists('\zstd_compress') && strpos($acceptEncoding, 'zstd') !== false) {
+         $compressed = \zstd_compress($content, 3); // Recommended level for web
+         $encoding = 'zstd';
+      }
+      // 2. Check Brotli (Priority 2)
+      elseif (function_exists('\brotli_compress') && strpos($acceptEncoding, 'br') !== false) {
+         $compressed = \brotli_compress($content, 4, \BROTLI_TEXT);
+         $encoding = 'br';
+      }
+      // 3. Fallback to Gzip (Priority 3)
+      elseif (function_exists('\gzencode') && strpos($acceptEncoding, 'gzip') !== false) {
+         $compressed = \gzencode($content, 9);
+         $encoding = 'gzip';
+      }
+
+      if ($encoding !== null && $compressed !== false && $compressed !== null) {
          if (!headers_sent()) {
-            header('Content-Encoding: gzip');
+            header("Content-Encoding: $encoding");
             header('Vary: Accept-Encoding');
             header('Content-Length: ' . strlen($compressed));
 
@@ -315,10 +341,8 @@ trait HtmlCompressor
          return $compressed;
       }
 
-      if (!headers_sent()) {
-         if ($contentType !== null) {
-            header("Content-Type: $contentType; charset=UTF-8");
-         }
+      if (!headers_sent() && $contentType !== null) {
+         header("Content-Type: $contentType; charset=UTF-8");
       }
       return $content;
    }
@@ -344,7 +368,7 @@ trait HtmlCompressor
    public static function compressJson(array $data): string
    {
       $json = json_encode($data);
-      return self::gzipCompress($json, 'application/json');
+      return self::applyBinaryCompression($json, 'application/json');
    }
 
    /**

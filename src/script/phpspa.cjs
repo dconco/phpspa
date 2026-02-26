@@ -1450,7 +1450,7 @@ class AppManager {
             let tempElem = null;
             // --- Update content ---
             const updateDOM = async () => {
-                if (window.WAIT_FOR_STYLES) {
+                if (window.WAIT_FOR_STYLES === true) {
                     const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
                     // --- Preload stylesheets in the new content ---
                     tempElem = await preloadStylesFromContent(component.content, styleScopeKey);
@@ -1802,7 +1802,7 @@ class AppManager {
                 document.getElementById(history.state?.targetID) ??
                 document.body;
             const updateDOM = async () => {
-                if (window.WAIT_FOR_STYLES) {
+                if (window.WAIT_FOR_STYLES === true) {
                     const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
                     const tempElem = await preloadStylesFromContent(component.content, styleScopeKey);
                     try {
