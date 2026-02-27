@@ -161,7 +161,6 @@ export class RuntimeManager {
    }
 
    public static runScriptsForElement(element: HTMLElement): void {
-      console.log('Running SPA scripts')
       this.runInlineScripts(element)
       this.runPhpSpaScripts(element)
    }

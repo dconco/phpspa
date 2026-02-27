@@ -183,7 +183,6 @@ class RuntimeManager {
         }
     }
     static runScriptsForElement(element) {
-        console.log('Running SPA scripts');
         this.runInlineScripts(element);
         this.runPhpSpaScripts(element);
     }
@@ -2031,7 +2030,6 @@ const navigateHistory = (event) => {
             // RuntimeManager.runStylesForElement(targetContainer)
         };
         const completedDOMUpdate = async () => {
-            console.log('DOM update completed');
             // --- Clear old executed scripts cache ---
             RuntimeManager.clearEffects();
             // --- Execute any inline scripts in the restored content ---

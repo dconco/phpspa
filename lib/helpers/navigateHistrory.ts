@@ -81,7 +81,6 @@ export const navigateHistory = (event: PopStateEvent) => {
       }
 
       const completedDOMUpdate = async () => {
-         console.log('DOM update completed')
 
          // --- Clear old executed scripts cache ---
          RuntimeManager.clearEffects()
