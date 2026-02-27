@@ -1,5 +1,5 @@
 import morphdom from "morphdom"
-import { clearPreloadedStylesForScope, preloadStylesFromContent } from "../utils/preloadStylesFromContent"
+import { clearPreloadedStylesForScope } from "../utils/preloadStylesFromContent"
 import { RuntimeManager } from "../core/RuntimeManager"
 import { StateObject } from "../types/StateObjectTypes"
 import { AppManager } from "../core/AppManager"
@@ -81,10 +81,10 @@ export const navigateHistory = (event: PopStateEvent) => {
       }
 
       const completedDOMUpdate = async () => {
+         console.log('DOM update completed')
 
          // --- Clear old executed scripts cache ---
          RuntimeManager.clearEffects()
-         RuntimeManager.clearExecutedScripts()
 
          // --- Execute any inline scripts in the restored content ---
          RuntimeManager.runScriptsForElement(targetContainer)

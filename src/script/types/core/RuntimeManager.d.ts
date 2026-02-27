@@ -8,10 +8,6 @@ import { StateObject, StateValueType } from "../types/StateObjectTypes";
  */
 export declare class RuntimeManager {
     /**
-     * Tracks executed scripts to prevent duplicates
-     */
-    private static executedScripts;
-    /**
      * Tracks executed styles to prevent duplicates
      */
     static executedStyles: Set<string>;
@@ -66,15 +62,6 @@ export declare class RuntimeManager {
      */
     private static runInlineScripts;
     private static runPhpSpaScripts;
-    /**
-     * Clears all executed scripts from the runtime manager.
-     * This method removes all entries from the executedScripts collection,
-     * effectively resetting the tracking of previously executed scripts.
-     *
-     * @static
-     * @memberof RuntimeManager
-     */
-    static clearExecutedScripts(): void;
     /**
      * Processes and injects inline styles within a container
      * Prevents duplicate style injection by tracking content hashes

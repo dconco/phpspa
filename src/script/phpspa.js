@@ -62,10 +62,6 @@
      */
     class RuntimeManager {
         /**
-         * Tracks executed scripts to prevent duplicates
-         */
-        static executedScripts = new Set();
-        /**
          * Tracks executed styles to prevent duplicates
          */
         static executedStyles = new Set();
@@ -189,6 +185,7 @@
             }
         }
         static runScriptsForElement(element) {
+            console.log('Running SPA scripts');
             this.runInlineScripts(element);
             this.runPhpSpaScripts(element);
         }
@@ -213,90 +210,72 @@
                     typeAttr === 'text/ecmascript' ||
                     isModule;
                 if (src) {
-                    if (!this.executedScripts.has(src)) {
-                        this.executedScripts.add(src);
-                        const newScript = document.createElement("script");
-                        newScript.nonce = nonce ?? undefined;
-                        for (const attribute of Array.from(script.attributes)) {
-                            newScript.setAttribute(attribute.name, attribute.value);
-                        }
-                        document.head.appendChild(newScript);
+                    const newScript = document.createElement("script");
+                    newScript.nonce = nonce ?? undefined;
+                    for (const attribute of Array.from(script.attributes)) {
+                        newScript.setAttribute(attribute.name, attribute.value);
                     }
+                    document.head.appendChild(newScript).remove();
                     return;
                 }
                 if (!isExecutable) {
                     return;
                 }
                 // --- Use base64 encoded content as unique identifier ---
-                const contentHash = utf8ToBase64(`${typeAttr}:${script.textContent.trim()}`);
-                // --- Skip if this script has already been executed ---
-                if (!this.executedScripts.has(contentHash) && script.textContent.trim() !== "") {
-                    this.executedScripts.add(contentHash);
-                    // --- Create new script element ---
-                    const newScript = document.createElement("script");
-                    newScript.nonce = nonce ?? undefined;
-                    // --- Copy all attributes except the data-type identifier ---
-                    for (const attribute of Array.from(script.attributes)) {
-                        newScript.setAttribute(attribute.name, attribute.value);
-                    }
-                    newScript.textContent = script.textContent;
-                    // --- Execute and immediately remove from DOM ---
-                    document.head.appendChild(newScript).remove();
+                utf8ToBase64(`${typeAttr}:${script.textContent.trim()}`);
+                // --- Create new script element ---
+                const newScript = document.createElement("script");
+                newScript.nonce = nonce ?? undefined;
+                // --- Copy all attributes except the data-type identifier ---
+                for (const attribute of Array.from(script.attributes)) {
+                    newScript.setAttribute(attribute.name, attribute.value);
                 }
+                newScript.textContent = script.textContent;
+                // --- Execute and immediately remove from DOM ---
+                document.head.appendChild(newScript).remove();
             });
         }
         static runPhpSpaScripts(container) {
             const scripts = container.querySelectorAll("phpspa-script, script[data-type=\"phpspa/script\"]");
             const nonce = document.head.getAttribute('x-phpspa');
-            scripts.forEach(async (script) => {
+            scripts.forEach(async (script, index) => {
+                console.log('Executing script, index:', index, 'Script', script.src);
                 const scriptUrl = script.getAttribute('src') ?? '';
                 const scriptType = script.getAttribute('type') ?? '';
                 // --- Skip if this script has already been executed ---
-                if (!this.executedScripts.has(scriptUrl)) {
-                    this.executedScripts.add(scriptUrl);
-                    // --- Check cache first ---
-                    if (this.ScriptsCachedContent[scriptUrl]) {
-                        const newScript = document.createElement("script");
-                        newScript.textContent = this.ScriptsCachedContent[scriptUrl];
-                        newScript.nonce = nonce ?? undefined;
-                        newScript.type = scriptType;
-                        // --- Execute and immediately remove from DOM ---
-                        document.head.appendChild(newScript).remove();
-                        return;
+                // --- Check cache first ---
+                if (this.ScriptsCachedContent[scriptUrl]) {
+                    const newScript = document.createElement("script");
+                    newScript.textContent = this.ScriptsCachedContent[scriptUrl];
+                    newScript.nonce = nonce ?? undefined;
+                    newScript.type = scriptType;
+                    console.log('Using cached script');
+                    // --- Execute and immediately remove from DOM ---
+                    document.head.appendChild(newScript).remove();
+                    return;
+                }
+                const response = await fetch(scriptUrl, {
+                    headers: {
+                        "X-Requested-With": "PHPSPA_REQUEST_SCRIPT",
                     }
-                    const response = await fetch(scriptUrl, {
-                        headers: {
-                            "X-Requested-With": "PHPSPA_REQUEST_SCRIPT",
-                        }
-                    });
-                    if (response.ok) {
-                        const scriptContent = await response.text();
-                        // --- Create new script element ---
-                        const newScript = document.createElement("script");
-                        newScript.textContent = scriptContent;
-                        newScript.nonce = nonce ?? undefined;
-                        newScript.type = scriptType;
-                        // --- Execute and immediately remove from DOM ---
-                        document.head.appendChild(newScript).remove();
-                        // --- Cache the fetched script content ---
-                        this.ScriptsCachedContent[scriptUrl] = scriptContent;
-                    }
-                    else {
-                        console.error(`Failed to load script from ${scriptUrl}: ${response.statusText}`);
-                    }
+                });
+                if (response.ok) {
+                    const scriptContent = await response.text();
+                    // --- Create new script element ---
+                    const newScript = document.createElement("script");
+                    newScript.textContent = scriptContent;
+                    newScript.nonce = nonce ?? undefined;
+                    newScript.type = scriptType;
+                    // --- Execute and immediately remove from DOM ---
+                    document.head.appendChild(newScript).remove();
+                    // --- Cache the fetched script content ---
+                    this.ScriptsCachedContent[scriptUrl] = scriptContent;
+                    console.log('Added new script');
+                }
+                else {
+                    console.error(`Failed to load script from ${scriptUrl}: ${response.statusText}`);
                 }
             });
-        }
-        /**
-         * Clears all executed scripts from the runtime manager.
-         * This method removes all entries from the executedScripts collection,
-         * effectively resetting the tracking of previously executed scripts.
-         *
-         * @static
-         * @memberof RuntimeManager
-         */
-        static clearExecutedScripts() {
-            RuntimeManager.executedScripts.clear();
         }
         /**
          * Processes and injects inline styles within a container
@@ -1502,7 +1481,6 @@
                     }
                     // --- Clear old executed scripts cache ---
                     RuntimeManager.clearEffects();
-                    RuntimeManager.clearExecutedScripts();
                     // --- Execute any inline scripts in the new content ---
                     RuntimeManager.runScriptsForElement(targetElement);
                     // --- Handle URL fragments (hash navigation) ---
@@ -1830,10 +1808,8 @@
                     RuntimeManager.runStylesForElement(targetElement);
                 };
                 const completedDOMUpdate = () => {
-                    // Clean up temp element
                     // --- Clear old executed scripts cache ---
                     RuntimeManager.clearEffects();
-                    RuntimeManager.clearExecutedScripts();
                     // --- Execute any inline scripts in the new content ---
                     RuntimeManager.runScriptsForElement(targetElement);
                     // --- Set up next auto-reload if specified ---
@@ -2060,9 +2036,9 @@
                 // RuntimeManager.runStylesForElement(targetContainer)
             };
             const completedDOMUpdate = async () => {
+                console.log('DOM update completed');
                 // --- Clear old executed scripts cache ---
                 RuntimeManager.clearEffects();
-                RuntimeManager.clearExecutedScripts();
                 // --- Execute any inline scripts in the restored content ---
                 RuntimeManager.runScriptsForElement(targetContainer);
                 // --- Restart auto-reload timer if needed ---

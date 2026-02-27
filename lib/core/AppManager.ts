@@ -229,10 +229,9 @@ export class AppManager {
 
             // --- Clear old executed scripts cache ---
             RuntimeManager.clearEffects()
-            RuntimeManager.clearExecutedScripts()
 
             // --- Execute any inline scripts in the new content ---
-               RuntimeManager.runScriptsForElement(targetElement)
+            RuntimeManager.runScriptsForElement(targetElement)
 
             // --- Handle URL fragments (hash navigation) ---
             const hashElement = document.getElementById(newUrl.hash.substring(1))
@@ -592,14 +591,11 @@ export class AppManager {
 
          const completedDOMUpdate = () => {
 
-             // Clean up temp element
-
             // --- Clear old executed scripts cache ---
             RuntimeManager.clearEffects()
-            RuntimeManager.clearExecutedScripts()
 
             // --- Execute any inline scripts in the new content ---
-               RuntimeManager.runScriptsForElement(targetElement)
+            RuntimeManager.runScriptsForElement(targetElement)
 
             // --- Set up next auto-reload if specified ---
             if (component?.reloadTime) {

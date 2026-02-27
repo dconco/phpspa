@@ -11,11 +11,6 @@ import { utf8ToBase64 } from "../utils/baseConverter"
  */
 export class RuntimeManager {
    /**
-    * Tracks executed scripts to prevent duplicates
-    */
-   private static executedScripts: Set<string> = new Set()
-
-   /**
     * Tracks executed styles to prevent duplicates
     */
    public static executedStyles: Set<string> = new Set()
@@ -166,6 +161,7 @@ export class RuntimeManager {
    }
 
    public static runScriptsForElement(element: HTMLElement): void {
+      console.log('Running SPA scripts')
       this.runInlineScripts(element)
       this.runPhpSpaScripts(element)
    }
@@ -195,18 +191,14 @@ export class RuntimeManager {
             isModule
 
          if (src) {
-            if (!this.executedScripts.has(src)) {
-               this.executedScripts.add(src)
+            const newScript = document.createElement("script")
+            newScript.nonce = nonce ?? undefined
 
-               const newScript = document.createElement("script")
-               newScript.nonce = nonce ?? undefined
-
-               for (const attribute of Array.from(script.attributes)) {
-                  newScript.setAttribute(attribute.name, attribute.value)
-               }
-
-               document.head.appendChild(newScript)
+            for (const attribute of Array.from(script.attributes)) {
+               newScript.setAttribute(attribute.name, attribute.value)
             }
+
+            document.head.appendChild(newScript).remove()
 
             return
          }
@@ -218,25 +210,20 @@ export class RuntimeManager {
          // --- Use base64 encoded content as unique identifier ---
          const contentHash = utf8ToBase64(`${typeAttr}:${script.textContent.trim()}`)
 
-         // --- Skip if this script has already been executed ---
-         if (!this.executedScripts.has(contentHash) && script.textContent.trim() !== "") {
-            this.executedScripts.add(contentHash)
+         // --- Create new script element ---
+         const newScript = document.createElement("script")
 
-            // --- Create new script element ---
-            const newScript = document.createElement("script")
+         newScript.nonce = nonce ?? undefined;
 
-            newScript.nonce = nonce ?? undefined;
-
-            // --- Copy all attributes except the data-type identifier ---
-            for (const attribute of Array.from(script.attributes)) {
-               newScript.setAttribute(attribute.name, attribute.value)
-            }
-
-            newScript.textContent = script.textContent
-
-            // --- Execute and immediately remove from DOM ---
-            document.head.appendChild(newScript).remove()
+         // --- Copy all attributes except the data-type identifier ---
+         for (const attribute of Array.from(script.attributes)) {
+            newScript.setAttribute(attribute.name, attribute.value)
          }
+
+         newScript.textContent = script.textContent
+
+         // --- Execute and immediately remove from DOM ---
+         document.head.appendChild(newScript).remove()
       })
    }
 
@@ -245,65 +232,49 @@ export class RuntimeManager {
       const scripts = container.querySelectorAll("phpspa-script, script[data-type=\"phpspa/script\"]") as NodeListOf<HTMLScriptElement>
       const nonce = document.head.getAttribute('x-phpspa')
 
-      scripts.forEach(async (script: HTMLScriptElement): Promise<void> => {
+      scripts.forEach(async (script: HTMLScriptElement, index: number): Promise<void> => {
          const scriptUrl = script.getAttribute('src') ?? ''
          const scriptType = script.getAttribute('type') ?? ''
 
          // --- Skip if this script has already been executed ---
-         if (!this.executedScripts.has(scriptUrl)) {
-            this.executedScripts.add(scriptUrl);
+         // --- Check cache first ---
+         if (this.ScriptsCachedContent[scriptUrl]) {
+            const newScript = document.createElement("script");
+            newScript.textContent = this.ScriptsCachedContent[scriptUrl];
+            newScript.nonce = nonce ?? undefined;
+            newScript.type = scriptType;
 
-            // --- Check cache first ---
-            if (this.ScriptsCachedContent[scriptUrl]) {
-               const newScript = document.createElement("script");
-               newScript.textContent = this.ScriptsCachedContent[scriptUrl];
-               newScript.nonce = nonce ?? undefined;
-               newScript.type = scriptType;
+            // --- Execute and immediately remove from DOM ---
+            document.head.appendChild(newScript).remove();
+            return;
+         }
 
-               // --- Execute and immediately remove from DOM ---
-               document.head.appendChild(newScript).remove();
-               return;
+         const response = await fetch(scriptUrl, {
+            headers: {
+               "X-Requested-With": "PHPSPA_REQUEST_SCRIPT",
             }
+         })
 
-            const response = await fetch(scriptUrl, {
-               headers: {
-                  "X-Requested-With": "PHPSPA_REQUEST_SCRIPT",
-               }
-            })
+         if (response.ok) {
+            const scriptContent = await response.text()
 
-            if (response.ok) {
-               const scriptContent = await response.text()
+            // --- Create new script element ---
+            const newScript = document.createElement("script")
+            newScript.textContent = scriptContent;
+            newScript.nonce = nonce ?? undefined;
+            newScript.type = scriptType;
 
-               // --- Create new script element ---
-               const newScript = document.createElement("script")
-               newScript.textContent = scriptContent;
-               newScript.nonce = nonce ?? undefined;
-               newScript.type = scriptType;
+            // --- Execute and immediately remove from DOM ---
+            document.head.appendChild(newScript).remove()
 
-               // --- Execute and immediately remove from DOM ---
-               document.head.appendChild(newScript).remove()
-
-               // --- Cache the fetched script content ---
-               this.ScriptsCachedContent[scriptUrl] = scriptContent;
-            } else {
-               console.error(`Failed to load script from ${scriptUrl}: ${response.statusText}`);
-            }
+            // --- Cache the fetched script content ---
+            this.ScriptsCachedContent[scriptUrl] = scriptContent;
+         } else {
+            console.error(`Failed to load script from ${scriptUrl}: ${response.statusText}`);
          }
       })
    }
 
-
-   /**
-    * Clears all executed scripts from the runtime manager.
-    * This method removes all entries from the executedScripts collection,
-    * effectively resetting the tracking of previously executed scripts.
-    *
-    * @static
-    * @memberof RuntimeManager
-    */
-   public static clearExecutedScripts() {
-      RuntimeManager.executedScripts.clear()
-   }
 
    /**
     * Processes and injects inline styles within a container
