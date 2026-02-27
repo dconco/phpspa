@@ -237,7 +237,6 @@ class RuntimeManager {
         const scripts = container.querySelectorAll("phpspa-script, script[data-type=\"phpspa/script\"]");
         const nonce = document.head.getAttribute('x-phpspa');
         scripts.forEach(async (script, index) => {
-            console.log('Executing script, index:', index, 'Script', script.src);
             const scriptUrl = script.getAttribute('src') ?? '';
             const scriptType = script.getAttribute('type') ?? '';
             // --- Skip if this script has already been executed ---
@@ -247,7 +246,6 @@ class RuntimeManager {
                 newScript.textContent = this.ScriptsCachedContent[scriptUrl];
                 newScript.nonce = nonce ?? undefined;
                 newScript.type = scriptType;
-                console.log('Using cached script');
                 // --- Execute and immediately remove from DOM ---
                 document.head.appendChild(newScript).remove();
                 return;
@@ -268,7 +266,6 @@ class RuntimeManager {
                 document.head.appendChild(newScript).remove();
                 // --- Cache the fetched script content ---
                 this.ScriptsCachedContent[scriptUrl] = scriptContent;
-                console.log('Added new script');
             }
             else {
                 console.error(`Failed to load script from ${scriptUrl}: ${response.statusText}`);
