@@ -64,7 +64,7 @@ abstract class AppImpl implements ApplicationContract {
     * Each component can be accessed and managed by the application core.
     * Typically used for dependency injection or service management.
     *
-    * @var Component|IComponent[]
+    * @var array<Component|IComponent>
     */
    private array $components = [];
 
