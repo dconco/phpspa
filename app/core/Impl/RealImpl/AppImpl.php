@@ -2,6 +2,7 @@
 
 namespace PhpSPA\Core\Impl\RealImpl;
 
+use PhpSPA\Core\Utils\Timer;
 use PhpSPA\DOM;
 use PhpSPA\Component;
 use PhpSPA\Http\Request;
@@ -377,7 +378,11 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       if ($success === true) {
+         $timer = new Timer();
+
+         $timer->start();
          $compressedOutput = Compressor::compress((string) $this->renderedData, 'text/html');
+         error_log("Compressed HTML output within {$timer->getFormattedElapsedTime()} | From {$request->path()}");
 
          if ($return) return $compressedOutput;
 
@@ -1132,14 +1137,18 @@ abstract class AppImpl implements ApplicationContract {
          $content = $content[0];
       } else {
          if ($currentLevel > Compressor::LEVEL_NONE) {
+            $timer = new Timer();
+            $assetType = strtoupper($assetInfo['assetType']);
+            
             // --- Compress the content ---
+            $timer->start();
             $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type'], $isGlobalAsset ? 'global' : 'scoped');
+            error_log("Compressed $assetType asset output within {$timer->getFormattedElapsedTime()} | From {$assetInfo['name']}");
 
             if (!$isPhpSpaRequest) {
                if (!is_dir($fileDir)) mkdir($fileDir);
 
                if ($fileName) {
-                  $assetType = strtoupper($assetInfo['assetType']);
                   @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
                }
             }
