@@ -26,8 +26,7 @@ class Timer
          throw new \LogicException("Timer has not been started.");
       }
 
-      $now = $this->getElapsedTime();
-      $elapse = $now - self::$time;
+      $elapse = $this->getElapsedTime();
       $secs = round($elapse, 2) . 's';
       $ms = round($elapse * 1000, 2) . 'ms';
 
