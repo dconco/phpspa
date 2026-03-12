@@ -185,7 +185,6 @@
             }
         }
         static runScriptsForElement(element) {
-            this.runInlineScripts(element);
             this.runPhpSpaScripts(element);
         }
         static runStylesForElement(element) {
@@ -220,8 +219,6 @@
                 if (!isExecutable) {
                     return;
                 }
-                // --- Use base64 encoded content as unique identifier ---
-                utf8ToBase64(`${typeAttr}:${script.textContent.trim()}`);
                 // --- Create new script element ---
                 const newScript = document.createElement("script");
                 newScript.nonce = nonce ?? undefined;
@@ -235,21 +232,55 @@
             });
         }
         static runPhpSpaScripts(container) {
-            const scripts = container.querySelectorAll("phpspa-script, script[data-type=\"phpspa/script\"]");
+            const scripts = container.querySelectorAll("phpspa-script, script");
             const nonce = document.head.getAttribute('x-phpspa');
-            scripts.forEach(async (script, index) => {
-                const scriptUrl = script.getAttribute('src') ?? '';
-                const scriptType = script.getAttribute('type') ?? '';
-                // --- Skip if this script has already been executed ---
-                // --- Check cache first ---
+            scripts.forEach(async (script) => {
+                const scriptUrl = script.getAttribute('src');
+                const typeAttr = (script.getAttribute('type') ?? '').trim().toLowerCase();
+                const isModule = typeAttr === 'module';
+                const isExecutable = typeAttr === '' ||
+                    typeAttr === 'text/javascript' ||
+                    typeAttr === 'application/javascript' ||
+                    typeAttr === 'application/ecmascript' ||
+                    typeAttr === 'text/ecmascript' ||
+                    isModule;
+                if (!isExecutable) {
+                    const newScript = document.createElement("script");
+                    for (const attribute of Array.from(script.attributes)) {
+                        newScript.setAttribute(attribute.name, attribute.value);
+                    }
+                    newScript.textContent = script.textContent;
+                    if (!newScript.getAttribute('nonce'))
+                        newScript.nonce = nonce ?? undefined;
+                    // --- Execute and immediately remove from DOM ---
+                    return document.head.appendChild(newScript).remove();
+                }
+                if (!scriptUrl) {
+                    // --- Create new script element ---
+                    const newScript = document.createElement("script");
+                    // --- Copy all attributes ---
+                    for (const attribute of Array.from(script.attributes)) {
+                        newScript.setAttribute(attribute.name, attribute.value);
+                    }
+                    if (!newScript.getAttribute('nonce'))
+                        newScript.nonce = nonce ?? undefined;
+                    newScript.textContent = script.textContent;
+                    // --- Execute and immediately remove from DOM ---
+                    return document.head.appendChild(newScript).remove();
+                }
+                // --- Check cache first, then execute the cached content else download the script ---
                 if (this.ScriptsCachedContent[scriptUrl]) {
                     const newScript = document.createElement("script");
                     newScript.textContent = this.ScriptsCachedContent[scriptUrl];
-                    newScript.nonce = nonce ?? undefined;
-                    newScript.type = scriptType;
+                    for (const attribute of Array.from(script.attributes)) {
+                        if (attribute.name == 'src')
+                            continue;
+                        newScript.setAttribute(attribute.name, attribute.value);
+                    }
+                    if (!newScript.getAttribute('nonce'))
+                        newScript.nonce = nonce ?? undefined;
                     // --- Execute and immediately remove from DOM ---
-                    document.head.appendChild(newScript).remove();
-                    return;
+                    return document.head.appendChild(newScript).remove();
                 }
                 const response = await fetch(scriptUrl, {
                     headers: {
@@ -261,8 +292,13 @@
                     // --- Create new script element ---
                     const newScript = document.createElement("script");
                     newScript.textContent = scriptContent;
-                    newScript.nonce = nonce ?? undefined;
-                    newScript.type = scriptType;
+                    for (const attribute of Array.from(script.attributes)) {
+                        if (attribute.name == 'src')
+                            continue;
+                        newScript.setAttribute(attribute.name, attribute.value);
+                    }
+                    if (!newScript.getAttribute('nonce'))
+                        newScript.nonce = nonce ?? undefined;
                     // --- Execute and immediately remove from DOM ---
                     document.head.appendChild(newScript).remove();
                     // --- Cache the fetched script content ---
