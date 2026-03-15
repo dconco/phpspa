@@ -55,6 +55,10 @@ function base64ToUtf8(str) {
  * for the PhpSPA framework. Uses an obscure class name to avoid conflicts.
  */
 class RuntimeManager {
+    static config = {
+        preserveUpdatedHtmlState: false,
+        waitForStyles: false,
+    };
     /**
      * Tracks executed styles to prevent duplicates
      */
@@ -383,6 +387,15 @@ class RuntimeManager {
             // --- Silently handle history API restrictions ---
             console.warn("Failed to replace history state:", error instanceof Error ? error.message : error);
         }
+    }
+    static configure(config) {
+        RuntimeManager.config = {
+            ...RuntimeManager.config,
+            ...config,
+        };
+    }
+    static getConfig() {
+        return { ...RuntimeManager.config };
     }
 }
 
@@ -1310,6 +1323,26 @@ var morphdom = morphdomFactory(morphAttrs);
 
 class AppManager {
     static currentStateData = {};
+    static config(config) {
+        RuntimeManager.configure(config);
+    }
+    static snapshotCurrentRouteState() {
+        if (!RuntimeManager.config.preserveUpdatedHtmlState)
+            return;
+        const currentState = history.state;
+        if (!currentState?.targetID)
+            return;
+        const currentTarget = document.getElementById(currentState.targetID);
+        if (!currentTarget)
+            return;
+        const updatedState = {
+            ...currentState,
+            url: location.toString(),
+            title: document.title,
+            content: currentTarget.innerHTML,
+        };
+        RuntimeManager.replaceState(updatedState, updatedState.title, updatedState.url);
+    }
     /**
      * Navigates to a given URL using PHPSPA's custom navigation logic.
      * Fetches the content via a custom HTTP method, updates the DOM, manages browser history,
@@ -1323,6 +1356,8 @@ class AppManager {
      */
     static navigate(url, state = "push") {
         const newUrl = url instanceof URL ? url : new URL(url, location.toString());
+        // --- Persist current DOM state before changing route when enabled ---
+        AppManager.snapshotCurrentRouteState();
         // --- Emit beforeload event for loading indicators ---
         RuntimeManager.emit("beforeload", { route: newUrl.toString() });
         // --- Fetch content from the server with PhpSPA headers ---
@@ -1457,7 +1492,7 @@ class AppManager {
             let tempElem = null;
             // --- Update content ---
             const updateDOM = async () => {
-                if (window.WAIT_FOR_STYLES === true) {
+                if (RuntimeManager.config.waitForStyles === true) {
                     const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
                     // --- Preload stylesheets in the new content ---
                     tempElem = await preloadStylesFromContent(component.content, styleScopeKey);
@@ -1808,7 +1843,7 @@ class AppManager {
                 document.getElementById(history.state?.targetID) ??
                 document.body;
             const updateDOM = async () => {
-                if (window.WAIT_FOR_STYLES === true) {
+                if (RuntimeManager.config.waitForStyles === true) {
                     const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
                     const tempElem = await preloadStylesFromContent(component.content, styleScopeKey);
                     try {
@@ -2118,8 +2153,6 @@ if (typeof window !== "undefined") {
         window.useEffect = phpspa.useEffect;
     if (window.useCallback !== phpspa.useCallback)
         window.useCallback = phpspa.useCallback;
-    if (typeof window.WAIT_FOR_STYLES === 'undefined')
-        window.WAIT_FOR_STYLES = false;
 }
 const setState = phpspa.setState.bind(phpspa);
 const useEffect = phpspa.useEffect.bind(phpspa);

@@ -12,7 +12,6 @@ declare global {
       useEffect: typeof phpspa.useEffect
       useCallback: typeof phpspa.useCallback
       __call: typeof phpspa.__call
-      WAIT_FOR_STYLES: boolean
    }
 }
 
@@ -41,8 +40,6 @@ if (typeof window !== "undefined") {
    if (window.useEffect !== phpspa.useEffect) window.useEffect = phpspa.useEffect
 
    if (window.useCallback !== phpspa.useCallback) window.useCallback = phpspa.useCallback
-
-   if (typeof window.WAIT_FOR_STYLES === 'undefined') window.WAIT_FOR_STYLES = false
 }
 
 export const setState = phpspa.setState.bind(phpspa)

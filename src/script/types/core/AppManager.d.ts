@@ -1,7 +1,9 @@
 import { StateValueType } from "../types/StateObjectTypes";
-import { EventObject, EventPayload } from "../types/RuntimeInterfaces";
+import { EventObject, EventPayload, RuntimeConfig } from "../types/RuntimeInterfaces";
 export declare class AppManager {
     static currentStateData: Record<string, StateValueType>;
+    static config(config: Partial<RuntimeConfig>): void;
+    private static snapshotCurrentRouteState;
     /**
      * Navigates to a given URL using PHPSPA's custom navigation logic.
      * Fetches the content via a custom HTTP method, updates the DOM, manages browser history,

@@ -9,7 +9,6 @@ declare global {
         useEffect: typeof phpspa.useEffect;
         useCallback: typeof phpspa.useCallback;
         __call: typeof phpspa.__call;
-        WAIT_FOR_STYLES: boolean;
     }
 }
 export declare const setState: typeof AppManager.setState;

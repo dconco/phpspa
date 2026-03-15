@@ -22,6 +22,20 @@ composer require dconco/phpspa:dev-support/php-8.4
 #### **Force Native Compression**
 - Added `forceNativeCompression()` to force the use of native (C++) compression over the PHP fallback.
 
+#### **Client Runtime Config for Navigation & Style Loading**
+
+- Added `phpspa.config()` runtime options for client-side behavior control.
+- `preserveUpdatedHtmlState` (default: `false`): if set to true, it stores the current live target HTML into history state before route changes, so browser back/forward restores the latest DOM (not only the initial server render).
+- `waitForStyles` (default: `false`): enables stylesheet preloading before DOM swap to help avoid flash-of-unstyled-content during navigation.
+
+```js
+// Enable both runtime options
+phpspa.config({
+   preserveUpdatedHtmlState: true,
+   waitForStyles: true,
+});
+```
+
 
 ```php
 use PhpSPA\App;

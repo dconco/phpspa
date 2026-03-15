@@ -1,4 +1,4 @@
-import { CurrentRoutesObject, EffectType, EventObject, EventPayload } from "../types/RuntimeInterfaces"
+import { CurrentRoutesObject, EffectType, EventObject, EventPayload, RuntimeConfig } from "../types/RuntimeInterfaces"
 import { StateObject, StateValueType } from "../types/StateObjectTypes"
 import { utf8ToBase64 } from "../utils/baseConverter"
 
@@ -10,6 +10,11 @@ import { utf8ToBase64 } from "../utils/baseConverter"
  * for the PhpSPA framework. Uses an obscure class name to avoid conflicts.
  */
 export class RuntimeManager {
+   public static config: RuntimeConfig = {
+      preserveUpdatedHtmlState: false,
+      waitForStyles: false,
+   }
+
    /**
     * Tracks executed styles to prevent duplicates
     */
@@ -407,5 +412,16 @@ export class RuntimeManager {
          // --- Silently handle history API restrictions ---
          console.warn("Failed to replace history state:", error instanceof Error ? error.message : error)
       }
+   }
+
+   public static configure(config: Partial<RuntimeConfig>) {
+      RuntimeManager.config = {
+         ...RuntimeManager.config,
+         ...config,
+      }
+   }
+
+   public static getConfig(): RuntimeConfig {
+      return { ...RuntimeManager.config }
    }
 }

@@ -1,4 +1,4 @@
-import { CurrentRoutesObject, EventObject, EventPayload } from "../types/RuntimeInterfaces";
+import { CurrentRoutesObject, EventObject, EventPayload, RuntimeConfig } from "../types/RuntimeInterfaces";
 import { StateObject, StateValueType } from "../types/StateObjectTypes";
 /**
  * Runtime Manager for PhpSPA
@@ -7,6 +7,7 @@ import { StateObject, StateValueType } from "../types/StateObjectTypes";
  * for the PhpSPA framework. Uses an obscure class name to avoid conflicts.
  */
 export declare class RuntimeManager {
+    static config: RuntimeConfig;
     /**
      * Tracks executed styles to prevent duplicates
      */
@@ -89,5 +90,7 @@ export declare class RuntimeManager {
      * Wraps in try-catch to handle potential browser restrictions
      */
     static replaceState(data: StateObject, unused: string, url?: string | URL | null): void;
+    static configure(config: Partial<RuntimeConfig>): void;
+    static getConfig(): RuntimeConfig;
 }
 //# sourceMappingURL=RuntimeManager.d.ts.map

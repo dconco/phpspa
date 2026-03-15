@@ -1,5 +1,5 @@
 import { ComponentObject, StateObject, StateValueType } from "../types/StateObjectTypes"
-import { EventObject, EventPayload } from "../types/RuntimeInterfaces"
+import { EventObject, EventPayload, RuntimeConfig } from "../types/RuntimeInterfaces"
 import { clearPreloadedStylesForScope, preloadStylesFromContent } from "../utils/preloadStylesFromContent"
 import { utf8ToBase64 } from "../utils/baseConverter"
 import { RuntimeManager } from "./RuntimeManager"
@@ -8,6 +8,31 @@ import morphdom from "morphdom"
 export class AppManager {
 
    public static currentStateData: Record<string, StateValueType> = {}
+
+   public static config(config: Partial<RuntimeConfig>): void {
+      RuntimeManager.configure(config)
+   }
+
+   private static snapshotCurrentRouteState(): void {
+      if (!RuntimeManager.config.preserveUpdatedHtmlState) return
+
+      const currentState = history.state as StateObject | null
+
+      if (!currentState?.targetID) return
+
+      const currentTarget = document.getElementById(currentState.targetID)
+
+      if (!currentTarget) return
+
+      const updatedState: StateObject = {
+         ...currentState,
+         url: location.toString(),
+         title: document.title,
+         content: currentTarget.innerHTML,
+      }
+
+      RuntimeManager.replaceState(updatedState, updatedState.title, updatedState.url)
+   }
 
 
    /**
@@ -23,6 +48,9 @@ export class AppManager {
     */
    public static navigate(url: URL|string, state: 'push' | 'replace' = "push") {
       const newUrl = url instanceof URL ? url : new URL(url, location.toString())
+
+      // --- Persist current DOM state before changing route when enabled ---
+      AppManager.snapshotCurrentRouteState()
 
       // --- Emit beforeload event for loading indicators ---
       RuntimeManager.emit("beforeload", { route: newUrl.toString() })
@@ -175,7 +203,7 @@ export class AppManager {
          // --- Update content ---
          const updateDOM = async () => {
 
-            if (window.WAIT_FOR_STYLES === true) {
+            if (RuntimeManager.config.waitForStyles === true) {
                const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__'
 
                // --- Preload stylesheets in the new content ---
@@ -564,7 +592,7 @@ export class AppManager {
             document.body
 
          const updateDOM = async () => {
-            if (window.WAIT_FOR_STYLES === true) {
+            if (RuntimeManager.config.waitForStyles === true) {
                const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__'
                const tempElem = await preloadStylesFromContent(component.content, styleScopeKey)
 

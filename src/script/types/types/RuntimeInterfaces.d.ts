@@ -14,6 +14,10 @@ export interface EventPayload {
     error?: any;
     data?: string;
 }
+export interface RuntimeConfig {
+    preserveUpdatedHtmlState: boolean;
+    waitForStyles: boolean;
+}
 export type CurrentRoutesObject = Record<string, {
     route: URL;
     exact: boolean;
