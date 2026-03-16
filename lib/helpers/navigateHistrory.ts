@@ -7,7 +7,24 @@ import { AppManager } from "../core/AppManager"
 export const navigateHistory = (event: PopStateEvent) => {
    const navigationState: StateObject = event.state
 
-   RuntimeManager.emit('beforeload', { route: location.toString() })
+   let isCancelled = false
+
+   const popstatePayload = {
+      route: location.toString(),
+      state: navigationState ?? null,
+      nativeEvent: event,
+      defaultPrevented: false,
+      preventDefault: () => {
+         isCancelled = true
+         popstatePayload.defaultPrevented = true
+      },
+   }
+
+   RuntimeManager.emit('popstate', popstatePayload)
+
+   if (isCancelled) {
+      return
+   }
 
    // --- Enable automatic scroll restoration ---
    history.scrollRestoration = "auto"
@@ -92,21 +109,11 @@ export const navigateHistory = (event: PopStateEvent) => {
          if (navigationState?.reloadTime) {
             setTimeout(AppManager.reloadComponent, navigationState.reloadTime)
          }
-
-         RuntimeManager.emit('load', {
-            route: navigationState.url,
-            success: true,
-            error: false
-         })
       }
 
       if (document.startViewTransition) {
          document.startViewTransition(updateDOM).finished.then(completedDOMUpdate).catch((reason) => {
-            RuntimeManager.emit('load', {
-               route: location.href,
-               success: false,
-               error: reason || 'Unknown error during view transition',
-            })
+            console.error('Popstate view transition failed:', reason || 'Unknown error during view transition')
          })
       } else {
          updateDOM().then(completedDOMUpdate)

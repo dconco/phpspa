@@ -1,4 +1,4 @@
-import { CurrentRoutesObject, EffectType, EventObject, EventPayload, RuntimeConfig } from "../types/RuntimeInterfaces"
+import { CurrentRoutesObject, EffectType, EventObject, EventPayloadMap, RuntimeConfig } from "../types/RuntimeInterfaces"
 import { StateObject, StateValueType } from "../types/StateObjectTypes"
 import { utf8ToBase64 } from "../utils/baseConverter"
 
@@ -34,6 +34,7 @@ export class RuntimeManager {
    public static events: EventObject = {
       beforeload: [],
       load: [],
+      popstate: [],
    }
 
    public static currentStateData: Record<string, StateValueType>
@@ -41,7 +42,7 @@ export class RuntimeManager {
    /**
     * Caches the last payload for each emitted event so late listeners can replay it
     */
-   private static lastEventPayload: Partial<Record<keyof EventObject, EventPayload>> = {}
+   private static lastEventPayload: Partial<EventPayloadMap> = {}
 
    private static effects: Set<EffectType> = new Set()
 
@@ -364,7 +365,7 @@ export class RuntimeManager {
     * @param eventName - The name of the event to emit
     * @param payload - The data to pass to event listeners
     */
-   static emit(eventName: keyof EventObject, payload: EventPayload) {
+   static emit<K extends keyof EventPayloadMap>(eventName: K, payload: EventPayloadMap[K]) {
       const callbacks = this.events[eventName] || []
       this.lastEventPayload[eventName] = payload
 
@@ -384,8 +385,37 @@ export class RuntimeManager {
    /**
     * Returns the last cached payload for an event, if available
     */
-   public static getLastEventPayload(eventName: keyof EventObject): EventPayload | undefined {
+   public static getLastEventPayload<K extends keyof EventPayloadMap>(eventName: K): EventPayloadMap[K] | undefined {
       return this.lastEventPayload[eventName]
+   }
+
+   public static off<K extends keyof EventPayloadMap>(eventName: K, callback?: (payload: EventPayloadMap[K]) => void): void {
+      if (!this.events[eventName]) {
+         return
+      }
+
+      if (!callback) {
+         this.events[eventName] = []
+         delete this.lastEventPayload[eventName]
+         return
+      }
+
+      const listeners = this.events[eventName] as Array<(payload: EventPayloadMap[K]) => void>
+      this.events[eventName] = listeners.filter((cb) => cb !== callback) as EventObject[K]
+   }
+
+   public static resetEvents(eventName?: keyof EventPayloadMap): void {
+      if (eventName) {
+         this.events[eventName] = []
+         delete this.lastEventPayload[eventName]
+         return
+      }
+
+      (Object.keys(this.events) as Array<keyof EventPayloadMap>).forEach((name) => {
+         this.events[name] = []
+      })
+
+      this.lastEventPayload = {}
    }
 
    /**

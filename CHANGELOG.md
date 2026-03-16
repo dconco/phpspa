@@ -36,6 +36,32 @@ phpspa.config({
 });
 ```
 
+#### **Dedicated Popstate Lifecycle + Listener Control**
+
+- Browser history navigation now uses a dedicated `popstate` runtime event instead of triggering `beforeload` and `load`.
+- `popstate` is cancelable: listeners can call `payload.preventDefault()` to stop the default history DOM restore.
+- Added `phpspa.off(event, callback?)` to remove one listener or clear all listeners for a specific event.
+- Added `phpspa.resetEvents(event?)` to clear listeners for one event or reset all runtime events.
+
+```js
+const onHistoryNavigate = (payload) => {
+   if (shouldBlockHistoryNavigation()) {
+      payload.preventDefault();
+   }
+};
+
+phpspa.on('popstate', onHistoryNavigate);
+
+// remove one listener
+phpspa.off('popstate', onHistoryNavigate);
+
+// clear all listeners for one event
+phpspa.off('popstate');
+
+// clear all runtime event listeners
+phpspa.resetEvents();
+```
+
 
 ```php
 use PhpSPA\App;
@@ -1376,14 +1402,6 @@ Include the JS engine:
 ```html
 <script src="https://cdn.jsdelivr.net/npm/phpspa-js"></script>
 ```
-
----
-
-## 🧱 Coming Soon
-
-- 🛡️ CSRF protection helpers and automatic verification
-- 🧪 Testing utilities for components
-- 🌐 Built-in i18n tools
 
 ---
 

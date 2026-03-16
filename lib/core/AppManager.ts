@@ -1,5 +1,5 @@
 import { ComponentObject, StateObject, StateValueType } from "../types/StateObjectTypes"
-import { EventObject, EventPayload, RuntimeConfig } from "../types/RuntimeInterfaces"
+import { EventObject, EventPayloadMap, RuntimeConfig } from "../types/RuntimeInterfaces"
 import { clearPreloadedStylesForScope, preloadStylesFromContent } from "../utils/preloadStylesFromContent"
 import { utf8ToBase64 } from "../utils/baseConverter"
 import { RuntimeManager } from "./RuntimeManager"
@@ -330,7 +330,7 @@ export class AppManager {
     * @param event - The name of the event to listen for.
     * @param callback - The function to call when the event is triggered.
     */
-   public static on(event: keyof EventObject, callback: (payload: EventPayload) => void) {
+   public static on<K extends keyof EventObject>(event: K, callback: (payload: EventPayloadMap[K]) => void) {
       if (!RuntimeManager.events[event]) {
          RuntimeManager.events[event] = []
       }
@@ -344,6 +344,14 @@ export class AppManager {
             console.error(`Error in ${event} event callback:`, error)
          }
       }
+   }
+
+   public static off<K extends keyof EventObject>(event: K, callback?: (payload: EventPayloadMap[K]) => void): void {
+      RuntimeManager.off(event, callback)
+   }
+
+   public static resetEvents(event?: keyof EventObject): void {
+      RuntimeManager.resetEvents(event)
    }
 
    /**

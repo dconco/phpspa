@@ -1,4 +1,4 @@
-import { CurrentRoutesObject, EventObject, EventPayload, RuntimeConfig } from "../types/RuntimeInterfaces";
+import { CurrentRoutesObject, EventObject, EventPayloadMap, RuntimeConfig } from "../types/RuntimeInterfaces";
 import { StateObject, StateValueType } from "../types/StateObjectTypes";
 /**
  * Runtime Manager for PhpSPA
@@ -75,11 +75,13 @@ export declare class RuntimeManager {
      * @param eventName - The name of the event to emit
      * @param payload - The data to pass to event listeners
      */
-    static emit(eventName: keyof EventObject, payload: EventPayload): void;
+    static emit<K extends keyof EventPayloadMap>(eventName: K, payload: EventPayloadMap[K]): void;
     /**
      * Returns the last cached payload for an event, if available
      */
-    static getLastEventPayload(eventName: keyof EventObject): EventPayload | undefined;
+    static getLastEventPayload<K extends keyof EventPayloadMap>(eventName: K): EventPayloadMap[K] | undefined;
+    static off<K extends keyof EventPayloadMap>(eventName: K, callback?: (payload: EventPayloadMap[K]) => void): void;
+    static resetEvents(eventName?: keyof EventPayloadMap): void;
     /**
      * Safely pushes a new state to browser history
      * Wraps in try-catch to handle potential browser restrictions

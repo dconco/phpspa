@@ -1,5 +1,5 @@
 import { StateValueType } from "../types/StateObjectTypes";
-import { EventObject, EventPayload, RuntimeConfig } from "../types/RuntimeInterfaces";
+import { EventObject, EventPayloadMap, RuntimeConfig } from "../types/RuntimeInterfaces";
 export declare class AppManager {
     static currentStateData: Record<string, StateValueType>;
     static config(config: Partial<RuntimeConfig>): void;
@@ -37,7 +37,9 @@ export declare class AppManager {
      * @param event - The name of the event to listen for.
      * @param callback - The function to call when the event is triggered.
      */
-    static on(event: keyof EventObject, callback: (payload: EventPayload) => void): void;
+    static on<K extends keyof EventObject>(event: K, callback: (payload: EventPayloadMap[K]) => void): void;
+    static off<K extends keyof EventObject>(event: K, callback?: (payload: EventPayloadMap[K]) => void): void;
+    static resetEvents(event?: keyof EventObject): void;
     /**
      * Registers a side effect to be executed after component updates.
      * Alias for RuntimeManager.registerEffect.

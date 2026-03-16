@@ -79,6 +79,7 @@ class RuntimeManager {
     static events = {
         beforeload: [],
         load: [],
+        popstate: [],
     };
     static currentStateData;
     /**
@@ -365,6 +366,29 @@ class RuntimeManager {
      */
     static getLastEventPayload(eventName) {
         return this.lastEventPayload[eventName];
+    }
+    static off(eventName, callback) {
+        if (!this.events[eventName]) {
+            return;
+        }
+        if (!callback) {
+            this.events[eventName] = [];
+            delete this.lastEventPayload[eventName];
+            return;
+        }
+        const listeners = this.events[eventName];
+        this.events[eventName] = listeners.filter((cb) => cb !== callback);
+    }
+    static resetEvents(eventName) {
+        if (eventName) {
+            this.events[eventName] = [];
+            delete this.lastEventPayload[eventName];
+            return;
+        }
+        Object.keys(this.events).forEach((name) => {
+            this.events[name] = [];
+        });
+        this.lastEventPayload = {};
     }
     /**
      * Safely pushes a new state to browser history
@@ -1626,6 +1650,12 @@ class AppManager {
             }
         }
     }
+    static off(event, callback) {
+        RuntimeManager.off(event, callback);
+    }
+    static resetEvents(event) {
+        RuntimeManager.resetEvents(event);
+    }
     /**
      * Registers a side effect to be executed after component updates.
      * Alias for RuntimeManager.registerEffect.
@@ -2040,7 +2070,21 @@ function bootstrap() {
 
 const navigateHistory = (event) => {
     const navigationState = event.state;
-    RuntimeManager.emit('beforeload', { route: location.toString() });
+    let isCancelled = false;
+    const popstatePayload = {
+        route: location.toString(),
+        state: navigationState ?? null,
+        nativeEvent: event,
+        defaultPrevented: false,
+        preventDefault: () => {
+            isCancelled = true;
+            popstatePayload.defaultPrevented = true;
+        },
+    };
+    RuntimeManager.emit('popstate', popstatePayload);
+    if (isCancelled) {
+        return;
+    }
     // --- Enable automatic scroll restoration ---
     history.scrollRestoration = "auto";
     // --- Check if we have valid PhpSPA state data ---
@@ -2109,19 +2153,10 @@ const navigateHistory = (event) => {
             if (navigationState?.reloadTime) {
                 setTimeout(AppManager.reloadComponent, navigationState.reloadTime);
             }
-            RuntimeManager.emit('load', {
-                route: navigationState.url,
-                success: true,
-                error: false
-            });
         };
         if (document.startViewTransition) {
             document.startViewTransition(updateDOM).finished.then(completedDOMUpdate).catch((reason) => {
-                RuntimeManager.emit('load', {
-                    route: location.href,
-                    success: false,
-                    error: reason || 'Unknown error during view transition',
-                });
+                console.error('Popstate view transition failed:', reason || 'Unknown error during view transition');
             });
         }
         else {
