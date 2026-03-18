@@ -29,7 +29,7 @@ interface Request {
      *
      * @return void
      */
-    public function __set($name, $value);
+    public function __set ($name, $value);
 
     /**
      * Magic getter that provides read-only, dynamic access to request data.
@@ -42,7 +42,7 @@ interface Request {
      * @param string $name The name of the property to retrieve.
      * @return mixed The resolved value for the given name, or null if not found.
      */
-    public function __get($name);
+    public function __get ($name);
 
     /**
      * Retrieves file data from the request by name.
@@ -108,12 +108,49 @@ interface Request {
      * Retrieves headers from the request.
      *
      * This method returns the headers sent with the HTTP request. If a specific header name is provided,
-     * it will return the value of that header; otherwise, it returns all headers as an object.
+     * it will return the value of that header; otherwise, it returns all headers as an associative array.
+     * By default, all header keys are normalized to lowercase for consistent access.
      *
-     * @param ?string $name The header name to retrieve. If omitted, returns all headers.
-     * @return mixed The header, or a specific header value if `$name` is provided.
+     * @param ?string $name The header name to retrieve (case-insensitive when $lowercase is true). If omitted, returns all headers.
+     * @param bool $lowercase Whether to normalize all header keys to lowercase. Defaults to true.
+     * @return mixed An associative array of all headers if no name is provided, or the value of the
+     *               specified header as a string, or null if the header does not exist.
+     *
+     * @example
+     * ```php
+     * // Get all headers (lowercase by default)
+     * $headers = $request->header();
+     * // ['accept-language' => 'en-US,en;q=0.9', 'sec-fetch-mode' => 'navigate', ...]
+     * ```
+     *
+     * @example
+     * ```php
+     * // Get all headers with original casing
+     * $headers = $request->header(lowercase: false);
+     * // ['Accept-Language' => 'en-US,en;q=0.9', 'Sec-Fetch-Mode' => 'navigate', ...]
+     * ```
+     *
+     * @example
+     * ```php
+     * // Get a specific header (case-insensitive when lowercase is true)
+     * $lang = $request->header('Accept-Language'); // 'en-US,en;q=0.9'
+     * $lang = $request->header('accept-language'); // same result
+     * ```
+     *
+     * @example
+     * ```php
+     * // Get a specific header with original casing (must match exactly)
+     * $lang = $request->header('Accept-Language', lowercase: false); // 'en-US,en;q=0.9'
+     * $lang = $request->header('accept-language', lowercase: false); // null (won't match)
+     * ```
+     *
+     * @example
+     * ```php
+     * // Returns null if header does not exist
+     * $missing = $request->header('X-Non-Existent'); // null
+     * ```
      */
-    public function header (?string $name = null);
+    public function header (?string $name = null, bool $lowercase = true);
 
     /**
      * Retrieves the request body as an associative array.
@@ -336,7 +373,7 @@ interface Request {
      * @since v2.0.5
      * @return string The site's full URL.
      */
-    public function siteURL(): string;
+    public function siteURL (): string;
 
     /**
      * Determines if the current HTTP request originates from the same origin as the server.
