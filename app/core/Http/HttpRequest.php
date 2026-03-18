@@ -98,6 +98,7 @@ class HttpRequest implements Request {
     public function header (?string $name = null, bool $lowercase = true)
     {
         $headers = [];
+        $name = ($name && $lowercase) ? strtolower($name) : $name;
 
         if (function_exists('getallheaders')) {
             $headers = $lowercase ? array_change_key_case(getallheaders(), CASE_LOWER) : getallheaders();
@@ -106,11 +107,21 @@ class HttpRequest implements Request {
             $headers = $lowercase ? array_change_key_case(apache_request_headers(), CASE_LOWER) : apache_request_headers();
         }
 
+        // --- If the header is found in the initial headers, return it immediately ---
+        if ($name && isset($headers[$name])) {
+            return $headers[$name];
+        }
+
         // Merge $_SERVER HTTP_ entries as fallback for anything missing
         foreach ($_SERVER as $key => $value) {
             if (strpos($key, 'HTTP_') === 0) {
                 $header = str_replace('_', '-', substr($key, 5));
                 $header = $lowercase ? strtolower($header) : $header;
+
+                // --- If we're looking for a specific header and it matches, return it immediately ---
+                if ($name && $header === $name) {
+                    return $value;
+                }
 
                 // Now both are lowercase, comparison is accurate
                 if (!isset($headers[$header])) {
@@ -123,8 +134,7 @@ class HttpRequest implements Request {
             return $headers;
         }
 
-        $name = $lowercase ? strtolower($name) : $name;
-        return $headers[$name] ?? null;
+        return null; // header not found
     }
 
     public function json (?string $name = null)
@@ -230,8 +240,8 @@ class HttpRequest implements Request {
     {
         // Check for forwarded IP addresses from proxies or load balancers
         if (
-         isset($_SERVER['HTTP_X_FORWARDED_FOR']) ||
-         $this->header('X-Forwarded-For')
+        isset($_SERVER['HTTP_X_FORWARDED_FOR']) ||
+        $this->header('X-Forwarded-For')
         ) {
             return $_SERVER['HTTP_X_FORWARDED_FOR'] ?:
                 $this->header('X-Forwarded-For');
