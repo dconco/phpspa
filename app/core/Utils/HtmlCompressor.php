@@ -98,8 +98,8 @@ trait HtmlCompressor
       // Append Comments
       $html = $comment . $html;
 
-      // Apply gzip compression if enabled and supported
-      $html = self::gzipCompress($html, $contentType);
+      // Apply binary compression (Zstd, Brotli, or Gzip) if enabled and supported
+      $html = self::applyBinaryCompression($html, $contentType);
 
       return $html;
    }
@@ -110,9 +110,10 @@ trait HtmlCompressor
     * @param string $content HTML content
     * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @param int $level Compression level
+    * @param string $scope Compression scope enum['GLOBAL', 'SCOPED']
     * @return string Minified HTML
     */
-   private static function minify(string $content, $type, int $level): string
+   private static function minify(string $content, $type, int $level, string $scope = 'global', bool $useEsbuild = false): string
    {
       if ($level === Compressor::LEVEL_NONE) return $content;
 
@@ -126,10 +127,10 @@ trait HtmlCompressor
       }
 
       if (self::isNativeCompressorAvailable()) {
-         $result = self::compressWithNative($content, $level, $type);
+         $result = self::compressWithNative($content, $level, $type, $scope, $useEsbuild);
       } else {
          // Fallback to PHP implementation
-         $result = self::compressWithFallback($content, $level, $type);
+         $result = self::compressWithFallback($content, $level, $type, $scope);
       }
 
       if ($type === 'HTML' && \is_array($preservedBlocks) && $preservedBlocks !== []) {
@@ -207,7 +208,7 @@ trait HtmlCompressor
    /**
     * Compress using the native shared library via FFI
     */
-   private static function compressWithNative(string $html, int $level, string $type): string
+   private static function compressWithNative(string $html, int $level, string $type, string $scope, bool $useEsbuild): string
    {
 		$nativeLevel = match ($level) {
          Compressor::LEVEL_AGGRESSIVE => 2,
@@ -215,7 +216,7 @@ trait HtmlCompressor
          default => 1,
       };
 
-      return NativeCompressor::compress($html, $nativeLevel, $type);
+      return NativeCompressor::compress($html, $nativeLevel, $type, $scope, $useEsbuild);
    }
 
    /**
@@ -226,7 +227,7 @@ trait HtmlCompressor
     * @param int $level Compression level
     * @return string Compressed HTML
     */
-   private static function compressWithFallback(string $content, int $level, string $type): string
+   private static function compressWithFallback(string $content, int $level, string $type, string $scope = 'global'): string
    {
       if ($type === 'JS') $content = "<script>$content</script>";
       elseif ($type === 'CSS') $content = "<style>$content</style>";
@@ -239,7 +240,14 @@ trait HtmlCompressor
       };
       $result = trim($result);
 
-      if ($type === 'JS') $result = substr($result, 8, -9); // Extract content inside <script> tags
+      if ($type === 'JS') {
+         $result = substr($result, 8, -9); // Extract content inside <script> tags
+
+         if ($scope === 'scoped' && !empty($result)) {
+            $result = rtrim($result, "; \t\n\r\0\x0B");
+            $result = "(()=>{{$result};})();";
+         }
+      }
       elseif ($type === 'CSS') $result = substr($result, 7, -8); // Extract content inside <style> tags
 
       return $result;
@@ -280,22 +288,48 @@ trait HtmlCompressor
    }
 
 
-   /**
-    * Apply gzip compression
-    *
-    * @param string $content Content to compress
-    * @return string Compressed content
-    */
-   public static function gzipCompress(
+    /**
+     * Apply binary compression based on content negotiation and server support.
+     * Tiered priority: Zstd > Brotli > Gzip
+     *
+     * @param string $content Content to compress
+     * @param string|null $contentType Optional content type header
+     * @return string Compressed content
+     */
+   public static function applyBinaryCompression(
       string $content,
       ?string $contentType = null,
    ): string {
-      if (self::supportsGzip() && self::$useGzip) {
-         $compressed = gzencode($content, 9); // Maximum compression level
+      if (!self::$useGzip) {
+         if (!headers_sent() && $contentType !== null) {
+            header("Content-Type: $contentType; charset=UTF-8");
+         }
+         return $content;
+      }
 
-         // Set appropriate headers for gzip compression
+      $acceptEncoding = $_SERVER['HTTP_ACCEPT_ENCODING'] ?? '';
+      $compressed = null;
+      $encoding = null;
+
+      // 1. Check Zstd (Priority 1)
+      if (function_exists('\zstd_compress') && strpos($acceptEncoding, 'zstd') !== false) {
+         $compressed = \zstd_compress($content, 3); // Recommended level for web
+         $encoding = 'zstd';
+      }
+      // 2. Check Brotli (Priority 2)
+      elseif (function_exists('\brotli_compress') && strpos($acceptEncoding, 'br') !== false) {
+         $compressed = \brotli_compress($content, 4, \BROTLI_TEXT);
+         $encoding = 'br';
+      }
+      // 3. Fallback to Gzip (Priority 3)
+      elseif (function_exists('\gzencode') && strpos($acceptEncoding, 'gzip') !== false) {
+         $compressed = \gzencode($content, 9);
+         $encoding = 'gzip';
+      }
+
+      if ($encoding !== null && $compressed !== false && $compressed !== null) {
          if (!headers_sent()) {
-            header('Content-Encoding: gzip');
+            header("Content-Encoding: $encoding");
             header('Vary: Accept-Encoding');
             header('Content-Length: ' . strlen($compressed));
 
@@ -307,10 +341,8 @@ trait HtmlCompressor
          return $compressed;
       }
 
-      if (!headers_sent()) {
-         if ($contentType !== null) {
-            header("Content-Type: $contentType; charset=UTF-8");
-         }
+      if (!headers_sent() && $contentType !== null) {
+         header("Content-Type: $contentType; charset=UTF-8");
       }
       return $content;
    }
@@ -336,7 +368,7 @@ trait HtmlCompressor
    public static function compressJson(array $data): string
    {
       $json = json_encode($data);
-      return self::gzipCompress($json, 'application/json');
+      return self::applyBinaryCompression($json, 'application/json');
    }
 
    /**
@@ -346,7 +378,7 @@ trait HtmlCompressor
     * @param string $type Content type enum['HTML', 'JS', 'CSS'] 
     * @return string Base64 encoded compressed content
     */
-   public static function compressComponent(string $content, $type = 'HTML'): string
+   public static function compressComponent(string $content, string $type = 'HTML'): string
    {
       // Apply minification based on compression level
       return self::minify($content, $type, Compressor::LEVEL_EXTREME);
@@ -390,13 +422,15 @@ trait HtmlCompressor
     * Compress content with specific level
     *
     * @param string $content Content to compress
-    * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @param int $level Compression level
+    * @param string $type Content type enum['HTML', 'JS', 'CSS']
+    * @param string $scope Compression scope enum['GLOBAL', 'SCOPED']
+    * @param bool $useEsbuild Use esbuild for minification
     * @return string Compressed content
     */
-   public static function compressWithLevel(string $content, int $level, $type = 'HTML'): string
+   public static function compressWithLevel(string $content, int $level, string $type = 'HTML', string $scope = 'global', bool $useEsbuild = false): string
    {
-      return self::minify($content, $type, $level);
+      return self::minify($content, $type, $level, $scope, $useEsbuild);
    }
 
    public static function getCompressionEngine(): string

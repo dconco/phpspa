@@ -1,4 +1,4 @@
-import { CurrentRoutesObject, EffectType, EventObject, EventPayload } from "../types/RuntimeInterfaces"
+import { CurrentRoutesObject, EffectType, EventObject, EventPayloadMap, RuntimeConfig } from "../types/RuntimeInterfaces"
 import { StateObject, StateValueType } from "../types/StateObjectTypes"
 import { utf8ToBase64 } from "../utils/baseConverter"
 
@@ -10,15 +10,15 @@ import { utf8ToBase64 } from "../utils/baseConverter"
  * for the PhpSPA framework. Uses an obscure class name to avoid conflicts.
  */
 export class RuntimeManager {
-   /**
-    * Tracks executed scripts to prevent duplicates
-    */
-   private static executedScripts: Set<string> = new Set()
+   public static config: RuntimeConfig = {
+      preserveUpdatedHtmlState: false,
+      waitForStyles: false,
+   }
 
    /**
     * Tracks executed styles to prevent duplicates
     */
-   private static executedStyles: Set<string> = new Set()
+   public static executedStyles: Set<string> = new Set()
 
    /**
     * A static cache object that stores processed script content to avoid redundant processing.
@@ -34,6 +34,7 @@ export class RuntimeManager {
    public static events: EventObject = {
       beforeload: [],
       load: [],
+      popstate: [],
    }
 
    public static currentStateData: Record<string, StateValueType>
@@ -41,7 +42,7 @@ export class RuntimeManager {
    /**
     * Caches the last payload for each emitted event so late listeners can replay it
     */
-   private static lastEventPayload: Partial<Record<keyof EventObject, EventPayload>> = {}
+   private static lastEventPayload: Partial<EventPayloadMap> = {}
 
    private static effects: Set<EffectType> = new Set()
 
@@ -166,7 +167,6 @@ export class RuntimeManager {
    }
 
    public static runScriptsForElement(element: HTMLElement): void {
-      this.runInlineScripts(element)
       this.runPhpSpaScripts(element)
    }
 
@@ -195,18 +195,14 @@ export class RuntimeManager {
             isModule
 
          if (src) {
-            if (!this.executedScripts.has(src)) {
-               this.executedScripts.add(src)
+            const newScript = document.createElement("script")
+            newScript.nonce = nonce ?? undefined
 
-               const newScript = document.createElement("script")
-               newScript.nonce = nonce ?? undefined
-
-               for (const attribute of Array.from(script.attributes)) {
-                  newScript.setAttribute(attribute.name, attribute.value)
-               }
-
-               document.head.appendChild(newScript)
+            for (const attribute of Array.from(script.attributes)) {
+               newScript.setAttribute(attribute.name, attribute.value)
             }
+
+            document.head.appendChild(newScript).remove()
 
             return
          }
@@ -215,95 +211,120 @@ export class RuntimeManager {
             return
          }
 
-         // --- Use base64 encoded content as unique identifier ---
-         const contentHash = utf8ToBase64(`${typeAttr}:${script.textContent.trim()}`)
+         // --- Create new script element ---
+         const newScript = document.createElement("script")
 
-         // --- Skip if this script has already been executed ---
-         if (!this.executedScripts.has(contentHash) && script.textContent.trim() !== "") {
-            this.executedScripts.add(contentHash)
+         newScript.nonce = nonce ?? undefined;
 
-            // --- Create new script element ---
-            const newScript = document.createElement("script")
-
-            newScript.nonce = nonce ?? undefined;
-
-            // --- Copy all attributes except the data-type identifier ---
-            for (const attribute of Array.from(script.attributes)) {
-               newScript.setAttribute(attribute.name, attribute.value)
-            }
-
-            newScript.textContent = script.textContent
-
-            // --- Execute and immediately remove from DOM ---
-            document.head.appendChild(newScript).remove()
+         // --- Copy all attributes except the data-type identifier ---
+         for (const attribute of Array.from(script.attributes)) {
+            newScript.setAttribute(attribute.name, attribute.value)
          }
+
+         newScript.textContent = script.textContent
+
+         // --- Execute and immediately remove from DOM ---
+         document.head.appendChild(newScript).remove()
       })
    }
 
 
    private static runPhpSpaScripts(container: HTMLElement) {
-      const scripts = container.querySelectorAll("phpspa-script, script[data-type=\"phpspa/script\"]") as NodeListOf<HTMLScriptElement>
+      const scripts = container.querySelectorAll("phpspa-script, script") as NodeListOf<HTMLScriptElement>
       const nonce = document.head.getAttribute('x-phpspa')
 
       scripts.forEach(async (script: HTMLScriptElement): Promise<void> => {
-         const scriptUrl = script.getAttribute('src') ?? ''
-         const scriptType = script.getAttribute('type') ?? ''
+         const scriptUrl = script.getAttribute('src')
+         const typeAttr = (script.getAttribute('type') ?? '').trim().toLowerCase()
+         const isModule = typeAttr === 'module'
+         const isExecutable =
+            typeAttr === '' ||
+            typeAttr === 'text/javascript' ||
+            typeAttr === 'application/javascript' ||
+            typeAttr === 'application/ecmascript' ||
+            typeAttr === 'text/ecmascript' ||
+            isModule
 
-         // --- Skip if this script has already been executed ---
-         if (!this.executedScripts.has(scriptUrl)) {
-            this.executedScripts.add(scriptUrl);
+         
+         if (!isExecutable) {
+            const newScript = document.createElement("script")
 
-            // --- Check cache first ---
-            if (this.ScriptsCachedContent[scriptUrl]) {
-               const newScript = document.createElement("script");
-               newScript.textContent = `(()=>{\n${this.ScriptsCachedContent[scriptUrl]}\n})()`;
-               newScript.nonce = nonce ?? undefined;
-               newScript.type = scriptType;
+            for (const attribute of Array.from(script.attributes)) {
+               newScript.setAttribute(attribute.name, attribute.value)
+            }
+            newScript.textContent = script.textContent
 
-               // --- Execute and immediately remove from DOM ---
-               document.head.appendChild(newScript).remove();
-               return;
+            if (!newScript.getAttribute('nonce')) newScript.nonce = nonce ?? undefined
+
+            // --- Execute and immediately remove from DOM ---
+            return document.head.appendChild(newScript).remove()
+         }
+
+         if (!scriptUrl) {
+            // --- Create new script element ---
+            const newScript = document.createElement("script")
+
+            // --- Copy all attributes ---
+            for (const attribute of Array.from(script.attributes)) {
+               newScript.setAttribute(attribute.name, attribute.value)
             }
 
-            const response = await fetch(scriptUrl, {
-               headers: {
-                  "X-Requested-With": "PHPSPA_REQUEST_SCRIPT",
-               }
-            })
+            if (!newScript.getAttribute('nonce')) newScript.nonce = nonce ?? undefined
 
-            if (response.ok) {
-               const scriptContent = await response.text()
+            newScript.textContent = script.textContent
 
-               // --- Create new script element ---
-               const newScript = document.createElement("script")
-               newScript.textContent = `(()=>{\n${scriptContent}\n})()`;
-               newScript.nonce = nonce ?? undefined;
-               newScript.type = scriptType;
+            // --- Execute and immediately remove from DOM ---
+            return document.head.appendChild(newScript).remove()
+         }
 
-               // --- Execute and immediately remove from DOM ---
-               document.head.appendChild(newScript).remove()
+         // --- Check cache first, then execute the cached content else download the script ---
+         if (this.ScriptsCachedContent[scriptUrl]) {
+            const newScript = document.createElement("script")
 
-               // --- Cache the fetched script content ---
-               this.ScriptsCachedContent[scriptUrl] = scriptContent;
-            } else {
-               console.error(`Failed to load script from ${scriptUrl}: ${response.statusText}`);
+            newScript.textContent = this.ScriptsCachedContent[scriptUrl]
+
+            for (const attribute of Array.from(script.attributes)) {
+               if (attribute.name == 'src') continue
+               newScript.setAttribute(attribute.name, attribute.value)
             }
+
+            if (!newScript.getAttribute('nonce')) newScript.nonce = nonce ?? undefined
+
+            // --- Execute and immediately remove from DOM ---
+            return document.head.appendChild(newScript).remove()
+         }
+
+         const response = await fetch(scriptUrl, {
+            headers: {
+               "X-Requested-With": "PHPSPA_REQUEST_SCRIPT",
+            }
+         })
+
+         if (response.ok) {
+            const scriptContent = await response.text()
+
+            // --- Create new script element ---
+            const newScript = document.createElement("script")
+            newScript.textContent = scriptContent;
+
+            for (const attribute of Array.from(script.attributes)) {
+               if (attribute.name == 'src') continue
+               newScript.setAttribute(attribute.name, attribute.value)
+            }
+
+            if (!newScript.getAttribute('nonce')) newScript.nonce = nonce ?? undefined
+
+            // --- Execute and immediately remove from DOM ---
+            document.head.appendChild(newScript).remove()
+
+            // --- Cache the fetched script content ---
+            this.ScriptsCachedContent[scriptUrl] = scriptContent;
+         } else {
+            console.error(`Failed to load script from ${scriptUrl}: ${response.statusText}`);
          }
       })
    }
 
-
-   /**
-    * Clears all executed scripts from the runtime manager.
-    * This method removes all entries from the executedScripts collection,
-    * effectively resetting the tracking of previously executed scripts.
-    *
-    * @static
-    * @memberof RuntimeManager
-    */
-   public static clearExecutedScripts() {
-      RuntimeManager.executedScripts.clear()
-   }
 
    /**
     * Processes and injects inline styles within a container
@@ -344,7 +365,7 @@ export class RuntimeManager {
     * @param eventName - The name of the event to emit
     * @param payload - The data to pass to event listeners
     */
-   static emit(eventName: keyof EventObject, payload: EventPayload) {
+   static emit<K extends keyof EventPayloadMap>(eventName: K, payload: EventPayloadMap[K]) {
       const callbacks = this.events[eventName] || []
       this.lastEventPayload[eventName] = payload
 
@@ -364,8 +385,37 @@ export class RuntimeManager {
    /**
     * Returns the last cached payload for an event, if available
     */
-   public static getLastEventPayload(eventName: keyof EventObject): EventPayload | undefined {
+   public static getLastEventPayload<K extends keyof EventPayloadMap>(eventName: K): EventPayloadMap[K] | undefined {
       return this.lastEventPayload[eventName]
+   }
+
+   public static off<K extends keyof EventPayloadMap>(eventName: K, callback?: (payload: EventPayloadMap[K]) => void): void {
+      if (!this.events[eventName]) {
+         return
+      }
+
+      if (!callback) {
+         this.events[eventName] = []
+         delete this.lastEventPayload[eventName]
+         return
+      }
+
+      const listeners = this.events[eventName] as Array<(payload: EventPayloadMap[K]) => void>
+      this.events[eventName] = listeners.filter((cb) => cb !== callback) as EventObject[K]
+   }
+
+   public static resetEvents(eventName?: keyof EventPayloadMap): void {
+      if (eventName) {
+         this.events[eventName] = []
+         delete this.lastEventPayload[eventName]
+         return
+      }
+
+      (Object.keys(this.events) as Array<keyof EventPayloadMap>).forEach((name) => {
+         this.events[name] = []
+      })
+
+      this.lastEventPayload = {}
    }
 
    /**
@@ -392,5 +442,16 @@ export class RuntimeManager {
          // --- Silently handle history API restrictions ---
          console.warn("Failed to replace history state:", error instanceof Error ? error.message : error)
       }
+   }
+
+   public static configure(config: Partial<RuntimeConfig>) {
+      RuntimeManager.config = {
+         ...RuntimeManager.config,
+         ...config,
+      }
+   }
+
+   public static getConfig(): RuntimeConfig {
+      return { ...RuntimeManager.config }
    }
 }

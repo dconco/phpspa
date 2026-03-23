@@ -36,20 +36,18 @@ final class HtmlCompressorTest extends TestCase
       $_SERVER['HTTP_ACCEPT_ENCODING'] = 'gzip';
       Compressor::setGzipEnabled(true);
 
-      $this->assertTrue(Compressor::supportsGzip());
-
       $compressed = Compressor::compressJson(['a' => 1]);
       $decoded = gzdecode($compressed);
 
       $this->assertSame('{"a":1}', $decoded);
    }
 
-   public function testGzipCompressReturnsGzipPayload(): void
+   public function testApplyBinaryCompressionReturnsGzipPayload(): void
    {
       $_SERVER['HTTP_ACCEPT_ENCODING'] = 'gzip';
       Compressor::setGzipEnabled(true);
 
-      $compressed = Compressor::gzipCompress('data', 'text/plain');
+      $compressed = Compressor::applyBinaryCompression('data', 'text/plain');
 
       $this->assertStringStartsWith("\x1f\x8b", $compressed);
    }

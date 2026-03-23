@@ -1,5 +1,96 @@
 # CHANGELOG
 
+## v2.0.9 (Development) (PHP 8.4)
+
+**Installation:**
+```bash
+composer require dconco/phpspa:dev-support/php-8.4
+```
+
+### ✨ New Features
+
+#### **esbuild as Default JS Minifier** 🚀
+
+- JavaScript minification now uses the professional `esbuild` bundler **by default**.
+- Esbuild provides superior minification, bundling, and tree-shaking compared to the built-in C++/PHP minifier.
+- For best performance, install `esbuild` globally: `npm install --global esbuild`. Falls back to `npx` if not found.
+- To disable esbuild and use the internal minifier instead, call `disableMinificationWithEsbuild()`. This gives you faster minification but with less compression.
+
+#### **Custom Compressor Library Path**
+- Added `setCustomCompressorLibraryPath(string $path)` to specify a custom path to the native compressor shared library.
+
+#### **Force Native Compression**
+- Added `forceNativeCompression()` to force the use of native (C++) compression over the PHP fallback.
+
+#### **Client Runtime Config for Navigation & Style Loading**
+
+- Added `phpspa.config()` runtime options for client-side behavior control.
+- `preserveUpdatedHtmlState` (default: `false`): if set to true, it stores the current live target HTML into history state before route changes, so browser back/forward restores the latest DOM (not only the initial server render).
+- `waitForStyles` (default: `false`): enables stylesheet preloading before DOM swap to help avoid flash-of-unstyled-content during navigation.
+
+```js
+// Enable both runtime options
+phpspa.config({
+   preserveUpdatedHtmlState: true,
+   waitForStyles: true,
+});
+```
+
+#### **Dedicated Popstate Lifecycle + Listener Control**
+
+- Browser history navigation now uses a dedicated `popstate` runtime event instead of triggering `beforeload` and `load`.
+- `popstate` is cancelable: listeners can call `payload.preventDefault()` to stop the default history DOM restore.
+- Added `phpspa.off(event, callback?)` to remove one listener or clear all listeners for a specific event.
+- Added `phpspa.resetEvents(event?)` to clear listeners for one event or reset all runtime events.
+
+```js
+const onHistoryNavigate = (payload) => {
+   if (shouldBlockHistoryNavigation()) {
+      payload.preventDefault();
+   }
+};
+
+phpspa.on('popstate', onHistoryNavigate);
+
+// remove one listener
+phpspa.off('popstate', onHistoryNavigate);
+
+// clear all listeners for one event
+phpspa.off('popstate');
+
+// clear all runtime event listeners
+phpspa.resetEvents();
+```
+
+
+```php
+use PhpSPA\App;
+
+$app = new App(...);
+// esbuild is enabled by default, no need to call anything
+
+// --- To disable esbuild: ---
+$app->disableMinificationWithEsbuild();
+
+// --- To force native compression: ---
+$app->forceNativeCompression();
+
+// --- To set a custom path to the native compressor library: ---
+$app->setCustomCompressorLibraryPath(dirname(__DIR__, 1) . '/src/bin/libcompressor-wsl.so');
+
+$app->run();
+```
+
+
+
+
+
+---
+
+
+
+
+
 ## v2.0.8 (Stable) (Latest) (PHP 8.4)
 
 **Installation:**
@@ -1311,14 +1402,6 @@ Include the JS engine:
 ```html
 <script src="https://cdn.jsdelivr.net/npm/phpspa-js"></script>
 ```
-
----
-
-## 🧱 Coming Soon
-
-- 🛡️ CSRF protection helpers and automatic verification
-- 🧪 Testing utilities for components
-- 🌐 Built-in i18n tools
 
 ---
 

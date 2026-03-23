@@ -1,5 +1,5 @@
 import { ComponentObject, StateObject, StateValueType } from "../types/StateObjectTypes"
-import { EventObject, EventPayload } from "../types/RuntimeInterfaces"
+import { EventObject, EventPayloadMap, RuntimeConfig } from "../types/RuntimeInterfaces"
 import { clearPreloadedStylesForScope, preloadStylesFromContent } from "../utils/preloadStylesFromContent"
 import { utf8ToBase64 } from "../utils/baseConverter"
 import { RuntimeManager } from "./RuntimeManager"
@@ -8,6 +8,31 @@ import morphdom from "morphdom"
 export class AppManager {
 
    public static currentStateData: Record<string, StateValueType> = {}
+
+   public static config(config: Partial<RuntimeConfig>): void {
+      RuntimeManager.configure(config)
+   }
+
+   private static snapshotCurrentRouteState(): void {
+      if (!RuntimeManager.config.preserveUpdatedHtmlState) return
+
+      const currentState = history.state as StateObject | null
+
+      if (!currentState?.targetID) return
+
+      const currentTarget = document.getElementById(currentState.targetID)
+
+      if (!currentTarget) return
+
+      const updatedState: StateObject = {
+         ...currentState,
+         url: location.toString(),
+         title: document.title,
+         content: currentTarget.innerHTML,
+      }
+
+      RuntimeManager.replaceState(updatedState, updatedState.title, updatedState.url)
+   }
 
 
    /**
@@ -23,6 +48,9 @@ export class AppManager {
     */
    public static navigate(url: URL|string, state: 'push' | 'replace' = "push") {
       const newUrl = url instanceof URL ? url : new URL(url, location.toString())
+
+      // --- Persist current DOM state before changing route when enabled ---
+      AppManager.snapshotCurrentRouteState()
 
       // --- Emit beforeload event for loading indicators ---
       RuntimeManager.emit("beforeload", { route: newUrl.toString() })
@@ -175,23 +203,33 @@ export class AppManager {
          // --- Update content ---
          const updateDOM = async () => {
 
-            const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__'
+            if (RuntimeManager.config.waitForStyles === true) {
+               const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__'
 
-            // --- Preload stylesheets in the new content ---
-            tempElem = await preloadStylesFromContent(component.content, styleScopeKey)
+               // --- Preload stylesheets in the new content ---
+               tempElem = await preloadStylesFromContent(component.content, styleScopeKey)
 
-            if (tempElem) {
+               if (tempElem) {
+                  try {
+                     morphdom(targetElement, tempElem, {
+                        childrenOnly: true
+                     })
+                  } catch {
+                     targetElement.innerHTML = tempElem.innerHTML
+                  }
+               }
+            } else {
                try {
-                  morphdom(targetElement, tempElem, {
+                  morphdom(targetElement, `<div>${component.content}</div>`, {
                      childrenOnly: true
                   })
                } catch {
-                  targetElement.innerHTML = tempElem.innerHTML
+                  targetElement.innerHTML = component.content
                }
             }
 
             // --- Execute any inline styles in the new content ---
-               RuntimeManager.runStylesForElement(targetElement)
+            RuntimeManager.runStylesForElement(targetElement)
          }
 
 
@@ -219,10 +257,9 @@ export class AppManager {
 
             // --- Clear old executed scripts cache ---
             RuntimeManager.clearEffects()
-            RuntimeManager.clearExecutedScripts()
 
             // --- Execute any inline scripts in the new content ---
-               RuntimeManager.runScriptsForElement(targetElement)
+            RuntimeManager.runScriptsForElement(targetElement)
 
             // --- Handle URL fragments (hash navigation) ---
             const hashElement = document.getElementById(newUrl.hash.substring(1))
@@ -293,7 +330,7 @@ export class AppManager {
     * @param event - The name of the event to listen for.
     * @param callback - The function to call when the event is triggered.
     */
-   public static on(event: keyof EventObject, callback: (payload: EventPayload) => void) {
+   public static on<K extends keyof EventObject>(event: K, callback: (payload: EventPayloadMap[K]) => void) {
       if (!RuntimeManager.events[event]) {
          RuntimeManager.events[event] = []
       }
@@ -307,6 +344,14 @@ export class AppManager {
             console.error(`Error in ${event} event callback:`, error)
          }
       }
+   }
+
+   public static off<K extends keyof EventObject>(event: K, callback?: (payload: EventPayloadMap[K]) => void): void {
+      RuntimeManager.off(event, callback)
+   }
+
+   public static resetEvents(event?: keyof EventObject): void {
+      RuntimeManager.resetEvents(event)
    }
 
    /**
@@ -555,31 +600,38 @@ export class AppManager {
             document.body
 
          const updateDOM = async () => {
-            const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__'
-            const tempElem = await preloadStylesFromContent(component.content, styleScopeKey)
+            if (RuntimeManager.config.waitForStyles === true) {
+               const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__'
+               const tempElem = await preloadStylesFromContent(component.content, styleScopeKey)
 
-            try {
-               morphdom(targetElement, tempElem, {
-                  childrenOnly: true
-               })
-            } catch {
-               targetElement.innerHTML = tempElem.innerHTML
+               try {
+                  morphdom(targetElement, tempElem, {
+                     childrenOnly: true
+                  })
+               } catch {
+                  targetElement.innerHTML = tempElem.innerHTML
+               }
+            } else {
+               try {
+                  morphdom(targetElement, `<div>${component.content}</div>`, {
+                     childrenOnly: true
+                  })
+               } catch {
+                  targetElement.innerHTML = component.content
+               }
             }
 
             // --- Execute any inline styles in the new content ---
-               RuntimeManager.runStylesForElement(targetElement)
+            RuntimeManager.runStylesForElement(targetElement)
          }
 
          const completedDOMUpdate = () => {
 
-             // Clean up temp element
-
             // --- Clear old executed scripts cache ---
             RuntimeManager.clearEffects()
-            RuntimeManager.clearExecutedScripts()
 
             // --- Execute any inline scripts in the new content ---
-               RuntimeManager.runScriptsForElement(targetElement)
+            RuntimeManager.runScriptsForElement(targetElement)
 
             // --- Set up next auto-reload if specified ---
             if (component?.reloadTime) {

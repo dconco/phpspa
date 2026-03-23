@@ -2,6 +2,7 @@
 
 namespace PhpSPA\Core\Impl\RealImpl;
 
+use PhpSPA\Core\Utils\Timer;
 use PhpSPA\DOM;
 use PhpSPA\Component;
 use PhpSPA\Http\Request;
@@ -64,7 +65,7 @@ abstract class AppImpl implements ApplicationContract {
     * Each component can be accessed and managed by the application core.
     * Typically used for dependency injection or service management.
     *
-    * @var Component|IComponent[]
+    * @var array<Component|IComponent>
     */
    private array $components = [];
 
@@ -129,6 +130,8 @@ abstract class AppImpl implements ApplicationContract {
    private bool $randomizeAssetName = false;
 
    private ?string $generatedCacheDirectory = null;
+
+   private bool $useEsbuild = true;
 
    public function defaultTargetID (string $targetID): ApplicationContract
    {
@@ -202,6 +205,18 @@ abstract class AppImpl implements ApplicationContract {
    public function assetCacheHours (int $hours): ApplicationContract
    {
       AssetLinkManager::setCacheConfig($hours);
+      return $this;
+   }
+
+   public function setCustomCompressorLibraryPath(string $path): ApplicationContract
+   {
+      putenv("PHPSPA_COMPRESSOR_LIB=$path");
+      return $this;
+   }
+
+   public function forceNativeCompression(): ApplicationContract
+   {
+      putenv("PHPSPA_COMPRESSION_STRATEGY=native");
       return $this;
    }
 
@@ -309,6 +324,11 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
+   public function disableMinificationWithEsbuild(): ApplicationContract {
+      $this->useEsbuild = false;
+      return $this;
+   }
+
    public function randomizeAssetName(): ApplicationContract {
       $this->randomizeAssetName = true;
       return $this;
@@ -358,7 +378,11 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       if ($success === true) {
+         $timer = new Timer();
+
+         $timer->start();
          $compressedOutput = Compressor::compress((string) $this->renderedData, 'text/html');
+         error_log("Compressed HTML output within {$timer->getFormattedElapsedTime()} | From {$request->path()}");
 
          if ($return) return $compressedOutput;
 
@@ -562,6 +586,7 @@ abstract class AppImpl implements ApplicationContract {
 
          // Merge DOM meta (dynamic, set by user in component) and override any with same name/property/charset
          $domMeta = DOM::meta();
+
          if (!empty($domMeta)) {
             foreach ($domMeta as $domEntry) {
                foreach ($metaTags as $k => $meta) {
@@ -577,6 +602,7 @@ abstract class AppImpl implements ApplicationContract {
 
          // Merge DOM link (dynamic, set by user in component) and override any with same name or rel
          $domLinks = DOM::link();
+
          if (!empty($domLinks)) {
             foreach ($domLinks as $domLink) {
                $domName = $domLink['name'] ?? null;
@@ -626,6 +652,7 @@ abstract class AppImpl implements ApplicationContract {
 
          if ($request->requestedWith() !== 'PHPSPA_REQUEST' && !empty($metaTags)) {
             $metaMarkup = $this->buildMetaTagMarkup($metaTags);
+
             if ($metaMarkup !== '') {
                $layoutOutput = $this->injectMetaTags($layoutOutput, $metaMarkup);
             }
@@ -720,14 +747,21 @@ abstract class AppImpl implements ApplicationContract {
       if (!$isPreloadingComponent) {
          if ($title) {
             $count = 0;
+
             $layoutOutput = preg_replace_callback(
-               pattern: '/<title\b([^>]*)>.*?<\/title>/si',
-               callback: fn ($matches) =>
-                  // --- $matches[1] contains any attributes inside the <title> tag ---
-                  "\n      <title" . ($matches[1] ?? null) . '>' . $title . '</title>',
-               subject: $layoutOutput,
-               limit: -1,
-               count: $count,
+               '/(<head\b[^>]*>)(.*?)(<\/head>)/is',
+               function ($headMatches) use ($title, &$count) {
+                  $headContent = preg_replace_callback(
+                     '/<title\b([^>]*)>.*?<\/title>/si',
+                     fn ($matches) => "\n      <title" . ($matches[1] ?? null) . '>' . $title . '</title>',
+                     $headMatches[2],
+                     1,
+                     $count
+                  );
+                  return $headMatches[1] . $headContent . $headMatches[3];
+               },
+               $layoutOutput,
+               1
             );
 
             if ($count === 0) {
@@ -1073,11 +1107,7 @@ abstract class AppImpl implements ApplicationContract {
                else {
                   $content = require $newName;
 
-                  // --- Wrap component requested by initial page load in IIFE ---
-                  if (!$isGlobalAsset && !$isPhpSpaRequest && $isJS) {
-                     $content = "(()=>{{$content}})()";
-                  }
-                  $content = Compressor::gzipCompress($content);
+                  $content = Compressor::applyBinaryCompression($content);
                   $this->setAssetHeaders($assetInfo['type']);
                   echo $content;
                   exit(0);
@@ -1106,21 +1136,27 @@ abstract class AppImpl implements ApplicationContract {
       if (\is_array($content)) {
          $content = $content[0];
       } else {
-         // --- Compress the content ---
-         $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type']);
+         if ($currentLevel > Compressor::LEVEL_NONE) {
+            $timer = new Timer();
+            $assetType = strtoupper($assetInfo['assetType']);
+            
+            // --- Compress the content ---
+            $timer->start();
+            $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type'], $isGlobalAsset ? 'global' : 'scoped');
+            error_log("Compressed $assetType asset output within {$timer->getFormattedElapsedTime()} | From {$assetInfo['name']}");
 
-         if ($currentLevel > Compressor::LEVEL_NONE && !$isPhpSpaRequest) {
-            if (!is_dir($fileDir)) mkdir($fileDir);
+            if (!$isPhpSpaRequest) {
+               if (!is_dir($fileDir)) mkdir($fileDir);
 
-            if ($fileName) {
-               $assetType = strtoupper($assetInfo['assetType']);
-               @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
+               if ($fileName) {
+                  @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
+               }
             }
-         }
-
-         // --- Wrap component requested by initial page load in IIFE ---
-         if (!$isGlobalAsset && !$isPhpSpaRequest && $isJS) {
-            $content = "(()=>{{$content}})()";
+         } else {
+            // --- Wrap component in IIFE ---
+            if (!$isGlobalAsset && $isJS) {
+               $content = "(()=>{{$content}})()";
+            }
          }
       }
 
@@ -1223,16 +1259,17 @@ abstract class AppImpl implements ApplicationContract {
     * @param string $content The content to compress
     * @param int $level Compression level
     * @param string $type Asset type ('css' or 'js')
+    * @param string $scope Compression scope ('global' or 'scoped')
     * @return string Compressed content
     */
-   private function compressAssetContent (string $content, int $level, string $type): string
+   private function compressAssetContent (string $content, int $level, string $type, string $scope): string
    {
       if ($type === 'css')
-         return Compressor::compressWithLevel($content, $level, 'CSS');
+         return Compressor::compressWithLevel($content, $level, 'CSS', $scope);
       elseif ($type === 'js')
-         return Compressor::compressWithLevel($content, $level, 'JS');
-
-      return Compressor::compressWithLevel($content, $level, 'HTML');
+         return Compressor::compressWithLevel($content, $level, 'JS', $scope, $this->useEsbuild);
+      else
+         return Compressor::compressWithLevel($content, $level, 'HTML', $scope);
    }
 
    /**

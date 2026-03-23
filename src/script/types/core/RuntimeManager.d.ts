@@ -1,4 +1,4 @@
-import { CurrentRoutesObject, EventObject, EventPayload } from "../types/RuntimeInterfaces";
+import { CurrentRoutesObject, EventObject, EventPayloadMap, RuntimeConfig } from "../types/RuntimeInterfaces";
 import { StateObject, StateValueType } from "../types/StateObjectTypes";
 /**
  * Runtime Manager for PhpSPA
@@ -7,14 +7,11 @@ import { StateObject, StateValueType } from "../types/StateObjectTypes";
  * for the PhpSPA framework. Uses an obscure class name to avoid conflicts.
  */
 export declare class RuntimeManager {
-    /**
-     * Tracks executed scripts to prevent duplicates
-     */
-    private static executedScripts;
+    static config: RuntimeConfig;
     /**
      * Tracks executed styles to prevent duplicates
      */
-    private static executedStyles;
+    static executedStyles: Set<string>;
     /**
      * A static cache object that stores processed script content to avoid redundant processing.
      * Used to improve performance by caching scripts that have already been processed or compiled.
@@ -67,15 +64,6 @@ export declare class RuntimeManager {
     private static runInlineScripts;
     private static runPhpSpaScripts;
     /**
-     * Clears all executed scripts from the runtime manager.
-     * This method removes all entries from the executedScripts collection,
-     * effectively resetting the tracking of previously executed scripts.
-     *
-     * @static
-     * @memberof RuntimeManager
-     */
-    static clearExecutedScripts(): void;
-    /**
      * Processes and injects inline styles within a container
      * Prevents duplicate style injection by tracking content hashes
      */
@@ -87,11 +75,13 @@ export declare class RuntimeManager {
      * @param eventName - The name of the event to emit
      * @param payload - The data to pass to event listeners
      */
-    static emit(eventName: keyof EventObject, payload: EventPayload): void;
+    static emit<K extends keyof EventPayloadMap>(eventName: K, payload: EventPayloadMap[K]): void;
     /**
      * Returns the last cached payload for an event, if available
      */
-    static getLastEventPayload(eventName: keyof EventObject): EventPayload | undefined;
+    static getLastEventPayload<K extends keyof EventPayloadMap>(eventName: K): EventPayloadMap[K] | undefined;
+    static off<K extends keyof EventPayloadMap>(eventName: K, callback?: (payload: EventPayloadMap[K]) => void): void;
+    static resetEvents(eventName?: keyof EventPayloadMap): void;
     /**
      * Safely pushes a new state to browser history
      * Wraps in try-catch to handle potential browser restrictions
@@ -102,5 +92,7 @@ export declare class RuntimeManager {
      * Wraps in try-catch to handle potential browser restrictions
      */
     static replaceState(data: StateObject, unused: string, url?: string | URL | null): void;
+    static configure(config: Partial<RuntimeConfig>): void;
+    static getConfig(): RuntimeConfig;
 }
 //# sourceMappingURL=RuntimeManager.d.ts.map

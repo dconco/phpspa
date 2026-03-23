@@ -1,5 +1,5 @@
 import morphdom from "morphdom"
-import { clearPreloadedStylesForScope, preloadStylesFromContent } from "../utils/preloadStylesFromContent"
+import { clearPreloadedStylesForScope } from "../utils/preloadStylesFromContent"
 import { RuntimeManager } from "../core/RuntimeManager"
 import { StateObject } from "../types/StateObjectTypes"
 import { AppManager } from "../core/AppManager"
@@ -7,7 +7,24 @@ import { AppManager } from "../core/AppManager"
 export const navigateHistory = (event: PopStateEvent) => {
    const navigationState: StateObject = event.state
 
-   RuntimeManager.emit('beforeload', { route: location.toString() })
+   let isCancelled = false
+
+   const popstatePayload = {
+      route: location.toString(),
+      state: navigationState ?? null,
+      nativeEvent: event,
+      defaultPrevented: false,
+      preventDefault: () => {
+         isCancelled = true
+         popstatePayload.defaultPrevented = true
+      },
+   }
+
+   RuntimeManager.emit('popstate', popstatePayload)
+
+   if (isCancelled) {
+      return
+   }
 
    // --- Enable automatic scroll restoration ---
    history.scrollRestoration = "auto"
@@ -49,7 +66,7 @@ export const navigateHistory = (event: PopStateEvent) => {
             let currentHTML = document.getElementById(targetID)
             if (currentHTML) {
                try {
-                  morphdom(currentHTML, '<div>' + targetInfo.defaultContent + '</div>', {
+                  morphdom(currentHTML, `<div>${targetInfo.defaultContent}</div>`, {
                      childrenOnly: true
                   })
                } catch {
@@ -65,26 +82,25 @@ export const navigateHistory = (event: PopStateEvent) => {
 
       // --- Decode and restore HTML content ---
       const updateDOM = async () => {
-         const styleScopeKey = navigationState.targetID || targetContainer.id || '__phpspa_body__'
-         const tempElem = await preloadStylesFromContent(navigationState.content, styleScopeKey)
+         // const styleScopeKey = navigationState.targetID || targetContainer.id || '__phpspa_body__'
+         // const tempElem = await preloadStylesFromContent(navigationState.content, styleScopeKey)
 
          try {
-            morphdom(targetContainer, tempElem, {
+            morphdom(targetContainer, `<div>${navigationState.content}</div>`, {
                childrenOnly: true
             })
          } catch {
-            targetContainer.innerHTML = tempElem.innerHTML
+            targetContainer.innerHTML = navigationState.content
          }
 
          // --- Execute any inline styles in the new content ---
-         RuntimeManager.runStylesForElement(targetContainer)
+         // RuntimeManager.runStylesForElement(targetContainer)
       }
 
       const completedDOMUpdate = async () => {
 
          // --- Clear old executed scripts cache ---
          RuntimeManager.clearEffects()
-         RuntimeManager.clearExecutedScripts()
 
          // --- Execute any inline scripts in the restored content ---
          RuntimeManager.runScriptsForElement(targetContainer)
@@ -93,21 +109,11 @@ export const navigateHistory = (event: PopStateEvent) => {
          if (navigationState?.reloadTime) {
             setTimeout(AppManager.reloadComponent, navigationState.reloadTime)
          }
-
-         RuntimeManager.emit('load', {
-            route: navigationState.url,
-            success: true,
-            error: false
-         })
       }
 
       if (document.startViewTransition) {
          document.startViewTransition(updateDOM).finished.then(completedDOMUpdate).catch((reason) => {
-            RuntimeManager.emit('load', {
-               route: location.href,
-               success: false,
-               error: reason || 'Unknown error during view transition',
-            })
+            console.error('Popstate view transition failed:', reason || 'Unknown error during view transition')
          })
       } else {
          updateDOM().then(completedDOMUpdate)

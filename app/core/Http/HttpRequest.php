@@ -6,17 +6,16 @@ use PhpSPA\Http\Request;
 use PhpSPA\Http\Session;
 use stdClass;
 
-class HttpRequest implements Request
-{
+class HttpRequest implements Request {
     use \PhpSPA\Core\Auth\Authentication;
 
     private array $tempData = [];
 
-    public function __construct(readonly private array $params = [])
+    public function __construct (readonly private array $params = [])
     {
     }
 
-    public function __invoke(string $key, ?string $default = null): mixed
+    public function __invoke (string $key, ?string $default = null): mixed
     {
         if (isset($_REQUEST[$key])) {
             return $_REQUEST[$key];
@@ -25,17 +24,17 @@ class HttpRequest implements Request
         return $default;
     }
 
-    public function __set($name, $value)
+    public function __set ($name, $value)
     {
         $this->tempData[$name] = $value;
     }
 
-    public function __get($name)
+    public function __get ($name)
     {
         return $this->tempData[$name] ?? null;
     }
 
-    public function files(?string $name = null): ?array
+    public function files (?string $name = null): ?array
     {
         if (!$name) {
             return $_FILES;
@@ -47,12 +46,12 @@ class HttpRequest implements Request
         return $_FILES[$name];
     }
 
-    public function apiKey(string $key = 'Api-Key')
+    public function apiKey (string $key = 'Api-Key')
     {
         return self::RequestApiKey($key);
     }
 
-    public function auth(): stdClass
+    public function auth (): stdClass
     {
         $cl = new stdClass();
         $cl->basic = self::BasicAuthCredentials();
@@ -61,7 +60,7 @@ class HttpRequest implements Request
         return $cl;
     }
 
-    public function urlQuery(?string $name = null)
+    public function urlQuery (?string $name = null)
     {
         $parsed = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
 
@@ -88,7 +87,7 @@ class HttpRequest implements Request
         return $cl->$name;
     }
 
-    public function urlParams(?string $name = null)
+    public function urlParams (?string $name = null)
     {
         if (!$name) {
             return $this->params;
@@ -96,19 +95,36 @@ class HttpRequest implements Request
         return $this->params[$name] ?? null;
     }
 
-    public function header(?string $name = null)
+    public function header (?string $name = null, bool $lowercase = true)
     {
         $headers = [];
+        $name = ($name && $lowercase) ? strtolower($name) : $name;
 
         if (function_exists('getallheaders')) {
-            $headers = getallheaders();
-        } elseif (function_exists('apache_request_headers')) {
-            $headers = apache_request_headers();
-        } else {
-            // CLI fallback - construct headers from $_SERVER
-            foreach ($_SERVER as $key => $value) {
-                if (strpos($key, 'HTTP_') === 0) {
-                    $header = str_replace('_', '-', substr($key, 5));
+            $headers = $lowercase ? array_change_key_case(getallheaders(), CASE_LOWER) : getallheaders();
+        }
+        elseif (function_exists('apache_request_headers')) {
+            $headers = $lowercase ? array_change_key_case(apache_request_headers(), CASE_LOWER) : apache_request_headers();
+        }
+
+        // --- If the header is found in the initial headers, return it immediately ---
+        if ($name && isset($headers[$name])) {
+            return $headers[$name];
+        }
+
+        // Merge $_SERVER HTTP_ entries as fallback for anything missing
+        foreach ($_SERVER as $key => $value) {
+            if (strpos($key, 'HTTP_') === 0) {
+                $header = str_replace('_', '-', substr($key, 5));
+                $header = $lowercase ? strtolower($header) : $header;
+
+                // --- If we're looking for a specific header and it matches, return it immediately ---
+                if ($name && $header === $name) {
+                    return $value;
+                }
+
+                // Now both are lowercase, comparison is accurate
+                if (!isset($headers[$header])) {
                     $headers[$header] = $value;
                 }
             }
@@ -117,10 +133,11 @@ class HttpRequest implements Request
         if (!$name) {
             return $headers;
         }
-        return $headers[$name] ?? null;
+
+        return null; // header not found
     }
 
-    public function json(?string $name = null)
+    public function json (?string $name = null)
     {
         $data = json_decode(file_get_contents('php://input'), true);
 
@@ -134,7 +151,7 @@ class HttpRequest implements Request
         return $data;
     }
 
-    public function get(?string $key = null)
+    public function get (?string $key = null)
     {
         if (!$key) {
             return $_GET;
@@ -145,7 +162,7 @@ class HttpRequest implements Request
         return $_GET[$key] ?? null;
     }
 
-    public function post(?string $key = null)
+    public function post (?string $key = null)
     {
         if (!$key) {
             return $_POST;
@@ -158,10 +175,10 @@ class HttpRequest implements Request
         return $data;
     }
 
-    public function form(?string $key = null)
+    public function form (?string $key = null)
     {
         if ($key === null) {
-            return [...$_POST ?? [], ...$_FILES ?? []];
+            return [ ...$_POST ?? [], ...$_FILES ?? [] ];
         }
 
         if (isset($_POST[$key])) {
@@ -175,27 +192,27 @@ class HttpRequest implements Request
         return null;
     }
 
-    public function all(): array
+    public function all (): array
     {
         $data = [];
 
         if (\is_array($_GET ?? null)) {
-            $data = [...$data, ...$_GET];
+            $data = [ ...$data, ...$_GET ];
         }
 
         if (\is_array($_POST ?? null)) {
-            $data = [...$data, ...$_POST];
+            $data = [ ...$data, ...$_POST ];
         }
 
         $json = $this->json();
         if (\is_array($json)) {
-            $data = [...$data, ...$json];
+            $data = [ ...$data, ...$json ];
         }
 
         return $data;
     }
 
-    public function cookie(?string $key = null)
+    public function cookie (?string $key = null)
     {
         if (!$key) {
             return $_COOKIE;
@@ -203,7 +220,7 @@ class HttpRequest implements Request
         return $_COOKIE[$key] ?? null;
     }
 
-    public function session(?string $key = null)
+    public function session (?string $key = null)
     {
         Session::start();
 
@@ -214,17 +231,17 @@ class HttpRequest implements Request
         return Session::get($key);
     }
 
-    public function method(): string
+    public function method (): string
     {
         return strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
     }
 
-    public function ip(): string
+    public function ip (): string
     {
         // Check for forwarded IP addresses from proxies or load balancers
         if (
-            isset($_SERVER['HTTP_X_FORWARDED_FOR']) ||
-            $this->header('X-Forwarded-For')
+        isset($_SERVER['HTTP_X_FORWARDED_FOR']) ||
+        $this->header('X-Forwarded-For')
         ) {
             return $_SERVER['HTTP_X_FORWARDED_FOR'] ?:
                 $this->header('X-Forwarded-For');
@@ -232,74 +249,74 @@ class HttpRequest implements Request
         return $_SERVER['REMOTE_ADDR'] ?? '';
     }
 
-    public function isAjax(): bool
+    public function isAjax (): bool
     {
         return strtolower(
             $_SERVER['HTTP_X_REQUESTED_WITH'] ?? $this->header('X-Requested-With'),
         ) === 'xmlhttprequest';
     }
 
-    public function referrer(): ?string
+    public function referrer (): ?string
     {
         return $_SERVER['HTTP_REFERER'] ?? $this->header('Referer') !== null
             ? $_SERVER['HTTP_REFERER']
             : null;
     }
 
-    public function protocol(): ?string
+    public function protocol (): ?string
     {
         return $_SERVER['SERVER_PROTOCOL'] ?? null;
     }
 
-    public function isMethod(string $method): bool
+    public function isMethod (string $method): bool
     {
         return $this->method() === strtoupper($method);
     }
 
-    public function isHttps(): bool
+    public function isHttps (): bool
     {
         return !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ||
             $_SERVER['SERVER_PORT'] == 443 || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
     }
 
-    public function requestTime(): int
+    public function requestTime (): int
     {
         return (int) $_SERVER['REQUEST_TIME'] ?? 0;
     }
 
-    public function contentType(): ?string
+    public function contentType (): ?string
     {
         return $this->header('Content-Type') ??
             ($_SERVER['CONTENT_TYPE'] ?? null);
     }
 
-    public function contentLength(): ?int
+    public function contentLength (): ?int
     {
         return isset($_SERVER['CONTENT_LENGTH'])
             ? (int) $_SERVER['CONTENT_LENGTH']
             : null;
     }
 
-    public function csrf()
+    public function csrf ()
     {
         return $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $this->header('X-CSRF-TOKEN') ?:
             $this->header('X-Csrf-Token');
     }
 
-    public function requestedWith()
+    public function requestedWith ()
     {
         return $_SERVER['HTTP_X_REQUESTED_WITH'] ??
             $this->header('X-Requested-With');
     }
 
-    public function getUri(): string
+    public function getUri (): string
     {
         return urldecode(
             parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH),
         );
     }
 
-    public function path(): string
+    public function path (): string
     {
         $uri = $_SERVER['REQUEST_URI'] ?? '/';
 
@@ -311,28 +328,31 @@ class HttpRequest implements Request
         return rawurldecode($uri);
     }
 
-    public function baseURL(): string {
+    public function baseURL (): string
+    {
         $scheme = $this->isHttps() ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
         return "{$scheme}://{$host}";
     }
 
-    public function siteURL(): string {
+    public function siteURL (): string
+    {
         $path = $this->getUri();
         $baseURL = $this->baseURL();
 
         return "{$baseURL}{$path}";
     }
 
-    public function origin(): string {
+    public function origin (): string
+    {
         $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
         $referer = $_SERVER['HTTP_REFERER'] ?? '';
 
         if (empty($origin) && !empty($referer)) {
             $parts = parse_url($referer);
             $origin = $parts['scheme'] . '://' . $parts['host'];
-            
+
             // Optional: Add port if it exists
             if (isset($parts['port'])) {
                 $origin .= ':' . $parts['port'];
@@ -342,7 +362,8 @@ class HttpRequest implements Request
         return $origin;
     }
 
-    public function isSameOrigin(): bool {
+    public function isSameOrigin (): bool
+    {
         $origin = $_SERVER['HTTP_ORIGIN'] ?? null;
         $referer = $_SERVER['HTTP_REFERER'] ?? null;
 

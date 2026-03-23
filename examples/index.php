@@ -9,12 +9,10 @@ use PhpSPA\App;
 use PhpSPA\DOM;
 use PhpSPA\Compression\Compressor;
 
-putenv('PHPSPA_COMPRESSION_STRATEGY=native');
-
 // --- Initialize a new Application ---
 new App(require 'layout/Layout.php')
-    // --- Attach and Run Application ---
 
+    // --- Attach and Run Application ---
     ->attach(require 'components/Login.php')
     ->attach(require 'components/Timer.php')
     ->attach(require 'components/Counter.php')
@@ -43,6 +41,8 @@ new App(require 'layout/Layout.php')
     ->cors()
 
     ->assetCacheHours(0)
+    ->forceNativeCompression()
+    // ->setCustomCompressorLibraryPath(dirname(__DIR__, 1) . '/src/bin/libcompressor-wsl.so')
 
     ->meta(charset: 'utf-8')
     ->meta(name: 'viewport', content: 'from App')
@@ -105,7 +105,7 @@ new App(require 'layout/Layout.php')
     ->script(fn() => <<<JS
         const sure = 'Making sure'
         console.log(sure);
-    JS)
+    JS, 'global-js-2')
 
     ->run();
 

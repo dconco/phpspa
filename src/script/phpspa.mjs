@@ -1,141 +1,8 @@
 /*!
- * PhpSPA Client Runtime v2.0.12
+ * PhpSPA Client Runtime v2.0.13
  * Docs: https://phpspa.tech | Package: @dconco/phpspa
  * License: MIT
  */
-const waitForNextPaint = () => new Promise((resolve) => {
-    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-});
-const waitForStylesheet = (link) => new Promise((resolve) => {
-    if (link.sheet) {
-        waitForNextPaint().then(resolve);
-        return;
-    }
-    const cleanup = () => {
-        link.removeEventListener('load', onLoad);
-        link.removeEventListener('error', onLoad);
-        resolve();
-    };
-    const onLoad = () => cleanup();
-    link.addEventListener('load', onLoad, { once: true });
-    link.addEventListener('error', onLoad, { once: true });
-});
-const DEFAULT_SCOPE_KEY = '__phpspa_default__';
-const scopeToHrefs = new Map();
-const hrefToScopes = new Map();
-const ownedLinksByHref = new Map();
-const normalizeScopeKey = (scopeKey) => {
-    const key = (scopeKey ?? '').trim();
-    return key.length > 0 ? key : DEFAULT_SCOPE_KEY;
-};
-const resolveHref = (href) => {
-    try {
-        return new URL(href, location.toString()).href;
-    }
-    catch {
-        return href;
-    }
-};
-const getHeadStylesheetLinks = () => Array.from(document.head.querySelectorAll('link[rel="stylesheet"]'));
-const findExistingHeadLink = (resolvedHref, rawHref, headLinks) => {
-    for (const existing of headLinks) {
-        try {
-            if (existing.href === resolvedHref)
-                return existing;
-        }
-        catch {
-            // ignore
-        }
-        if (existing.getAttribute('href') === rawHref)
-            return existing;
-    }
-    return null;
-};
-const releaseScopeHref = (scopeKey, resolvedHref) => {
-    const scopes = hrefToScopes.get(resolvedHref);
-    if (scopes) {
-        scopes.delete(scopeKey);
-        if (scopes.size === 0) {
-            hrefToScopes.delete(resolvedHref);
-            const owned = ownedLinksByHref.get(resolvedHref);
-            if (owned && owned.isConnected) {
-                owned.remove();
-            }
-            ownedLinksByHref.delete(resolvedHref);
-        }
-    }
-};
-const setScopeStyles = (scopeKey, nextHrefs) => {
-    const previous = scopeToHrefs.get(scopeKey) ?? new Set();
-    // remove old hrefs that are no longer needed by this scope
-    for (const href of previous) {
-        if (!nextHrefs.has(href)) {
-            releaseScopeHref(scopeKey, href);
-        }
-    }
-    // add new hrefs for this scope
-    for (const href of nextHrefs) {
-        if (!previous.has(href)) {
-            let scopes = hrefToScopes.get(href);
-            if (!scopes) {
-                scopes = new Set();
-                hrefToScopes.set(href, scopes);
-            }
-            scopes.add(scopeKey);
-        }
-    }
-    scopeToHrefs.set(scopeKey, new Set(nextHrefs));
-};
-const clearPreloadedStylesForScope = (scopeKey) => {
-    const key = normalizeScopeKey(scopeKey);
-    setScopeStyles(key, new Set());
-};
-const preloadStylesFromContent = async (content, scopeKey) => {
-    const normalizedScopeKey = normalizeScopeKey(scopeKey);
-    const tempElem = document.createElement('div');
-    tempElem.innerHTML = content;
-    const links = Array.from(tempElem.querySelectorAll('link[rel="stylesheet"]'));
-    // even when there are no links, we must clear previously-managed styles for this scope
-    if (links.length === 0) {
-        setScopeStyles(normalizedScopeKey, new Set());
-        return tempElem;
-    }
-    const headLinks = getHeadStylesheetLinks();
-    const incomingByHref = new Map();
-    for (const link of links) {
-        const href = link.getAttribute('href');
-        link.remove();
-        if (!href)
-            continue;
-        const resolvedHref = resolveHref(href);
-        if (!incomingByHref.has(resolvedHref)) {
-            incomingByHref.set(resolvedHref, link);
-        }
-    }
-    setScopeStyles(normalizedScopeKey, new Set(incomingByHref.keys()));
-    const loadPromises = Array.from(incomingByHref.entries()).map(([resolvedHref, templateLink]) => {
-        const rawHref = templateLink.getAttribute('href') ?? resolvedHref;
-        // prefer a previously-owned managed link if still present
-        const owned = ownedLinksByHref.get(resolvedHref);
-        let headLink = (owned && owned.isConnected) ? owned : null;
-        if (!headLink) {
-            headLink = findExistingHeadLink(resolvedHref, rawHref, headLinks);
-        }
-        if (!headLink) {
-            headLink = templateLink.cloneNode(true);
-            headLink.setAttribute('data-phpspa-managed', '1');
-            headLink.setAttribute('data-phpspa-scope', normalizedScopeKey);
-            document.head.appendChild(headLink);
-            headLinks.push(headLink);
-            ownedLinksByHref.set(resolvedHref, headLink);
-        }
-        return waitForStylesheet(headLink);
-    });
-    await Promise.all(loadPromises);
-    await waitForNextPaint();
-    return tempElem;
-};
-
 /**
  * UTF-8 safe base64 encoding function
  * Handles Unicode characters that btoa cannot process
@@ -188,10 +55,10 @@ function base64ToUtf8(str) {
  * for the PhpSPA framework. Uses an obscure class name to avoid conflicts.
  */
 class RuntimeManager {
-    /**
-     * Tracks executed scripts to prevent duplicates
-     */
-    static executedScripts = new Set();
+    static config = {
+        preserveUpdatedHtmlState: false,
+        waitForStyles: false,
+    };
     /**
      * Tracks executed styles to prevent duplicates
      */
@@ -208,6 +75,7 @@ class RuntimeManager {
     static events = {
         beforeload: [],
         load: [],
+        popstate: [],
     };
     static currentStateData;
     /**
@@ -316,7 +184,6 @@ class RuntimeManager {
         }
     }
     static runScriptsForElement(element) {
-        this.runInlineScripts(element);
         this.runPhpSpaScripts(element);
     }
     static runStylesForElement(element) {
@@ -340,90 +207,106 @@ class RuntimeManager {
                 typeAttr === 'text/ecmascript' ||
                 isModule;
             if (src) {
-                if (!this.executedScripts.has(src)) {
-                    this.executedScripts.add(src);
-                    const newScript = document.createElement("script");
-                    newScript.nonce = nonce ?? undefined;
-                    for (const attribute of Array.from(script.attributes)) {
-                        newScript.setAttribute(attribute.name, attribute.value);
-                    }
-                    document.head.appendChild(newScript);
+                const newScript = document.createElement("script");
+                newScript.nonce = nonce ?? undefined;
+                for (const attribute of Array.from(script.attributes)) {
+                    newScript.setAttribute(attribute.name, attribute.value);
                 }
+                document.head.appendChild(newScript).remove();
                 return;
             }
             if (!isExecutable) {
                 return;
             }
-            // --- Use base64 encoded content as unique identifier ---
-            const contentHash = utf8ToBase64(`${typeAttr}:${script.textContent.trim()}`);
-            // --- Skip if this script has already been executed ---
-            if (!this.executedScripts.has(contentHash) && script.textContent.trim() !== "") {
-                this.executedScripts.add(contentHash);
-                // --- Create new script element ---
+            // --- Create new script element ---
+            const newScript = document.createElement("script");
+            newScript.nonce = nonce ?? undefined;
+            // --- Copy all attributes except the data-type identifier ---
+            for (const attribute of Array.from(script.attributes)) {
+                newScript.setAttribute(attribute.name, attribute.value);
+            }
+            newScript.textContent = script.textContent;
+            // --- Execute and immediately remove from DOM ---
+            document.head.appendChild(newScript).remove();
+        });
+    }
+    static runPhpSpaScripts(container) {
+        const scripts = container.querySelectorAll("phpspa-script, script");
+        const nonce = document.head.getAttribute('x-phpspa');
+        scripts.forEach(async (script) => {
+            const scriptUrl = script.getAttribute('src');
+            const typeAttr = (script.getAttribute('type') ?? '').trim().toLowerCase();
+            const isModule = typeAttr === 'module';
+            const isExecutable = typeAttr === '' ||
+                typeAttr === 'text/javascript' ||
+                typeAttr === 'application/javascript' ||
+                typeAttr === 'application/ecmascript' ||
+                typeAttr === 'text/ecmascript' ||
+                isModule;
+            if (!isExecutable) {
                 const newScript = document.createElement("script");
-                newScript.nonce = nonce ?? undefined;
-                // --- Copy all attributes except the data-type identifier ---
                 for (const attribute of Array.from(script.attributes)) {
                     newScript.setAttribute(attribute.name, attribute.value);
                 }
                 newScript.textContent = script.textContent;
+                if (!newScript.getAttribute('nonce'))
+                    newScript.nonce = nonce ?? undefined;
+                // --- Execute and immediately remove from DOM ---
+                return document.head.appendChild(newScript).remove();
+            }
+            if (!scriptUrl) {
+                // --- Create new script element ---
+                const newScript = document.createElement("script");
+                // --- Copy all attributes ---
+                for (const attribute of Array.from(script.attributes)) {
+                    newScript.setAttribute(attribute.name, attribute.value);
+                }
+                if (!newScript.getAttribute('nonce'))
+                    newScript.nonce = nonce ?? undefined;
+                newScript.textContent = script.textContent;
+                // --- Execute and immediately remove from DOM ---
+                return document.head.appendChild(newScript).remove();
+            }
+            // --- Check cache first, then execute the cached content else download the script ---
+            if (this.ScriptsCachedContent[scriptUrl]) {
+                const newScript = document.createElement("script");
+                newScript.textContent = this.ScriptsCachedContent[scriptUrl];
+                for (const attribute of Array.from(script.attributes)) {
+                    if (attribute.name == 'src')
+                        continue;
+                    newScript.setAttribute(attribute.name, attribute.value);
+                }
+                if (!newScript.getAttribute('nonce'))
+                    newScript.nonce = nonce ?? undefined;
+                // --- Execute and immediately remove from DOM ---
+                return document.head.appendChild(newScript).remove();
+            }
+            const response = await fetch(scriptUrl, {
+                headers: {
+                    "X-Requested-With": "PHPSPA_REQUEST_SCRIPT",
+                }
+            });
+            if (response.ok) {
+                const scriptContent = await response.text();
+                // --- Create new script element ---
+                const newScript = document.createElement("script");
+                newScript.textContent = scriptContent;
+                for (const attribute of Array.from(script.attributes)) {
+                    if (attribute.name == 'src')
+                        continue;
+                    newScript.setAttribute(attribute.name, attribute.value);
+                }
+                if (!newScript.getAttribute('nonce'))
+                    newScript.nonce = nonce ?? undefined;
                 // --- Execute and immediately remove from DOM ---
                 document.head.appendChild(newScript).remove();
+                // --- Cache the fetched script content ---
+                this.ScriptsCachedContent[scriptUrl] = scriptContent;
+            }
+            else {
+                console.error(`Failed to load script from ${scriptUrl}: ${response.statusText}`);
             }
         });
-    }
-    static runPhpSpaScripts(container) {
-        const scripts = container.querySelectorAll("phpspa-script, script[data-type=\"phpspa/script\"]");
-        const nonce = document.head.getAttribute('x-phpspa');
-        scripts.forEach(async (script) => {
-            const scriptUrl = script.getAttribute('src') ?? '';
-            const scriptType = script.getAttribute('type') ?? '';
-            // --- Skip if this script has already been executed ---
-            if (!this.executedScripts.has(scriptUrl)) {
-                this.executedScripts.add(scriptUrl);
-                // --- Check cache first ---
-                if (this.ScriptsCachedContent[scriptUrl]) {
-                    const newScript = document.createElement("script");
-                    newScript.textContent = `(()=>{\n${this.ScriptsCachedContent[scriptUrl]}\n})()`;
-                    newScript.nonce = nonce ?? undefined;
-                    newScript.type = scriptType;
-                    // --- Execute and immediately remove from DOM ---
-                    document.head.appendChild(newScript).remove();
-                    return;
-                }
-                const response = await fetch(scriptUrl, {
-                    headers: {
-                        "X-Requested-With": "PHPSPA_REQUEST_SCRIPT",
-                    }
-                });
-                if (response.ok) {
-                    const scriptContent = await response.text();
-                    // --- Create new script element ---
-                    const newScript = document.createElement("script");
-                    newScript.textContent = `(()=>{\n${scriptContent}\n})()`;
-                    newScript.nonce = nonce ?? undefined;
-                    newScript.type = scriptType;
-                    // --- Execute and immediately remove from DOM ---
-                    document.head.appendChild(newScript).remove();
-                    // --- Cache the fetched script content ---
-                    this.ScriptsCachedContent[scriptUrl] = scriptContent;
-                }
-                else {
-                    console.error(`Failed to load script from ${scriptUrl}: ${response.statusText}`);
-                }
-            }
-        });
-    }
-    /**
-     * Clears all executed scripts from the runtime manager.
-     * This method removes all entries from the executedScripts collection,
-     * effectively resetting the tracking of previously executed scripts.
-     *
-     * @static
-     * @memberof RuntimeManager
-     */
-    static clearExecutedScripts() {
-        RuntimeManager.executedScripts.clear();
     }
     /**
      * Processes and injects inline styles within a container
@@ -480,6 +363,29 @@ class RuntimeManager {
     static getLastEventPayload(eventName) {
         return this.lastEventPayload[eventName];
     }
+    static off(eventName, callback) {
+        if (!this.events[eventName]) {
+            return;
+        }
+        if (!callback) {
+            this.events[eventName] = [];
+            delete this.lastEventPayload[eventName];
+            return;
+        }
+        const listeners = this.events[eventName];
+        this.events[eventName] = listeners.filter((cb) => cb !== callback);
+    }
+    static resetEvents(eventName) {
+        if (eventName) {
+            this.events[eventName] = [];
+            delete this.lastEventPayload[eventName];
+            return;
+        }
+        Object.keys(this.events).forEach((name) => {
+            this.events[name] = [];
+        });
+        this.lastEventPayload = {};
+    }
     /**
      * Safely pushes a new state to browser history
      * Wraps in try-catch to handle potential browser restrictions
@@ -506,7 +412,165 @@ class RuntimeManager {
             console.warn("Failed to replace history state:", error instanceof Error ? error.message : error);
         }
     }
+    static configure(config) {
+        RuntimeManager.config = {
+            ...RuntimeManager.config,
+            ...config,
+        };
+    }
+    static getConfig() {
+        return { ...RuntimeManager.config };
+    }
 }
+
+const waitForNextPaint = () => new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+});
+const waitForStylesheet = (link) => new Promise((resolve) => {
+    if (link.sheet) {
+        waitForNextPaint().then(resolve);
+        return;
+    }
+    const cleanup = () => {
+        link.removeEventListener('load', onLoad);
+        link.removeEventListener('error', onLoad);
+        resolve();
+    };
+    const onLoad = () => cleanup();
+    link.addEventListener('load', onLoad, { once: true });
+    link.addEventListener('error', onLoad, { once: true });
+});
+const DEFAULT_SCOPE_KEY = '__phpspa_default__';
+const scopeToHrefs = new Map();
+const hrefToScopes = new Map();
+const ownedLinksByHref = new Map();
+const normalizeScopeKey = (scopeKey) => {
+    const key = (scopeKey ?? '').trim();
+    return key.length > 0 ? key : DEFAULT_SCOPE_KEY;
+};
+const resolveHref = (href) => {
+    try {
+        // Use origin + pathname as base to stabilize resolution regardless of current query/hash
+        const base = location.origin + location.pathname;
+        return new URL(href, base).href;
+    }
+    catch {
+        return href;
+    }
+};
+const getHeadStylesheetLinks = () => Array.from(document.head.querySelectorAll('link[rel="stylesheet"]'));
+const findExistingHeadLink = (resolvedHref, rawHref, headLinks) => {
+    for (const existing of headLinks) {
+        try {
+            if (existing.href === resolvedHref)
+                return existing;
+        }
+        catch {
+            // ignore
+        }
+        if (existing.getAttribute('href') === rawHref)
+            return existing;
+    }
+    return null;
+};
+const releaseScopeHref = (scopeKey, resolvedHref) => {
+    const scopes = hrefToScopes.get(resolvedHref);
+    if (scopes) {
+        scopes.delete(scopeKey);
+        if (scopes.size === 0) {
+            hrefToScopes.delete(resolvedHref);
+            const owned = ownedLinksByHref.get(resolvedHref);
+            if (owned && owned.isConnected) {
+                owned.remove();
+            }
+            ownedLinksByHref.delete(resolvedHref);
+        }
+    }
+};
+const setScopeStyles = (scopeKey, nextHrefs) => {
+    const previous = scopeToHrefs.get(scopeKey) ?? new Set();
+    // remove old hrefs that are no longer needed by this scope
+    for (const href of previous) {
+        if (!nextHrefs.has(href)) {
+            releaseScopeHref(scopeKey, href);
+        }
+    }
+    // add new hrefs for this scope
+    for (const href of nextHrefs) {
+        if (!previous.has(href)) {
+            let scopes = hrefToScopes.get(href);
+            if (!scopes) {
+                scopes = new Set();
+                hrefToScopes.set(href, scopes);
+            }
+            scopes.add(scopeKey);
+        }
+    }
+    scopeToHrefs.set(scopeKey, new Set(nextHrefs));
+};
+const clearPreloadedStylesForScope = (scopeKey) => {
+    const key = normalizeScopeKey(scopeKey);
+    setScopeStyles(key, new Set());
+};
+const preloadStylesFromContent = async (content, scopeKey) => {
+    const normalizedScopeKey = normalizeScopeKey(scopeKey);
+    const nextHrefs = new Set();
+    const toLoad = new Map();
+    // --- Use regex to extract stylesheet links before DOM parsing triggers loads ---
+    const linkRegex = /<link[^>]+rel=["']stylesheet["'][^>]*>/gi;
+    const hrefRegex = /href=["']([^"']+)["']/i;
+    const strippedContent = content.replace(linkRegex, (match) => {
+        const hrefMatch = match.match(hrefRegex);
+        if (hrefMatch && hrefMatch[1]) {
+            const rawHref = hrefMatch[1];
+            const resolvedHref = resolveHref(rawHref);
+            nextHrefs.add(resolvedHref);
+            if (!RuntimeManager.executedStyles.has(resolvedHref)) {
+                toLoad.set(resolvedHref, rawHref);
+            }
+        }
+        return ''; // Remove the link from content
+    });
+    // --- Update tracking for this scope ---
+    setScopeStyles(normalizedScopeKey, nextHrefs);
+    // --- If no new styles to load, return immediately to maximize speed ---
+    if (toLoad.size === 0) {
+        const tempElem = document.createElement('div');
+        tempElem.innerHTML = strippedContent;
+        return tempElem;
+    }
+    const headLinks = getHeadStylesheetLinks();
+    const loadPromises = Array.from(toLoad.entries()).map(([resolvedHref, rawHref]) => {
+        // --- Double-check cache (race condition safety) ---
+        if (RuntimeManager.executedStyles.has(resolvedHref)) {
+            return Promise.resolve();
+        }
+        // --- Mark as loaded immediately to prevent future redundant loads ---
+        RuntimeManager.executedStyles.add(resolvedHref);
+        // prefer a previously-owned managed link if still present
+        const owned = ownedLinksByHref.get(resolvedHref);
+        let headLink = (owned && owned.isConnected) ? owned : null;
+        if (!headLink) {
+            headLink = findExistingHeadLink(resolvedHref, rawHref, headLinks);
+        }
+        if (!headLink) {
+            headLink = document.createElement('link');
+            headLink.rel = 'stylesheet';
+            headLink.href = rawHref;
+            headLink.setAttribute('data-phpspa-managed', '1');
+            headLink.setAttribute('data-phpspa-scope', normalizedScopeKey);
+            document.head.appendChild(headLink);
+            headLinks.push(headLink);
+            ownedLinksByHref.set(resolvedHref, headLink);
+        }
+        return waitForStylesheet(headLink);
+    });
+    await Promise.all(loadPromises);
+    await waitForNextPaint();
+    const tempElem = document.createElement('div');
+    tempElem.innerHTML = strippedContent;
+    return tempElem;
+};
 
 var DOCUMENT_FRAGMENT_NODE = 11;
 
@@ -1283,6 +1347,26 @@ var morphdom = morphdomFactory(morphAttrs);
 
 class AppManager {
     static currentStateData = {};
+    static config(config) {
+        RuntimeManager.configure(config);
+    }
+    static snapshotCurrentRouteState() {
+        if (!RuntimeManager.config.preserveUpdatedHtmlState)
+            return;
+        const currentState = history.state;
+        if (!currentState?.targetID)
+            return;
+        const currentTarget = document.getElementById(currentState.targetID);
+        if (!currentTarget)
+            return;
+        const updatedState = {
+            ...currentState,
+            url: location.toString(),
+            title: document.title,
+            content: currentTarget.innerHTML,
+        };
+        RuntimeManager.replaceState(updatedState, updatedState.title, updatedState.url);
+    }
     /**
      * Navigates to a given URL using PHPSPA's custom navigation logic.
      * Fetches the content via a custom HTTP method, updates the DOM, manages browser history,
@@ -1296,6 +1380,8 @@ class AppManager {
      */
     static navigate(url, state = "push") {
         const newUrl = url instanceof URL ? url : new URL(url, location.toString());
+        // --- Persist current DOM state before changing route when enabled ---
+        AppManager.snapshotCurrentRouteState();
         // --- Emit beforeload event for loading indicators ---
         RuntimeManager.emit("beforeload", { route: newUrl.toString() });
         // --- Fetch content from the server with PhpSPA headers ---
@@ -1430,17 +1516,29 @@ class AppManager {
             let tempElem = null;
             // --- Update content ---
             const updateDOM = async () => {
-                const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
-                // --- Preload stylesheets in the new content ---
-                tempElem = await preloadStylesFromContent(component.content, styleScopeKey);
-                if (tempElem) {
+                if (RuntimeManager.config.waitForStyles === true) {
+                    const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
+                    // --- Preload stylesheets in the new content ---
+                    tempElem = await preloadStylesFromContent(component.content, styleScopeKey);
+                    if (tempElem) {
+                        try {
+                            morphdom(targetElement, tempElem, {
+                                childrenOnly: true
+                            });
+                        }
+                        catch {
+                            targetElement.innerHTML = tempElem.innerHTML;
+                        }
+                    }
+                }
+                else {
                     try {
-                        morphdom(targetElement, tempElem, {
+                        morphdom(targetElement, `<div>${component.content}</div>`, {
                             childrenOnly: true
                         });
                     }
                     catch {
-                        targetElement.innerHTML = tempElem.innerHTML;
+                        targetElement.innerHTML = component.content;
                     }
                 }
                 // --- Execute any inline styles in the new content ---
@@ -1468,7 +1566,6 @@ class AppManager {
                 }
                 // --- Clear old executed scripts cache ---
                 RuntimeManager.clearEffects();
-                RuntimeManager.clearExecutedScripts();
                 // --- Execute any inline scripts in the new content ---
                 RuntimeManager.runScriptsForElement(targetElement);
                 // --- Handle URL fragments (hash navigation) ---
@@ -1548,6 +1645,12 @@ class AppManager {
                 console.error(`Error in ${event} event callback:`, error);
             }
         }
+    }
+    static off(event, callback) {
+        RuntimeManager.off(event, callback);
+    }
+    static resetEvents(event) {
+        RuntimeManager.resetEvents(event);
     }
     /**
      * Registers a side effect to be executed after component updates.
@@ -1770,24 +1873,34 @@ class AppManager {
                 document.getElementById(history.state?.targetID) ??
                 document.body;
             const updateDOM = async () => {
-                const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
-                const tempElem = await preloadStylesFromContent(component.content, styleScopeKey);
-                try {
-                    morphdom(targetElement, tempElem, {
-                        childrenOnly: true
-                    });
+                if (RuntimeManager.config.waitForStyles === true) {
+                    const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
+                    const tempElem = await preloadStylesFromContent(component.content, styleScopeKey);
+                    try {
+                        morphdom(targetElement, tempElem, {
+                            childrenOnly: true
+                        });
+                    }
+                    catch {
+                        targetElement.innerHTML = tempElem.innerHTML;
+                    }
                 }
-                catch {
-                    targetElement.innerHTML = tempElem.innerHTML;
+                else {
+                    try {
+                        morphdom(targetElement, `<div>${component.content}</div>`, {
+                            childrenOnly: true
+                        });
+                    }
+                    catch {
+                        targetElement.innerHTML = component.content;
+                    }
                 }
                 // --- Execute any inline styles in the new content ---
                 RuntimeManager.runStylesForElement(targetElement);
             };
             const completedDOMUpdate = () => {
-                // Clean up temp element
                 // --- Clear old executed scripts cache ---
                 RuntimeManager.clearEffects();
-                RuntimeManager.clearExecutedScripts();
                 // --- Execute any inline scripts in the new content ---
                 RuntimeManager.runScriptsForElement(targetElement);
                 // --- Set up next auto-reload if specified ---
@@ -1953,7 +2066,21 @@ function bootstrap() {
 
 const navigateHistory = (event) => {
     const navigationState = event.state;
-    RuntimeManager.emit('beforeload', { route: location.toString() });
+    let isCancelled = false;
+    const popstatePayload = {
+        route: location.toString(),
+        state: navigationState ?? null,
+        nativeEvent: event,
+        defaultPrevented: false,
+        preventDefault: () => {
+            isCancelled = true;
+            popstatePayload.defaultPrevented = true;
+        },
+    };
+    RuntimeManager.emit('popstate', popstatePayload);
+    if (isCancelled) {
+        return;
+    }
     // --- Enable automatic scroll restoration ---
     history.scrollRestoration = "auto";
     // --- Check if we have valid PhpSPA state data ---
@@ -1986,7 +2113,7 @@ const navigateHistory = (event) => {
                 let currentHTML = document.getElementById(targetID);
                 if (currentHTML) {
                     try {
-                        morphdom(currentHTML, '<div>' + targetInfo.defaultContent + '</div>', {
+                        morphdom(currentHTML, `<div>${targetInfo.defaultContent}</div>`, {
                             childrenOnly: true
                         });
                     }
@@ -2000,42 +2127,32 @@ const navigateHistory = (event) => {
         }
         // --- Decode and restore HTML content ---
         const updateDOM = async () => {
-            const styleScopeKey = navigationState.targetID || targetContainer.id || '__phpspa_body__';
-            const tempElem = await preloadStylesFromContent(navigationState.content, styleScopeKey);
+            // const styleScopeKey = navigationState.targetID || targetContainer.id || '__phpspa_body__'
+            // const tempElem = await preloadStylesFromContent(navigationState.content, styleScopeKey)
             try {
-                morphdom(targetContainer, tempElem, {
+                morphdom(targetContainer, `<div>${navigationState.content}</div>`, {
                     childrenOnly: true
                 });
             }
             catch {
-                targetContainer.innerHTML = tempElem.innerHTML;
+                targetContainer.innerHTML = navigationState.content;
             }
             // --- Execute any inline styles in the new content ---
-            RuntimeManager.runStylesForElement(targetContainer);
+            // RuntimeManager.runStylesForElement(targetContainer)
         };
         const completedDOMUpdate = async () => {
             // --- Clear old executed scripts cache ---
             RuntimeManager.clearEffects();
-            RuntimeManager.clearExecutedScripts();
             // --- Execute any inline scripts in the restored content ---
             RuntimeManager.runScriptsForElement(targetContainer);
             // --- Restart auto-reload timer if needed ---
             if (navigationState?.reloadTime) {
                 setTimeout(AppManager.reloadComponent, navigationState.reloadTime);
             }
-            RuntimeManager.emit('load', {
-                route: navigationState.url,
-                success: true,
-                error: false
-            });
         };
         if (document.startViewTransition) {
             document.startViewTransition(updateDOM).finished.then(completedDOMUpdate).catch((reason) => {
-                RuntimeManager.emit('load', {
-                    route: location.href,
-                    success: false,
-                    error: reason || 'Unknown error during view transition',
-                });
+                console.error('Popstate view transition failed:', reason || 'Unknown error during view transition');
             });
         }
         else {
