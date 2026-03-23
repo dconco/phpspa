@@ -146,7 +146,7 @@ final class HttpRequestTest extends TestCase
       $_SERVER['HTTP_X_TEST_HEADER'] = 'one';
 
       $request = new HttpRequest();
-      $headers = $request->header();
+      $headers = $request->header(null, false);
 
       $this->assertSame('one', $headers['X-TEST-HEADER']);
    }
