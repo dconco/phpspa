@@ -53,35 +53,25 @@ class CallableInspector
       }
 
       $prop = $reflection->getProperty($property);
-      $prop->setAccessible(true);
 
-      try
+      // For static properties or when passing a class name
+      if (\is_string($classOrObject) && $prop->isStatic())
       {
-         // For static properties or when passing a class name
-         if (is_string($classOrObject) && $prop->isStatic())
-         {
-            $value = $prop->getValue();
-         }
-         // For instance properties
-         else if (is_object($classOrObject))
-         {
-            if (!$prop->isInitialized($classOrObject))
-            {
-               return null;
-            }
-            $value = $prop->getValue($classOrObject);
-         }
-         // Invalid case - instance property accessed with class name
-         else
-         {
-            throw new \LogicException("Cannot access non-static property '$property' without an object instance");
-         }
-
-         return $value;
+         return $prop->getValue();
       }
-      finally
+      // For instance properties
+      else if (\is_object($classOrObject))
       {
-         $prop->setAccessible(false); // Ensure accessibility is always reset
+         if (!$prop->isInitialized($classOrObject))
+         {
+            return null;
+         }
+         return $prop->getValue($classOrObject);
+      }
+      // Invalid case - instance property accessed with class name
+      else
+      {
+         throw new \LogicException("Cannot access non-static property '$property' without an object instance");
       }
    }
 }
