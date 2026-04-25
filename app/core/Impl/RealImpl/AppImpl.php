@@ -368,6 +368,16 @@ abstract class AppImpl implements ApplicationContract {
 
       $success = false;
 
+      foreach ($this->prefix as $prefix) {
+         $output = $this->handlePrefix($prefix, [], $return);
+         if (isset($output)) return $output;
+      }
+
+      if (empty($this->components)) {
+         // --- If component is empty, then create an empty component ---
+         $this->attach(new Component(fn() => ''));
+      }
+
       foreach ($this->components as $component) {
          $output = $this->runComponent($component, false, $this->renderedData);
 
@@ -382,7 +392,7 @@ abstract class AppImpl implements ApplicationContract {
 
          $timer->start();
          $compressedOutput = Compressor::compress((string) $this->renderedData, 'text/html');
-         error_log("Compressed HTML output within {$timer->getFormattedElapsedTime()} | From {$request->path()}");
+         if (Compressor::getLevel() > Compressor::LEVEL_NONE) error_log("Compressed HTML output within {$timer->getFormattedElapsedTime()} | From {$request->path()}");
 
          if ($return) return $compressedOutput;
 
@@ -390,10 +400,6 @@ abstract class AppImpl implements ApplicationContract {
          exit(0);
       }
 
-      foreach ($this->prefix as $prefix) {
-         $output = $this->handlePrefix($prefix, [], $return);
-         if (isset($output)) return $output;
-      }
    }
 
    private function resolveCors(Request $request) {
