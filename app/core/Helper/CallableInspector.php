@@ -55,12 +55,12 @@ class CallableInspector
       $prop = $reflection->getProperty($property);
 
       // For static properties or when passing a class name
-      if (is_string($classOrObject) && $prop->isStatic())
+      if (\is_string($classOrObject) && $prop->isStatic())
       {
          return $prop->getValue();
       }
       // For instance properties
-      else if (is_object($classOrObject))
+      else if (\is_object($classOrObject))
       {
          if (!$prop->isInitialized($classOrObject))
          {
