@@ -402,7 +402,7 @@ export class AppManager {
 
             const { route } = currentRoutes[targetID]
 
-            const prom = fetch(route, {
+            const prom = fetch(route || '', {
                headers: {
                   "X-Requested-With": "PHPSPA_REQUEST",
                   Authorization: `Bearer ${utf8ToBase64(statePayload)}`,
