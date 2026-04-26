@@ -891,19 +891,10 @@ function morphdomFactory(morphAttrs) {
     }
 
     if (typeof toNode === 'string') {
-      if (fromNode.nodeName === '#document' || fromNode.nodeName === 'HTML') {
+      if (fromNode.nodeName === '#document' || fromNode.nodeName === 'HTML' || fromNode.nodeName === 'BODY') {
         var toNodeHtml = toNode;
         toNode = doc.createElement('html');
         toNode.innerHTML = toNodeHtml;
-      } else if (fromNode.nodeName === 'BODY') {
-        var toNodeBody = toNode;
-        toNode = doc.createElement('html');
-        toNode.innerHTML = toNodeBody;
-        // Extract the body element from the created HTML structure
-        var bodyElement = toNode.querySelector('body');
-        if (bodyElement) {
-          toNode = bodyElement;
-        }
       } else {
         toNode = toElement(toNode);
       }
@@ -1683,7 +1674,7 @@ class AppManager {
      * Preserves the current scroll position during the update.
      *
      * @param key - The key representing the state to update.
-     * @param value - The new value to set for the specified state key.
+     * @param value - The new value to set for the specified state key., if a function is passed, phpspa sends a previous value to the function argument
      * @returns A promise that resolves when the state is updated successfully.
      *
      * @example
@@ -1696,6 +1687,9 @@ class AppManager {
             value = value(RuntimeManager.currentStateData[key]);
         }
         return new Promise(async (resolve, reject) => {
+            if (value === undefined || value === void 0) {
+                return resolve();
+            }
             const currentRoutes = RuntimeManager.currentRoutes;
             const statePayload = JSON.stringify({ state: { key, value } });
             const promises = [];
@@ -1703,7 +1697,7 @@ class AppManager {
                 if (!Object.hasOwn(currentRoutes, targetID))
                     continue;
                 const { route } = currentRoutes[targetID];
-                const prom = fetch(route, {
+                const prom = fetch(route || '', {
                     headers: {
                         "X-Requested-With": "PHPSPA_REQUEST",
                         Authorization: `Bearer ${utf8ToBase64(statePayload)}`,

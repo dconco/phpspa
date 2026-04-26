@@ -8,7 +8,7 @@
   "browser": "src/script/phpspa.js",
   "types": "src/script/types/index.d.ts",
   "files": [
-    "src/script/",
+    "src/script/types/",
     "README.md",
     "LICENSE"
   ],
