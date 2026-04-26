@@ -3,7 +3,7 @@ import { bootstrap } from "./helpers/bootstrap"
 import type { EventObject } from "./types/RuntimeInterfaces"
 import { navigateHistory } from "./helpers/navigateHistrory"
 
-export default class phpspa extends AppManager {}
+export default class phpspa extends AppManager { }
 
 declare global {
    export interface Window {
@@ -47,7 +47,8 @@ export const useEffect = phpspa.useEffect.bind(phpspa)
 export const useCallback = phpspa.useCallback.bind(phpspa)
 export const __call = phpspa.__call.bind(phpspa)
 
-export type { EventObject, EventPayload } from "./types/RuntimeInterfaces"
+export type { EventObject, EventPayload, RuntimeConfig } from "./types/RuntimeInterfaces"
 export type { StateObject } from "./types/StateObjectTypes"
 export type EventName = keyof EventObject
 export type PhpSPAInstance = typeof phpspa
+export type { StateValueType } from './types/StateObjectTypes'

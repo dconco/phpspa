@@ -374,7 +374,7 @@ export class AppManager {
     * Preserves the current scroll position during the update.
     *
     * @param key - The key representing the state to update.
-    * @param value - The new value to set for the specified state key.
+    * @param value - The new value to set for the specified state key., if a function is passed, phpspa sends a previous value to the function argument
     * @returns A promise that resolves when the state is updated successfully.
     *
     * @example
@@ -388,6 +388,11 @@ export class AppManager {
       }
 
       return new Promise(async (resolve, reject) => {
+         
+         if (value === undefined || value === void 0) {
+            return resolve()
+         }
+
          const currentRoutes = RuntimeManager.currentRoutes
          const statePayload = JSON.stringify({ state: { key, value } })
          const promises = []
