@@ -139,7 +139,7 @@ class Router
       };
    }
 
-   private function handleHandler(callable|string $handler, &$request, $response, Closure $next) {
+   private function handleHandler(callable|array|string $handler, &$request, $response, Closure $next) {
       return \call_user_func($handler, $request, $response, $next);
    }
 
@@ -155,7 +155,7 @@ class Router
       return strtoupper($methods);
    }
 
-   private function handle(string $method, array $route, callable|string ...$handlers)
+   private function handle(string $method, array $route, callable|array|string ...$handlers)
    {
       $response = new Response();
       $iterator = 0;

@@ -2,6 +2,8 @@
 
 namespace Component;
 
+use PhpSPA\Core\Helper\CsrfManager;
+
 /**
  * Form CSRF protection component.
  *
@@ -12,11 +14,7 @@ namespace Component;
  * @author dconco <me@dconco.tech>
  * @see https://phpspa.tech/security/csrf-protection
  */
-class Csrf extends \PhpSPA\Core\Helper\CsrfManager
-{
-    public function __render(string $name)
-    {
-        $this->name = $name;
-        return $this->getInput();
-    }
+function Csrf (string $name) {
+   $csrf = new CsrfManager($name);
+   return $csrf->getInput();
 }
