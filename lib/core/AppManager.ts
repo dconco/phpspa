@@ -384,7 +384,7 @@ export class AppManager {
     */
    public static setState(key: string, value: StateValueType | ((previous: StateValueType) => StateValueType)): Promise<void> {
       if (typeof value === 'function') {
-         value = value(RuntimeManager.currentStateData[key])
+         value = value(RuntimeManager.currentStateData[key] ?? null)
       }
 
       return new Promise(async (resolve, reject) => {
