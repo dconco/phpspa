@@ -68,16 +68,14 @@ class StateManager
 	 * @param mixed $value Optional value to be processed when the object is invoked.
 	 * @return mixed The result of the invocation, depending on the implementation.
 	 */
-	public function __invoke()
+	public function __invoke($value = UNDEFINED_STATE_VARIABLE)
 	{
 		$sessionData = SessionHandler::get(STATE_HANDLE);
 
 		// If no argument was passed, return the current state value.
-		if (\func_num_args() === 0) {
+		if ($value === UNDEFINED_STATE_VARIABLE) {
 			return $sessionData[$this->stateKey] ?? $this->value;
-		}
-		// An argument was explicitly provided (even if it is falsy); treat it as the new state value.
-		$value = func_get_arg(0);
+		};
 
 		$this->lastState = $this->value ?? Validate::validate($value);
 		$this->value = $value;

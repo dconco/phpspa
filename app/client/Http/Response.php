@@ -477,7 +477,20 @@ class Response
     *
     * @return void
     */
-   public function send(): void
+   public function send (): void
+   {
+      echo $this->__toString();
+
+      // Exit to prevent further output
+      exit;
+   }
+
+   /**
+    * Convert the response to a string when echoed.
+    *
+    * @return string
+    */
+   public function __toString (): string
    {
       // Set the HTTP response code
       http_response_code($this->statusCode);
@@ -495,37 +508,16 @@ class Response
          header("HTTP/1.1 {$this->statusCode} {$statusMessage}", true, $this->statusCode);
       }
 
-      // If data is not null, encode and output as JSON
-      if ($this->data !== null) {
-         // Check if we should encode as JSON
-         $contentType = $this->headers['Content-Type'] ?? $this->headers['content-type'] ?? $this->headers['Content-type'] ?? '';
-         if (strpos($contentType, 'application/json') !== false) {
-            echo json_encode($this->data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-         } else {
-            // For non-JSON responses, output the data directly
-            echo $this->data;
-         }
-      }
-
-      // Exit to prevent further output
-      exit;
-   }
-
-   /**
-    * Convert the response to a string when echoed.
-    *
-    * @return string
-    */
-   public function __toString(): string
-   {
       if ($this->data !== null) {
          $contentType = strtolower($this->headers['Content-Type'] ?? $this->headers['content-type'] ?? $this->headers['Content-type'] ?? '');
          if (strpos($contentType, 'application/json') !== false) {
             return json_encode($this->data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-         } else {
+         }
+         else {
             return $this->data;
          }
       }
+
       return '';
    }
 

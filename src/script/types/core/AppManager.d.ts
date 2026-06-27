@@ -54,7 +54,7 @@ export declare class AppManager {
      * Preserves the current scroll position during the update.
      *
      * @param key - The key representing the state to update.
-     * @param value - The new value to set for the specified state key.
+     * @param value - The new value to set for the specified state key., if a function is passed, phpspa sends a previous value to the function argument
      * @returns A promise that resolves when the state is updated successfully.
      *
      * @example

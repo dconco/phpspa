@@ -15,8 +15,9 @@ export declare const setState: typeof AppManager.setState;
 export declare const useEffect: typeof AppManager.useEffect;
 export declare const useCallback: typeof AppManager.useCallback;
 export declare const __call: typeof AppManager.__call;
-export type { EventObject, EventPayload } from "./types/RuntimeInterfaces";
+export type { EventObject, EventPayload, RuntimeConfig } from "./types/RuntimeInterfaces";
 export type { StateObject } from "./types/StateObjectTypes";
 export type EventName = keyof EventObject;
 export type PhpSPAInstance = typeof phpspa;
+export type { StateValueType } from './types/StateObjectTypes';
 //# sourceMappingURL=index.d.ts.map

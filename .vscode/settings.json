@@ -67,7 +67,13 @@
    },
    "editor.fontFamily": "'Google Sans Code', Consolas, 'Courier New', monospace",
    "editor.defaultFormatter": "google.antigravity",
-   "editor.fontSize": 15,
+   "editor.fontSize": 14,
    "editor.tabSize": 3,
-   "editor.formatOnSave": true
+   "editor.formatOnSave": false,
+   "[typescript]": {
+      "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
+   },
+   "[php]": {
+      "editor.defaultFormatter": "DEVSENSE.phptools-vscode"
+   }
 }
