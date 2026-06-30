@@ -63,6 +63,7 @@ final class HtmlCompressorTest extends TestCase
    public function testCompressComponentUsesExtremeLevel(): void
    {
       $html = '<div>x</div>';
+      Compressor::setLevel(Compressor::LEVEL_EXTREME);
 
       $this->assertSame($html, Compressor::compressComponent('<div>  x  </div>', 'HTML'));
    }

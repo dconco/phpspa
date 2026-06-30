@@ -85,7 +85,8 @@ class HttpRequest implements Request
         if (!$name) {
             return $cl;
         }
-        return $cl->$name ?? null;
+
+        return property_exists($cl, $name) ? $cl->$name : null;
     }
 
     public function urlParams(?string $name = null)
