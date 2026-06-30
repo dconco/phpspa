@@ -373,7 +373,7 @@ abstract class AppImpl implements ApplicationContract {
          if (isset($output)) return $output;
       }
 
-      if (empty($this->components)) {
+      if (empty($this->components) && empty($this->prefix)) {
          // --- If component is empty, then create an empty component ---
          $this->attach(new Component(fn() => ''));
       }
@@ -392,7 +392,9 @@ abstract class AppImpl implements ApplicationContract {
 
          $timer->start();
          $compressedOutput = Compressor::compress((string) $this->renderedData, 'text/html');
-         if (Compressor::getLevel() !== Compressor::LEVEL_NONE) error_log("Compressed HTML output within {$timer->getFormattedElapsedTime()} | From {$request->path()}");
+         if (Compressor::getLevel() !== Compressor::LEVEL_NONE) {
+            error_log("Compressed HTML output within {$timer->getFormattedElapsedTime()} | From {$request->path()}");
+         }
 
          if ($return) return $compressedOutput;
 
