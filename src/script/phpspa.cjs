@@ -1,5 +1,5 @@
 /*!
- * PhpSPA Client Runtime v2.0.14
+ * PhpSPA Client Runtime v2.0.15
  * Docs: https://phpspa.tech | Package: @dconco/phpspa
  * License: MIT
  */
@@ -891,10 +891,19 @@ function morphdomFactory(morphAttrs) {
     }
 
     if (typeof toNode === 'string') {
-      if (fromNode.nodeName === '#document' || fromNode.nodeName === 'HTML' || fromNode.nodeName === 'BODY') {
+      if (fromNode.nodeName === '#document' || fromNode.nodeName === 'HTML') {
         var toNodeHtml = toNode;
         toNode = doc.createElement('html');
         toNode.innerHTML = toNodeHtml;
+      } else if (fromNode.nodeName === 'BODY') {
+        var toNodeBody = toNode;
+        toNode = doc.createElement('html');
+        toNode.innerHTML = toNodeBody;
+        // Extract the body element from the created HTML structure
+        var bodyElement = toNode.querySelector('body');
+        if (bodyElement) {
+          toNode = bodyElement;
+        }
       } else {
         toNode = toElement(toNode);
       }
@@ -1684,7 +1693,12 @@ class AppManager {
      */
     static setState(key, value) {
         if (typeof value === 'function') {
-            value = value(RuntimeManager.currentStateData[key]);
+            const hasRegisteredState = RuntimeManager.currentStateData &&
+                Object.prototype.hasOwnProperty.call(RuntimeManager.currentStateData, key);
+            if (!hasRegisteredState) {
+                return Promise.resolve();
+            }
+            value = value(RuntimeManager.currentStateData[key] ?? null);
         }
         return new Promise(async (resolve, reject) => {
             if (value === undefined || value === void 0) {

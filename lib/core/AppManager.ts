@@ -384,6 +384,14 @@ export class AppManager {
     */
    public static setState(key: string, value: StateValueType | ((previous: StateValueType) => StateValueType)): Promise<void> {
       if (typeof value === 'function') {
+         const hasRegisteredState =
+            RuntimeManager.currentStateData &&
+            Object.prototype.hasOwnProperty.call(RuntimeManager.currentStateData, key)
+
+         if (!hasRegisteredState) {
+            return Promise.resolve()
+         }
+
          value = value(RuntimeManager.currentStateData[key] ?? null)
       }
 
