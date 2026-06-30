@@ -14,7 +14,11 @@ use PhpSPA\Core\Helper\CsrfManager;
  * @author dconco <me@dconco.tech>
  * @see https://phpspa.tech/security/csrf-protection
  */
-function Csrf (string $name) {
-   $csrf = new CsrfManager($name);
-   return $csrf->getInput();
+class Csrf
+{
+   public function __render(string $name): string
+   {
+      $csrf = new CsrfManager($name);
+      return $csrf->getInput();
+   }
 }
