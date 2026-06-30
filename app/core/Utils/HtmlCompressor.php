@@ -394,12 +394,12 @@ trait HtmlCompressor
     */
    private static function detectOptimalLevel(string $content): int
    {
-      $CONTENT_LENGTH = strlen($content);
+      $contentLen = strlen($content);
 
-      if ($CONTENT_LENGTH < 1024) {
+      if ($contentLen < 1024) {
          // Less than 1KB
          return Compressor::LEVEL_BASIC;
-      } elseif ($CONTENT_LENGTH < 10240) {
+      } elseif ($contentLen < 10240) {
          // Less than 10KB
          return Compressor::LEVEL_AGGRESSIVE;
       } else {

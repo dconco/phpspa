@@ -392,7 +392,7 @@ abstract class AppImpl implements ApplicationContract {
 
          $timer->start();
          $compressedOutput = Compressor::compress((string) $this->renderedData, 'text/html');
-         if (Compressor::getLevel() > Compressor::LEVEL_NONE) error_log("Compressed HTML output within {$timer->getFormattedElapsedTime()} | From {$request->path()}");
+         if (Compressor::getLevel() !== Compressor::LEVEL_NONE) error_log("Compressed HTML output within {$timer->getFormattedElapsedTime()} | From {$request->path()}");
 
          if ($return) return $compressedOutput;
 
@@ -1142,10 +1142,10 @@ abstract class AppImpl implements ApplicationContract {
       if (\is_array($content)) {
          $content = $content[0];
       } else {
-         if ($currentLevel > Compressor::LEVEL_NONE) {
+         if ($currentLevel !== Compressor::LEVEL_NONE) {
             $timer = new Timer();
             $assetType = strtoupper($assetInfo['assetType']);
-            
+
             // --- Compress the content ---
             $timer->start();
             $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type'], $isGlobalAsset ? 'global' : 'scoped');

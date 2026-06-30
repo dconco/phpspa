@@ -39,7 +39,8 @@ class FileHandler
 
             $file_info = finfo_open(FILEINFO_MIME_TYPE);
             $file_type = finfo_file($file_info, $filename);
-            finfo_close($file_info);
+
+            if (version_compare(PHP_VERSION, '5.0.0', '<')) finfo_close($file_info);
 
             $file_ext = explode('.', $filename);
             $file_ext = strtolower(end($file_ext));
