@@ -38,8 +38,6 @@ class AsyncResponse {
       $headerSize = curl_getinfo($this->curlHandle, CURLINFO_HEADER_SIZE);
       $statusCode = curl_getinfo($this->curlHandle, CURLINFO_HTTP_CODE);
 
-      curl_close($this->curlHandle);
-
       if ($response === false || $error) {
          $this->response = new ClientResponse(false, 0, [], $error ?: 'Request failed');
       } else {
@@ -127,7 +125,6 @@ class AsyncResponse {
          }
 
          curl_multi_remove_handle($multiHandle, $handle);
-         curl_close($handle);
       }
 
       curl_multi_close($multiHandle);
