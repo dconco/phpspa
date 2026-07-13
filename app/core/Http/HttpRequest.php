@@ -117,7 +117,7 @@ class HttpRequest implements Request
       foreach ($_SERVER as $key => $value) {
          if (strpos($key, 'HTTP_') === 0) {
             $header = str_replace('_', '-', substr($key, 5));
-            $header = $lowercase ? strtolower($header) : $header;
+            $header = $lowercase ? strtolower($header) : ucwords(strtolower($header), '-');
 
             // --- If we're looking for a specific header and it matches, return it immediately ---
             if ($name && $header === $name) {
