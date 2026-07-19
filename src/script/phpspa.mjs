@@ -1,5 +1,5 @@
 /*!
- * PhpSPA Client Runtime v2.0.15
+ * PhpSPA Client Runtime v2.0.16
  * Docs: https://phpspa.tech | Package: @dconco/phpspa
  * License: MIT
  */
@@ -534,15 +534,15 @@ const preloadStylesFromContent = (content, scopeKey) => {
         }
         return ''; // Remove the link from content
     });
-    // --- Update tracking for this scope ---
-    setScopeStyles(normalizedScopeKey, nextHrefs);
     const tempElem = document.createElement('div');
     tempElem.innerHTML = strippedContent;
     // --- Execute any inline styles in the new content ---
     RuntimeManager.runStylesForElement(tempElem);
-    // --- If the component has no linked styles, return immediately ---
+    // --- Keep current styles until the caller is ready to replace the DOM ---
     if (nextHrefs.size === 0) {
-        return { element: tempElem, ready: Promise.resolve() };
+        const ready = Promise.resolve()
+            .then(() => setScopeStyles(normalizedScopeKey, nextHrefs));
+        return { element: tempElem, ready };
     }
     const headLinks = getHeadStylesheetLinks();
     const loadPromises = Array.from(rawHrefs.entries()).map(([resolvedHref, rawHref]) => {
@@ -566,8 +566,7 @@ const preloadStylesFromContent = (content, scopeKey) => {
         return waitForStylesheet(headLink);
     });
     const ready = Promise.all(loadPromises)
-        //.then(() => waitForNextPaint())
-        .then(() => { });
+        .then(() => setScopeStyles(normalizedScopeKey, nextHrefs));
     return { element: tempElem, ready };
 };
 
