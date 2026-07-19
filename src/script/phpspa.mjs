@@ -441,6 +441,7 @@ const waitForStylesheet = (link) => new Promise((resolve) => {
     link.addEventListener('error', onLoad, { once: true });
 });
 const DEFAULT_SCOPE_KEY = '__phpspa_default__';
+const STYLESHEET_LINK_REGEX = /<link[^>]+rel=["']stylesheet["'][^>]*>/gi;
 const scopeToHrefs = new Map();
 const hrefToScopes = new Map();
 const ownedLinksByHref = new Map();
@@ -484,6 +485,7 @@ const releaseScopeHref = (scopeKey, resolvedHref) => {
                 owned.remove();
             }
             ownedLinksByHref.delete(resolvedHref);
+            RuntimeManager.executedStyles.delete(resolvedHref);
         }
     }
 };
@@ -512,22 +514,23 @@ const clearPreloadedStylesForScope = (scopeKey) => {
     const key = normalizeScopeKey(scopeKey);
     setScopeStyles(key, new Set());
 };
+const retainStylesheetLinks = (sourceContent, updatedContent) => {
+    const stylesheetLinks = sourceContent.match(STYLESHEET_LINK_REGEX);
+    return stylesheetLinks ? stylesheetLinks.join('') + updatedContent : updatedContent;
+};
 const preloadStylesFromContent = (content, scopeKey) => {
     const normalizedScopeKey = normalizeScopeKey(scopeKey);
     const nextHrefs = new Set();
-    const toLoad = new Map();
+    const rawHrefs = new Map();
     // --- Use regex to extract stylesheet links before DOM parsing triggers loads ---
-    const linkRegex = /<link[^>]+rel=["']stylesheet["'][^>]*>/gi;
     const hrefRegex = /href=["']([^"']+)["']/i;
-    const strippedContent = content.replace(linkRegex, (match) => {
+    const strippedContent = content.replace(STYLESHEET_LINK_REGEX, (match) => {
         const hrefMatch = match.match(hrefRegex);
         if (hrefMatch && hrefMatch[1]) {
             const rawHref = hrefMatch[1];
             const resolvedHref = resolveHref(rawHref);
             nextHrefs.add(resolvedHref);
-            if (!RuntimeManager.executedStyles.has(resolvedHref)) {
-                toLoad.set(resolvedHref, rawHref);
-            }
+            rawHrefs.set(resolvedHref, rawHref);
         }
         return ''; // Remove the link from content
     });
@@ -537,18 +540,12 @@ const preloadStylesFromContent = (content, scopeKey) => {
     tempElem.innerHTML = strippedContent;
     // --- Execute any inline styles in the new content ---
     RuntimeManager.runStylesForElement(tempElem);
-    // --- If no new styles to load, return immediately to maximize speed ---
-    if (toLoad.size === 0) {
+    // --- If the component has no linked styles, return immediately ---
+    if (nextHrefs.size === 0) {
         return { element: tempElem, ready: Promise.resolve() };
     }
     const headLinks = getHeadStylesheetLinks();
-    const loadPromises = Array.from(toLoad.entries()).map(([resolvedHref, rawHref]) => {
-        // --- Double-check cache (race condition safety) ---
-        if (RuntimeManager.executedStyles.has(resolvedHref)) {
-            return Promise.resolve();
-        }
-        // --- Mark as loaded immediately to prevent future redundant loads ---
-        RuntimeManager.executedStyles.add(resolvedHref);
+    const loadPromises = Array.from(rawHrefs.entries()).map(([resolvedHref, rawHref]) => {
         // prefer a previously-owned managed link if still present
         const owned = ownedLinksByHref.get(resolvedHref);
         let headLink = (owned && owned.isConnected) ? owned : null;
@@ -565,6 +562,7 @@ const preloadStylesFromContent = (content, scopeKey) => {
             headLinks.push(headLink);
             ownedLinksByHref.set(resolvedHref, headLink);
         }
+        RuntimeManager.executedStyles.add(resolvedHref);
         return waitForStylesheet(headLink);
     });
     const ready = Promise.all(loadPromises)
@@ -1373,7 +1371,7 @@ class AppManager {
             ...currentState,
             url: location.toString(),
             title: document.title,
-            content: currentTarget.innerHTML,
+            content: retainStylesheetLinks(currentState.content, currentTarget.innerHTML),
         };
         RuntimeManager.replaceState(updatedState, updatedState.title, updatedState.url);
     }
@@ -2087,7 +2085,6 @@ const navigateHistory = (event) => {
             if (!Object.hasOwn(currentRoutes, targetID))
                 continue;
             const targetInfo = currentRoutes[targetID];
-            clearPreloadedStylesForScope(targetID);
             // --- If route is exact and the route target ID is not equal to the navigated route target ID ---
             // --- Then the document URL has changed ---
             // --- That is they are navigating away ---
@@ -2104,6 +2101,7 @@ const navigateHistory = (event) => {
                         currentHTML.innerHTML = targetInfo.defaultContent;
                     }
                 }
+                clearPreloadedStylesForScope(targetID);
                 delete currentRoutes[targetID];
             }
         }

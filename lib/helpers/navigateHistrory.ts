@@ -58,8 +58,6 @@ export const navigateHistory = (event: PopStateEvent) => {
 
          const targetInfo = currentRoutes[targetID]
 
-         clearPreloadedStylesForScope(targetID)
-
          // --- If route is exact and the route target ID is not equal to the navigated route target ID ---
          // --- Then the document URL has changed ---
          // --- That is they are navigating away ---
@@ -76,6 +74,7 @@ export const navigateHistory = (event: PopStateEvent) => {
                }
             }
 
+            clearPreloadedStylesForScope(targetID)
             delete currentRoutes[targetID]
          }
       }

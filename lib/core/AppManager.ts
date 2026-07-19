@@ -1,6 +1,6 @@
 import { ComponentObject, StateObject, StateValueType } from "../types/StateObjectTypes"
 import { EventObject, EventPayloadMap, RuntimeConfig } from "../types/RuntimeInterfaces"
-import { clearPreloadedStylesForScope, preloadStylesFromContent } from "../utils/preloadStylesFromContent"
+import { clearPreloadedStylesForScope, preloadStylesFromContent, retainStylesheetLinks } from "../utils/preloadStylesFromContent"
 import { utf8ToBase64 } from "../utils/baseConverter"
 import { RuntimeManager } from "./RuntimeManager"
 import morphdom from "morphdom"
@@ -28,7 +28,7 @@ export class AppManager {
          ...currentState,
          url: location.toString(),
          title: document.title,
-         content: currentTarget.innerHTML,
+         content: retainStylesheetLinks(currentState.content, currentTarget.innerHTML),
       }
 
       RuntimeManager.replaceState(updatedState, updatedState.title, updatedState.url)
