@@ -1,5 +1,5 @@
 import morphdom from "morphdom"
-import { clearPreloadedStylesForScope } from "../utils/preloadStylesFromContent"
+import { preloadStylesFromContent, clearPreloadedStylesForScope } from "../utils/preloadStylesFromContent"
 import { RuntimeManager } from "../core/RuntimeManager"
 import { StateObject } from "../types/StateObjectTypes"
 import { AppManager } from "../core/AppManager"
@@ -58,6 +58,8 @@ export const navigateHistory = (event: PopStateEvent) => {
 
          const targetInfo = currentRoutes[targetID]
 
+         clearPreloadedStylesForScope(targetID)
+
          // --- If route is exact and the route target ID is not equal to the navigated route target ID ---
          // --- Then the document URL has changed ---
          // --- That is they are navigating away ---
@@ -74,28 +76,30 @@ export const navigateHistory = (event: PopStateEvent) => {
                }
             }
 
-            clearPreloadedStylesForScope(targetID)
             delete currentRoutes[targetID]
          }
       }
 
 
       // --- Decode and restore HTML content ---
-      const updateDOM = async () => {
-         // const styleScopeKey = navigationState.targetID || targetContainer.id || '__phpspa_body__'
-         // const tempElem = await preloadStylesFromContent(navigationState.content, styleScopeKey)
+      const updateDOM = () =>
+         new Promise((resolve) => {
+            const styleScopeKey = navigationState.targetID || targetContainer.id || '__phpspa_body__'
 
-         try {
-            morphdom(targetContainer, `<div>${navigationState.content}</div>`, {
-               childrenOnly: true
+            // --- Preload stylesheets in the new content ---
+            const { element, ready } = preloadStylesFromContent(navigationState.content, styleScopeKey)
+
+            ready.then(() => {
+               morphdom(targetContainer, element, {
+                  childrenOnly: true
+               })
+               resolve(0)
             })
-         } catch {
-            targetContainer.innerHTML = navigationState.content
-         }
-
-         // --- Execute any inline styles in the new content ---
-         // RuntimeManager.runStylesForElement(targetContainer)
-      }
+               .catch(() => {
+                  targetContainer.appendChild(element)
+                  resolve(0)
+               })
+         })
 
       const completedDOMUpdate = async () => {
 
@@ -111,13 +115,7 @@ export const navigateHistory = (event: PopStateEvent) => {
          }
       }
 
-      if (document.startViewTransition) {
-         document.startViewTransition(updateDOM).finished.then(completedDOMUpdate).catch((reason) => {
-            console.error('Popstate view transition failed:', reason || 'Unknown error during view transition')
-         })
-      } else {
-         updateDOM().then(completedDOMUpdate)
-      }
+      updateDOM().then(completedDOMUpdate)
 
    } else {
       // --- No valid state found - reload current URL to refresh ---

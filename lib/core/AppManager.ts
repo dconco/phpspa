@@ -198,39 +198,25 @@ export class AppManager {
             }
          }
 
-         let tempElem: HTMLDivElement | null = null
-
          // --- Update content ---
-         const updateDOM = async () => {
-
-            if (RuntimeManager.config.waitForStyles === true) {
+         const updateDOM = () =>
+            new Promise((resolve) => {
                const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__'
-
+      
                // --- Preload stylesheets in the new content ---
-               tempElem = await preloadStylesFromContent(component.content, styleScopeKey)
-
-               if (tempElem) {
-                  try {
-                     morphdom(targetElement, tempElem, {
-                        childrenOnly: true
-                     })
-                  } catch {
-                     targetElement.innerHTML = tempElem.innerHTML
-                  }
-               }
-            } else {
-               try {
-                  morphdom(targetElement, `<div>${component.content}</div>`, {
+               const { element, ready } = preloadStylesFromContent(component.content, styleScopeKey)
+      
+               ready.then(() => {
+                  morphdom(targetElement, element, {
                      childrenOnly: true
                   })
-               } catch {
-                  targetElement.innerHTML = component.content
-               }
-            }
-
-            // --- Execute any inline styles in the new content ---
-            RuntimeManager.runStylesForElement(targetElement)
-         }
+                  resolve(0)
+               })
+                  .catch(() => {
+                     targetElement.appendChild(element)
+                     resolve(0)
+                  })
+            })
 
 
          const stateData: StateObject = {
@@ -286,17 +272,7 @@ export class AppManager {
             }
          }
 
-         if (document.startViewTransition) {
-            document.startViewTransition(updateDOM).finished.then(completedDOMUpdate).catch((reason) => {
-               RuntimeManager.emit('load', {
-                  route: newUrl.toString(),
-                  success: false,
-                  error: reason || 'Unknown error during view transition',
-               })
-            })
-         } else {
-            updateDOM().then(completedDOMUpdate)
-         }
+         updateDOM().then(completedDOMUpdate)
       }
    }
 
@@ -483,12 +459,12 @@ export class AppManager {
           * @param {string|Object} responseData - The response data to process
           */
          function updateContent(responseData: ComponentObject|string) {
-         const component: ComponentObject = typeof responseData === 'string'
-            ? { content: responseData, stateData: {} }
-            : responseData
-
-         RuntimeManager.currentStateData = component.stateData
+            const component: ComponentObject = typeof responseData === 'string'
+               ? { content: responseData, stateData: {} }
+               : responseData
    
+            RuntimeManager.currentStateData = component.stateData
+
             // --- Update title if provided ---
             if (component?.title && String(component.title).length > 0) {
                document.title = component.title
@@ -612,31 +588,26 @@ export class AppManager {
             document.getElementById(history.state?.targetID) ??
             document.body
 
-         const updateDOM = async () => {
-            if (RuntimeManager.config.waitForStyles === true) {
+         
+         // --- Update content ---
+         const updateDOM = () =>
+            new Promise((resolve) => {
                const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__'
-               const tempElem = await preloadStylesFromContent(component.content, styleScopeKey)
-
-               try {
-                  morphdom(targetElement, tempElem, {
+      
+               // --- Preload stylesheets in the new content ---
+               const { element, ready } = preloadStylesFromContent(component.content, styleScopeKey)
+      
+               ready.then(() => {
+                  morphdom(targetElement, element, {
                      childrenOnly: true
                   })
-               } catch {
-                  targetElement.innerHTML = tempElem.innerHTML
-               }
-            } else {
-               try {
-                  morphdom(targetElement, `<div>${component.content}</div>`, {
-                     childrenOnly: true
+                  resolve(0)
+               })
+                  .catch(() => {
+                     targetElement.appendChild(element)
+                     resolve(0)
                   })
-               } catch {
-                  targetElement.innerHTML = component.content
-               }
-            }
-
-            // --- Execute any inline styles in the new content ---
-            RuntimeManager.runStylesForElement(targetElement)
-         }
+            })
 
          const completedDOMUpdate = () => {
 

@@ -518,7 +518,7 @@
         const key = normalizeScopeKey(scopeKey);
         setScopeStyles(key, new Set());
     };
-    const preloadStylesFromContent = async (content, scopeKey) => {
+    const preloadStylesFromContent = (content, scopeKey) => {
         const normalizedScopeKey = normalizeScopeKey(scopeKey);
         const nextHrefs = new Set();
         const toLoad = new Map();
@@ -539,11 +539,13 @@
         });
         // --- Update tracking for this scope ---
         setScopeStyles(normalizedScopeKey, nextHrefs);
+        const tempElem = document.createElement('div');
+        tempElem.innerHTML = strippedContent;
+        // --- Execute any inline styles in the new content ---
+        RuntimeManager.runStylesForElement(tempElem);
         // --- If no new styles to load, return immediately to maximize speed ---
         if (toLoad.size === 0) {
-            const tempElem = document.createElement('div');
-            tempElem.innerHTML = strippedContent;
-            return tempElem;
+            return { element: tempElem, ready: Promise.resolve() };
         }
         const headLinks = getHeadStylesheetLinks();
         const loadPromises = Array.from(toLoad.entries()).map(([resolvedHref, rawHref]) => {
@@ -571,11 +573,10 @@
             }
             return waitForStylesheet(headLink);
         });
-        await Promise.all(loadPromises);
-        await waitForNextPaint();
-        const tempElem = document.createElement('div');
-        tempElem.innerHTML = strippedContent;
-        return tempElem;
+        const ready = Promise.all(loadPromises)
+            //.then(() => waitForNextPaint())
+            .then(() => { });
+        return { element: tempElem, ready };
     };
 
     var DOCUMENT_FRAGMENT_NODE = 11;
@@ -1528,37 +1529,22 @@
                         delete currentRoutes[targetID];
                     }
                 }
-                let tempElem = null;
                 // --- Update content ---
-                const updateDOM = async () => {
-                    if (RuntimeManager.config.waitForStyles === true) {
-                        const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
-                        // --- Preload stylesheets in the new content ---
-                        tempElem = await preloadStylesFromContent(component.content, styleScopeKey);
-                        if (tempElem) {
-                            try {
-                                morphdom(targetElement, tempElem, {
-                                    childrenOnly: true
-                                });
-                            }
-                            catch {
-                                targetElement.innerHTML = tempElem.innerHTML;
-                            }
-                        }
-                    }
-                    else {
-                        try {
-                            morphdom(targetElement, `<div>${component.content}</div>`, {
-                                childrenOnly: true
-                            });
-                        }
-                        catch {
-                            targetElement.innerHTML = component.content;
-                        }
-                    }
-                    // --- Execute any inline styles in the new content ---
-                    RuntimeManager.runStylesForElement(targetElement);
-                };
+                const updateDOM = () => new Promise((resolve) => {
+                    const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
+                    // --- Preload stylesheets in the new content ---
+                    const { element, ready } = preloadStylesFromContent(component.content, styleScopeKey);
+                    ready.then(() => {
+                        morphdom(targetElement, element, {
+                            childrenOnly: true
+                        });
+                        resolve(0);
+                    })
+                        .catch(() => {
+                        targetElement.appendChild(element);
+                        resolve(0);
+                    });
+                });
                 const stateData = {
                     url: newUrl.toString(),
                     title: component?.title ?? document.title,
@@ -1605,18 +1591,7 @@
                         setTimeout(AppManager.reloadComponent, component.reloadTime);
                     }
                 };
-                if (document.startViewTransition) {
-                    document.startViewTransition(updateDOM).finished.then(completedDOMUpdate).catch((reason) => {
-                        RuntimeManager.emit('load', {
-                            route: newUrl.toString(),
-                            success: false,
-                            error: reason || 'Unknown error during view transition',
-                        });
-                    });
-                }
-                else {
-                    updateDOM().then(completedDOMUpdate);
-                }
+                updateDOM().then(completedDOMUpdate);
             }
         }
         /**
@@ -1895,32 +1870,22 @@
                 const targetElement = document.getElementById(component?.targetID) ??
                     document.getElementById(history.state?.targetID) ??
                     document.body;
-                const updateDOM = async () => {
-                    if (RuntimeManager.config.waitForStyles === true) {
-                        const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
-                        const tempElem = await preloadStylesFromContent(component.content, styleScopeKey);
-                        try {
-                            morphdom(targetElement, tempElem, {
-                                childrenOnly: true
-                            });
-                        }
-                        catch {
-                            targetElement.innerHTML = tempElem.innerHTML;
-                        }
-                    }
-                    else {
-                        try {
-                            morphdom(targetElement, `<div>${component.content}</div>`, {
-                                childrenOnly: true
-                            });
-                        }
-                        catch {
-                            targetElement.innerHTML = component.content;
-                        }
-                    }
-                    // --- Execute any inline styles in the new content ---
-                    RuntimeManager.runStylesForElement(targetElement);
-                };
+                // --- Update content ---
+                const updateDOM = () => new Promise((resolve) => {
+                    const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
+                    // --- Preload stylesheets in the new content ---
+                    const { element, ready } = preloadStylesFromContent(component.content, styleScopeKey);
+                    ready.then(() => {
+                        morphdom(targetElement, element, {
+                            childrenOnly: true
+                        });
+                        resolve(0);
+                    })
+                        .catch(() => {
+                        targetElement.appendChild(element);
+                        resolve(0);
+                    });
+                });
                 const completedDOMUpdate = () => {
                     // --- Clear old executed scripts cache ---
                     RuntimeManager.clearEffects();
@@ -2128,6 +2093,7 @@
                 if (!Object.hasOwn(currentRoutes, targetID))
                     continue;
                 const targetInfo = currentRoutes[targetID];
+                clearPreloadedStylesForScope(targetID);
                 // --- If route is exact and the route target ID is not equal to the navigated route target ID ---
                 // --- Then the document URL has changed ---
                 // --- That is they are navigating away ---
@@ -2144,25 +2110,25 @@
                             currentHTML.innerHTML = targetInfo.defaultContent;
                         }
                     }
-                    clearPreloadedStylesForScope(targetID);
                     delete currentRoutes[targetID];
                 }
             }
             // --- Decode and restore HTML content ---
-            const updateDOM = async () => {
-                // const styleScopeKey = navigationState.targetID || targetContainer.id || '__phpspa_body__'
-                // const tempElem = await preloadStylesFromContent(navigationState.content, styleScopeKey)
-                try {
-                    morphdom(targetContainer, `<div>${navigationState.content}</div>`, {
+            const updateDOM = () => new Promise((resolve) => {
+                const styleScopeKey = navigationState.targetID || targetContainer.id || '__phpspa_body__';
+                // --- Preload stylesheets in the new content ---
+                const { element, ready } = preloadStylesFromContent(navigationState.content, styleScopeKey);
+                ready.then(() => {
+                    morphdom(targetContainer, element, {
                         childrenOnly: true
                     });
-                }
-                catch {
-                    targetContainer.innerHTML = navigationState.content;
-                }
-                // --- Execute any inline styles in the new content ---
-                // RuntimeManager.runStylesForElement(targetContainer)
-            };
+                    resolve(0);
+                })
+                    .catch(() => {
+                    targetContainer.appendChild(element);
+                    resolve(0);
+                });
+            });
             const completedDOMUpdate = async () => {
                 // --- Clear old executed scripts cache ---
                 RuntimeManager.clearEffects();
@@ -2173,14 +2139,7 @@
                     setTimeout(AppManager.reloadComponent, navigationState.reloadTime);
                 }
             };
-            if (document.startViewTransition) {
-                document.startViewTransition(updateDOM).finished.then(completedDOMUpdate).catch((reason) => {
-                    console.error('Popstate view transition failed:', reason || 'Unknown error during view transition');
-                });
-            }
-            else {
-                updateDOM().then(completedDOMUpdate);
-            }
+            updateDOM().then(completedDOMUpdate);
         }
         else {
             // --- No valid state found - reload current URL to refresh ---

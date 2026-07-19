@@ -109,7 +109,7 @@ export const clearPreloadedStylesForScope = (scopeKey: string) => {
    setScopeStyles(key, new Set())
 }
 
-export const preloadStylesFromContent = async (content: string, scopeKey?: string): Promise<HTMLDivElement> => {
+export const preloadStylesFromContent =  (content: string, scopeKey?: string): { element: HTMLDivElement; ready: Promise<void> } => {
    const normalizedScopeKey = normalizeScopeKey(scopeKey)
 
    const nextHrefs: Set<string> = new Set()
@@ -136,11 +136,15 @@ export const preloadStylesFromContent = async (content: string, scopeKey?: strin
    // --- Update tracking for this scope ---
    setScopeStyles(normalizedScopeKey, nextHrefs)
 
+   const tempElem = document.createElement('div')
+   tempElem.innerHTML = strippedContent
+
+   // --- Execute any inline styles in the new content ---
+   RuntimeManager.runStylesForElement(tempElem)
+
    // --- If no new styles to load, return immediately to maximize speed ---
    if (toLoad.size === 0) {
-      const tempElem = document.createElement('div')
-      tempElem.innerHTML = strippedContent
-      return tempElem
+      return { element: tempElem, ready: Promise.resolve() }
    }
 
    const headLinks = getHeadStylesheetLinks()
@@ -176,10 +180,9 @@ export const preloadStylesFromContent = async (content: string, scopeKey?: strin
       return waitForStylesheet(headLink)
    })
 
-   await Promise.all(loadPromises)
-   await waitForNextPaint()
+   const ready = Promise.all(loadPromises)
+      //.then(() => waitForNextPaint())
+      .then(() => {})
 
-   const tempElem = document.createElement('div')
-   tempElem.innerHTML = strippedContent
-   return tempElem
+   return { element: tempElem, ready }
 }
