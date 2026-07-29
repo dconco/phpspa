@@ -147,7 +147,7 @@ final class HttpRequestTest extends TestCase {
       $request = new HttpRequest();
       $headers = $request->header(null, false);
 
-        $this->assertSame('one', $headers['X-TEST-HEADER']);
+      $this->assertSame('one', $headers['X-Test-Header']);
     }
 
     public function testJsonReturnsNullOnEmptyInput (): void
