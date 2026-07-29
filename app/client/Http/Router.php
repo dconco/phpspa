@@ -139,6 +139,11 @@ class Router
       };
    }
 
+   public static function __callStatic($method, $args)
+   {
+      return new self('', false, [])->__call($method, $args);
+   }
+
    private function handleHandler(callable|array|string $handler, &$request, $response, Closure $next) {
       return \call_user_func($handler, $request, $response, $next);
    }

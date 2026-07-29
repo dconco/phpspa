@@ -175,9 +175,9 @@ abstract class AppImpl implements ApplicationContract {
 
    public function cors (array $data = []): ApplicationContract
    {
-      $this->cors = require __DIR__ . '/../../Config/Cors.php';
+      $this->cors = require dirname(__DIR__, 2) . '/Config/Cors.php';
 
-      if (!empty($data)) {
+      /*if (!empty($data)) {
          $this->cors = array_merge_recursive($this->cors, $data);
       }
 
@@ -185,6 +185,10 @@ abstract class AppImpl implements ApplicationContract {
          if (\is_array($value)) {
             $this->cors[$key] = array_unique($value);
          }
+      }*/
+
+      if (!empty($data)) {
+         $this->cors = array_merge($this->cors, $data);
       }
 
       return $this;

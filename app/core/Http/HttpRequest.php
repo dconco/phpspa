@@ -8,416 +8,440 @@ use stdClass;
 
 class HttpRequest implements Request
 {
-    use \PhpSPA\Core\Auth\Authentication;
-
-    private array $tempData = [];
-
-    public function __construct(private readonly array $params = [])
-    {
-    }
-
-    public function __invoke(string $key, ?string $default = null): mixed
-    {
-        if (isset($_REQUEST[$key])) {
-            return $_REQUEST[$key];
-        }
-
-        return $default;
-    }
-
-    public function __set($name, $value)
-    {
-        $this->tempData[$name] = $value;
-    }
-
-    public function __get($name)
-    {
-        return $this->tempData[$name] ?? null;
-    }
-
-    public function files(?string $name = null): ?array
-    {
-        if (!$name) {
-            return $_FILES;
-        }
-        if (!isset($_FILES[$name]) || $_FILES[$name]['error'] !== UPLOAD_ERR_OK) {
-            return null;
-        }
-
-        return $_FILES[$name];
-    }
-
-    public function apiKey(string $key = 'Api-Key')
-    {
-        return self::RequestApiKey($key);
-    }
-
-    public function auth(): stdClass
-    {
-        $cl = new stdClass();
-        $cl->basic = self::BasicAuthCredentials();
-        $cl->bearer = self::BearerToken();
-
-        return $cl;
-    }
-
-    public function urlQuery(?string $name = null)
-    {
-        $parsed = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
-
-        $cl = new stdClass();
-
-        if (!$parsed) {
-            return $cl;
-        }
-        $parsed = mb_split('&', urldecode($parsed));
-
-        $i = 0;
-        while ($i < \count($parsed)) {
-            $p = mb_split('=', $parsed[$i]);
-            $key = $p[0];
-            $value = $p[1] ? $p[1] : null;
-
-            $cl->$key = $value;
-            $i++;
-        }
-
-        if (!$name) {
-            return $cl;
-        }
-
-        return property_exists($cl, $name) ? $cl->$name : null;
-    }
-
-    public function urlParams(?string $name = null)
-    {
-        if (!$name) {
-            return $this->params;
-        }
-        return $this->params[$name] ?? null;
-    }
-
-    public function header(?string $name = null, bool $lowercase = true)
-    {
-        $headers = [];
-        $name = ($name && $lowercase) ? strtolower($name) : $name;
-
-        if (function_exists('getallheaders')) {
-            $headers = $lowercase ? array_change_key_case(getallheaders(), CASE_LOWER) : getallheaders();
-        } elseif (function_exists('apache_request_headers')) {
-            $headers = $lowercase ? array_change_key_case(apache_request_headers(), CASE_LOWER) : apache_request_headers();
-        }
-
-        // --- If the header is found in the initial headers, return it immediately ---
-        if ($name && isset($headers[$name])) {
-            return $headers[$name];
-        }
-
-        // Merge $_SERVER HTTP_ entries as fallback for anything missing
-        foreach ($_SERVER as $key => $value) {
-            if (strpos($key, 'HTTP_') === 0) {
-                $header = str_replace('_', '-', substr($key, 5));
-                $header = $lowercase ? strtolower($header) : $header;
-
-                // --- If we're looking for a specific header and it matches, return it immediately ---
-                if ($name && $header === $name) {
-                    return $value;
-                }
-
-                // Now both are lowercase, comparison is accurate
-                if (!isset($headers[$header])) {
-                    $headers[$header] = $value;
-                }
-            }
-        }
-
-        if (!$name) {
-            return $headers;
-        }
-
-        return null; // header not found
-    }
-
-    public function json(?string $name = null)
-    {
-        $data = json_decode(file_get_contents('php://input'), true);
-
-        if ($data === null || json_last_error() !== JSON_ERROR_NONE) {
-            return null;
-        }
-
-        if ($name !== null) {
-            return $data[$name] ?? null;
-        }
-        return $data;
-    }
-
-    public function get(?string $key = null)
-    {
-        if (!$key) {
-            return $_GET;
-        }
-        if (!isset($_GET[$key])) {
-            return null;
-        }
-        return $_GET[$key] ?? null;
-    }
-
-    public function post(?string $key = null)
-    {
-        if (!$key) {
-            return $_POST;
-        }
-        if (!isset($_POST[$key])) {
-            return null;
-        }
-
-        $data = $_POST[$key];
-        return $data;
-    }
-
-    public function form(?string $key = null)
-    {
-        if ($key === null) {
-            return [ ...$_POST ?? [], ...$_FILES ?? [] ];
-        }
-
-        if (isset($_POST[$key])) {
-            return $_POST[$key];
-        }
-
-        if (isset($_FILES[$key])) {
-            return $_FILES[$key];
-        }
-
-        return null;
-    }
-
-    public function all(): array
-    {
-        $data = [];
-
-        if (\is_array($_GET ?? null)) {
-            $data = [ ...$data, ...$_GET ];
-        }
-
-        if (\is_array($_POST ?? null)) {
-            $data = [ ...$data, ...$_POST ];
-        }
-
-        $json = $this->json();
-        if (\is_array($json)) {
-            $data = [ ...$data, ...$json ];
-        }
-
-        return $data;
-    }
-
-    public function cookie(?string $key = null)
-    {
-        if (!$key) {
-            return $_COOKIE;
-        }
-        return $_COOKIE[$key] ?? null;
-    }
-
-    public function session(?string $key = null)
-    {
-        Session::start();
-
-        if (!$key) {
-            return $_SESSION;
-        }
-
-        return Session::get($key);
-    }
-
-    public function method(): string
-    {
-        return strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
-    }
-
-    public function ip(): string
-    {
-        // Check for forwarded IP addresses from proxies or load balancers
-        if (
-            isset($_SERVER['HTTP_X_FORWARDED_FOR']) ||
-            $this->header('X-Forwarded-For')
-        ) {
-            return $_SERVER['HTTP_X_FORWARDED_FOR'] ?:
-                $this->header('X-Forwarded-For');
-        }
-        return $_SERVER['REMOTE_ADDR'] ?? '';
-    }
-
-    public function isAjax(): bool
-    {
-        return strtolower(
-            $_SERVER['HTTP_X_REQUESTED_WITH'] ?? $this->header('X-Requested-With'),
-        ) === 'xmlhttprequest';
-    }
-
-    public function referrer(): ?string
-    {
-        return $_SERVER['HTTP_REFERER'] ?? $this->header('Referer') !== null
-            ? $_SERVER['HTTP_REFERER']
-            : null;
-    }
-
-    public function protocol(): ?string
-    {
-        return $_SERVER['SERVER_PROTOCOL'] ?? null;
-    }
-
-    public function isMethod(string $method): bool
-    {
-        return $this->method() === strtoupper($method);
-    }
-
-    public function isHttps(): bool
-    {
-        return !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ||
-            $_SERVER['SERVER_PORT'] == 443 || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
-    }
-
-    public function requestTime(): int
-    {
-        return (int) $_SERVER['REQUEST_TIME'] ?? 0;
-    }
-
-    public function contentType(): ?string
-    {
-        return $this->header('Content-Type') ??
-            ($_SERVER['CONTENT_TYPE'] ?? null);
-    }
-
-    public function contentLength(): ?int
-    {
-        return isset($_SERVER['CONTENT_LENGTH'])
-            ? (int) $_SERVER['CONTENT_LENGTH']
-            : null;
-    }
-
-    public function csrf()
-    {
-        return $this->header('X-Csrf-Token');
-    }
-
-    public function requestedWith()
-    {
-        return $_SERVER['HTTP_X_REQUESTED_WITH'] ??
-            $this->header('X-Requested-With');
-    }
-
-    public function getUri(): string
-    {
-        return urldecode(
-            parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH),
-        );
-    }
-
-    public function path(): string
-    {
-        $uri = $_SERVER['REQUEST_URI'] ?? '/';
-
-        // Strip query string from URI
-        if (strpos($uri, '?') !== false) {
-            $uri = substr($uri, 0, strpos($uri, '?'));
-        }
-
-        return rawurldecode($uri);
-    }
-
-    public function baseURL(): string
-    {
-        $scheme = $this->isHttps() ? 'https' : 'http';
-        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-
-        return "{$scheme}://{$host}";
-    }
-
-    public function siteURL(): string
-    {
-        $path = $this->getUri();
-        $baseURL = $this->baseURL();
-
-        return "{$baseURL}{$path}";
-    }
-
-    public function origin(): string
-    {
-        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-        $referer = $_SERVER['HTTP_REFERER'] ?? '';
-
-        if (empty($origin) && !empty($referer)) {
-            $parts = parse_url($referer);
-            $origin = $parts['scheme'] . '://' . $parts['host'];
-
-            // Optional: Add port if it exists
-            if (isset($parts['port'])) {
-                $origin .= ':' . $parts['port'];
-            }
-        }
-
-        return $origin;
-    }
-
-    public function isSameOrigin(): bool
-    {
-        $origin = $_SERVER['HTTP_ORIGIN'] ?? null;
-        $referer = $_SERVER['HTTP_REFERER'] ?? null;
-
-        $rawHost = $_SERVER['HTTP_HOST'] ?? '';
-        $host = parse_url($rawHost, PHP_URL_HOST) ?: $rawHost;
-        $port = parse_url($rawHost, PHP_URL_PORT);
-        $serverName = $_SERVER['SERVER_NAME'] ?? '';
-        $serverPort = $_SERVER['SERVER_PORT'] ?? null;
-        $expectedHost = $host ?: $serverName;
-        $expectedPort = $port ?? $serverPort;
-        $hasExplicitPort = $port !== null;
-
-        // Case 1: Browser explicitly sent Origin header
-        if ($origin !== null) {
-            $parsedHost = parse_url($origin, PHP_URL_HOST);
-            $parsedPort = parse_url($origin, PHP_URL_PORT);
-
-            if (!$parsedHost) {
-                return false;
+   use \PhpSPA\Core\Auth\Authentication;
+
+   private array $tempData = [];
+
+   public function __construct(private readonly array $params = [])
+   {
+   }
+
+   public function __invoke(string $key, ?string $default = null): mixed
+   {
+      if (isset($_REQUEST[$key])) {
+         return $_REQUEST[$key];
+      }
+
+      return $default;
+   }
+
+   public function __set($name, $value)
+   {
+      $this->tempData[$name] = $value;
+   }
+
+   public function __get($name)
+   {
+      return $this->tempData[$name] ?? null;
+   }
+
+   public function files(?string $name = null): ?array
+   {
+      if (!$name) {
+         return $_FILES;
+      }
+      if (!isset($_FILES[$name]) || $_FILES[$name]['error'] !== UPLOAD_ERR_OK) {
+         return null;
+      }
+
+      return $_FILES[$name];
+   }
+
+   public function apiKey(string $key = 'Api-Key')
+   {
+      return self::RequestApiKey($key);
+   }
+
+   public function auth(): stdClass
+   {
+      $cl = new stdClass();
+      $cl->basic = self::BasicAuthCredentials();
+      $cl->bearer = self::BearerToken();
+
+      return $cl;
+   }
+
+   public function urlQuery(?string $name = null)
+   {
+      $parsed = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
+
+      $cl = new stdClass();
+
+      if (!$parsed) {
+         return $cl;
+      }
+      $parsed = mb_split('&', urldecode($parsed));
+
+      $i = 0;
+      while ($i < \count($parsed)) {
+         $p = mb_split('=', $parsed[$i]);
+         $key = $p[0];
+         $value = $p[1] ? $p[1] : null;
+
+         $cl->$key = $value;
+         $i++;
+      }
+
+      if (!$name) {
+         return $cl;
+      }
+
+      return property_exists($cl, $name) ? $cl->$name : null;
+   }
+
+   public function urlParams(?string $name = null)
+   {
+      if (!$name) {
+         return $this->params;
+      }
+      return $this->params[$name] ?? null;
+   }
+
+   public function header(?string $name = null, bool $lowercase = true)
+   {
+      $headers = [];
+      $name = ($name && $lowercase) ? strtolower($name) : $name;
+
+      if (function_exists('getallheaders')) {
+         $headers = $lowercase ? array_change_key_case(getallheaders(), CASE_LOWER) : getallheaders();
+      } elseif (function_exists('apache_request_headers')) {
+         $headers = $lowercase ? array_change_key_case(apache_request_headers(), CASE_LOWER) : apache_request_headers();
+      }
+
+      // --- If the header is found in the initial headers, return it immediately ---
+      if ($name && isset($headers[$name])) {
+         return $headers[$name];
+      }
+
+      // Merge $_SERVER HTTP_ entries as fallback for anything missing
+      foreach ($_SERVER as $key => $value) {
+         if (strpos($key, 'HTTP_') === 0) {
+            $header = str_replace('_', '-', substr($key, 5));
+            $header = $lowercase ? strtolower($header) : ucwords(strtolower($header), '-');
+
+            // --- If we're looking for a specific header and it matches, return it immediately ---
+            if ($name && $header === $name) {
+               return $value;
             }
 
-            if ($parsedHost !== $expectedHost) {
-                return false;
+            // Now both are lowercase, comparison is accurate
+            if (!isset($headers[$header])) {
+               $headers[$header] = $value;
             }
+         }
+      }
 
-            if ($parsedPort !== null && $expectedPort !== null) {
-                return (string) $parsedPort === (string) $expectedPort;
-            }
+      if (!$name) {
+         return $headers;
+      }
 
-            return true;
-        }
+      return null; // header not found
+   }
 
-        // Case 2: No Origin -> check Referer header
-        if ($referer !== null) {
-            $parsedHost = parse_url($referer, PHP_URL_HOST);
-            $parsedPort = parse_url($referer, PHP_URL_PORT);
+   public function json(?string $name = null)
+   {
+      $data = json_decode(file_get_contents('php://input'), true);
 
-            if (!$parsedHost) {
-                return false;
-            }
+      if ($data === null || json_last_error() !== JSON_ERROR_NONE) {
+         return null;
+      }
 
-            if ($parsedHost !== $expectedHost) {
-                return false;
-            }
+      if ($name !== null) {
+         return $data[$name] ?? null;
+      }
+      return $data;
+   }
 
-            if ($hasExplicitPort && $parsedPort !== null && $expectedPort !== null) {
-                return (string) $parsedPort === (string) $expectedPort;
-            }
+   public function get(?string $key = null)
+   {
+      if (!$key) {
+         return $_GET;
+      }
+      if (!isset($_GET[$key])) {
+         return null;
+      }
+      return $_GET[$key] ?? null;
+   }
 
-            return true;
-        }
+   public function post(?string $key = null)
+   {
+      if (!$key) {
+         return $_POST;
+      }
+      if (!isset($_POST[$key])) {
+         return null;
+      }
 
-        // Case 3: No Origin or Referer -> allow internal requests with a relative URI
-        $uri = $_SERVER['REQUEST_URI'] ?? '';
-        return $expectedHost !== '' && $uri !== '' && str_starts_with($uri, '/');
-    }
+      $data = $_POST[$key];
+      return $data;
+   }
+
+   public function form(?string $key = null)
+   {
+      parse_str(file_get_contents("php://input"), $data);
+
+      if (!$key) return $data;
+      return $data[$key];
+   }
+
+   public function multipart(?string $key = null)
+   {
+      $rawInput = file_get_contents('php://input');
+      $patchData = [];
+
+      // Find the boundary delimiter
+      if (preg_match('/--([\w-]+)\b/', $rawInput, $matches)) {
+          $boundary = $matches[0];
+
+          // Split payload into distinct parts
+          $parts = explode($boundary, $rawInput);
+
+          foreach ($parts as $part) {
+              if (empty(trim($part)) || $part === '--') continue;
+
+              // Separate headers from the actual value
+              if (preg_match('/name="([^"]+)"\s+([\s\S]+)/', $part, $subMatches)) {
+                  $key = $subMatches[1];
+                  $value = trim($subMatches[2]);
+                  $patchData[$key] = $value;
+              }
+          }
+      }
+   }
+
+   public function all(): array
+   {
+      $data = [];
+
+      if (\is_array($_GET ?? null)) $data = [ ...$data, ...$_GET ];
+      if (\is_array($_POST ?? null)) $data = [ ...$data, ...$_POST ];
+
+      // Check the Content-Type header to route parsing correctly
+      $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+   
+      if (str_contains($contentType, 'application/json')) {
+         $json = $this->json();
+         if (\is_array($json)) $data = [ ...$data, ...$json ];
+      }
+
+      elseif (str_contains($contentType, 'multipart/form-data')) {
+         $multipart = $this->multipart();
+         if (\is_array($multipart)) $data = [ ...$data, ...$multipart ];
+      }
+
+      elseif (str_contains($contentType, 'application/x-www-form-urlencoded')) {
+           $form = $this->form();
+           if (\is_array($form)) $data = [ ...$data, ...$form ];
+      }
+
+      return $data;
+   }
+
+   public function cookie(?string $key = null)
+   {
+      if (!$key) {
+         return $_COOKIE;
+      }
+      return $_COOKIE[$key] ?? null;
+   }
+
+   public function session(?string $key = null)
+   {
+      Session::start();
+
+      if (!$key) {
+         return $_SESSION;
+      }
+
+      return Session::get($key);
+   }
+
+   public function method(): string
+   {
+      return strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+   }
+
+   public function ip(): string
+   {
+      // Check for forwarded IP addresses from proxies or load balancers
+      if (
+         isset($_SERVER['HTTP_X_FORWARDED_FOR']) ||
+         $this->header('X-Forwarded-For')
+      ) {
+         return $_SERVER['HTTP_X_FORWARDED_FOR'] ?:
+            $this->header('X-Forwarded-For');
+      }
+      return $_SERVER['REMOTE_ADDR'] ?? '';
+   }
+
+   public function isAjax(): bool
+   {
+      return strtolower(
+         $_SERVER['HTTP_X_REQUESTED_WITH'] ?? $this->header('X-Requested-With'),
+      ) === 'xmlhttprequest';
+   }
+
+   public function referrer(): ?string
+   {
+      return $_SERVER['HTTP_REFERER'] ?? $this->header('Referer') !== null
+         ? $_SERVER['HTTP_REFERER']
+         : null;
+   }
+
+   public function protocol(): ?string
+   {
+      return $_SERVER['SERVER_PROTOCOL'] ?? null;
+   }
+
+   public function isMethod(string $method): bool
+   {
+      return $this->method() === strtoupper($method);
+   }
+
+   public function isHttps(): bool
+   {
+      return !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ||
+         $_SERVER['SERVER_PORT'] == 443 || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
+   }
+
+   public function requestTime(): int
+   {
+      return (int) $_SERVER['REQUEST_TIME'] ?? 0;
+   }
+
+   public function contentType(): ?string
+   {
+      return $this->header('Content-Type') ??
+         ($_SERVER['CONTENT_TYPE'] ?? null);
+   }
+
+   public function contentLength(): ?int
+   {
+      return isset($_SERVER['CONTENT_LENGTH'])
+         ? (int) $_SERVER['CONTENT_LENGTH']
+         : null;
+   }
+
+   public function csrf()
+   {
+      return $this->header('X-Csrf-Token');
+   }
+
+   public function requestedWith()
+   {
+      return $_SERVER['HTTP_X_REQUESTED_WITH'] ??
+         $this->header('X-Requested-With');
+   }
+
+   public function getUri(): string
+   {
+      return urldecode(
+         parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH),
+      );
+   }
+
+   public function path(): string
+   {
+      $uri = $_SERVER['REQUEST_URI'] ?? '/';
+
+      // Strip query string from URI
+      if (strpos($uri, '?') !== false) {
+         $uri = substr($uri, 0, strpos($uri, '?'));
+      }
+
+      return rawurldecode($uri);
+   }
+
+   public function baseURL(): string
+   {
+      $scheme = $this->isHttps() ? 'https' : 'http';
+      $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+      return "{$scheme}://{$host}";
+   }
+
+   public function siteURL(): string
+   {
+      $path = $this->getUri();
+      $baseURL = $this->baseURL();
+
+      return "{$baseURL}{$path}";
+   }
+
+   public function origin(): string
+   {
+      $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+      $referer = $_SERVER['HTTP_REFERER'] ?? '';
+
+      if (empty($origin) && !empty($referer)) {
+         $parts = parse_url($referer);
+         $origin = $parts['scheme'] . '://' . $parts['host'];
+
+         // Optional: Add port if it exists
+         if (isset($parts['port'])) {
+            $origin .= ':' . $parts['port'];
+         }
+      }
+
+      return $origin;
+   }
+
+   public function isSameOrigin(): bool
+   {
+      $origin = $_SERVER['HTTP_ORIGIN'] ?? null;
+      $referer = $_SERVER['HTTP_REFERER'] ?? null;
+
+      $rawHost = $_SERVER['HTTP_HOST'] ?? '';
+      $host = parse_url($rawHost, PHP_URL_HOST) ?: $rawHost;
+      $port = parse_url($rawHost, PHP_URL_PORT);
+      $serverName = $_SERVER['SERVER_NAME'] ?? '';
+      $serverPort = $_SERVER['SERVER_PORT'] ?? null;
+      $expectedHost = $host ?: $serverName;
+      $expectedPort = $port ?? $serverPort;
+      $hasExplicitPort = $port !== null;
+
+      // Case 1: Browser explicitly sent Origin header
+      if ($origin !== null) {
+         $parsedHost = parse_url($origin, PHP_URL_HOST);
+         $parsedPort = parse_url($origin, PHP_URL_PORT);
+
+         if (!$parsedHost) {
+            return false;
+         }
+
+         if ($parsedHost !== $expectedHost) {
+            return false;
+         }
+
+         if ($parsedPort !== null && $expectedPort !== null) {
+            return (string) $parsedPort === (string) $expectedPort;
+         }
+
+         return true;
+      }
+
+      // Case 2: No Origin -> check Referer header
+      if ($referer !== null) {
+         $parsedHost = parse_url($referer, PHP_URL_HOST);
+         $parsedPort = parse_url($referer, PHP_URL_PORT);
+
+         if (!$parsedHost) {
+            return false;
+         }
+
+         if ($parsedHost !== $expectedHost) {
+            return false;
+         }
+
+         if ($hasExplicitPort && $parsedPort !== null && $expectedPort !== null) {
+            return (string) $parsedPort === (string) $expectedPort;
+         }
+
+         return true;
+      }
+
+      // Case 3: No Origin or Referer -> allow internal requests with a relative URI
+      $uri = $_SERVER['REQUEST_URI'] ?? '';
+      return $expectedHost !== '' && $uri !== '' && str_starts_with($uri, '/');
+   }
 }

@@ -26,6 +26,7 @@ const waitForStylesheet = (link: HTMLLinkElement): Promise<void> =>
    })
 
 const DEFAULT_SCOPE_KEY = '__phpspa_default__'
+const STYLESHEET_LINK_REGEX = /<link[^>]+rel=["']stylesheet["'][^>]*>/gi
 
 const scopeToHrefs: Map<string, Set<string>> = new Map()
 const hrefToScopes: Map<string, Set<string>> = new Map()
@@ -75,6 +76,7 @@ const releaseScopeHref = (scopeKey: string, resolvedHref: string) => {
             owned.remove()
          }
          ownedLinksByHref.delete(resolvedHref)
+         RuntimeManager.executedStyles.delete(resolvedHref)
       }
    }
 }
@@ -109,51 +111,48 @@ export const clearPreloadedStylesForScope = (scopeKey: string) => {
    setScopeStyles(key, new Set())
 }
 
-export const preloadStylesFromContent = async (content: string, scopeKey?: string): Promise<HTMLDivElement> => {
+export const retainStylesheetLinks = (sourceContent: string, updatedContent: string): string => {
+   const stylesheetLinks = sourceContent.match(STYLESHEET_LINK_REGEX)
+   return stylesheetLinks ? stylesheetLinks.join('') + updatedContent : updatedContent
+}
+
+export const preloadStylesFromContent =  (content: string, scopeKey?: string): { element: HTMLDivElement; ready: Promise<void> } => {
    const normalizedScopeKey = normalizeScopeKey(scopeKey)
 
    const nextHrefs: Set<string> = new Set()
-   const toLoad: Map<string, string> = new Map()
+   const rawHrefs: Map<string, string> = new Map()
 
    // --- Use regex to extract stylesheet links before DOM parsing triggers loads ---
-   const linkRegex = /<link[^>]+rel=["']stylesheet["'][^>]*>/gi
    const hrefRegex = /href=["']([^"']+)["']/i
    
-   const strippedContent = content.replace(linkRegex, (match) => {
+   const strippedContent = content.replace(STYLESHEET_LINK_REGEX, (match) => {
       const hrefMatch = match.match(hrefRegex)
       if (hrefMatch && hrefMatch[1]) {
          const rawHref = hrefMatch[1]
          const resolvedHref = resolveHref(rawHref)
          nextHrefs.add(resolvedHref)
-         
-         if (!RuntimeManager.executedStyles.has(resolvedHref)) {
-            toLoad.set(resolvedHref, rawHref)
-         }
+         rawHrefs.set(resolvedHref, rawHref)
       }
       return '' // Remove the link from content
    })
 
-   // --- Update tracking for this scope ---
-   setScopeStyles(normalizedScopeKey, nextHrefs)
+   const tempElem = document.createElement('div')
+   tempElem.innerHTML = strippedContent
 
-   // --- If no new styles to load, return immediately to maximize speed ---
-   if (toLoad.size === 0) {
-      const tempElem = document.createElement('div')
-      tempElem.innerHTML = strippedContent
-      return tempElem
+   // --- Execute any inline styles in the new content ---
+   RuntimeManager.runStylesForElement(tempElem)
+
+   // --- Keep current styles until the caller is ready to replace the DOM ---
+   if (nextHrefs.size === 0) {
+      const ready = Promise.resolve()
+         .then(() => setScopeStyles(normalizedScopeKey, nextHrefs))
+
+      return { element: tempElem, ready }
    }
 
    const headLinks = getHeadStylesheetLinks()
 
-   const loadPromises = Array.from(toLoad.entries()).map(([resolvedHref, rawHref]) => {
-      // --- Double-check cache (race condition safety) ---
-      if (RuntimeManager.executedStyles.has(resolvedHref)) {
-         return Promise.resolve()
-      }
-
-      // --- Mark as loaded immediately to prevent future redundant loads ---
-      RuntimeManager.executedStyles.add(resolvedHref)
-
+   const loadPromises = Array.from(rawHrefs.entries()).map(([resolvedHref, rawHref]) => {
       // prefer a previously-owned managed link if still present
       const owned = ownedLinksByHref.get(resolvedHref)
       let headLink: HTMLLinkElement | null = (owned && owned.isConnected) ? owned : null
@@ -173,13 +172,12 @@ export const preloadStylesFromContent = async (content: string, scopeKey?: strin
          ownedLinksByHref.set(resolvedHref, headLink)
       }
 
+      RuntimeManager.executedStyles.add(resolvedHref)
       return waitForStylesheet(headLink)
    })
 
-   await Promise.all(loadPromises)
-   await waitForNextPaint()
+   const ready = Promise.all(loadPromises)
+      .then(() => setScopeStyles(normalizedScopeKey, nextHrefs))
 
-   const tempElem = document.createElement('div')
-   tempElem.innerHTML = strippedContent
-   return tempElem
+   return { element: tempElem, ready }
 }
