@@ -264,7 +264,7 @@ class Response
       } elseif ($fileType === 'text/css') {
          $level = Compressor::getLevel();
          $contents = Compressor::compressWithLevel($contents, $level, $fileType);
-         $contents = Compressor::gzipCompress($contents, $fileType);
+         $contents = Compressor::applyBinaryCompression($contents, $fileType);
       }
 
       if ($fileType === 'application/json') {
