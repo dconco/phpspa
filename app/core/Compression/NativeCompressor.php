@@ -41,7 +41,7 @@ final class NativeCompressor
    public static function compress(string $content, int $nativeLevel, string $type, string $scope, bool $useEsbuild): string
    {
       if (!self::initialize()) {
-         throw new \RuntimeException('Native compressor is unavailable.');
+         throw new \RuntimeException(self::$lastError ?? 'Native compressor is unavailable.');
       }
 
       $level = max(1, min(3, $nativeLevel));
@@ -56,7 +56,7 @@ final class NativeCompressor
       if ($resultPointer === null || \FFI::isNull($resultPointer)) {
          throw new \RuntimeException('Native compressor returned a null pointer.');
       }
-      error_log(\FFI::string($debugOutput));
+      if ($_ENV['APP_ENV'] !== 'production') error_log(\FFI::string($debugOutput));
 
       try {
          return \FFI::string($resultPointer, $outLen->cdata ?? 0);
@@ -83,9 +83,19 @@ final class NativeCompressor
          return false;
       }
 
+      // Check if already preloaded into shared OPcache memory
+      try {
+         self::$ffi = \FFI::scope('phpspa_compressor');
+         return true;
+      } catch (\FFI\Exception $e) {
+         if ($_ENV['APP_ENV'] !== 'production') error_log("phpspa_compressor isn't preloaded in PHP INI, falling back to loading directly from the shared library.");
+         // Not preloaded; proceed to dynamic loading below
+      }
+
       $libraryPath = self::resolveLibraryPath();
       if ($libraryPath === null) {
-         self::$lastError = 'Native compressor library not found. Set PHPSPA_COMPRESSOR_LIB to an absolute path to compressor.dll.';
+         $ENV_LIBRARY_PATH = self::ENV_LIBRARY_PATH;
+         self::$lastError = "Native compressor library not found. Set {$ENV_LIBRARY_PATH} to an absolute path to compressor.dll or libcompressor.so";
          return false;
       }
 
@@ -102,9 +112,9 @@ final class NativeCompressor
 
    private static function resolveLibraryPath(): ?string
    {
-      $envPath = \getenv(self::ENV_LIBRARY_PATH);
+      $envPath = $_ENV[self::ENV_LIBRARY_PATH];
       if (\is_string($envPath) && $envPath !== '' && \is_file($envPath)) {
-         error_log("Using native compressor library from environment variable: $envPath");
+         if ($_ENV['APP_ENV'] !== 'production') error_log("Using native compressor library from environment variable: $envPath");
          return $envPath;
       }
 
@@ -122,7 +132,7 @@ final class NativeCompressor
          foreach (self::libraryFilenames() as $filename) {
             $candidate = $directory . '/' . $filename;
             if (\is_file($candidate)) {
-               error_log('Found native compressor library: ' . $candidate);
+               if ($_ENV['APP_ENV'] !== 'production') error_log('Found native compressor library: ' . $candidate);
                return $candidate;
             }
          }

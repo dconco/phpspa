@@ -300,8 +300,13 @@ class HttpRequest implements Request
 
    public function isHttps(): bool
    {
-      return !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ||
-         $_SERVER['SERVER_PORT'] == 443 || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
+      $proto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '';
+      $firstProto = strtolower(trim(explode(',', $proto)[0]));
+
+      return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+         || $_SERVER['SERVER_PORT'] == 443
+         || $firstProto === 'https'
+         || ($_SERVER['HTTP_X_FORWARDED_SSL'] ?? '') === 'on';
    }
 
    public function requestTime(): int
