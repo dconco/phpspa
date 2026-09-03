@@ -24,6 +24,46 @@ extension=ffi
 
 ---
 
+### ⚡ FFI Preloading (Recommended for Production)
+
+FFI preloading loads the native library once at server startup via OPcache, eliminating per-request FFI initialization overhead.
+
+#### Create the Header File
+
+Create a file named `phpspa_compressor.h` anywhere on your server (e.g. alongside your project or in a dedicated config directory):
+
+```c
+// path to compressor library
+#define FFI_LIB "/path/to/project/vendor/dconco/phpspa/src/bin/libcompressor.so"
+#define FFI_SCOPE "phpspa_compressor"
+
+char* phpspa_compress_html(const char* content, int level, int type, size_t* out_len);
+char* phpspa_compress_html_esbuild(const char* content, int level, int type, const char* scope, char* debug_output, size_t* out_len);
+void phpspa_free_string(char* ptr);
+```
+
+!!! info "Path Configuration"
+    - **`FFI_LIB`** — Set this to the **absolute path** of the compressor shared library on your server. The library is located at `vendor/dconco/phpspa/src/bin/libcompressor.so` inside your project root (e.g. `/var/www/myapp/vendor/dconco/phpspa/src/bin/libcompressor.so`).
+    - **`ffi.preload`** — Set this to the **absolute path** of the `phpspa_compressor.h` file you just created (e.g. `/var/www/myapp/phpspa_compressor.h`).
+
+#### Configure `php.ini`
+
+Add the following to your `php.ini`:
+
+```ini
+ffi.enable = "preload"
+ffi.preload = "/absolute/path/to/phpspa_compressor.h"
+opcache.enable = 1
+```
+
+!!! warning "Restart Required"
+    Restart your web server (Apache/Nginx/PHP-FPM) after editing `php.ini` for preloading to take effect.
+
+!!! tip "Verify Preloading"
+    After restarting, check `X-PhpSPA-Compression-Engine: native` in your response headers to confirm the native engine is active.
+
+---
+
 ### 2️⃣ Download Prebuilt Libraries (Optional)
 
 PhpSPA **auto-detects** the compressor library from your installation. Windows and Linux binaries are included by default.

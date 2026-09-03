@@ -218,6 +218,41 @@ This ensures:
 
 ---
 
+### ⚡ FFI Preloading { #ffi-preloading }
+
+FFI preloading loads the native compressor library once at server startup via OPcache, removing per-request FFI initialization overhead for maximum performance.
+
+#### Create `phpspa_compressor.h`
+
+Create this header file anywhere on your server (e.g. your project root):
+
+```c
+// path to compressor library
+#define FFI_LIB "/path/to/project/vendor/dconco/phpspa/src/bin/libcompressor.so"
+#define FFI_SCOPE "phpspa_compressor"
+
+char* phpspa_compress_html(const char* content, int level, int type, size_t* out_len);
+char* phpspa_compress_html_esbuild(const char* content, int level, int type, const char* scope, char* debug_output, size_t* out_len);
+void phpspa_free_string(char* ptr);
+```
+
+Then add to your `php.ini`:
+
+```ini
+ffi.enable = "preload"
+ffi.preload = "/absolute/path/to/phpspa_compressor.h"
+opcache.enable = 1
+```
+
+!!! info "Path Configuration"
+    - **`FFI_LIB`** — Absolute path to the compressor library. Located at `vendor/dconco/phpspa/src/bin/libcompressor.so` inside your project (e.g. `/var/www/myapp/vendor/dconco/phpspa/src/bin/libcompressor.so`).
+    - **`ffi.preload`** — Absolute path to the `phpspa_compressor.h` file you created (e.g. `/var/www/myapp/phpspa_compressor.h`).
+
+!!! warning "Restart Required"
+    Restart your web server after editing `php.ini` for preloading to take effect.
+
+---
+
 ### 🚀 JavaScript Minification with esbuild
 
 Starting from **v2.0.9**, PhpSPA uses the professional [`esbuild`](https://esbuild.github.io/) bundler **by default** for JavaScript minification. Esbuild provides superior minification, bundling, and tree-shaking compared to the built-in C++/PHP minifier.

@@ -1,6 +1,6 @@
 // PHP.INI CONFIGURATION
 // ffi.enable = "preload"
-// ffi.preload = "/absolute/path/to/this/file/php_preload.h"
+// ffi.preload = "/absolute/path/to/this/file/phpspa_compressor.h"
 // opcache.enable = 1
 
 // path to compressor library
