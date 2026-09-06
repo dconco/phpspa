@@ -88,7 +88,7 @@ final class NativeCompressor
          self::$ffi = \FFI::scope('phpspa_compressor');
          return true;
       } catch (\FFI\Exception $e) {
-         if ($_ENV['APP_ENV'] !== 'production') error_log("phpspa_compressor isn't preloaded in PHP INI, falling back to loading directly from the shared library.");
+         if ($_ENV['APP_ENV'] ?? '' !== 'production') error_log("phpspa_compressor isn't preloaded in PHP INI, falling back to loading directly from the shared library.");
          // Not preloaded; proceed to dynamic loading below
       }
 
@@ -112,9 +112,9 @@ final class NativeCompressor
 
    private static function resolveLibraryPath(): ?string
    {
-      $envPath = $_ENV[self::ENV_LIBRARY_PATH];
+      $envPath = $_ENV[self::ENV_LIBRARY_PATH] ?? '';
       if (\is_string($envPath) && $envPath !== '' && \is_file($envPath)) {
-         if ($_ENV['APP_ENV'] !== 'production') error_log("Using native compressor library from environment variable: $envPath");
+         if ($_ENV['APP_ENV'] ?? '' !== 'production') error_log("Using native compressor library from environment variable: $envPath");
          return $envPath;
       }
 
