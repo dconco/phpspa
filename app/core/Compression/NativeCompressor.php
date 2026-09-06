@@ -56,7 +56,7 @@ final class NativeCompressor
       if ($resultPointer === null || \FFI::isNull($resultPointer)) {
          throw new \RuntimeException('Native compressor returned a null pointer.');
       }
-      if ($_ENV['APP_ENV'] !== 'production') error_log(\FFI::string($debugOutput));
+      if ($_ENV['APP_ENV'] ?? '' !== 'production') error_log(\FFI::string($debugOutput));
 
       try {
          return \FFI::string($resultPointer, $outLen->cdata ?? 0);
@@ -132,7 +132,7 @@ final class NativeCompressor
          foreach (self::libraryFilenames() as $filename) {
             $candidate = $directory . '/' . $filename;
             if (\is_file($candidate)) {
-               if ($_ENV['APP_ENV'] !== 'production') error_log('Found native compressor library: ' . $candidate);
+               if ($_ENV['APP_ENV'] ?? '' !== 'production') error_log('Found native compressor library: ' . $candidate);
                return $candidate;
             }
          }
