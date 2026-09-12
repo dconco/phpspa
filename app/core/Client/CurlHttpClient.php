@@ -56,8 +56,10 @@ class CurlHttpClient implements HttpClient {
    {
       // Increase PHP max execution time if timeout is higher
       $timeout = $options['timeout'] ?? 30;
-      if ($timeout > ini_get('max_execution_time')) {
-         @set_time_limit((int)$timeout + 10);
+      $currentTimeout = (int) ini_get('max_execution_time');
+
+      if ($currentTimeout !== 0 && $timeout > $currentTimeout) {
+          @set_time_limit($timeout + 10);
       }
 
       $ch = curl_init();
@@ -76,17 +78,17 @@ class CurlHttpClient implements HttpClient {
             curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
          }
       }
-      
+
       // Handle timeout - support both seconds (int/float) and milliseconds
       $timeout = $options['timeout'] ?? 30;
       if ($timeout > 0 && $timeout < 1) {
          // Use milliseconds for sub-second timeouts
-         curl_setopt($ch, CURLOPT_TIMEOUT_MS, (int)($timeout * 1000));
+         curl_setopt($ch, CURLOPT_TIMEOUT_MS, (int) ($timeout * 1000));
       } else {
          // Use seconds for timeouts >= 1
          curl_setopt($ch, CURLOPT_TIMEOUT, (int)$timeout);
       }
-      
+
       $connectTimeout = $options['connect_timeout'] ?? 10;
       curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, (int) $connectTimeout);
       curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $options['verify_ssl'] ?? false);
