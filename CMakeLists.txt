@@ -70,3 +70,13 @@ file(GLOB_RECURSE HEADERS
 
 # Create shared library with all source files
 add_library(compressor SHARED ${SOURCES} ${C_SOURCES} ${HEADERS})
+
+# --- C++ compressor tests (opt-in) ---
+# Kept behind an option so the default `compressor` shared-library build is
+# unaffected. Configure with -DBUILD_TESTING_CPP=ON to build and run the tests
+# under testing/ via ctest.
+option(BUILD_TESTING_CPP "Build the C++ compressor tests" OFF)
+if(BUILD_TESTING_CPP)
+    enable_testing()
+    add_subdirectory(testing)
+endif()

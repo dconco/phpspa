@@ -5,15 +5,53 @@ permissions:
 
 on:
   push:
-    branches: [master]
+    branches: [master, support/php-8.4]
   release:
     types: [published]
   workflow_dispatch:
 
 jobs:
+  cpp-tests:
+    name: C++ tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up MSVC toolchain
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Set up Ninja
+        if: runner.os == 'Windows'
+        uses: seanmiddleditch/gha-setup-ninja@v5
+
+      - name: Configure (Windows, Debug)
+        if: runner.os == 'Windows'
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING_CPP=ON
+
+      - name: Install build tools (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake
+
+      - name: Configure (Linux, Debug)
+        if: runner.os == 'Linux'
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING_CPP=ON
+
+      - name: Build tests
+        run: cmake --build build -j 8
+
+      - name: Run tests (ctest)
+        run: ctest --test-dir build --output-on-failure
+
   windows-build:
     name: Windows MinSizeRel
     runs-on: windows-latest
+    needs: [cpp-tests]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
