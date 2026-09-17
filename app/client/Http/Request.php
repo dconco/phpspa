@@ -153,6 +153,43 @@ interface Request {
    public function header (?string $name = null, bool $lowercase = true);
 
    /**
+    * Retrieves the raw, unparsed request body.
+    *
+    * Reads the raw request payload from `php://input` (i.e. `file_get_contents('php://input')`)
+    * and returns it exactly as sent by the client, without any parsing or transformation.
+    * This is useful for reading JSON, XML, or other raw payloads on any HTTP method.
+    *
+    * The raw body is read only once and cached; every subsequent call returns the cached
+    * value rather than re-reading the input stream. This avoids issues where `php://input`
+    * cannot be read more than once and keeps repeated calls cheap.
+    *
+    * @return string|false The raw request body as a string, or false if the input stream could not be read.
+    *
+    * @example
+    * ```php
+    * // Get the raw request body
+    * $raw = $request->getContent();
+    * ```
+    *
+    * @example
+    * ```php
+    * // Decode a raw JSON payload manually
+    * $raw  = $request->getContent();
+    * $data = json_decode($raw, true);
+    * ```
+    *
+    * @example
+    * ```php
+    * // Safe usage when the stream may be unreadable
+    * $raw = $request->getContent();
+    * if ($raw === false) {
+    *     // handle the empty/unreadable body
+    * }
+    * ```
+    */
+   public function getContent (): string|false;
+
+   /**
     * Retrieves the request body as an associative array.
     *
     * This method parses the raw POST body data and returns it as an associative array.

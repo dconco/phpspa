@@ -11,6 +11,7 @@ class HttpRequest implements Request
    use \PhpSPA\Core\Auth\Authentication;
 
    private array $tempData = [];
+   private static string|false|null $cachedRawPostData = null;
 
    public function __construct(private readonly array $params = [])
    {
@@ -138,9 +139,14 @@ class HttpRequest implements Request
       return null; // header not found
    }
 
+   public function getContent(): string|false {
+      if (static::$cachedRawPostData !== null) return static::$cachedRawPostData;
+      return static::$cachedRawPostData = file_get_contents('php://input');
+   }
+
    public function json(?string $name = null)
    {
-      $data = json_decode(file_get_contents('php://input'), true);
+      $data = json_decode($this->getContent(), true);
 
       if ($data === null || json_last_error() !== JSON_ERROR_NONE) {
          return null;
@@ -178,7 +184,7 @@ class HttpRequest implements Request
 
    public function form(?string $key = null)
    {
-      parse_str(file_get_contents("php://input"), $data);
+      parse_str($this->getContent(), $data);
 
       if (!$key) return $data;
       return $data[$key];
@@ -186,7 +192,7 @@ class HttpRequest implements Request
 
    public function multipart(?string $key = null)
    {
-      $rawInput = file_get_contents('php://input');
+      $rawInput = $this->getContent();
       $patchData = [];
 
       // Find the boundary delimiter
