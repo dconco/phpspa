@@ -15,71 +15,65 @@ use PhpSPA\Exceptions\AppException;
  * @copyright 2026 Dave Conco
  * @license MIT
  */
-class FileHandler
+class FileHandler 
 {
     /**
-     * Get the MIME content type for a file.
-     *
-     * This method returns the MIME type of a file based on its extension
-     * and the file's contents. If the `fileinfo` extension is not enabled,
-     * an exception is thrown.
-     *
-     * @param string $filename The path to the file whose MIME type is being determined.
-     * @return bool|string The MIME type of the file as a string, or `false` if the file doesn't exist.
-     * @throws AppException If the `fileinfo` extension is not enabled in PHP.
+     * Shared helper to verify the environment and return a configured finfo instance.
+     * 
+     * @throws AppException
      */
-    public static function fileType(string $filename): bool|string
+    private static function getFinfoInstance(int $flags): \finfo
     {
-        if (is_file($filename)) {
-            if (!extension_loaded('fileinfo')) {
-                throw new AppException(
-                    'Fileinfo extension is not enabled. Please enable it in your php.ini configuration.',
-                );
-            }
-
-            $file_info = finfo_open(FILEINFO_MIME_TYPE);
-            $file_type = finfo_file($file_info, $filename);
-
-            if (version_compare(PHP_VERSION, '5.0.0', '<')) finfo_close($file_info);
-
-            $file_ext = explode('.', $filename);
-            $file_ext = strtolower(end($file_ext));
-
-            if (
-                $file_type === 'text/plain' ||
-                $file_type === 'application/x-empty' ||
-                $file_type === 'application/octet-stream'
-            ) {
-                return match ($file_ext) {
-                    'css' => 'text/css',
-                    'txt' => 'text/plain',
-                    'csv' => 'text/csv',
-                    'htm' => 'text/htm',
-                    'html' => 'text/html',
-                    'php' => 'text/x-php',
-                    'xml' => 'text/xml',
-                    'js' => 'application/javascript',
-                    'pdf' => 'application/pdf',
-                    'doc' => 'application/msword',
-                    'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    'xls' => 'application/vnd.ms-excel',
-                    'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    'json' => 'application/json',
-                    'md' => 'text/markdown',
-                    'ppt' => 'application/mspowerpoint',
-                    'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-                    'swf' => 'application/x-shockwave-flash',
-                    'ai' => 'application/postscript',
-                    'odt' => 'application/vnd.oasis.opendocument.text',
-                    'png' => 'image/png',
-                    'jpg' => 'image/jpeg',
-                    default => 'text/plain',
-                };
-            } else {
-                return $file_type;
-            }
-        } else {
-            return false;
+        if (!extension_loaded('fileinfo')) {
+            throw new AppException('Fileinfo extension is not enabled. Please enable it in your php.ini configuration.');
         }
+
+        return new \finfo($flags);
+    }
+
+    /**
+     * Get the character encoding for a file.
+     */
+    public static function fileCharset(string $filename): false|string
+    {
+        if (!is_file($filename)) return false;
+
+        $finfo = self::getFinfoInstance(FILEINFO_MIME_ENCODING);
+        return $finfo->file($filename);
+    }
+
+    /**
+     * Get the MIME content type for a file.
+     */
+    public static function fileType(string $filename): false|string
+    {
+        if (!is_file($filename)) return false;
+
+        $finfo = self::getFinfoInstance(FILEINFO_MIME_TYPE);
+        return $finfo->file($filename);
+    }
+
+    /**
+     * Retrieve both MIME type and charset securely in a single file-read operation.
+     * 
+     * @return array{type: string, charset: string}|false
+     */
+    public static function fileMimeMeta(string $filename): array|false
+    {
+        if (!is_file($filename)) return false;
+
+        // Use FILEINFO_MIME to get both text representations combined
+        $finfo = self::getFinfoInstance(FILEINFO_MIME);
+        $raw_mime = $finfo->file($filename);
+
+        if (!$raw_mime) return false;
+
+        // Separate the type and charset safely
+        $parts = explode('; charset=', $raw_mime);
+
+        return [
+            'type' => $parts[0] ?? 'application/octet-stream',
+            'charset' => $parts[1] ?? 'binary'
+        ];
     }
 }

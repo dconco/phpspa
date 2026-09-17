@@ -2,6 +2,7 @@
 
 namespace PhpSPA\Core\Http;
 
+use PhpSPA\Core\Helper\FileHandler;
 use PhpSPA\Http\Request;
 use PhpSPA\Http\Session;
 use stdClass;
@@ -41,12 +42,47 @@ class HttpRequest implements Request
       if (!$name) {
          return $_FILES;
       }
-      if (!isset($_FILES[$name]) || $_FILES[$name]['error'] !== UPLOAD_ERR_OK) {
+
+      if (!isset($_FILES[$name])) {
          return null;
       }
 
-      return $_FILES[$name];
+      $file = $_FILES[$name];
+
+      // Standard Single File Upload Block
+      if (isset($file['error']) && !is_array($file['error'])) {
+         if ($file['error'] !== UPLOAD_ERR_OK) {
+               return null;
+         }
+
+         // Single read operational pass
+         $meta = FileHandler::fileMimeMeta($file['tmp_name']);
+         $file['mime'] = $meta ?: ['type' => 'unknown', 'charset' => 'unknown'];
+         return $file;
+      }
+
+      // Multi-File Array Upload normalization patch
+      if (isset($file['error']) && is_array($file['error'])) {
+         $normalized = [];
+         foreach ($file['error'] as $index => $error) {
+               if ($error === UPLOAD_ERR_OK) {
+                  $meta = FileHandler::fileMimeMeta($file['tmp_name'][$index]);
+                  $normalized[] = [
+                     'name'     => $file['name'][$index],
+                     'type'     => $file['type'][$index], // Original client header
+                     'tmp_name' => $file['tmp_name'][$index],
+                     'error'    => $error,
+                     'size'     => $file['size'][$index],
+                     'mime'     => $meta ?: ['type' => 'unknown', 'charset' => 'unknown']
+                  ];
+               }
+         }
+         return !empty($normalized) ? $normalized : null;
+      }
+
+      return null;
    }
+
 
    public function apiKey(string $key = 'Api-Key')
    {

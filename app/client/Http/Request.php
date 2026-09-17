@@ -45,26 +45,38 @@ interface Request {
    public function __get ($name);
 
    /**
-    * Retrieves file data from the request by name.
+    * Retrieves secure file data from the request.
     *
-    * This method retrieves file data from the request. If a name is provided, it returns the file data for that specific
-    * input field; otherwise, it returns all file data as an array of file information arrays.
+    * If a field name is provided, it handles single file uploads or normalizes 
+    * multi-file input arrays into a structured list. If no field name is 
+    * specified, it recursively processes and compiles all uploaded files.
     *
-    * @param ?string $name The name of the file input.
-    * @return ?array{
+    * @param ?string $name The name of the file input field.
+    * @return ?array<string, array>|array{
     *   name: string,
     *   type: string,
     *   size: int,
     *   tmp_name: string,
-    *   error: UPLOAD_ERR_*
-    * } File data array containing upload information, or null if not set. Each file contains:
-    *   - name: Original filename on the client machine
-    *   - type: MIME type of the file (e.g., 'image/jpeg')
-    *   - size: Size of uploaded file in bytes
-    *   - tmp_name: Temporary path where the file is stored on the server
-    *   - error: Upload error code (UPLOAD_ERR_OK = 0 for success)
+    *   error: int,
+    *   mime: array{type: string, charset: string}
+    * }|array<int, array{
+    *   name: string,
+    *   type: string,
+    *   size: int,
+    *   tmp_name: string,
+    *   error: int,
+    *   mime: array{type: string, charset: string}
+    * }> File structural payload or null on validation failure. Contains:
+    *   - name: Original filename sent by the client machine.
+    *   - type: Unsecure client-declared MIME type.
+    *   - size: Total file allocation footprint in bytes.
+    *   - tmp_name: Valid temporary system disk location wrapper.
+    *   - error: Integrated core upload error integers (e.g., UPLOAD_ERR_OK).
+    *   - mime: Server-verified cryptographic byte inspection metadata:
+    *     - type: Fully validated true system MIME structure (e.g., 'image/png').
+    *     - charset: Real decoded text file payload string encoding (e.g., 'utf-8').
     */
-   public function files (?string $name = null): ?array;
+   public function files(?string $name = null): ?array;
 
    /**
     * Validates the API key from the request headers.
