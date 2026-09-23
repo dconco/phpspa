@@ -2,7 +2,6 @@
 
 namespace PhpSPA\Core\Impl\RealImpl;
 
-use PhpSPA\Core\Utils\Timer;
 use PhpSPA\DOM;
 use PhpSPA\Component;
 use PhpSPA\Http\Request;
@@ -22,6 +21,7 @@ use PhpSPA\Core\Helper\PathResolver;
 use PhpSPA\Core\Utils\FileFunction;
 use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 use PhpSPA\Core\Utils\Validate;
+use PhpSPA\Core\Utils\Timer;
 use PhpSPA\Interfaces\ApplicationContract;
 use PhpSPA\Interfaces\IComponent;
 
@@ -1292,11 +1292,11 @@ abstract class AppImpl implements ApplicationContract {
     */
    private function setAssetHeaders (string $type): void
    {
-      if (!headers_sent()) {
+      if (!\headers_sent()) {
          if ($type === 'css') header('Content-Type: text/css; charset=UTF-8');
          elseif ($type === 'js') header('Content-Type: application/javascript; charset=UTF-8');
 
-         header('Cache-Control: private, max-age=' . AssetLinkManager::getCacheConfig()['hours'] * 3600);
+         header('Cache-Control: public, max-age=' . AssetLinkManager::getCacheConfig()['hours'] * 3600 . ', immutable');
       }
    }
 
