@@ -38,7 +38,7 @@ class FileHandler
     {
         if (!is_file($filename)) return false;
 
-        $finfo = self::getFinfoInstance(FILEINFO_MIME_ENCODING);
+        $finfo = self::getFinfoInstance(\FILEINFO_MIME_ENCODING);
         return $finfo->file($filename);
     }
 
@@ -49,7 +49,7 @@ class FileHandler
     {
         if (!is_file($filename)) return false;
 
-        $finfo = self::getFinfoInstance(FILEINFO_MIME_TYPE);
+        $finfo = self::getFinfoInstance(\FILEINFO_MIME_TYPE);
         return $finfo->file($filename);
     }
 
@@ -63,7 +63,7 @@ class FileHandler
         if (!is_file($filename)) return false;
 
         // Use FILEINFO_MIME to get both text representations combined
-        $finfo = self::getFinfoInstance(FILEINFO_MIME);
+        $finfo = self::getFinfoInstance(\FILEINFO_MIME);
         $raw_mime = $finfo->file($filename);
 
         if (!$raw_mime) return false;
