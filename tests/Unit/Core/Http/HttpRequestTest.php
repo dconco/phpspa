@@ -79,6 +79,9 @@ final class HttpRequestTest extends TestCase {
            'upload' => [
               'name' => 'file.txt',
               'error' => UPLOAD_ERR_OK,
+              'type' => 'text/plain',
+              'size' => 3564,
+              'tmp_name' => 'file.txt'
            ],
         ];
 
@@ -86,6 +89,8 @@ final class HttpRequestTest extends TestCase {
 
         $this->assertSame($_FILES, $request->files());
         $this->assertSame('file.txt', $request->files('upload')['name']);
+        $this->assertSame('file.txt', $request->files('upload')['tmp_name']);
+        $this->assertSame(3564, $request->files('upload')['size']);
         $this->assertNull($request->files('missing'));
     }
 
