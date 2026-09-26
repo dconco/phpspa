@@ -65,7 +65,7 @@
       "xhash": "cpp",
       "fstream": "cpp"
    },
-   "editor.fontFamily": "'Google Sans Code', Consolas, 'Courier New', monospace",
+   "editor.fontFamily": "'Google Sans Code Medium', Consolas, 'Courier New', monospace",
    "editor.defaultFormatter": "google.antigravity",
    "editor.fontSize": 13,
    "editor.tabSize": 3,

@@ -56,7 +56,10 @@ class HttpRequest implements Request
          }
 
          // Single read operational pass
-         $meta = FileHandler::fileMimeMeta($file['tmp_name']);
+         $tmpName = $file['tmp_name'] ?? '';
+         $meta = ($tmpName !== '' && is_string($tmpName))
+            ? FileHandler::fileMimeMeta($tmpName)
+            : false;
          $file['mime'] = $meta ?: ['type' => 'unknown', 'charset' => 'unknown'];
          return $file;
       }
@@ -66,13 +69,16 @@ class HttpRequest implements Request
          $normalized = [];
          foreach ($file['error'] as $index => $error) {
                if ($error === UPLOAD_ERR_OK) {
-                  $meta = FileHandler::fileMimeMeta($file['tmp_name'][$index]);
+                  $tmpName = $file['tmp_name'][$index] ?? '';
+                  $meta = ($tmpName !== '' && is_string($tmpName))
+                     ? FileHandler::fileMimeMeta($tmpName)
+                     : false;
                   $normalized[] = [
-                     'name'     => $file['name'][$index],
-                     'type'     => $file['type'][$index], // Original client header
-                     'tmp_name' => $file['tmp_name'][$index],
+                     'name'     => $file['name'][$index] ?? null,
+                     'type'     => $file['type'][$index] ?? null, // Original client header
+                     'tmp_name' => $tmpName,
                      'error'    => $error,
-                     'size'     => $file['size'][$index],
+                     'size'     => $file['size'][$index] ?? 0,
                      'mime'     => $meta ?: ['type' => 'unknown', 'charset' => 'unknown']
                   ];
                }

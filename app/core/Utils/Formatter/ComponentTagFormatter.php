@@ -78,8 +78,9 @@ trait ComponentTagFormatter
                }
             }
 
-            // Parse attributes
-            $attributes = self::parseAttributesToArray($matches[2]);
+            // Parse attributes. Most component tags have none, so skip the
+            // two regex passes inside parseAttributesToArray for empty text.
+            $attributes = ($matches[2] ?? '') === '' ? [] : self::parseAttributesToArray($matches[2]);
 
             if (isset($matches[3])) {
                // Recursively process children FIRST and capture the result

@@ -184,14 +184,26 @@ jobs:
           git commit -m "ci: update compressor shared libraries [skip ci]"
           git push origin HEAD:${GITHUB_REF#refs/heads/}
 
+      # GitHub releases require unique asset filenames; the Linux and WSL builds
+      # both produce libcompressor.so, so they are renamed to libcompressor-linux.so
+      # and libcompressor-wsl.so for the release while src/bin keeps the
+      # platform-conventional names for FFI auto-resolution.
+      - name: Stage release assets with distinct names
+        run: |
+          mkdir -p release-assets
+          cp src/bin/libcompressor.so release-assets/libcompressor-linux.so
+          cp src/bin/compressor.dll release-assets/compressor.dll
+          cp artifacts/macos/libcompressor.dylib release-assets/libcompressor.dylib
+          cp artifacts/wsl/libcompressor.so release-assets/libcompressor-wsl.so
+
       - name: Attach shared libraries to release
         if: github.event_name == 'release' && github.event.action == 'published'
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: |
-            src/bin/libcompressor.so
-            src/bin/compressor.dll
-            artifacts/macos/libcompressor.dylib
-            artifacts/wsl/libcompressor.so
+            release-assets/libcompressor-linux.so
+            release-assets/compressor.dll
+            release-assets/libcompressor.dylib
+            release-assets/libcompressor-wsl.so
