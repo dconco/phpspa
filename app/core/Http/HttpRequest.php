@@ -12,7 +12,7 @@ class HttpRequest implements Request
    use \PhpSPA\Core\Auth\Authentication;
 
    private array $tempData = [];
-   private static string|false|null $cachedRawPostData = null;
+   public static string|false|null $cachedRawPostData = null;
 
    public function __construct(private readonly array $params = [])
    {

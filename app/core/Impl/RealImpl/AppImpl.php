@@ -345,8 +345,10 @@ abstract class AppImpl implements ApplicationContract {
 
    public function run (bool $return = false)
    {
-      // --- Reset DOM static state for worker mode compatibility ---
+      // --- Reset DOM/Nonce/Reset HttpRequest static state for worker mode compatibility ---
       DOM::reset();
+      Nonce::reset();
+      HttpRequest::$cachedRawPostData = null;
 
       $request = new HttpRequest();
       static::$request_uri = $request->path();
