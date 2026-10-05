@@ -437,7 +437,7 @@ abstract class AppImpl implements ApplicationContract {
       if ($request->requestedWith() === 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
          $data = json_decode(base64_decode($request->auth()->bearer ?? ''), true);
 
-         if (isset($data['state']) && $request->isSameOrigin()) {
+         if (isset($data['state'])) {
             $state = $data['state'];
 
             if (isset($state['key'])) {
@@ -448,14 +448,16 @@ abstract class AppImpl implements ApplicationContract {
 
             return;
 
-         } else if (isset($data['__call']) && $request->isSameOrigin()) {
+         } else if (isset($data['__call'])) {
             try {
-               $tokenData = base64_decode($data['__call']['token'] ?? '');
-               $tokenData = json_decode($tokenData);
+               /**
+                * @var array{0: string, 1: string, 2: bool} $tokenData
+                */
+               $tokenData = json_decode(base64_decode($data['__call']['token'] ?? ''));
 
                $token = $tokenData[1] ?? null;
                $functionName = $tokenData[0] ?? null;
-               $use_once = $tokenData[3] ?? false;
+               $use_once = $tokenData[2] ?? false;
                $csrf = new CsrfManager($functionName, CALL_FUNC_HANDLE);
 
                if ($csrf->verifyToken($token, $use_once)) {
