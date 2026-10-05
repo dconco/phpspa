@@ -54,86 +54,13 @@ class CurlHttpClient implements HttpClient {
     */
    public function request(string $url, string $method, array $headers, ?string $body = null, array $options = []): ClientResponse
    {
-      // Increase PHP max execution time if timeout is higher
-      $timeout = $options['timeout'] ?? 30;
-      $currentTimeout = (int) ini_get('max_execution_time');
-
-      if ($currentTimeout !== 0 && $timeout > $currentTimeout) {
-          @set_time_limit($timeout + 10);
-      }
-
-      $ch = curl_init();
-      
-      curl_setopt($ch, CURLOPT_URL, $url);
-      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-      curl_setopt($ch, CURLOPT_HEADER, true);
-      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-      curl_setopt($ch, CURLOPT_FOLLOWLOCATION, $options['follow_redirects'] ?? true);
-      curl_setopt($ch, CURLOPT_MAXREDIRS, $options['max_redirects'] ?? 10);
-      if (isset($options['ip_resolve'])) {
-         $ipResolve = $options['ip_resolve'];
-         if ($ipResolve === 'v4') {
-            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
-         } elseif ($ipResolve === 'v6') {
-            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
-         }
-      }
-
-      // Handle timeout - support both seconds (int/float) and milliseconds
-      $timeout = $options['timeout'] ?? 30;
-      if ($timeout > 0 && $timeout < 1) {
-         // Use milliseconds for sub-second timeouts
-         curl_setopt($ch, CURLOPT_TIMEOUT_MS, (int) ($timeout * 1000));
-      } else {
-         // Use seconds for timeouts >= 1
-         curl_setopt($ch, CURLOPT_TIMEOUT, (int)$timeout);
-      }
-
-      $connectTimeout = $options['connect_timeout'] ?? 10;
-      curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, (int) $connectTimeout);
-      curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $options['verify_ssl'] ?? false);
-      curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, ($options['verify_ssl'] ?? false) ? 2 : 0);
-
-      // --- Handle Unix Socket ---
-      if (isset($options['unix_socket_path'])) {
-         curl_setopt($ch, CURLOPT_UNIX_SOCKET_PATH, $options['unix_socket_path']);
-      }
-
-      if (isset($options['cert_path'])) {
-         curl_setopt($ch, CURLOPT_CAINFO, $options['cert_path']);
-      }
-      
-      if (isset($options['user_agent'])) {
-         curl_setopt($ch, CURLOPT_USERAGENT, $options['user_agent']);
-      }
-      
-      // Build headers array for cURL
-      $curlHeaders = [];
-      foreach ($headers as $key => $value) {
-         if (\is_array($value)) $value = implode(', ', $value);
-         
-         $curlHeaders[] = "$key: $value";
-      }
-      curl_setopt($ch, CURLOPT_HTTPHEADER, $curlHeaders);
-      
-      // Add body for POST, PUT, PATCH
-      if ($body !== null) {
-         curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
-      }
-
-      // Apply any user-provided raw cURL options (advanced)
-      $curlOptions = $this->extractCurlOptions($options);
-      if (!empty($curlOptions)) {
-         @curl_setopt_array($ch, $curlOptions);
-      }
+      $ch = $this->initializeCurlWithOptions($options, $headers, $body, $url, $method);
 
       $response = curl_exec($ch);
       $errorNo = curl_errno($ch);
       $error = curl_error($ch);
       $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
       $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-      unset($ch);
 
       if ($response === false || $errorNo !== 0) {
          $message = $error ?: 'Request failed';
@@ -163,14 +90,24 @@ class CurlHttpClient implements HttpClient {
     */
    public function prepareAsync(string $url, string $method, array $headers, ?string $body = null, array $options = []): \CurlHandle
    {
+      // Return the prepared handle without executing
+      return $this->initializeCurlWithOptions($options, $headers, $body, $url, $method);
+   }
+
+
+
+   private function initializeCurlWithOptions(array $options, array $headers, ?string $body, string $url, string $method): \CurlHandle
+   {
+      $ch = curl_init();
+
       // Increase PHP max execution time if timeout is higher
       $timeout = $options['timeout'] ?? 30;
-      if ($timeout > ini_get('max_execution_time')) {
-         @set_time_limit((int)$timeout + 10);
+      $currentTimeout = (int) ini_get('max_execution_time');
+
+      if ($currentTimeout !== 0 && $timeout > $currentTimeout) {
+          @set_time_limit($timeout + 10);
       }
 
-      $ch = curl_init();
-      
       curl_setopt($ch, CURLOPT_URL, $url);
       curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
       curl_setopt($ch, CURLOPT_HEADER, true);
@@ -197,9 +134,10 @@ class CurlHttpClient implements HttpClient {
       }
 
       $connectTimeout = $options['connect_timeout'] ?? 10;
+      $verifySSL = $options['verify_ssl'] ?? true;
       curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, (int) $connectTimeout);
-      curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $options['verify_ssl'] ?? true);
-      curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, ($options['verify_ssl'] ?? true) ? 2 : 0);
+      curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $verifySSL);
+      curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, $verifySSL ? 2 : 0);
 
       // --- Handle Unix Socket ---
       if (isset($options['unix_socket_path'])) {
@@ -222,7 +160,7 @@ class CurlHttpClient implements HttpClient {
          $curlHeaders[] = "$key: $value";
       }
       curl_setopt($ch, CURLOPT_HTTPHEADER, $curlHeaders);
-      
+
       // Add body for POST, PUT, PATCH
       if ($body !== null) {
          curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
@@ -233,8 +171,7 @@ class CurlHttpClient implements HttpClient {
       if (!empty($curlOptions)) {
          @curl_setopt_array($ch, $curlOptions);
       }
-      
-      // Return the prepared handle without executing
+
       return $ch;
    }
 
