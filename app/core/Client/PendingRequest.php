@@ -117,11 +117,8 @@ class PendingRequest implements \ArrayAccess {
     */
    public function form(array|string $data): PendingRequest
    {
-      if (\is_array($data)) {
-         $this->data = http_build_query($data);
-      } else {
-         $this->data = $data;
-      }
+      if (\is_array($data)) $this->data = http_build_query($data);
+      else $this->data = $data;
 
       $this->headers['Content-Type'] = 'application/x-www-form-urlencoded';
       return $this;

@@ -37,6 +37,8 @@ new App(require 'layout/Layout.php')
    ->defaultTargetID('app')
    ->defaultToCaseSensitive()
 
+   ->useStatic('/', __DIR__ . '/public')
+
    ->compression(Compressor::LEVEL_EXTREME, true)
 
    ->cors()

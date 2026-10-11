@@ -67,9 +67,6 @@
    },
    "editor.fontFamily": "'Google Sans Code Medium', Consolas, 'Courier New', monospace",
    "editor.defaultFormatter": "google.antigravity",
-   "editor.fontSize": 13,
-   "editor.tabSize": 3,
-   "editor.formatOnSave": false,
    "[typescript]": {
       "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
    },
