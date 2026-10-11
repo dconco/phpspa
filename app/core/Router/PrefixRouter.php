@@ -74,24 +74,67 @@ trait PrefixRouter {
 
    protected function resolveStaticPath (bool $return)
    {
-      $request_uri = trim(static::$request_uri, '/');
-
       foreach ($this->static as $static) {
-         $route = trim($static['route'], '/');
-         $path = substr($request_uri, 0, \strlen($route));
+         $safePath = $this->resolveContainedStaticFile(
+            static::$request_uri,
+            $static['route'],
+            $static['staticPath']
+         );
 
-         if ($path === $route) {
-            $staticRoute = substr($request_uri, \strlen($route));
-            $filePath = rtrim($static['staticPath'], '/') . '/' . ltrim($staticRoute, '/');
-
-            if (is_file($filePath)) {
-               if ($return) {
-                  return new Response()->sendFile($filePath)->__toString();
-               }
-
-               new Response()->sendFile($filePath)->send();
+         if ($safePath !== null) {
+            if ($return) {
+               return new Response()->sendFile($safePath)->__toString();
             }
+
+            new Response()->sendFile($safePath)->send();
+            return;
          }
       }
+   }
+
+   /**
+    * Resolve a static file request to a real path, enforcing containment.
+    *
+    * Returns the canonical (realpath) file location ONLY when the resolved
+    * file exists and is contained within the configured static directory.
+    * Returns null when the route does not match, the file is missing, or the
+    * resolved path escapes the static root via path traversal.
+    *
+    * The request URI is URL-decoded upstream (rawurldecode in
+    * HttpRequest::path()), so a payload like `/assets/%2e%2e/%2e%2e/.env`
+    * reaches here as literal `../../` segments. Trimming slashes does NOT
+    * strip interior `..` segments, so the path must be canonicalized and
+    * verified against the static root. See issue #171.
+    *
+    * @see https://github.com/dconco/phpspa/issues/171
+    */
+   protected function resolveContainedStaticFile (
+      string $requestUri,
+      string $route,
+      string $staticPath
+   ): ?string {
+      $requestUri = trim($requestUri, '/');
+      $route = trim($route, '/');
+
+      $prefix = substr($requestUri, 0, \strlen($route));
+      if ($prefix !== $route) {
+         return null;
+      }
+
+      $staticRoute = substr($requestUri, \strlen($route));
+      $baseDir = rtrim($staticPath, '/');
+      $candidate = $baseDir . '/' . ltrim($staticRoute, '/');
+
+      $realBase = realpath($baseDir);
+      $realFile = realpath($candidate);
+
+      if ($realBase === false || $realFile === false || !is_file($realFile)) {
+         return null;
+      }
+
+      $contained = $realFile === $realBase
+         || str_starts_with($realFile, $realBase . DIRECTORY_SEPARATOR);
+
+      return $contained ? $realFile : null;
    }
 }
