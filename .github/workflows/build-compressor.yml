@@ -5,23 +5,21 @@ permissions:
 
 on:
   workflow_dispatch:
-  # Run only after "PHP (8.4) Tests" finishes successfully on main. The job guards on
-  # conclusion == 'success', so a failed test run never produces a build.
+  # Run only after "PHP (8.4) Tests" finishes successfully. The cpp-tests job
+  # guards on conclusion == 'success', so a failed test run never produces a build.
   workflow_run:
     workflows: ["PHP (8.4) Tests"]
-    types:
-        - completed
+    types: [completed]
     branches: [master, support/php-8.4]
-    release:
-      types: [published]
+  release:
+    types: [published]
 
 jobs:
-  # Skip unless tests passed. A manual workflow_dispatch has no triggering
-  # run, so it is allowed through.
-  if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
-
   cpp-tests:
     name: C++ tests (${{ matrix.os }})
+    # Skip unless the triggering test run passed. A manual workflow_dispatch and a
+    # release have no triggering workflow_run, so they are allowed through.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
