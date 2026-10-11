@@ -125,6 +125,8 @@ abstract class AppImpl implements ApplicationContract {
     */
    protected array $prefix = [];
 
+   private int $disableLogs = 0;
+
    private bool $module = false;
 
    private bool $randomizeAssetName = false;
@@ -324,23 +326,23 @@ abstract class AppImpl implements ApplicationContract {
    }
 
    public function useModule(): ApplicationContract {
-      $this->module = true;
-      return $this;
+      $this->module = true; return $this;
    }
 
    public function disableMinificationWithEsbuild(): ApplicationContract {
-      $this->useEsbuild = false;
-      return $this;
+      $this->useEsbuild = false; return $this;
+   }
+
+   public function disableLogs(int $flags = DISABLE_COMPRESSION_LOG | DISABLE_LIBRARY_LOG | DISABLE_PRELOAD_LOG): ApplicationContract {
+      $this->disableLogs |= $flags; return $this;
    }
 
    public function randomizeAssetName(): ApplicationContract {
-      $this->randomizeAssetName = true;
-      return $this;
+      $this->randomizeAssetName = true; return $this;
    }
 
    public function setGeneratedCacheDirectory(string $path): ApplicationContract {
-      $this->generatedCacheDirectory = $path;
-      return $this;
+      $this->generatedCacheDirectory = $path; return $this;
    }
 
    public function run (bool $return = false)
@@ -398,7 +400,7 @@ abstract class AppImpl implements ApplicationContract {
 
          $timer->start();
          $compressedOutput = Compressor::compress((string) $this->renderedData, 'text/html');
-         if (Compressor::getLevel() !== Compressor::LEVEL_NONE) {
+         if (Compressor::getLevel() !== Compressor::LEVEL_NONE && !($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
             error_log("Compressed HTML output within {$timer->getFormattedElapsedTime()} | From {$request->path()}");
          }
 
@@ -693,7 +695,7 @@ abstract class AppImpl implements ApplicationContract {
           * }
           */
          $info = [
-            'content' => Compressor::compressComponent($componentOutput),
+            'content' => Compressor::compressComponent($componentOutput, $this->disableLogs),
             'stateData' => SessionHandler::get(STATE_HANDLE),
             'title' => $title,
             'targetID' => $targetID,
@@ -821,7 +823,7 @@ abstract class AppImpl implements ApplicationContract {
             $targetInformation['currentRoutes'] = DOM::CurrentRoutes();
             $targetInformation['exact'][] = $exact;
             $targetInformation['targetIDs'][] = $targetID;
-            $targetInformation['defaultContent'][] = Compressor::compressComponent($matches[3]);
+            $targetInformation['defaultContent'][] = Compressor::compressComponent($matches[3], $this->disableLogs);
 
             // --- This is the last component which is the main component ---
             // --- Then attach it directly to the component target element ---
@@ -1159,7 +1161,7 @@ abstract class AppImpl implements ApplicationContract {
             // --- Compress the content ---
             $timer->start();
             $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type'], $isGlobalAsset ? 'global' : 'scoped');
-            error_log("Compressed $assetType asset output within {$timer->getFormattedElapsedTime()} | From {$assetInfo['name']}");
+            if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) error_log("Compressed $assetType asset output within {$timer->getFormattedElapsedTime()} | From {$assetInfo['name']}");
 
             if (!$isPhpSpaRequest) {
                if (!is_dir($fileDir)) mkdir($fileDir);
@@ -1280,12 +1282,13 @@ abstract class AppImpl implements ApplicationContract {
     */
    private function compressAssetContent (string $content, int $level, string $type, string $scope): string
    {
-      if ($type === 'css')
-         return Compressor::compressWithLevel($content, $level, 'CSS', $scope);
-      elseif ($type === 'js')
-         return Compressor::compressWithLevel($content, $level, 'JS', $scope, $this->useEsbuild);
-      else
-         return Compressor::compressWithLevel($content, $level, 'HTML', $scope);
+      $type = match ($type) {
+         'css' => 'CSS',
+         'js' => 'JS',
+         default => 'HTML',
+      };
+
+      return Compressor::compressWithLevel($content, $level, $type, $scope, $this->useEsbuild, $this->disableLogs);
    }
 
    /**
