@@ -83,3 +83,34 @@ You also have two ways to add assets that only belong to a specific component.
 
 !!! warning "Inline Assets"
     **Important:** This is the simplest method, but these inline assets **will not be externally cached** by the browser. It's best reserved for small, non-critical snippets.
+
+## Randomizing Asset Names
+
+When you attach an asset, the optional second parameter (`global-styles`, `global-scripts`) is **prepended to the generated link** as a readable label — great for debugging, since you can tell at a glance what each file is.
+
+PhpSPA already appends a content hash to every asset URL, so links **automatically change whenever the code is updated** — cache-busting works with or without this method. `randomizeAssetName()` isn't about caching. It simply **removes that prepended name**, leaving only the hash in the link. The goal is **obscurity**: without the label, someone scanning your page source can't tell what each asset file is for at a glance.
+
+**Example (`index.php`):**
+
+```php
+<?php
+$app = new App($layout);
+
+$app->styleSheet(require 'styles/GlobalStyle.php', 'global-styles');
+$app->script(require 'scripts/GlobalScript.php', 'global-scripts');
+
+// Drop the readable name labels from asset links
+$app->randomizeAssetName();
+```
+
+With the label: `/phpspa/assets/global-styles-a1b2c3d4.css` — the name tells you what it is.
+After `randomizeAssetName()`: the label is gone and only the hash remains, so the link no longer reveals the file's purpose.
+
+!!! note "Obscurity, not security"
+    This only strips the readable label from asset links; it is **not** a security measure. The files are still publicly served. Keep it for the mild obfuscation, not as protection.
+
+!!! tip "Development vs Production"
+    It's recommended to **remove** this call in development, keeping the readable name labels so generated asset files are easier to identify while debugging.
+
+!!! info "Since v2.0.7"
+    `randomizeAssetName()` is chainable and returns the `App` instance, so it fits anywhere in your configuration chain.
