@@ -23,6 +23,7 @@ function import(string $file): ImportedFile
 #### Description
 
 Imports a file with validation and returns an `ImportedFile` object.
+You can only import file that's not more than 5MB, else it will throw `PhpSPA\Exceptions\AppException` exception
 
 #### Example
 

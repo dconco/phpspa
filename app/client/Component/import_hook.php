@@ -21,8 +21,8 @@ function import(string $file): ImportedFile
     if (!is_file($file)) {
         throw new AppException("Unable to get file: $file");
     }
-    if (filesize($file) > (1048576 * 10)) {
-        // 10MB
+    if (filesize($file) > (1048576 * 5)) {
+        // 5MB
         throw new AppException("File too large to import: $file");
     }
 
