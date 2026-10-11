@@ -169,9 +169,9 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
-   public function middleware (callable|string $component): ApplicationContract
+   public function middleware (callable|string $middleware): ApplicationContract
    {
-      $this->middlewares[] = $component;
+      $this->middlewares[] = $middleware;
       return $this;
    }
 

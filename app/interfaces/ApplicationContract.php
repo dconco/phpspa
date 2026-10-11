@@ -190,7 +190,7 @@ interface ApplicationContract {
      * @since v2.0.5
      * @see https://phpspa.tech/references/middleware/#app-middleware
      */
-    public function middleware(callable|string $component): self;
+    public function middleware(callable|string $middleware): self;
 
     /**
      * Group routes under a common prefix.
