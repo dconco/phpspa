@@ -5,14 +5,14 @@ permissions:
 
 on:
   workflow_dispatch:
-  push:
-    branches: [master, support/php-8.4]
+  pull_request:
+    branches: [master]
   # Run only after "PHP (8.4) Tests" finishes successfully. The cpp-tests job
   # guards on conclusion == 'success', so a failed test run never produces a build.
   workflow_run:
     workflows: ["PHP (8.4) Tests"]
     types: [completed]
-    branches: [master, support/php-8.4]
+    branches: [master]
   release:
     types: [published]
 

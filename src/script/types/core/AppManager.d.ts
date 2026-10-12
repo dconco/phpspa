@@ -1,5 +1,5 @@
-import { StateValueType } from "../types/StateObjectTypes";
-import { EventObject, EventPayloadMap, RuntimeConfig } from "../types/RuntimeInterfaces";
+import { StateValueType } from '../types/StateObjectTypes';
+import { EventObject, EventPayloadMap, RuntimeConfig } from '../types/RuntimeInterfaces';
 export declare class AppManager {
     static currentStateData: Record<string, StateValueType>;
     static config(config: Partial<RuntimeConfig>): void;

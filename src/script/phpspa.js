@@ -1,5 +1,5 @@
 /*!
- * PhpSPA Client Runtime v2.0.16
+ * PhpSPA Client Runtime v2.0.17
  * Docs: https://phpspa.tech | Package: @dconco/phpspa
  * License: MIT
  */
@@ -465,23 +465,6 @@
             return href;
         }
     };
-    // A stylesheet <link> whose href is empty, "#", or otherwise resolves to the
-    // current document URL would make the browser fetch the HTML page as CSS and
-    // log a "MIME type ('text/html') is not a supported stylesheet" error on every
-    // SPA navigation. Treat such links as having no usable href and skip them.
-    const isUsableStylesheetHref = (rawHref) => {
-        const trimmed = (rawHref ?? '').trim();
-        if (trimmed === '' || trimmed === '#')
-            return false;
-        const resolvedHref = resolveHref(trimmed);
-        const currentDoc = resolveHref(location.pathname + location.search);
-        if (resolvedHref === currentDoc)
-            return false;
-        // Also reject bare origin+pathname matches (href resolving to the page itself)
-        if (resolvedHref === (location.origin + location.pathname))
-            return false;
-        return true;
-    };
     const getHeadStylesheetLinks = () => Array.from(document.head.querySelectorAll('link[rel="stylesheet"]'));
     const findExistingHeadLink = (resolvedHref, rawHref, headLinks) => {
         for (const existing of headLinks) {
@@ -549,7 +532,7 @@
         const hrefRegex = /href=["']([^"']+)["']/i;
         const strippedContent = content.replace(STYLESHEET_LINK_REGEX, (match) => {
             const hrefMatch = match.match(hrefRegex);
-            if (hrefMatch && hrefMatch[1] && isUsableStylesheetHref(hrefMatch[1])) {
+            if (hrefMatch && hrefMatch[1]) {
                 const rawHref = hrefMatch[1];
                 const resolvedHref = resolveHref(rawHref);
                 nextHrefs.add(resolvedHref);
@@ -1393,7 +1376,7 @@
                 ...currentState,
                 url: location.toString(),
                 title: document.title,
-                content: retainStylesheetLinks(currentState.content, currentTarget.innerHTML),
+                content: retainStylesheetLinks(currentState.content, currentTarget.innerHTML)
             };
             RuntimeManager.replaceState(updatedState, updatedState.title, updatedState.url);
         }
@@ -1408,29 +1391,29 @@
          * @fires AppManager#beforeload - Emitted before loading the new route.
          * @fires AppManager#load - Emitted after attempting to load the new route, with success or error status.
          */
-        static navigate(url, state = "push") {
+        static navigate(url, state = 'push') {
             const newUrl = url instanceof URL ? url : new URL(url, location.toString());
             // --- Persist current DOM state before changing route when enabled ---
             AppManager.snapshotCurrentRouteState();
             // --- Emit beforeload event for loading indicators ---
-            RuntimeManager.emit("beforeload", { route: newUrl.toString() });
+            RuntimeManager.emit('beforeload', { route: newUrl.toString() });
             // --- Fetch content from the server with PhpSPA headers ---
             fetch(newUrl, {
                 headers: {
-                    "X-Requested-With": "PHPSPA_REQUEST",
-                    "X-Phpspa-Target": "navigate",
+                    'X-Requested-With': 'PHPSPA_REQUEST',
+                    'X-Phpspa-Target': 'navigate'
                 },
-                mode: "same-origin",
-                redirect: "follow",
-                keepalive: true,
+                mode: 'same-origin',
+                redirect: 'follow',
+                keepalive: true
             })
-                .then((response) => {
+                .then(response => {
                 response
                     .text()
-                    .then((responseText) => {
+                    .then(responseText => {
                     let responseData;
                     // --- Try to parse JSON response, fallback to raw text ---
-                    if (responseText && responseText.trim().startsWith("{")) {
+                    if (responseText && responseText.trim().startsWith('{')) {
                         try {
                             responseData = JSON.parse(responseText);
                         }
@@ -1439,13 +1422,13 @@
                         }
                     }
                     else {
-                        responseData = responseText || ""; // --- Handle empty responses ---
+                        responseData = responseText || ''; // --- Handle empty responses ---
                     }
                     processResponse(responseData);
                 })
-                    .catch((error) => handleError(error));
+                    .catch(error => handleError(error));
             })
-                .catch((error) => handleError(error));
+                .catch(error => handleError(error));
             /**
              * Handles errors that occur during navigation requests
              * @param {Error} error - The error object from the failed request
@@ -1459,7 +1442,7 @@
                         let errorData;
                         try {
                             // --- Attempt to parse error response as JSON ---
-                            errorData = fallbackResponse?.trim().startsWith("{")
+                            errorData = fallbackResponse?.trim().startsWith('{')
                                 ? JSON.parse(fallbackResponse)
                                 : fallbackResponse;
                         }
@@ -1467,31 +1450,31 @@
                             // --- If parsing fails, use raw text ---
                             errorData = fallbackResponse;
                         }
-                        processResponse(errorData || "");
-                        RuntimeManager.emit("load", {
+                        processResponse(errorData || '');
+                        RuntimeManager.emit('load', {
                             route: newUrl.toString(),
                             success: false,
-                            error: error.message || "Server returned an error",
-                            data: errorData,
+                            error: error.message || 'Server returned an error',
+                            data: errorData
                         });
                     })
                         .catch(() => {
-                        processResponse("");
+                        processResponse('');
                         // --- Failed to read error response body ---
-                        RuntimeManager.emit("load", {
+                        RuntimeManager.emit('load', {
                             route: newUrl.toString(),
                             success: false,
-                            error: error.message || "Failed to read error response",
+                            error: error.message || 'Failed to read error response'
                         });
                     });
                 }
                 else {
-                    processResponse("");
+                    processResponse('');
                     // --- Network error, same-origin issue, or other connection problems ---
-                    RuntimeManager.emit("load", {
+                    RuntimeManager.emit('load', {
                         route: newUrl.toString(),
                         success: false,
-                        error: error.message || "No connection to server",
+                        error: error.message || 'No connection to server'
                     });
                 }
             }
@@ -1515,7 +1498,8 @@
                     RuntimeManager.currentRoutes[component.targetID] = {
                         route: newUrl,
                         exact: component.exact ?? false,
-                        defaultContent: RuntimeManager.currentRoutes[component.targetID]?.defaultContent ?? targetElement.innerHTML
+                        defaultContent: RuntimeManager.currentRoutes[component.targetID]
+                            ?.defaultContent ?? targetElement.innerHTML
                     };
                 }
                 const currentRoutes = RuntimeManager.currentRoutes;
@@ -1544,11 +1528,15 @@
                     }
                 }
                 // --- Update content ---
-                const updateDOM = () => new Promise((resolve) => {
-                    const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
+                const updateDOM = () => new Promise(resolve => {
+                    const styleScopeKey = component?.targetID ||
+                        history.state?.targetID ||
+                        targetElement.id ||
+                        '__phpspa_body__';
                     // --- Preload stylesheets in the new content ---
                     const { element, ready } = preloadStylesFromContent(component.content, styleScopeKey);
-                    ready.then(() => {
+                    ready
+                        .then(() => {
                         morphdom(targetElement, element, {
                             childrenOnly: true
                         });
@@ -1565,7 +1553,7 @@
                     targetID: targetElement.id,
                     content: component.content,
                     exact: currentRoutes[component?.targetID]?.exact,
-                    defaultContent: currentRoutes[component?.targetID]?.defaultContent,
+                    defaultContent: currentRoutes[component?.targetID]?.defaultContent
                 };
                 // --- Include reload time if specified ---
                 if (component?.reloadTime) {
@@ -1573,10 +1561,10 @@
                 }
                 const completedDOMUpdate = async () => {
                     // --- Update browser history ---
-                    if (state === "push") {
+                    if (state === 'push') {
                         RuntimeManager.pushState(stateData, stateData.title, newUrl);
                     }
-                    else if (state === "replace") {
+                    else if (state === 'replace') {
                         RuntimeManager.replaceState(stateData, stateData.title, newUrl);
                     }
                     // --- Clear old executed scripts cache ---
@@ -1588,17 +1576,17 @@
                     if (hashElement) {
                         scroll({
                             top: hashElement.offsetTop,
-                            left: hashElement.offsetLeft,
+                            left: hashElement.offsetLeft
                         });
                     }
                     else {
                         scroll(0, 0); // --- Scroll to top if no hash or element not found ---
                     }
                     // --- Emit successful load event ---
-                    RuntimeManager.emit("load", {
+                    RuntimeManager.emit('load', {
                         route: newUrl.toString(),
                         success: true,
-                        error: false,
+                        error: false
                     });
                     // --- Set up auto-reload if specified ---
                     if (component?.reloadTime) {
@@ -1627,7 +1615,7 @@
          * This does not add a new entry to the browser's history stack.
          */
         static reload() {
-            AppManager.navigate(location.toString(), "replace");
+            AppManager.navigate(location.toString(), 'replace');
         }
         /**
          * Registers a callback function to be executed when the specified event is triggered.
@@ -1704,12 +1692,12 @@
                     const { route } = currentRoutes[targetID];
                     const prom = fetch(route || '', {
                         headers: {
-                            "X-Requested-With": "PHPSPA_REQUEST",
-                            Authorization: `Bearer ${utf8ToBase64(statePayload)}`,
+                            'X-Requested-With': 'PHPSPA_REQUEST',
+                            Authorization: `Bearer ${utf8ToBase64(statePayload)}`
                         },
-                        mode: "same-origin",
-                        redirect: "follow",
-                        keepalive: true,
+                        mode: 'same-origin',
+                        redirect: 'follow',
+                        keepalive: true
                     });
                     promises.push(prom);
                 }
@@ -1719,7 +1707,7 @@
                         const responseText = await response.text();
                         let responseData;
                         // --- Parse response as JSON if possible ---
-                        if (responseText && responseText.trim().startsWith("{")) {
+                        if (responseText && responseText.trim().startsWith('{')) {
                             try {
                                 responseData = JSON.parse(responseText);
                             }
@@ -1728,7 +1716,7 @@
                             }
                         }
                         else {
-                            responseData = responseText || "";
+                            responseData = responseText || '';
                         }
                         resolve();
                         updateContent(responseData);
@@ -1748,21 +1736,21 @@
                             .then((fallbackResponse) => {
                             let errorData;
                             try {
-                                errorData = fallbackResponse?.trim().startsWith("{")
+                                errorData = fallbackResponse?.trim().startsWith('{')
                                     ? JSON.parse(fallbackResponse)
                                     : fallbackResponse;
                             }
                             catch (parseError) {
                                 errorData = fallbackResponse;
                             }
-                            updateContent(errorData || "");
+                            updateContent(errorData || '');
                         })
                             .catch(() => {
-                            updateContent("");
+                            updateContent('');
                         });
                     }
                     else {
-                        updateContent("");
+                        updateContent('');
                     }
                 }
                 /**
@@ -1809,19 +1797,19 @@
             // --- Fetch current page content ---
             fetch(location.toString(), {
                 headers: {
-                    "X-Requested-With": "PHPSPA_REQUEST",
+                    'X-Requested-With': 'PHPSPA_REQUEST'
                 },
-                mode: "same-origin",
-                redirect: "follow",
-                keepalive: true,
+                mode: 'same-origin',
+                redirect: 'follow',
+                keepalive: true
             })
-                .then((response) => {
+                .then(response => {
                 response
                     .text()
-                    .then((responseText) => {
+                    .then(responseText => {
                     let responseData;
                     // --- Parse response ---
-                    if (responseText && responseText.trim().startsWith("{")) {
+                    if (responseText && responseText.trim().startsWith('{')) {
                         try {
                             responseData = JSON.parse(responseText);
                         }
@@ -1830,15 +1818,15 @@
                         }
                     }
                     else {
-                        responseData = responseText || "";
+                        responseData = responseText || '';
                     }
                     updateComponentContent(responseData);
                 })
-                    .catch((error) => {
+                    .catch(error => {
                     handleComponentError(error);
                 });
             })
-                .catch((error) => {
+                .catch(error => {
                 handleComponentError(error);
             });
             /**
@@ -1851,21 +1839,21 @@
                         .then((fallbackResponse) => {
                         let errorData;
                         try {
-                            errorData = fallbackResponse?.trim().startsWith("{")
+                            errorData = fallbackResponse?.trim().startsWith('{')
                                 ? JSON.parse(fallbackResponse)
                                 : fallbackResponse;
                         }
                         catch (parseError) {
                             errorData = fallbackResponse;
                         }
-                        updateComponentContent(errorData || "");
+                        updateComponentContent(errorData || '');
                     })
                         .catch(() => {
-                        updateComponentContent("");
+                        updateComponentContent('');
                     });
                 }
                 else {
-                    updateComponentContent("");
+                    updateComponentContent('');
                 }
             }
             /**
@@ -1885,11 +1873,15 @@
                     document.getElementById(history.state?.targetID) ??
                     document.body;
                 // --- Update content ---
-                const updateDOM = () => new Promise((resolve) => {
-                    const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
+                const updateDOM = () => new Promise(resolve => {
+                    const styleScopeKey = component?.targetID ||
+                        history.state?.targetID ||
+                        targetElement.id ||
+                        '__phpspa_body__';
                     // --- Preload stylesheets in the new content ---
                     const { element, ready } = preloadStylesFromContent(component.content, styleScopeKey);
-                    ready.then(() => {
+                    ready
+                        .then(() => {
                         morphdom(targetElement, element, {
                             childrenOnly: true
                         });
@@ -1901,8 +1893,6 @@
                     });
                 });
                 const completedDOMUpdate = () => {
-                    // --- Clear old executed scripts cache ---
-                    RuntimeManager.clearEffects();
                     // --- Execute any inline scripts in the new content ---
                     RuntimeManager.runScriptsForElement(targetElement);
                     // --- Set up next auto-reload if specified ---
@@ -1926,17 +1916,17 @@
             try {
                 const response = await fetch(location.pathname, {
                     headers: {
-                        "X-Requested-With": "PHPSPA_REQUEST",
-                        Authorization: `Bearer ${utf8ToBase64(callPayload)}`,
+                        'X-Requested-With': 'PHPSPA_REQUEST',
+                        Authorization: `Bearer ${utf8ToBase64(callPayload)}`
                     },
-                    mode: "same-origin",
-                    redirect: "follow",
-                    keepalive: true,
+                    mode: 'same-origin',
+                    redirect: 'follow',
+                    keepalive: true
                 });
                 const responseText = await response.text();
                 let responseData;
                 // --- Parse and decode response ---
-                if (responseText && responseText.trim().startsWith("{")) {
+                if (responseText && responseText.trim().startsWith('{')) {
                     try {
                         responseData = JSON.parse(responseText);
                         responseData = responseData?.response
@@ -1948,7 +1938,7 @@
                     }
                 }
                 else {
-                    responseData = responseText || "";
+                    responseData = responseText || '';
                 }
                 return responseData;
             }
@@ -1959,7 +1949,7 @@
                         const fallbackResponse = await error.response.text();
                         let errorData;
                         try {
-                            errorData = fallbackResponse?.trim().startsWith("{")
+                            errorData = fallbackResponse?.trim().startsWith('{')
                                 ? JSON.parse(fallbackResponse)
                                 : fallbackResponse;
                             errorData = errorData?.response
@@ -1972,12 +1962,12 @@
                         return errorData;
                     }
                     catch {
-                        return "";
+                        return '';
                     }
                 }
                 else {
                     // --- Network errors or other issues ---
-                    return "";
+                    return '';
                 }
             }
         }
