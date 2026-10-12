@@ -47,6 +47,7 @@ rollup.config.js export-ignore
 
 # Ignore test directories
 tests/ export-ignore
+testing/ export-ignore
 
 # Exclude generated type declarations from distribution (keep only min.js)
 src/script/types/ export-ignore
