@@ -465,6 +465,23 @@
             return href;
         }
     };
+    // A stylesheet <link> whose href is empty, "#", or otherwise resolves to the
+    // current document URL would make the browser fetch the HTML page as CSS and
+    // log a "MIME type ('text/html') is not a supported stylesheet" error on every
+    // SPA navigation. Treat such links as having no usable href and skip them.
+    const isUsableStylesheetHref = (rawHref) => {
+        const trimmed = (rawHref ?? '').trim();
+        if (trimmed === '' || trimmed === '#')
+            return false;
+        const resolvedHref = resolveHref(trimmed);
+        const currentDoc = resolveHref(location.pathname + location.search);
+        if (resolvedHref === currentDoc)
+            return false;
+        // Also reject bare origin+pathname matches (href resolving to the page itself)
+        if (resolvedHref === (location.origin + location.pathname))
+            return false;
+        return true;
+    };
     const getHeadStylesheetLinks = () => Array.from(document.head.querySelectorAll('link[rel="stylesheet"]'));
     const findExistingHeadLink = (resolvedHref, rawHref, headLinks) => {
         for (const existing of headLinks) {
@@ -532,7 +549,7 @@
         const hrefRegex = /href=["']([^"']+)["']/i;
         const strippedContent = content.replace(STYLESHEET_LINK_REGEX, (match) => {
             const hrefMatch = match.match(hrefRegex);
-            if (hrefMatch && hrefMatch[1]) {
+            if (hrefMatch && hrefMatch[1] && isUsableStylesheetHref(hrefMatch[1])) {
                 const rawHref = hrefMatch[1];
                 const resolvedHref = resolveHref(rawHref);
                 nextHrefs.add(resolvedHref);

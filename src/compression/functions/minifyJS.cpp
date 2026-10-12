@@ -240,8 +240,6 @@ namespace {
          }
       }
 
-      appendDebug(debugOutput, "Running: " + command);
-
       std::filesystem::path errorPath = tempDir / makeTempFilename("phpspa_js_err_", ".txt");
 
       // Run bundler
