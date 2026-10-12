@@ -12,7 +12,7 @@ on:
   workflow_run:
     workflows: ["PHP (8.4) Tests"]
     types: [completed]
-    branches: [master]
+    branches: [support/php-8.4]
   release:
     types: [published]
 
