@@ -20,7 +20,7 @@ final class NativeCompressor
    {
       if (self::$available !== null) return self::$available;
 
-      return self::$available = self::initialize();
+      return self::$available = self::initialize(disableLogs: DISABLE_LIBRARY_LOG | DISABLE_PRELOAD_LOG);
    }
 
    public static function getLastError(): ?string
@@ -38,10 +38,10 @@ final class NativeCompressor
     * @param bool $useEsbuild Use esbuild for minification
     * @return string
     */
-   public static function compress(string $content, int $nativeLevel, string $type, string $scope, bool $useEsbuild): string
+   public static function compress(string $content, int $nativeLevel, string $type, string $scope, bool $useEsbuild, int $disableLogs = 0): string
    {
-      if (!self::initialize()) {
-         throw new \RuntimeException('Native compressor is unavailable.');
+      if (!self::initialize($disableLogs)) {
+         throw new \RuntimeException(self::$lastError ?? 'Native compressor is unavailable.');
       }
 
       $level = max(1, min(3, $nativeLevel));
@@ -56,7 +56,7 @@ final class NativeCompressor
       if ($resultPointer === null || \FFI::isNull($resultPointer)) {
          throw new \RuntimeException('Native compressor returned a null pointer.');
       }
-      error_log(\FFI::string($debugOutput));
+      if (!($disableLogs & DISABLE_LIBRARY_LOG)) error_log(\FFI::string($debugOutput));
 
       try {
          return \FFI::string($resultPointer, $outLen->cdata ?? 0);
@@ -70,7 +70,7 @@ final class NativeCompressor
       return self::$libraryPath;
    }
 
-   private static function initialize(): bool
+   private static function initialize(int $disableLogs): bool
    {
       if (self::$ffi !== null) {
          return true;
@@ -83,9 +83,19 @@ final class NativeCompressor
          return false;
       }
 
-      $libraryPath = self::resolveLibraryPath();
+      // Check if already preloaded into shared OPcache memory
+      try {
+         self::$ffi = \FFI::scope('phpspa_compressor');
+         return true;
+      } catch (\FFI\Exception $e) {
+         if (!($disableLogs & DISABLE_PRELOAD_LOG)) error_log("phpspa_compressor isn't preloaded in PHP INI, falling back to loading directly from the shared library.");
+         // Not preloaded; proceed to dynamic loading below
+      }
+
+      $libraryPath = self::resolveLibraryPath($disableLogs);
       if ($libraryPath === null) {
-         self::$lastError = 'Native compressor library not found. Set PHPSPA_COMPRESSOR_LIB to an absolute path to compressor.dll.';
+         $ENV_LIBRARY_PATH = self::ENV_LIBRARY_PATH;
+         self::$lastError = "Native compressor library not found. Set {$ENV_LIBRARY_PATH} to an absolute path to compressor.dll or libcompressor.so";
          return false;
       }
 
@@ -100,11 +110,11 @@ final class NativeCompressor
       }
    }
 
-   private static function resolveLibraryPath(): ?string
+   private static function resolveLibraryPath(int $disableLogs): ?string
    {
-      $envPath = \getenv(self::ENV_LIBRARY_PATH);
+      $envPath = $_ENV[self::ENV_LIBRARY_PATH] ?? '';
       if (\is_string($envPath) && $envPath !== '' && \is_file($envPath)) {
-         error_log("Using native compressor library from environment variable: $envPath");
+         if (!($disableLogs & DISABLE_LIBRARY_LOG)) error_log("Using native compressor library from environment variable: $envPath");
          return $envPath;
       }
 
@@ -122,7 +132,7 @@ final class NativeCompressor
          foreach (self::libraryFilenames() as $filename) {
             $candidate = $directory . '/' . $filename;
             if (\is_file($candidate)) {
-               error_log('Found native compressor library: ' . $candidate);
+               if (!($disableLogs & DISABLE_LIBRARY_LOG)) error_log('Found native compressor library: ' . $candidate);
                return $candidate;
             }
          }

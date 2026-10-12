@@ -37,13 +37,15 @@ new App(require 'layout/Layout.php')
    ->defaultTargetID('app')
    ->defaultToCaseSensitive()
 
+   ->useStatic('/', __DIR__ . '/public')
+
    ->compression(Compressor::LEVEL_EXTREME, true)
 
    ->cors()
 
    ->assetCacheHours(0)
    ->setGeneratedCacheDirectory(__DIR__ . '/generated')
-   // ->forceNativeCompression()
+   ->forceNativeCompression()
    // ->setCustomCompressorLibraryPath(dirname(__DIR__, 1) . '/src/bin/libcompressor-wsl.so')
 
    ->meta(charset: 'utf-8')
@@ -115,7 +117,7 @@ new App(require 'layout/Layout.php')
 
 
 // --- APP 2 ---
-(new App(fn () => '<div id="root"></div>'))
+(new App('<div id="root"></div>'))
 
    ->attach(new Component(fn () => <<<HTML
       <div>

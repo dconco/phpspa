@@ -75,3 +75,7 @@ Makefile
 
 # Tests
 .phpunit.cache/
+
+# CMake test build dirs (BUILD_TESTING_CPP) and stray artifacts
+build-default/
+nul

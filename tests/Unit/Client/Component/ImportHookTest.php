@@ -32,7 +32,7 @@ final class ImportHookTest extends TestCase
       $this->expectException(AppException::class);
 
       $tempPath = tempnam(sys_get_temp_dir(), 'phpspa_big_');
-      file_put_contents($tempPath, str_repeat('a', 1048577));
+      file_put_contents($tempPath, str_repeat('a', 1048577 * 6)); // 6MB
 
       try {
          Component\import($tempPath);

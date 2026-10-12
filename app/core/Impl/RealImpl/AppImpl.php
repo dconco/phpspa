@@ -2,7 +2,6 @@
 
 namespace PhpSPA\Core\Impl\RealImpl;
 
-use PhpSPA\Core\Utils\Timer;
 use PhpSPA\DOM;
 use PhpSPA\Component;
 use PhpSPA\Http\Request;
@@ -22,6 +21,7 @@ use PhpSPA\Core\Helper\PathResolver;
 use PhpSPA\Core\Utils\FileFunction;
 use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 use PhpSPA\Core\Utils\Validate;
+use PhpSPA\Core\Utils\Timer;
 use PhpSPA\Interfaces\ApplicationContract;
 use PhpSPA\Interfaces\IComponent;
 
@@ -125,6 +125,8 @@ abstract class AppImpl implements ApplicationContract {
     */
    protected array $prefix = [];
 
+   private int $disableLogs = 0;
+
    private bool $module = false;
 
    private bool $randomizeAssetName = false;
@@ -167,9 +169,9 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
-   public function middleware (callable|string $component): ApplicationContract
+   public function middleware (callable|string $middleware): ApplicationContract
    {
-      $this->middlewares[] = $component;
+      $this->middlewares[] = $middleware;
       return $this;
    }
 
@@ -324,29 +326,31 @@ abstract class AppImpl implements ApplicationContract {
    }
 
    public function useModule(): ApplicationContract {
-      $this->module = true;
-      return $this;
+      $this->module = true; return $this;
    }
 
    public function disableMinificationWithEsbuild(): ApplicationContract {
-      $this->useEsbuild = false;
-      return $this;
+      $this->useEsbuild = false; return $this;
+   }
+
+   public function disableLogs(int $flags = DISABLE_COMPRESSION_LOG | DISABLE_LIBRARY_LOG | DISABLE_PRELOAD_LOG): ApplicationContract {
+      $this->disableLogs |= $flags; return $this;
    }
 
    public function randomizeAssetName(): ApplicationContract {
-      $this->randomizeAssetName = true;
-      return $this;
+      $this->randomizeAssetName = true; return $this;
    }
 
    public function setGeneratedCacheDirectory(string $path): ApplicationContract {
-      $this->generatedCacheDirectory = $path;
-      return $this;
+      $this->generatedCacheDirectory = $path; return $this;
    }
 
    public function run (bool $return = false)
    {
-      // --- Reset DOM static state for worker mode compatibility ---
+      // --- Reset DOM/Nonce/Reset HttpRequest static state for worker mode compatibility ---
       DOM::reset();
+      Nonce::reset();
+      HttpRequest::$cachedRawPostData = null;
 
       $request = new HttpRequest();
       static::$request_uri = $request->path();
@@ -396,7 +400,7 @@ abstract class AppImpl implements ApplicationContract {
 
          $timer->start();
          $compressedOutput = Compressor::compress((string) $this->renderedData, 'text/html');
-         if (Compressor::getLevel() !== Compressor::LEVEL_NONE) {
+         if (Compressor::getLevel() !== Compressor::LEVEL_NONE && !($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
             error_log("Compressed HTML output within {$timer->getFormattedElapsedTime()} | From {$request->path()}");
          }
 
@@ -435,7 +439,7 @@ abstract class AppImpl implements ApplicationContract {
       if ($request->requestedWith() === 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
          $data = json_decode(base64_decode($request->auth()->bearer ?? ''), true);
 
-         if (isset($data['state']) && $request->isSameOrigin()) {
+         if (isset($data['state'])) {
             $state = $data['state'];
 
             if (isset($state['key'])) {
@@ -446,14 +450,16 @@ abstract class AppImpl implements ApplicationContract {
 
             return;
 
-         } else if (isset($data['__call']) && $request->isSameOrigin()) {
+         } else if (isset($data['__call'])) {
             try {
-               $tokenData = base64_decode($data['__call']['token'] ?? '');
-               $tokenData = json_decode($tokenData);
+               /**
+                * @var array{0: string, 1: string, 2: bool} $tokenData
+                */
+               $tokenData = json_decode(base64_decode($data['__call']['token'] ?? ''));
 
                $token = $tokenData[1] ?? null;
                $functionName = $tokenData[0] ?? null;
-               $use_once = $tokenData[3] ?? false;
+               $use_once = $tokenData[2] ?? false;
                $csrf = new CsrfManager($functionName, CALL_FUNC_HANDLE);
 
                if ($csrf->verifyToken($token, $use_once)) {
@@ -689,7 +695,7 @@ abstract class AppImpl implements ApplicationContract {
           * }
           */
          $info = [
-            'content' => Compressor::compressComponent($componentOutput),
+            'content' => Compressor::compressComponent($componentOutput, $this->disableLogs),
             'stateData' => SessionHandler::get(STATE_HANDLE),
             'title' => $title,
             'targetID' => $targetID,
@@ -817,7 +823,7 @@ abstract class AppImpl implements ApplicationContract {
             $targetInformation['currentRoutes'] = DOM::CurrentRoutes();
             $targetInformation['exact'][] = $exact;
             $targetInformation['targetIDs'][] = $targetID;
-            $targetInformation['defaultContent'][] = Compressor::compressComponent($matches[3]);
+            $targetInformation['defaultContent'][] = Compressor::compressComponent($matches[3], $this->disableLogs);
 
             // --- This is the last component which is the main component ---
             // --- Then attach it directly to the component target element ---
@@ -1155,7 +1161,7 @@ abstract class AppImpl implements ApplicationContract {
             // --- Compress the content ---
             $timer->start();
             $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type'], $isGlobalAsset ? 'global' : 'scoped');
-            error_log("Compressed $assetType asset output within {$timer->getFormattedElapsedTime()} | From {$assetInfo['name']}");
+            if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) error_log("Compressed $assetType asset output within {$timer->getFormattedElapsedTime()} | From {$assetInfo['name']}");
 
             if (!$isPhpSpaRequest) {
                if (!is_dir($fileDir)) mkdir($fileDir);
@@ -1276,12 +1282,13 @@ abstract class AppImpl implements ApplicationContract {
     */
    private function compressAssetContent (string $content, int $level, string $type, string $scope): string
    {
-      if ($type === 'css')
-         return Compressor::compressWithLevel($content, $level, 'CSS', $scope);
-      elseif ($type === 'js')
-         return Compressor::compressWithLevel($content, $level, 'JS', $scope, $this->useEsbuild);
-      else
-         return Compressor::compressWithLevel($content, $level, 'HTML', $scope);
+      $type = match ($type) {
+         'css' => 'CSS',
+         'js' => 'JS',
+         default => 'HTML',
+      };
+
+      return Compressor::compressWithLevel($content, $level, $type, $scope, $this->useEsbuild, $this->disableLogs);
    }
 
    /**
@@ -1292,11 +1299,11 @@ abstract class AppImpl implements ApplicationContract {
     */
    private function setAssetHeaders (string $type): void
    {
-      if (!headers_sent()) {
+      if (!\headers_sent()) {
          if ($type === 'css') header('Content-Type: text/css; charset=UTF-8');
          elseif ($type === 'js') header('Content-Type: application/javascript; charset=UTF-8');
 
-         header('Cache-Control: private, max-age=' . AssetLinkManager::getCacheConfig()['hours'] * 3600);
+         header('Cache-Control: public, max-age=' . AssetLinkManager::getCacheConfig()['hours'] * 3600 . ', immutable');
       }
    }
 

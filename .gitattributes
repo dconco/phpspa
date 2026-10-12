@@ -38,6 +38,7 @@ TODO.md export-ignore
 badge/ export-ignore
 .github/ export-ignore
 .vscode/ export-ignore
+.kiro/ export-ignore
 .gitignore export-ignore
 .gitattributes export-ignore
 .npmignore export-ignore

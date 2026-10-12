@@ -1,0 +1,227 @@
+{
+  "pbtResults": {
+    "2. Write bug condition exploration test (BEFORE implementing the fix)": {
+      "status": "passed",
+      "failingExample": "Expected counterexamples on UNFIXED code (to be confirmed by CI cpp-tests; no local toolchain available):\n\n1) bug_exploration_timeout_budget_is_7_seconds\n   CHECK_EQ(bundlerRunTimeoutMillis(), 7000) -> actual 20000\n   (Linux emits `timeout 20s`). Confirms Req 2.3 defect.\n\n2) bug_exploration_probe_failure_yields_no_bundler_not_npx\n   resolveBundler(nullptr, /*probeSucceeds=*/false) -> \"npx --yes esbuild\"\n   expected \"\" (empty sentinel). commandUsesNpx == true. Confirms Req 2.1/2.2 npx-downgrade defect.\n\n3) bug_exploration_timeout_routes_to_native_without_npx\n   timeoutBuildsNpxCommand(false, -2 [Windows] / 124 [Linux]) -> true\n   expected false (no npx command constructed). Confirms Req 2.4 timeout-conflation defect.\n\nInvariant that already holds (stays passing): bug_exploration_native_fallback_produces_valid_output (Req 2.5).",
+      "lastRunTimestamp": 1789656821717
+    }
+  },
+  "executionHistory": {
+    "1. Set up the C++ test harness under `testing/`": [
+      {
+        "executionId": "8bcd88d4-e869-4e41-97e7-e2813e2490ca",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789653669601
+      },
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789656333044
+      }
+    ],
+    "2. Write bug condition exploration test (BEFORE implementing the fix)": [
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789656342987
+      },
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789656369960
+      },
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789656896233
+      }
+    ],
+    "3. Write preservation property tests (BEFORE implementing the fix)": [
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789656343704
+      },
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789656907263
+      },
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789657310993
+      }
+    ],
+    "4. Write concurrency / thread-safety test (BEFORE implementing the fix)": [
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789656345478
+      },
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789657324779
+      },
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789657577565
+      }
+    ],
+    "5. Write temp-filename uniqueness test (BEFORE implementing the fix)": [
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789656346066
+      },
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789657595180
+      },
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789657836859
+      }
+    ],
+    "6.1 Implement a single cached cross-platform global-esbuild detection helper": [
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789656346599
+      },
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789657867234
+      },
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789658127430
+      }
+    ],
+    "7.1 Shorten the bundler-run timeout on both platforms": [
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789656347643
+      },
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789658177079
+      },
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789658345057
+      }
+    ],
+    "8.1 Short-circuit the empty-sentinel no-bundler case in `runBundler`": [
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789656349125
+      },
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789658364133
+      },
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789658571618
+      }
+    ],
+    "8.2 Route the timeout signal explicitly in `runBundler`": [
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789656349832
+      },
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789658385977
+      },
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789658572316
+      }
+    ],
+    "9.1 Compose temp filenames from clock + thread id + atomic counter": [
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789656350360
+      },
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789658592186
+      }
+    ],
+    "10. Add decision-seam unit tests (after fix)": [
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789656351011
+      }
+    ],
+    "11. Verify bug condition exploration test now passes": [
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789656351761
+      }
+    ],
+    "12. Verify preservation and concurrency tests still pass": [
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789656353176
+      }
+    ],
+    "13. Verification — builds, ctest, and cross-platform path review": [
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789656355205
+      }
+    ],
+    "14. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789656355842
+      }
+    ],
+    "6. Change 1 — Thread-safe cached global esbuild detection (cross-platform)": [
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789658127853
+      }
+    ],
+    "7. Change 2 — esbuild execution timeout 20s → 7s (cross-platform)": [
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789658345409
+      }
+    ],
+    "8. Change 3 — Route timeout / no-bundler straight to the native minifier (cross-platform)": [
+      {
+        "executionId": "4a2838b1-3460-4bc0-8216-b1d80279519f",
+        "chatSessionId": "sess_b93adf85-de60-4c20-b63e-be7f824f0b19",
+        "timestamp": 1789658572560
+      }
+    ]
+  }
+}

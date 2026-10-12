@@ -190,7 +190,7 @@ interface ApplicationContract {
      * @since v2.0.5
      * @see https://phpspa.tech/references/middleware/#app-middleware
      */
-    public function middleware(callable|string $component): self;
+    public function middleware(callable|string $middleware): self;
 
     /**
      * Group routes under a common prefix.
@@ -224,6 +224,30 @@ interface ApplicationContract {
      * @since v2.0.7
      */
     public function randomizeAssetName(): self;
+
+    /**
+     * Disables logging for the specified log types.
+     *
+     * The native compressor emits several informational `error_log` messages during
+     * startup and compression. Pass a bitmask of the following flags to silence them.
+     * Combine flags with the bitwise OR operator (`|`); omit the argument to disable all.
+     *
+     * - `DISABLE_PRELOAD_LOG` — silences the "phpspa_compressor isn't preloaded in PHP INI,
+     *   falling back to loading directly from the shared library." notice, logged when the
+     *   compressor was not preloaded via FFI and is loaded from the shared library instead.
+     * - `DISABLE_LIBRARY_LOG` — silences the "Found native compressor library: ..." / "Using
+     *   native compressor library from environment variable: ..." notices logged while locating
+     *   and loading the native compressor library.
+     * - `DISABLE_COMPRESSION_LOG` — silences the "Compressed ... output within ... | From ..."
+     *   notice logged after each successful HTML/asset compression.
+     *
+     * @param int $flags Bitmask of log types to disable (`DISABLE_PRELOAD_LOG`,
+     *                   `DISABLE_LIBRARY_LOG`, `DISABLE_COMPRESSION_LOG`). Defaults to all three.
+     * @return self
+     * @since v2.0.13
+     * @see https://phpspa.tech/references/disabling-logs/
+     */
+    public function disableLogs(int $flags = DISABLE_COMPRESSION_LOG | DISABLE_LIBRARY_LOG | DISABLE_PRELOAD_LOG): self;
 
     /**
      * Sets the directory path for generated assets cache files.

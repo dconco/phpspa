@@ -2,6 +2,7 @@
 
 namespace PhpSPA\Core\Http;
 
+use PhpSPA\Core\Helper\FileHandler;
 use PhpSPA\Http\Request;
 use PhpSPA\Http\Session;
 use stdClass;
@@ -11,6 +12,7 @@ class HttpRequest implements Request
    use \PhpSPA\Core\Auth\Authentication;
 
    private array $tempData = [];
+   public static string|false|null $cachedRawPostData = null;
 
    public function __construct(private readonly array $params = [])
    {
@@ -40,12 +42,53 @@ class HttpRequest implements Request
       if (!$name) {
          return $_FILES;
       }
-      if (!isset($_FILES[$name]) || $_FILES[$name]['error'] !== UPLOAD_ERR_OK) {
+
+      if (!isset($_FILES[$name])) {
          return null;
       }
 
-      return $_FILES[$name];
+      $file = $_FILES[$name];
+
+      // Standard Single File Upload Block
+      if (isset($file['error']) && !is_array($file['error'])) {
+         if ($file['error'] !== UPLOAD_ERR_OK) {
+               return null;
+         }
+
+         // Single read operational pass
+         $tmpName = $file['tmp_name'] ?? '';
+         $meta = ($tmpName !== '' && is_string($tmpName))
+            ? FileHandler::fileMimeMeta($tmpName)
+            : false;
+         $file['mime'] = $meta ?: ['type' => 'unknown', 'charset' => 'unknown'];
+         return $file;
+      }
+
+      // Multi-File Array Upload normalization patch
+      if (isset($file['error']) && is_array($file['error'])) {
+         $normalized = [];
+         foreach ($file['error'] as $index => $error) {
+               if ($error === UPLOAD_ERR_OK) {
+                  $tmpName = $file['tmp_name'][$index] ?? '';
+                  $meta = ($tmpName !== '' && is_string($tmpName))
+                     ? FileHandler::fileMimeMeta($tmpName)
+                     : false;
+                  $normalized[] = [
+                     'name'     => $file['name'][$index] ?? null,
+                     'type'     => $file['type'][$index] ?? null, // Original client header
+                     'tmp_name' => $tmpName,
+                     'error'    => $error,
+                     'size'     => $file['size'][$index] ?? 0,
+                     'mime'     => $meta ?: ['type' => 'unknown', 'charset' => 'unknown']
+                  ];
+               }
+         }
+         return !empty($normalized) ? $normalized : null;
+      }
+
+      return null;
    }
+
 
    public function apiKey(string $key = 'Api-Key')
    {
@@ -138,9 +181,14 @@ class HttpRequest implements Request
       return null; // header not found
    }
 
+   public function getContent(): string|false {
+      if (static::$cachedRawPostData !== null) return static::$cachedRawPostData;
+      return static::$cachedRawPostData = file_get_contents('php://input');
+   }
+
    public function json(?string $name = null)
    {
-      $data = json_decode(file_get_contents('php://input'), true);
+      $data = json_decode($this->getContent(), true);
 
       if ($data === null || json_last_error() !== JSON_ERROR_NONE) {
          return null;
@@ -178,7 +226,7 @@ class HttpRequest implements Request
 
    public function form(?string $key = null)
    {
-      parse_str(file_get_contents("php://input"), $data);
+      parse_str($this->getContent(), $data);
 
       if (!$key) return $data;
       return $data[$key];
@@ -186,7 +234,7 @@ class HttpRequest implements Request
 
    public function multipart(?string $key = null)
    {
-      $rawInput = file_get_contents('php://input');
+      $rawInput = $this->getContent();
       $patchData = [];
 
       // Find the boundary delimiter
@@ -300,8 +348,13 @@ class HttpRequest implements Request
 
    public function isHttps(): bool
    {
-      return !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ||
-         $_SERVER['SERVER_PORT'] == 443 || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
+      $proto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '';
+      $firstProto = strtolower(trim(explode(',', $proto)[0]));
+
+      return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+         || $_SERVER['SERVER_PORT'] == 443
+         || $firstProto === 'https'
+         || ($_SERVER['HTTP_X_FORWARDED_SSL'] ?? '') === 'on';
    }
 
    public function requestTime(): int

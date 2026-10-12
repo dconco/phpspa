@@ -1,5 +1,5 @@
 /*!
- * PhpSPA Client Runtime v2.0.16
+ * PhpSPA Client Runtime v2.0.17
  * Docs: https://phpspa.tech | Package: @dconco/phpspa
  * License: MIT
  */
@@ -1374,7 +1374,7 @@ class AppManager {
             ...currentState,
             url: location.toString(),
             title: document.title,
-            content: retainStylesheetLinks(currentState.content, currentTarget.innerHTML),
+            content: retainStylesheetLinks(currentState.content, currentTarget.innerHTML)
         };
         RuntimeManager.replaceState(updatedState, updatedState.title, updatedState.url);
     }
@@ -1389,29 +1389,29 @@ class AppManager {
      * @fires AppManager#beforeload - Emitted before loading the new route.
      * @fires AppManager#load - Emitted after attempting to load the new route, with success or error status.
      */
-    static navigate(url, state = "push") {
+    static navigate(url, state = 'push') {
         const newUrl = url instanceof URL ? url : new URL(url, location.toString());
         // --- Persist current DOM state before changing route when enabled ---
         AppManager.snapshotCurrentRouteState();
         // --- Emit beforeload event for loading indicators ---
-        RuntimeManager.emit("beforeload", { route: newUrl.toString() });
+        RuntimeManager.emit('beforeload', { route: newUrl.toString() });
         // --- Fetch content from the server with PhpSPA headers ---
         fetch(newUrl, {
             headers: {
-                "X-Requested-With": "PHPSPA_REQUEST",
-                "X-Phpspa-Target": "navigate",
+                'X-Requested-With': 'PHPSPA_REQUEST',
+                'X-Phpspa-Target': 'navigate'
             },
-            mode: "same-origin",
-            redirect: "follow",
-            keepalive: true,
+            mode: 'same-origin',
+            redirect: 'follow',
+            keepalive: true
         })
-            .then((response) => {
+            .then(response => {
             response
                 .text()
-                .then((responseText) => {
+                .then(responseText => {
                 let responseData;
                 // --- Try to parse JSON response, fallback to raw text ---
-                if (responseText && responseText.trim().startsWith("{")) {
+                if (responseText && responseText.trim().startsWith('{')) {
                     try {
                         responseData = JSON.parse(responseText);
                     }
@@ -1420,13 +1420,13 @@ class AppManager {
                     }
                 }
                 else {
-                    responseData = responseText || ""; // --- Handle empty responses ---
+                    responseData = responseText || ''; // --- Handle empty responses ---
                 }
                 processResponse(responseData);
             })
-                .catch((error) => handleError(error));
+                .catch(error => handleError(error));
         })
-            .catch((error) => handleError(error));
+            .catch(error => handleError(error));
         /**
          * Handles errors that occur during navigation requests
          * @param {Error} error - The error object from the failed request
@@ -1440,7 +1440,7 @@ class AppManager {
                     let errorData;
                     try {
                         // --- Attempt to parse error response as JSON ---
-                        errorData = fallbackResponse?.trim().startsWith("{")
+                        errorData = fallbackResponse?.trim().startsWith('{')
                             ? JSON.parse(fallbackResponse)
                             : fallbackResponse;
                     }
@@ -1448,31 +1448,31 @@ class AppManager {
                         // --- If parsing fails, use raw text ---
                         errorData = fallbackResponse;
                     }
-                    processResponse(errorData || "");
-                    RuntimeManager.emit("load", {
+                    processResponse(errorData || '');
+                    RuntimeManager.emit('load', {
                         route: newUrl.toString(),
                         success: false,
-                        error: error.message || "Server returned an error",
-                        data: errorData,
+                        error: error.message || 'Server returned an error',
+                        data: errorData
                     });
                 })
                     .catch(() => {
-                    processResponse("");
+                    processResponse('');
                     // --- Failed to read error response body ---
-                    RuntimeManager.emit("load", {
+                    RuntimeManager.emit('load', {
                         route: newUrl.toString(),
                         success: false,
-                        error: error.message || "Failed to read error response",
+                        error: error.message || 'Failed to read error response'
                     });
                 });
             }
             else {
-                processResponse("");
+                processResponse('');
                 // --- Network error, same-origin issue, or other connection problems ---
-                RuntimeManager.emit("load", {
+                RuntimeManager.emit('load', {
                     route: newUrl.toString(),
                     success: false,
-                    error: error.message || "No connection to server",
+                    error: error.message || 'No connection to server'
                 });
             }
         }
@@ -1496,7 +1496,8 @@ class AppManager {
                 RuntimeManager.currentRoutes[component.targetID] = {
                     route: newUrl,
                     exact: component.exact ?? false,
-                    defaultContent: RuntimeManager.currentRoutes[component.targetID]?.defaultContent ?? targetElement.innerHTML
+                    defaultContent: RuntimeManager.currentRoutes[component.targetID]
+                        ?.defaultContent ?? targetElement.innerHTML
                 };
             }
             const currentRoutes = RuntimeManager.currentRoutes;
@@ -1525,11 +1526,15 @@ class AppManager {
                 }
             }
             // --- Update content ---
-            const updateDOM = () => new Promise((resolve) => {
-                const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
+            const updateDOM = () => new Promise(resolve => {
+                const styleScopeKey = component?.targetID ||
+                    history.state?.targetID ||
+                    targetElement.id ||
+                    '__phpspa_body__';
                 // --- Preload stylesheets in the new content ---
                 const { element, ready } = preloadStylesFromContent(component.content, styleScopeKey);
-                ready.then(() => {
+                ready
+                    .then(() => {
                     morphdom(targetElement, element, {
                         childrenOnly: true
                     });
@@ -1546,7 +1551,7 @@ class AppManager {
                 targetID: targetElement.id,
                 content: component.content,
                 exact: currentRoutes[component?.targetID]?.exact,
-                defaultContent: currentRoutes[component?.targetID]?.defaultContent,
+                defaultContent: currentRoutes[component?.targetID]?.defaultContent
             };
             // --- Include reload time if specified ---
             if (component?.reloadTime) {
@@ -1554,10 +1559,10 @@ class AppManager {
             }
             const completedDOMUpdate = async () => {
                 // --- Update browser history ---
-                if (state === "push") {
+                if (state === 'push') {
                     RuntimeManager.pushState(stateData, stateData.title, newUrl);
                 }
-                else if (state === "replace") {
+                else if (state === 'replace') {
                     RuntimeManager.replaceState(stateData, stateData.title, newUrl);
                 }
                 // --- Clear old executed scripts cache ---
@@ -1569,17 +1574,17 @@ class AppManager {
                 if (hashElement) {
                     scroll({
                         top: hashElement.offsetTop,
-                        left: hashElement.offsetLeft,
+                        left: hashElement.offsetLeft
                     });
                 }
                 else {
                     scroll(0, 0); // --- Scroll to top if no hash or element not found ---
                 }
                 // --- Emit successful load event ---
-                RuntimeManager.emit("load", {
+                RuntimeManager.emit('load', {
                     route: newUrl.toString(),
                     success: true,
-                    error: false,
+                    error: false
                 });
                 // --- Set up auto-reload if specified ---
                 if (component?.reloadTime) {
@@ -1608,7 +1613,7 @@ class AppManager {
      * This does not add a new entry to the browser's history stack.
      */
     static reload() {
-        AppManager.navigate(location.toString(), "replace");
+        AppManager.navigate(location.toString(), 'replace');
     }
     /**
      * Registers a callback function to be executed when the specified event is triggered.
@@ -1685,12 +1690,12 @@ class AppManager {
                 const { route } = currentRoutes[targetID];
                 const prom = fetch(route || '', {
                     headers: {
-                        "X-Requested-With": "PHPSPA_REQUEST",
-                        Authorization: `Bearer ${utf8ToBase64(statePayload)}`,
+                        'X-Requested-With': 'PHPSPA_REQUEST',
+                        Authorization: `Bearer ${utf8ToBase64(statePayload)}`
                     },
-                    mode: "same-origin",
-                    redirect: "follow",
-                    keepalive: true,
+                    mode: 'same-origin',
+                    redirect: 'follow',
+                    keepalive: true
                 });
                 promises.push(prom);
             }
@@ -1700,7 +1705,7 @@ class AppManager {
                     const responseText = await response.text();
                     let responseData;
                     // --- Parse response as JSON if possible ---
-                    if (responseText && responseText.trim().startsWith("{")) {
+                    if (responseText && responseText.trim().startsWith('{')) {
                         try {
                             responseData = JSON.parse(responseText);
                         }
@@ -1709,7 +1714,7 @@ class AppManager {
                         }
                     }
                     else {
-                        responseData = responseText || "";
+                        responseData = responseText || '';
                     }
                     resolve();
                     updateContent(responseData);
@@ -1729,21 +1734,21 @@ class AppManager {
                         .then((fallbackResponse) => {
                         let errorData;
                         try {
-                            errorData = fallbackResponse?.trim().startsWith("{")
+                            errorData = fallbackResponse?.trim().startsWith('{')
                                 ? JSON.parse(fallbackResponse)
                                 : fallbackResponse;
                         }
                         catch (parseError) {
                             errorData = fallbackResponse;
                         }
-                        updateContent(errorData || "");
+                        updateContent(errorData || '');
                     })
                         .catch(() => {
-                        updateContent("");
+                        updateContent('');
                     });
                 }
                 else {
-                    updateContent("");
+                    updateContent('');
                 }
             }
             /**
@@ -1790,19 +1795,19 @@ class AppManager {
         // --- Fetch current page content ---
         fetch(location.toString(), {
             headers: {
-                "X-Requested-With": "PHPSPA_REQUEST",
+                'X-Requested-With': 'PHPSPA_REQUEST'
             },
-            mode: "same-origin",
-            redirect: "follow",
-            keepalive: true,
+            mode: 'same-origin',
+            redirect: 'follow',
+            keepalive: true
         })
-            .then((response) => {
+            .then(response => {
             response
                 .text()
-                .then((responseText) => {
+                .then(responseText => {
                 let responseData;
                 // --- Parse response ---
-                if (responseText && responseText.trim().startsWith("{")) {
+                if (responseText && responseText.trim().startsWith('{')) {
                     try {
                         responseData = JSON.parse(responseText);
                     }
@@ -1811,15 +1816,15 @@ class AppManager {
                     }
                 }
                 else {
-                    responseData = responseText || "";
+                    responseData = responseText || '';
                 }
                 updateComponentContent(responseData);
             })
-                .catch((error) => {
+                .catch(error => {
                 handleComponentError(error);
             });
         })
-            .catch((error) => {
+            .catch(error => {
             handleComponentError(error);
         });
         /**
@@ -1832,21 +1837,21 @@ class AppManager {
                     .then((fallbackResponse) => {
                     let errorData;
                     try {
-                        errorData = fallbackResponse?.trim().startsWith("{")
+                        errorData = fallbackResponse?.trim().startsWith('{')
                             ? JSON.parse(fallbackResponse)
                             : fallbackResponse;
                     }
                     catch (parseError) {
                         errorData = fallbackResponse;
                     }
-                    updateComponentContent(errorData || "");
+                    updateComponentContent(errorData || '');
                 })
                     .catch(() => {
-                    updateComponentContent("");
+                    updateComponentContent('');
                 });
             }
             else {
-                updateComponentContent("");
+                updateComponentContent('');
             }
         }
         /**
@@ -1866,11 +1871,15 @@ class AppManager {
                 document.getElementById(history.state?.targetID) ??
                 document.body;
             // --- Update content ---
-            const updateDOM = () => new Promise((resolve) => {
-                const styleScopeKey = component?.targetID || history.state?.targetID || targetElement.id || '__phpspa_body__';
+            const updateDOM = () => new Promise(resolve => {
+                const styleScopeKey = component?.targetID ||
+                    history.state?.targetID ||
+                    targetElement.id ||
+                    '__phpspa_body__';
                 // --- Preload stylesheets in the new content ---
                 const { element, ready } = preloadStylesFromContent(component.content, styleScopeKey);
-                ready.then(() => {
+                ready
+                    .then(() => {
                     morphdom(targetElement, element, {
                         childrenOnly: true
                     });
@@ -1882,8 +1891,6 @@ class AppManager {
                 });
             });
             const completedDOMUpdate = () => {
-                // --- Clear old executed scripts cache ---
-                RuntimeManager.clearEffects();
                 // --- Execute any inline scripts in the new content ---
                 RuntimeManager.runScriptsForElement(targetElement);
                 // --- Set up next auto-reload if specified ---
@@ -1907,17 +1914,17 @@ class AppManager {
         try {
             const response = await fetch(location.pathname, {
                 headers: {
-                    "X-Requested-With": "PHPSPA_REQUEST",
-                    Authorization: `Bearer ${utf8ToBase64(callPayload)}`,
+                    'X-Requested-With': 'PHPSPA_REQUEST',
+                    Authorization: `Bearer ${utf8ToBase64(callPayload)}`
                 },
-                mode: "same-origin",
-                redirect: "follow",
-                keepalive: true,
+                mode: 'same-origin',
+                redirect: 'follow',
+                keepalive: true
             });
             const responseText = await response.text();
             let responseData;
             // --- Parse and decode response ---
-            if (responseText && responseText.trim().startsWith("{")) {
+            if (responseText && responseText.trim().startsWith('{')) {
                 try {
                     responseData = JSON.parse(responseText);
                     responseData = responseData?.response
@@ -1929,7 +1936,7 @@ class AppManager {
                 }
             }
             else {
-                responseData = responseText || "";
+                responseData = responseText || '';
             }
             return responseData;
         }
@@ -1940,7 +1947,7 @@ class AppManager {
                     const fallbackResponse = await error.response.text();
                     let errorData;
                     try {
-                        errorData = fallbackResponse?.trim().startsWith("{")
+                        errorData = fallbackResponse?.trim().startsWith('{')
                             ? JSON.parse(fallbackResponse)
                             : fallbackResponse;
                         errorData = errorData?.response
@@ -1953,12 +1960,12 @@ class AppManager {
                     return errorData;
                 }
                 catch {
-                    return "";
+                    return '';
                 }
             }
             else {
                 // --- Network errors or other issues ---
-                return "";
+                return '';
             }
         }
     }

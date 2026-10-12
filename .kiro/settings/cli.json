@@ -1,0 +1,12 @@
+{
+  "toolSearch.enabled": true,
+  "toolSearch.minPct": 5,
+  "toolSearch.minTokens": 50000,
+  "kirocrew.skillDiscovery.previousInheritance": {
+    "present": false,
+    "value": null
+  },
+  "kirocrew.skillDiscovery.inheritFiles": true,
+  "kirocrew.skillDiscovery.inheritSource": "global",
+  "chat.disableInheritingDefaultResources": true
+}

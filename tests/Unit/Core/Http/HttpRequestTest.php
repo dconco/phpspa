@@ -32,6 +32,8 @@ final class HttpRequestTest extends TestCase {
         $_SESSION = [];
 
         $_SERVER['REQUEST_METHOD'] = 'GET';
+
+        HttpRequest::$cachedRawPostData = null;
     }
 
     protected function tearDown (): void
@@ -43,6 +45,8 @@ final class HttpRequestTest extends TestCase {
         $_REQUEST = $this->requestBackup;
         $_FILES = $this->filesBackup;
         $_SESSION = $this->sessionBackup;
+
+        HttpRequest::$cachedRawPostData = null;
     }
 
     public function testUrlQueryParsesValues (): void
@@ -79,6 +83,9 @@ final class HttpRequestTest extends TestCase {
            'upload' => [
               'name' => 'file.txt',
               'error' => UPLOAD_ERR_OK,
+              'type' => 'text/plain',
+              'size' => 3564,
+              'tmp_name' => 'file.txt'
            ],
         ];
 
@@ -86,6 +93,8 @@ final class HttpRequestTest extends TestCase {
 
         $this->assertSame($_FILES, $request->files());
         $this->assertSame('file.txt', $request->files('upload')['name']);
+        $this->assertSame('file.txt', $request->files('upload')['tmp_name']);
+        $this->assertSame(3564, $request->files('upload')['size']);
         $this->assertNull($request->files('missing'));
     }
 
@@ -268,5 +277,90 @@ final class HttpRequestTest extends TestCase {
         $this->assertSame('http://example.com/path here', $request->siteURL());
         $this->assertSame('https://example.com:8080', $request->origin());
         $this->assertTrue($request->isSameOrigin());
+    }
+
+    public function testGetContentReturnsCachedValueWhenPrimed (): void
+    {
+        HttpRequest::$cachedRawPostData = '{"name":"PhpSPA"}';
+
+        $request = new HttpRequest();
+
+        $this->assertSame('{"name":"PhpSPA"}', $request->getContent());
+    }
+
+    public function testGetContentCachesFalseFromUnreadableStream (): void
+    {
+        // false is a legitimate cached state and must short-circuit,
+        // not trigger a re-read (null is the only "not yet read" marker).
+        HttpRequest::$cachedRawPostData = false;
+
+        $request = new HttpRequest();
+
+        $this->assertFalse($request->getContent());
+        $this->assertFalse(HttpRequest::$cachedRawPostData);
+    }
+
+    public function testGetContentReturnsSameCachedValueOnRepeatedCalls (): void
+    {
+        HttpRequest::$cachedRawPostData = 'raw-body';
+
+        $request = new HttpRequest();
+
+        $first = $request->getContent();
+        $second = $request->getContent();
+
+        $this->assertSame('raw-body', $first);
+        $this->assertSame($first, $second);
+    }
+
+    public function testEmptyCachedStringShortCircuitsAndIsNotTreatedAsUnread (): void
+    {
+        // Empty string is "already read, body was empty" and must be returned
+        // as-is rather than re-reading php://input.
+        HttpRequest::$cachedRawPostData = '';
+
+        $request = new HttpRequest();
+
+        $this->assertSame('', $request->getContent());
+        $this->assertSame('', HttpRequest::$cachedRawPostData);
+    }
+
+    public function testJsonConsumesCachedContent (): void
+    {
+        HttpRequest::$cachedRawPostData = '{"user":"phpspa","active":true}';
+
+        $request = new HttpRequest();
+
+        $this->assertSame(
+            [ 'user' => 'phpspa', 'active' => true ],
+            $request->json()
+        );
+        $this->assertSame('phpspa', $request->json('user'));
+        $this->assertNull($request->json('missing'));
+    }
+
+    public function testFormConsumesCachedContent (): void
+    {
+        HttpRequest::$cachedRawPostData = 'name=PhpSPA&lang=php';
+
+        $request = new HttpRequest();
+
+        $this->assertSame(
+            [ 'name' => 'PhpSPA', 'lang' => 'php' ],
+            $request->form()
+        );
+        $this->assertSame('PhpSPA', $request->form('name'));
+    }
+
+    public function testCachedContentSharedAcrossInstances (): void
+    {
+        // The cache is static: once primed, a second instance sees the same body.
+        HttpRequest::$cachedRawPostData = 'shared-body';
+
+        $first = new HttpRequest();
+        $second = new HttpRequest();
+
+        $this->assertSame('shared-body', $first->getContent());
+        $this->assertSame('shared-body', $second->getContent());
     }
 }

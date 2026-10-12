@@ -111,9 +111,11 @@ trait HtmlCompressor
     * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @param int $level Compression level
     * @param string $scope Compression scope enum['GLOBAL', 'SCOPED']
+    * @param bool $useEsbuild Whether to use esbuild for JavaScript processing
+    * @param int $disableLogs Flag to disable logging
     * @return string Minified HTML
     */
-   private static function minify(string $content, $type, int $level, string $scope = 'global', bool $useEsbuild = false): string
+   private static function minify(string $content, $type, int $level, string $scope = 'global', bool $useEsbuild = false, int $disableLogs = 0): string
    {
       if ($level === Compressor::LEVEL_NONE) return $content;
 
@@ -127,7 +129,7 @@ trait HtmlCompressor
       }
 
       if (self::isNativeCompressorAvailable()) {
-         $result = self::compressWithNative($content, $level, $type, $scope, $useEsbuild);
+         $result = self::compressWithNative($content, $level, $type, $scope, $useEsbuild, $disableLogs);
       } else {
          // Fallback to PHP implementation
          $result = self::compressWithFallback($content, $level, $type, $scope);
@@ -208,7 +210,7 @@ trait HtmlCompressor
    /**
     * Compress using the native shared library via FFI
     */
-   private static function compressWithNative(string $html, int $level, string $type, string $scope, bool $useEsbuild): string
+   private static function compressWithNative(string $html, int $level, string $type, string $scope, bool $useEsbuild, int $disableLogs): string
    {
 		$nativeLevel = match ($level) {
          Compressor::LEVEL_AGGRESSIVE => 2,
@@ -216,7 +218,7 @@ trait HtmlCompressor
          default => 1,
       };
 
-      return NativeCompressor::compress($html, $nativeLevel, $type, $scope, $useEsbuild);
+      return NativeCompressor::compress($html, $nativeLevel, $type, $scope, $useEsbuild, $disableLogs);
    }
 
    /**
@@ -375,15 +377,15 @@ trait HtmlCompressor
     * Compress component content for SPA responses
     *
     * @param string $content Component HTML content
-    * @param string $type Content type enum['HTML', 'JS', 'CSS'] 
+    * @param int $disableLogs Flag to disable logging
     * @return string Base64 encoded compressed content
     */
-   public static function compressComponent(string $content, string $type = 'HTML'): string
+   public static function compressComponent(string $content, int $disableLogs = 0): string
    {
       if (self::getLevel() === Compressor::LEVEL_NONE) return $content;
 
       // Apply minification based on compression level
-      return self::minify($content, $type, Compressor::LEVEL_EXTREME);
+      return self::minify($content, 'HTML', Compressor::LEVEL_EXTREME, 'global', false, $disableLogs);
    }
 
 
@@ -428,11 +430,12 @@ trait HtmlCompressor
     * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @param string $scope Compression scope enum['GLOBAL', 'SCOPED']
     * @param bool $useEsbuild Use esbuild for minification
+    * @param int $disableLogs Flag to disable logging
     * @return string Compressed content
     */
-   public static function compressWithLevel(string $content, int $level, string $type = 'HTML', string $scope = 'global', bool $useEsbuild = false): string
+   public static function compressWithLevel(string $content, int $level, string $type = 'HTML', string $scope = 'global', bool $useEsbuild = false, int $disableLogs = 0): string
    {
-      return self::minify($content, $type, $level, $scope, $useEsbuild);
+      return self::minify($content, $type, $level, $scope, $useEsbuild, $disableLogs);
    }
 
    public static function getCompressionEngine(): string

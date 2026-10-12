@@ -1,10 +1,94 @@
 # CHANGELOG
 
+## v2.0.13 (Stable) (Latest) (PHP 8.4)
+
+**Installation:**
+```bash
+composer require dconco/phpspa:v2.0.13
+```
+
+### 🔒 Security
+
+#### **Path Traversal in Static File Serving ([#171](https://github.com/dconco/phpspa/issues/171))**
+
+- Fixed an unauthenticated arbitrary-file-disclosure vulnerability in `useStatic()`. Because the request path is URL-decoded (`%2e%2e` → `..`) before resolution, a crafted URL such as `/assets/../../.env` could escape the static root and read any file on disk.
+- Static paths are now canonicalized with `realpath()` and verified to stay inside the resolved static base directory; anything resolving outside the root (including out-of-root symlinks) is rejected.
+
+### ✨ New Features
+
+#### **Raw Request Body — `getContent()`**
+
+- Added `HttpRequest::getContent()` to read the raw, unparsed request body from `php://input`, for any HTTP method and content type.
+- The raw body is read once and **cached** (`php://input` is not re-readable), so repeated calls and the methods built on it (`json()`, `form()`) reuse the cached payload. The cache distinguishes three states: unread, read-but-unreadable (`false`), and read-but-empty (`''`).
+
+**Documentation:** [requests/request-object#raw-request-body](https://phpspa.tech/requests/request-object/#raw-request-body)
+
+#### **`disableLogs()` Flags**
+
+- `disableLogs($flags)` now actually silences compressor/library logs via explicit flags, instead of being gated on `APP_ENV`:
+  - `DISABLE_PRELOAD_LOG` — shared-library preload/fallback notice.
+  - `DISABLE_LIBRARY_LOG` — native-library location notices.
+  - `DISABLE_COMPRESSION_LOG` — per-asset compression summary.
+
+```php
+use PhpSPA\App;
+
+(new App(...))
+   ->disableLogs(DISABLE_PRELOAD_LOG | DISABLE_LIBRARY_LOG)
+   ->compression(...)
+   ->run();
+```
+
+**Documentation:** [references/disabling-logs](https://phpspa.tech/references/disabling-logs/)
+
+#### **`randomizeAssetName()`**
+
+- Added `randomizeAssetName()` to drop the readable label (e.g. `global-styles`) that the named-asset parameter prepends to generated asset links, leaving only the content hash. This is for obscurity — making asset links non-self-explanatory — not caching (cache-busting already happens via the content hash) and not security.
+
+**Documentation:** [performance/managing-styles-and-scripts#randomizing-asset-names](https://phpspa.tech/performance/managing-styles-and-scripts/#randomizing-asset-names)
+
+### 🐛 Bug Fixes
+
+- **Function-call CSRF tokens ([#173](https://github.com/dconco/phpspa/issues/173))** — fixed an off-by-one index when decoding the call token (`$tokenData[3]` → `$tokenData[2]`), which caused `use_once` to be read from the wrong slot and broke server-function call verification.
+- **esbuild timeout & cascade on Windows** — the compressor no longer re-probes `esbuild --version` on every call (cached detection), caps each esbuild run at **7s** (was 20s), removed the `npx --yes esbuild` fallback that spawned extra processes under load, and routes straight to the native minifier on timeout. Resolves multi-second hangs and `status -2` cascades under concurrent asset requests.
+- **SPA navigation stylesheet error** — added `isUsableStylesheetHref()` so the client no longer injects a `<link rel="stylesheet">` whose `href` is empty, `#`, or resolves to the current/destination route, which caused the browser to fetch an HTML page as CSS (`Refused to apply style … MIME type ('text/html')`).
+- **`import()` size limit** — increased the max import file size from 1MB to 5MB.
+- Hardened temporary-filename generation and file-handling in `HttpRequest`/`FileHandler`.
+
+### ♻️ Refactors & Internals
+
+- `CurlHttpClient` — streamlined request handling and extracted cURL option setup into a dedicated method; refined timeout handling.
+- `ComponentTagFormatter` — optimized attribute parsing for empty component tags.
+- Renamed the `middleware()` parameter from `$component` to `$middleware` for clarity (impl + `ApplicationContract`).
+- Added preload support for the `phpspa_compressor.h` header; `Response.php` now uses `applyBinaryCompression()` instead of the removed `gzipCompress()`.
+- Null-coalescing guards for `APP_ENV`/environment checks.
+- Removed the verbose `Running: <esbuild command>` debug line from the C++ JS compressor.
+
+### 🧰 CI / Build
+
+- `build-compressor` workflow now gates the shared-library build behind passing PHP 8.4 tests, builds and runs the C++ `ctest` matrix on Ubuntu + Windows, and commits the rebuilt compressor libraries back on `push` to `support/php-8.4`.
+- Fixed invalid workflow YAML (misplaced job-level `if:`, mis-nested `release:` trigger) and added the `push` trigger so the DLL/`.so` commit-back actually fires.
+- Release assets renamed for unique identification.
+
+### 📚 Documentation
+
+- Documented `getContent()` and the full public `HttpRequest` surface (input readers, URL params/query, headers, authentication, URLs/origin, dynamic attributes) in `docs/requests/request-object.md`.
+- New `docs/references/disabling-logs.md` for `disableLogs()` and its flags (added to the site nav under API References → Performance, published at `phpspa.tech/references/disabling-logs`); documented `randomizeAssetName()` in `docs/performance/managing-styles-and-scripts.md`.
+- Documented preloading of the `phpspa_compressor.h` header in the compression docs.
+
+
+
+
+---
+
+
+
+
 ## v2.0.9 (Stable) (PHP 8.4)
 
 **Installation:**
 ```bash
-composer require dconco/phpspa:dev-support/php-8.4
+composer require dconco/phpspa:v2.0.9
 ```
 
 ### ✨ New Features
@@ -91,7 +175,7 @@ $app->run();
 
 
 
-## v2.0.8 (Stable) (Latest) (PHP 8.4)
+## v2.0.8 (Stable) (PHP 8.4)
 
 **Installation:**
 ```bash

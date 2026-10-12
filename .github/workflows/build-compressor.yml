@@ -4,16 +4,63 @@ permissions:
   contents: write
 
 on:
-  push:
+  workflow_dispatch:
+  pull_request:
     branches: [master]
+  # Run only after "PHP (8.4) Tests" finishes successfully. The cpp-tests job
+  # guards on conclusion == 'success', so a failed test run never produces a build.
+  workflow_run:
+    workflows: ["PHP (8.4) Tests"]
+    types: [completed]
+    branches: [support/php-8.4]
   release:
     types: [published]
-  workflow_dispatch:
 
 jobs:
+  cpp-tests:
+    name: C++ tests (${{ matrix.os }})
+    # Skip unless the triggering test run passed. A manual workflow_dispatch and a
+    # release have no triggering workflow_run, so they are allowed through.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up MSVC toolchain
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Set up Ninja
+        if: runner.os == 'Windows'
+        uses: seanmiddleditch/gha-setup-ninja@v5
+
+      - name: Configure (Windows, Debug)
+        if: runner.os == 'Windows'
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING_CPP=ON
+
+      - name: Install build tools (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake
+
+      - name: Configure (Linux, Debug)
+        if: runner.os == 'Linux'
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING_CPP=ON
+
+      - name: Build tests
+        run: cmake --build build -j 8
+
+      - name: Run tests (ctest)
+        run: ctest --test-dir build --output-on-failure
+
   windows-build:
     name: Windows MinSizeRel
     runs-on: windows-latest
+    needs: [cpp-tests]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -146,14 +193,26 @@ jobs:
           git commit -m "ci: update compressor shared libraries [skip ci]"
           git push origin HEAD:${GITHUB_REF#refs/heads/}
 
+      # GitHub releases require unique asset filenames; the Linux and WSL builds
+      # both produce libcompressor.so, so they are renamed to libcompressor-linux.so
+      # and libcompressor-wsl.so for the release while src/bin keeps the
+      # platform-conventional names for FFI auto-resolution.
+      - name: Stage release assets with distinct names
+        run: |
+          mkdir -p release-assets
+          cp src/bin/libcompressor.so release-assets/libcompressor-linux.so
+          cp src/bin/compressor.dll release-assets/compressor.dll
+          cp artifacts/macos/libcompressor.dylib release-assets/libcompressor.dylib
+          cp artifacts/wsl/libcompressor.so release-assets/libcompressor-wsl.so
+
       - name: Attach shared libraries to release
         if: github.event_name == 'release' && github.event.action == 'published'
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: |
-            src/bin/libcompressor.so
-            src/bin/compressor.dll
-            artifacts/macos/libcompressor.dylib
-            artifacts/wsl/libcompressor.so
+            release-assets/libcompressor-linux.so
+            release-assets/compressor.dll
+            release-assets/libcompressor.dylib
+            release-assets/libcompressor-wsl.so
