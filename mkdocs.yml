@@ -167,6 +167,7 @@ nav:
          - DOM Utilities: references/dom-utilities.md
       - Performance:
          - Compression: references/compression.md
+         - Disabling Logs: references/disabling-logs.md
       - Components:
          - Component Meta Tags: references/component-meta.md
          - Component Preloading: references/preloading-component.md
