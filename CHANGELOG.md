@@ -1,10 +1,10 @@
 # CHANGELOG
 
-## v2.0.13 (Stable) (Latest) (PHP 8.4)
+## v2.0.14 (Stable) (Latest) (PHP 8.4)
 
 **Installation:**
 ```bash
-composer require dconco/phpspa:v2.0.13
+composer require dconco/phpspa:v2.0.14
 ```
 
 ### 🔒 Security

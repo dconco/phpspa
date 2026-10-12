@@ -1,6 +1,6 @@
 # 🔇 Disabling Logs
 
-!!! info "New in v2.0.13"
+!!! info "New in v2.0.14"
     Silence the native compressor's informational startup and compression logs with `disableLogs()`.
 
 The native compressor writes several informational messages to the error log (`error_log`) while it starts up and compresses output. In development these are useful; in production they add noise. `disableLogs()` lets you silence any combination of them.

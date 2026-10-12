@@ -244,7 +244,7 @@ interface ApplicationContract {
      * @param int $flags Bitmask of log types to disable (`DISABLE_PRELOAD_LOG`,
      *                   `DISABLE_LIBRARY_LOG`, `DISABLE_COMPRESSION_LOG`). Defaults to all three.
      * @return self
-     * @since v2.0.13
+     * @since v2.0.14
      * @see https://phpspa.tech/references/disabling-logs/
      */
     public function disableLogs(int $flags = DISABLE_COMPRESSION_LOG | DISABLE_LIBRARY_LOG | DISABLE_PRELOAD_LOG): self;
