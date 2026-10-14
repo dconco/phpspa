@@ -977,14 +977,17 @@ abstract class AppImpl implements ApplicationContract {
             unset($stylesheet['name']);
             unset($stylesheet['content']);
 
-            if ($stylesheet['rel'] === 'stylesheet') {
-               $preloadStylesheet = $stylesheet;
-
-               $preloadStylesheet['rel'] = 'preload';
-               $preloadStylesheet['as'] = 'style';
-               $attributes = HTMLAttrInArrayToString($preloadStylesheet);
-               $result['global']['stylesheets'] .= "\n      <link $attributes />";
-            }
+            // --- Preload hint disabled: styles already sit at the top of <head>,
+            // --- so the browser discovers them nearly as early without the extra tag.
+            // --- Revisit with HTTP `Link:` / 103 Early Hints in a future release.
+            // if ($stylesheet['rel'] === 'stylesheet') {
+            //    $preloadStylesheet = $stylesheet;
+            //
+            //    $preloadStylesheet['rel'] = 'preload';
+            //    $preloadStylesheet['as'] = 'style';
+            //    $attributes = HTMLAttrInArrayToString($preloadStylesheet);
+            //    $result['global']['stylesheets'] .= "\n      <link $attributes />";
+            // }
 
             $attributes = HTMLAttrInArrayToString($stylesheet);
             $result['global']['stylesheets'] .= "\n      <link $attributes />";
@@ -1005,17 +1008,20 @@ abstract class AppImpl implements ApplicationContract {
             unset($stylesheet['name']);
             unset($stylesheet['content']);
 
-            if ($stylesheet['rel'] === 'stylesheet' && !$isPhpSpaRequest) {
-               $preloadStylesheet = $stylesheet;
-
-               unset($preloadStylesheet['name']);
-               unset($preloadStylesheet['content']);
-
-               $preloadStylesheet['rel'] = 'preload';
-               $preloadStylesheet['as'] = 'style';
-               $attributes = HTMLAttrInArrayToString($preloadStylesheet);
-               $result['component']['stylesheets'] .= "\n      <link $attributes />";
-            }
+            // --- Preload hint disabled: styles already sit at the top of <head>,
+            // --- so the browser discovers them nearly as early without the extra tag.
+            // --- Revisit with HTTP `Link:` / 103 Early Hints in a future release.
+            // if ($stylesheet['rel'] === 'stylesheet' && !$isPhpSpaRequest) {
+            //    $preloadStylesheet = $stylesheet;
+            //
+            //    unset($preloadStylesheet['name']);
+            //    unset($preloadStylesheet['content']);
+            //
+            //    $preloadStylesheet['rel'] = 'preload';
+            //    $preloadStylesheet['as'] = 'style';
+            //    $attributes = HTMLAttrInArrayToString($preloadStylesheet);
+            //    $result['component']['stylesheets'] .= "\n      <link $attributes />";
+            // }
 
             $attributes = HTMLAttrInArrayToString($stylesheet);
             $result['component']['stylesheets'] .= "\n      <link $attributes />";

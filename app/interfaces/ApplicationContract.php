@@ -370,7 +370,7 @@ interface ApplicationContract {
      * as individual tags.
      *
      * @return self
-     * @since v2.0.14
+     * @since v2.0.15
      * @see https://phpspa.tech/performance/managing-styles-and-scripts/#combining-assets-per-component
      */
     public function combineAssetsPerComponent(): self;
