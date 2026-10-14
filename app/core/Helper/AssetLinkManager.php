@@ -89,6 +89,58 @@ class AssetLinkManager
     }
 
     /**
+     * Generate a combined encoded link for multiple CSS assets
+     *
+     * @param string $componentRoute The route identifier for the component
+     * @param array<int> $stylesheetIndexes Array of stylesheet indexes to combine
+     * @param int $maxFilemtime Maximum file modification time across all assets (for cache busting)
+     * @param string $scriptType The type/rel of the stylesheets (must be same for all)
+     * @return string The generated combined CSS link
+     */
+    public static function generateCombinedCssLink(string $componentRoute, array $stylesheetIndexes, int $maxFilemtime, string $scriptType = 'text/css'): string
+    {
+        $data = [
+            'componentRoute' => $componentRoute,
+            'assetType' => 'css',
+            'assetIndexes' => $stylesheetIndexes,
+            'name' => null,
+            'created' => self::getCacheBucketTimestamp(),
+            'scriptType' => $scriptType,
+            'version' => $maxFilemtime
+        ];
+
+        $encoded = self::encodeAssetData($data);
+        $id = substr(md5($componentRoute . implode(',', $stylesheetIndexes)), 0, 8);
+        return self::buildAssetUrl($encoded, 'css', null, $id);
+    }
+
+    /**
+     * Generate a combined encoded link for multiple JavaScript assets
+     *
+     * @param string $componentRoute The route identifier for the component
+     * @param array<int> $scriptIndexes Array of script indexes to combine
+     * @param int $maxFilemtime Maximum file modification time across all assets (for cache busting)
+     * @param string $type The type of the scripts (must be same for all)
+     * @return string The generated combined JS link
+     */
+    public static function generateCombinedJsLink(string $componentRoute, array $scriptIndexes, int $maxFilemtime, string $type = 'text/javascript'): string
+    {
+        $data = [
+            'componentRoute' => $componentRoute,
+            'assetType' => 'js',
+            'assetIndexes' => $scriptIndexes,
+            'name' => null,
+            'created' => self::getCacheBucketTimestamp(),
+            'scriptType' => $type,
+            'version' => $maxFilemtime
+        ];
+
+        $encoded = self::encodeAssetData($data);
+        $id = substr(md5($componentRoute . implode(',', $scriptIndexes)), 0, 8);
+        return self::buildAssetUrl($encoded, 'js', null, $id);
+    }
+
+    /**
      * Check if a request is for an encoded asset
      *
      * @param string $requestUri The current request URI
@@ -125,7 +177,8 @@ class AssetLinkManager
             'componentRoute' => $data['componentRoute'],
             'scriptType' => $data['scriptType'],
             'assetType' => $data['assetType'],
-            'assetIndex' => $data['assetIndex'],
+            'assetIndex' => $data['assetIndex'] ?? null,
+            'assetIndexes' => $data['assetIndexes'] ?? null,
             'name' => $name
         ];
     }

@@ -131,6 +131,8 @@ abstract class AppImpl implements ApplicationContract {
 
    private bool $randomizeAssetName = false;
 
+   private bool $combineAssets = false;
+
    private ?string $generatedCacheDirectory = null;
 
    private bool $useEsbuild = true;
@@ -339,6 +341,12 @@ abstract class AppImpl implements ApplicationContract {
 
    public function randomizeAssetName(): ApplicationContract {
       $this->randomizeAssetName = true; return $this;
+   }
+
+   public function combineAssetsPerComponent(): ApplicationContract {
+      $this->combineAssets = true;
+      $this->randomizeAssetName = true; // Combined bundles have no single name
+      return $this;
    }
 
    public function setGeneratedCacheDirectory(string $path): ApplicationContract {
@@ -949,6 +957,12 @@ abstract class AppImpl implements ApplicationContract {
       // --- Get the primary route for mapping purposes ---
       $primaryRoute = \is_array($route) ? $route[0] ?? null : $route;
 
+      // ==================== COMBINED ASSETS PROTOTYPE ====================
+      if ($this->combineAssets) {
+         return $this->generateCombinedAssetLinks($primaryRoute, $scripts, $stylesheets, $globalScripts, $globalStylesheets, $isPhpSpaRequest);
+      }
+      // ==================== END COMBINED ASSETS PROTOTYPE ====================
+
       // --- Generate global stylesheet links ---
       if (!empty($globalStylesheets) && !$isPhpSpaRequest) {
          foreach ($globalStylesheets as $index => $stylesheet) {
@@ -1068,6 +1082,171 @@ abstract class AppImpl implements ApplicationContract {
    }
 
    /**
+    * Generate combined asset links (prototype for combineAssetsPerComponent)
+    *
+    * Groups callable assets by (scope, type) and generates one combined link per group.
+    * External links (non-callables) are emitted individually.
+    *
+    * @param string|null $primaryRoute Component route
+    * @param array $scripts Component scripts
+    * @param array $stylesheets Component stylesheets
+    * @param array $globalScripts Global scripts
+    * @param array $globalStylesheets Global stylesheets
+    * @param bool $isPhpSpaRequest Whether this is an SPA request
+    * @return array Asset links result
+    */
+   private function generateCombinedAssetLinks (?string $primaryRoute, array $scripts, array $stylesheets, array $globalScripts, array $globalStylesheets, bool $isPhpSpaRequest): array
+   {
+      $result = [
+         'component' => [ 'scripts' => '', 'stylesheets' => '' ],
+         'global' => [ 'scripts' => '', 'stylesheets' => '' ]
+      ];
+
+      // --- Helper to group callables by type and collect external links ---
+      $groupAssets = function (array $assets, string $typeKey = 'type') {
+         $callableGroups = []; // grouped by script/rel type
+         $externalLinks = [];
+         $mtimes = [];
+
+         foreach ($assets as $index => $asset) {
+            $asset = (array) Validate::validate($asset);
+
+            if (\is_callable($asset['content'])) {
+               $assetType = $asset[$typeKey] ?? 'default';
+               if (!isset($callableGroups[$assetType])) {
+                  $callableGroups[$assetType] = ['indexes' => [], 'mtimes' => [], 'attrs' => $asset];
+               }
+               $callableGroups[$assetType]['indexes'][] = $index;
+               $callableGroups[$assetType]['mtimes'][] = (new FileFunction($asset['content']))->getFileModificationTime();
+            } else {
+               $externalLinks[] = $asset;
+            }
+         }
+
+         return ['groups' => $callableGroups, 'external' => $externalLinks];
+      };
+
+      // --- Generate global stylesheet links (combined) ---
+      if (!empty($globalStylesheets) && !$isPhpSpaRequest) {
+         $grouped = $groupAssets($globalStylesheets, 'rel');
+
+         // Combined callable groups
+         foreach ($grouped['groups'] as $rel => $group) {
+            $maxMtime = \max($group['mtimes']);
+            $href = AssetLinkManager::generateCombinedCssLink("__global__", $group['indexes'], $maxMtime, $group['attrs']['type'] ?? 'text/css');
+
+            $attrs = $group['attrs'];
+            $attrs['href'] = $href;
+            unset($attrs['name'], $attrs['content']);
+
+            // --- Preload hint disabled: styles already sit at the top of <head>,
+            // --- so the browser discovers them nearly as early without the extra tag.
+            // --- Revisit with HTTP `Link:` / 103 Early Hints in a future release.
+            // if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet') {
+            //    $preload = $attrs;
+            //    $preload['rel'] = 'preload';
+            //    $preload['as'] = 'style';
+            //    $result['global']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($preload) . " />";
+            // }
+            $result['global']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($attrs) . " />";
+         }
+
+         // External links (non-callable)
+         foreach ($grouped['external'] as $ext) {
+            $ext['href'] = $ext['content'];
+            unset($ext['name'], $ext['content']);
+            $result['global']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($ext) . " />";
+         }
+      }
+
+      // --- Generate component stylesheet links (combined) ---
+      if (!empty($stylesheets)) {
+         $grouped = $groupAssets($stylesheets, 'rel');
+
+         foreach ($grouped['groups'] as $rel => $group) {
+            $maxMtime = \max($group['mtimes']);
+            $href = AssetLinkManager::generateCombinedCssLink($primaryRoute, $group['indexes'], $maxMtime, $group['attrs']['type'] ?? 'text/css');
+
+            $attrs = $group['attrs'];
+            $attrs['href'] = $href;
+            unset($attrs['name'], $attrs['content']);
+
+            // --- Preload hint disabled: styles already sit at the top of <head>,
+            // --- so the browser discovers them nearly as early without the extra tag.
+            // --- Revisit with HTTP `Link:` / 103 Early Hints in a future release.
+            // if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet' && !$isPhpSpaRequest) {
+            //    $preload = $attrs;
+            //    $preload['rel'] = 'preload';
+            //    $preload['as'] = 'style';
+            //    $result['component']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($preload) . " />";
+            // }
+            $result['component']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($attrs) . " />";
+         }
+
+         foreach ($grouped['external'] as $ext) {
+            $ext['href'] = $ext['content'];
+            unset($ext['name'], $ext['content']);
+            $result['component']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($ext) . " />";
+         }
+      }
+
+      // --- Automatically add phpspa script for SPA functionality ---
+      if (!$isPhpSpaRequest && !$this->module) {
+         $modificationTime = filemtime($this->getPhpSPAScriptPath());
+         $jsLink = AssetLinkManager::generateJsLink("__global__", -1, $modificationTime);
+         $result['global']['stylesheets'] .= "\n      <script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
+      }
+
+      // --- Generate global script links (combined) ---
+      if (!empty($globalScripts) && !$isPhpSpaRequest) {
+         $grouped = $groupAssets($globalScripts, 'type');
+
+         foreach ($grouped['groups'] as $type => $group) {
+            $maxMtime = \max($group['mtimes']);
+            $src = AssetLinkManager::generateCombinedJsLink("__global__", $group['indexes'], $maxMtime, $type);
+
+            $attrs = $group['attrs'];
+            $attrs['src'] = $src;
+            unset($attrs['name'], $attrs['content']);
+            $result['global']['scripts'] .= "\n      <script " . HTMLAttrInArrayToString($attrs) . "></script>";
+         }
+
+         foreach ($grouped['external'] as $ext) {
+            $ext['src'] = $ext['content'];
+            unset($ext['name'], $ext['content']);
+            $result['global']['scripts'] .= "\n      <script " . HTMLAttrInArrayToString($ext) . "></script>";
+         }
+      }
+
+      // --- Generate component script links (combined) ---
+      if (!empty($scripts)) {
+         $grouped = $groupAssets($scripts, 'type');
+
+         foreach ($grouped['groups'] as $type => $group) {
+            $maxMtime = \max($group['mtimes']);
+            $src = AssetLinkManager::generateCombinedJsLink($primaryRoute, $group['indexes'], $maxMtime, $type);
+
+            $attrs = $group['attrs'];
+            $attrs['src'] = $src;
+            unset($attrs['name'], $attrs['content']);
+
+            $tag = $isPhpSpaRequest
+               ? "\n      <script data-type=\"phpspa/script\" " . HTMLAttrInArrayToString($attrs) . "></script>"
+               : "\n      <script " . HTMLAttrInArrayToString($attrs) . "></script>";
+            $result['component']['scripts'] .= $tag;
+         }
+
+         foreach ($grouped['external'] as $ext) {
+            $ext['src'] = $ext['content'];
+            unset($ext['name'], $ext['content']);
+            $result['component']['scripts'] .= "\n      <script " . HTMLAttrInArrayToString($ext) . "></script>";
+         }
+      }
+
+      return $result;
+   }
+
+   /**
     * Serve CSS/JS asset content from session-based links
     *
     * @param array $assetInfo Asset information from AssetLinkManager
@@ -1080,6 +1259,13 @@ abstract class AppImpl implements ApplicationContract {
       $isGlobalAsset = $assetInfo['componentRoute'] === '__global__';
       $isPhpSpaRequest = $request->requestedWith() === 'PHPSPA_REQUEST' || $request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT';
       $isJS = strtolower($assetInfo['assetType']) === 'js';
+
+      // ==================== COMBINED ASSETS PROTOTYPE ====================
+      if ($this->combineAssets && isset($assetInfo['assetIndexes']) && \is_array($assetInfo['assetIndexes'])) {
+         $this->serveCombinedAsset($assetInfo, $currentLevel, $isGlobalAsset, $isPhpSpaRequest, $isJS);
+         return;
+      }
+      // ==================== END COMBINED ASSETS PROTOTYPE ====================
 
       if ($isGlobalAsset) {
          if ($assetInfo['assetType'] === 'css') {
@@ -1181,6 +1367,118 @@ abstract class AppImpl implements ApplicationContract {
       // --- Set appropriate headers ---
       $this->setAssetHeaders($assetInfo['type']);
       // --- Output the content ---
+      echo $content;
+      exit(0);
+   }
+
+   /**
+    * Serve combined CSS/JS asset content (prototype for combineAssetsPerComponent)
+    *
+    * Loops through all indexes, concatenates content, compresses once, serves.
+    *
+    * @param array $assetInfo Asset information with assetIndexes array
+    * @param int $currentLevel Current compression level
+    * @param bool $isGlobalAsset Whether this is a global asset
+    * @param bool $isPhpSpaRequest Whether this is an SPA request
+    * @param bool $isJS Whether this is a JavaScript asset
+    * @return void
+    */
+   private function serveCombinedAsset (array $assetInfo, int $currentLevel, bool $isGlobalAsset, bool $isPhpSpaRequest, bool $isJS): void
+   {
+      $indexes = $assetInfo['assetIndexes'];
+      $isCss = $assetInfo['assetType'] === 'css';
+
+      // --- Collect all callables ---
+      $callables = [];
+      $maxMtime = 0;
+      $firstFileName = null;
+
+      if ($isGlobalAsset) {
+         $sourceArray = $isCss ? $this->stylesheets : $this->scripts;
+         foreach ($indexes as $idx) {
+            $item = $sourceArray[$idx] ?? null;
+            if ($item && \is_callable($item['content'])) {
+               $callables[$idx] = $item['content'];
+               $ff = new FileFunction($item['content']);
+               $maxMtime = \max($maxMtime, $ff->getFileModificationTime());
+               if ($firstFileName === null) $firstFileName = $ff->getFileName();
+            }
+         }
+      } else {
+         $component = $this->findComponentByRoute($assetInfo['componentRoute']);
+         if ($component === null) return;
+
+         $sourceArray = $isCss
+            ? CallableInspector::getProperty($component, 'stylesheets')
+            : CallableInspector::getProperty($component, 'scripts');
+
+         foreach ($indexes as $idx) {
+            $item = $sourceArray[$idx] ?? null;
+            if ($item && \is_callable($item['content'])) {
+               $callables[$idx] = $item['content'];
+               $ff = new FileFunction($item['content']);
+               $maxMtime = \max($maxMtime, $ff->getFileModificationTime());
+               if ($firstFileName === null) $firstFileName = $ff->getFileName();
+            }
+         }
+      }
+
+      if (empty($callables)) return;
+
+      // --- Check generated cache ---
+      $indexesKey = \implode(',', $indexes);
+      $hashed = md5($assetInfo['componentRoute'] . $indexesKey . $maxMtime . $assetInfo['assetType']);
+      $fileDir = $this->generatedCacheDirectory ?? ($firstFileName ? (pathinfo($firstFileName, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 'generated') : null);
+      $newName = $fileDir ? ($fileDir . DIRECTORY_SEPARATOR . $hashed . ".generated.php") : null;
+
+      if ($newName && file_exists($newName)) {
+         if ($currentLevel === Compressor::LEVEL_NONE) {
+            unlink($newName);
+         } else {
+            $content = require $newName;
+            $content = Compressor::applyBinaryCompression($content);
+            $this->setAssetHeaders($assetInfo['type']);
+            echo $content;
+            exit(0);
+         }
+      }
+
+      // --- Concatenate all content ---
+      $buffer = '';
+      foreach ($callables as $idx => $callable) {
+         $part = \call_user_func($callable);
+         if (\is_array($part)) $part = $part[0] ?? '';
+         $buffer .= $part . "\n";
+      }
+
+      // --- Compress the concatenated content ---
+      $compressionLevel = $isPhpSpaRequest ? Compressor::LEVEL_EXTREME : $currentLevel;
+
+      if ($currentLevel !== Compressor::LEVEL_NONE) {
+         $timer = new Timer();
+         $assetType = strtoupper($assetInfo['assetType']);
+
+         $timer->start();
+         $content = $this->compressAssetContent($buffer, $compressionLevel, $assetInfo['type'], $isGlobalAsset ? 'global' : 'scoped');
+         $count = \count($indexes);
+         if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) error_log("Compressed combined $assetType asset ({$count} files) within {$timer->getFormattedElapsedTime()}");
+
+         // --- Cache the result ---
+         if (!$isPhpSpaRequest && $fileDir) {
+            if (!is_dir($fileDir)) mkdir($fileDir, 0755, true);
+            if ($newName) {
+               @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
+            }
+         }
+      } else {
+         $content = $buffer;
+         // --- Wrap component JS in IIFE ---
+         if (!$isGlobalAsset && $isJS) {
+            $content = "(()=>{{$content}})()";
+         }
+      }
+
+      $this->setAssetHeaders($assetInfo['type']);
       echo $content;
       exit(0);
    }

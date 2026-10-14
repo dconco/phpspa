@@ -347,4 +347,31 @@ interface ApplicationContract {
      * @param bool $return If true, returns the rendered output as a string instead of printing it.
      */
     public function run (bool $return = false);
+
+    /**
+     * Combine all assets per component into single bundled links.
+     *
+     * When enabled, instead of generating one link per CSS/JS callable, the application
+     * generates a single combined link per (scope, asset-type, script-type) group:
+     * - Global CSS callables → one combined CSS link
+     * - Global JS callables → one combined JS link (per script type)
+     * - Component CSS callables → one combined CSS link
+     * - Component JS callables → one combined JS link (per script type)
+     *
+     * This dramatically reduces the number of HTTP requests and compressor/esbuild
+     * invocations (N callables → 1 compression pass instead of N), improving
+     * page load performance in production.
+     *
+     * **Recommended for production only.** In development, individual links make
+     * debugging easier. Enabling this also forces `randomizeAssetName()` (combined
+     * bundles have no single name).
+     *
+     * External asset links (non-callable strings) are NOT combined and remain
+     * as individual tags.
+     *
+     * @return self
+     * @since v2.0.14
+     * @see https://phpspa.tech/performance/managing-styles-and-scripts/#combining-assets-per-component
+     */
+    public function combineAssetsPerComponent(): self;
 }

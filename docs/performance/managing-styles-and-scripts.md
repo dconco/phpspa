@@ -114,3 +114,75 @@ After `randomizeAssetName()`: the label is gone and only the hash remains, so th
 
 !!! info "Since v2.0.7"
     `randomizeAssetName()` is chainable and returns the `App` instance, so it fits anywhere in your configuration chain.
+
+## Combining Assets Per Component
+
+By default, PhpSPA generates **one link per asset** — if a component attaches 6 stylesheets and 4 scripts, that's 10 separate asset URLs, and each one is compressed in its own request (its own esbuild/native-compressor invocation).
+
+`combineAssetsPerComponent()` changes that. When enabled, PhpSPA **bundles all callable assets of the same kind into a single link**, so instead of N requests you get at most:
+
+- **1 combined CSS link** per component (all its stylesheet callables)
+- **1 combined JS link** per component (all its script callables)
+- **1 combined CSS link** for all global stylesheets
+- **1 combined JS link** for all global scripts
+
+**Example (`index.php`):**
+
+```php
+<?php
+$app = new App($layout);
+
+// Enable asset combining (recommended for production)
+$app->combineAssetsPerComponent();
+```
+
+For a component with several styles and scripts, this collapses many compression passes into just two:
+
+```php
+<?php
+$dashboard = new Component(fn() => '<div>...</div>');
+
+$dashboard
+   ->route('/dashboard')
+   ->styleSheet(require 'styles/layout.php')
+   ->styleSheet(require 'styles/cards.php')
+   ->styleSheet(require 'styles/sidebar.php')
+   ->script(require 'scripts/charts.php')
+   ->script(require 'scripts/realtime.php');
+
+// With combineAssetsPerComponent():
+//   3 stylesheets  -> 1 combined CSS link
+//   2 scripts      -> 1 combined JS link
+// Instead of 5 separate links and 5 compression passes.
+```
+
+### Why it's faster
+
+The expensive part of asset compression is the **per-request process spawn** (launching esbuild, the native-compressor FFI call), not the size of the code. Paying that cost once for a 10k-line bundle is dramatically cheaper than paying it ten times for ten 1k-line files:
+
+| Approach | Spawn cost | Result |
+|---|---|---|
+| 10 separate files | 10 × spawn overhead | Slowest — spawn tax paid 10× |
+| 1 combined bundle | 1 × spawn overhead | Fastest — spawn tax paid once |
+
+Minification time grows **sublinearly** with code size (the compressor works on an AST, not byte-by-byte), so combining 10 × 1k lines into one 10k-line pass is typically several times faster overall.
+
+### Grouping rules
+
+Assets are combined **by type**, so they can be merged into a single tag safely:
+
+- Scripts are grouped by their `type` attribute. If you call `->script(fn() => ..., type: 'module')` and `->script(fn() => ...)` (default `text/javascript`), those are **two different groups** and produce two links.
+- Stylesheets are grouped by their `rel`. Standard `rel="stylesheet"` links combine together.
+- **External links** (a `script()`/`link()` given a URL string instead of a callable) are **never combined** — they stay as individual tags pointing at their original source.
+
+!!! tip "Use default types for maximum combining"
+    If all your `->script(fn() => ...)` calls omit the `type` argument and all your `->link(fn() => ...)` calls omit `rel`, every callable asset in a component falls into one group — giving you exactly **one CSS link and one JS link per component**.
+
+!!! warning "Production only"
+    This is recommended for **production**. The combined link's cache key uses the **latest modification time across all files in the bundle**, so editing *any* file in a group invalidates the whole bundle's cached output. That's correct behavior, but it means coarser cache invalidation during active development — keep individual links in dev for easier debugging.
+
+!!! note "Auto-enables randomizeAssetName"
+    A combined bundle has no single readable name, so `combineAssetsPerComponent()` automatically enables [`randomizeAssetName()`](#randomizing-asset-names) — combined links are hash-only.
+
+!!! info "Since v2.0.15"
+    `combineAssetsPerComponent()` is chainable and returns the `App` instance. Component JavaScript bundles are still wrapped in an IIFE so component scope stays isolated across SPA navigation.
