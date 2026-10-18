@@ -1,6 +1,77 @@
 # CHANGELOG
 
-## v2.0.14 (Stable) (Latest) (PHP 8.4)
+## v2.0.15 (Stable) (Latest) (PHP 8.4)
+
+**Installation:**
+```bash
+composer require dconco/phpspa:v2.0.15
+```
+
+### ✨ New Features
+
+#### **Route Parameter Range Constraint — `INT<min,max>`**
+
+- Fixed and finalized the integer range constraint so it matches its documented semantics:
+  - `int<5>` — value **≥ 5** (minimum only, no upper bound).
+  - `int<5,5>` — **exactly 5**.
+  - `int<1,10>` — inclusive `[1, 10]`.
+- Resolved two long-standing bugs: the min-only comparison was inverted (it rejected values *above* the minimum), and `$max = (int)$matches[2] ?? null` made a real maximum of `0` indistinguishable from "no maximum" (e.g. `int<0,10>` misfired). A max of `0` is now preserved via an `isset` guard.
+
+**Documentation:** [routing/advanced-routing#typed-parameters-and-constraints](https://phpspa.tech/routing/advanced-routing/#typed-parameters-and-constraints)
+
+#### **Route Parameter Enum Constraint — `ENUM<...>`**
+
+- Added a literal-whitelist route parameter type: `enum<draft,published,archived>` matches only one of the listed values, is case-inheriting, and composes with union syntax.
+
+**Documentation:** [routing/advanced-routing#typed-parameters-and-constraints](https://phpspa.tech/routing/advanced-routing/#typed-parameters-and-constraints)
+
+#### **Literal Prefixes & Suffixes in Route Segments**
+
+- Route segments may now carry a literal prefix and/or suffix around a `{param}`, required on the incoming URL and stripped from the captured value:
+  - `/profile/@{username}` → `@john` captures `username = "john"` (a bare `/profile/john` does **not** match).
+  - `/download/{file}.json` → `report.json` captures `file = "report"`.
+  - `/tag/[{name}]` → `[php]` captures `name = "php"`.
+  - Composes with type constraints: `/order/#{id: int}` → `#42` captures int `42`.
+- The literal is matched exactly (special characters are not treated as regex), the capture is single-segment (never spans `/`), and an empty capture (e.g. `/profile/@` alone) is rejected.
+
+**Documentation:** [routing/advanced-routing#literal-prefixes-and-suffixes](https://phpspa.tech/routing/advanced-routing/#literal-prefixes-and-suffixes)
+
+### ⚡ Performance
+
+#### **Per-request Asset Resolve Memoization**
+
+- The asset request URL is now decoded, HMAC-verified, and expiry-checked **once per request URI** and reused by every `App` instance, instead of each `App`'s `run()` re-decoding and re-validating the same link. In a multi-`App` request this collapses N validations down to one.
+
+#### **Scope-id Fast Skip for Non-owning Apps**
+
+- When multiple `App` instances share a request lifecycle, an `App` that does not own a scoped global asset (`__global__:<id>` mismatch) now bails out of the serve path in O(1) instead of walking its own asset resolution.
+
+### 🐛 Bug Fixes
+
+- **Global assets leaked across `App` instances** — a global *callable* script/stylesheet registered on one `new App()` could be served for a **different** `App`'s global request. Global asset links encoded only the literal `__global__` route plus an index, so two Apps both produced identical links and whichever App's `run()` intercepted the request served *its own* global at that index. (String `->script("/cdn")` assets were never affected — they emit as literal `src` URLs, not framework asset links.) Each `App` now stamps its global links with a **scope id**, and only the owning App serves them.
+- **Scope id is now removal-stable (content-derived)** — the scope id is derived from the content identity of an App's registered globals (each callable's defining file, start line, and modification time), **not** from construction order. A positional/counter id shifts when an App is removed from the bootstrap — dropping one App makes a later App inherit the removed App's id and wrongly answer its stale (browser- or CDN-cached) URLs with the wrong bytes under a `200`. A content hash is position-independent, so removing one App never changes another App's id, and a stale URL for a removed App matches nobody. The global callable is never invoked to compute the id (reflection + `filemtime` only).
+- **Stale scoped-global URL route guard** — scope-id match is treated as necessary but not sufficient: a serving App additionally verifies it actually has the asset at the requested index before serving (mirroring how a component asset is only served when its route matches a registered component). A mismatch falls through to `404` rather than serving a mismatched global.
+- **Empty / match-all route asset crash** — a component registered with no route (empty / matches-all) resolved its route to `null`, which flowed into `generateCssLink()` / `generateJsLink()` (whose `$componentRoute` is a non-nullable `string`) and threw a `TypeError`. The empty route is now normalized to a stable `__root__` sentinel at generation, resolved back to the null-route component on serve, so the root/catch-all component's own scripts and stylesheets generate and serve correctly.
+
+### 🧪 Tests
+
+- Expanded `tests/AssetLinkTest.php` with coverage for cross-`App` global scoping (leak refusal, instance-scoped links, bare `__global__` framework assets preserved), the per-request resolve memoization and non-owning fast skip, the stale-URL route guard, and scope-id removal-stability (an App's id is unchanged whether or not another App was constructed before it).
+- Added `INT<min,max>` range cases (min-only equal/above/below, exact, inclusive bounds, zero-max regression) and literal prefix/suffix cases (prefix/suffix strip + required, prefix+suffix combo, empty-capture reject, type composition, plain-param regression) to the StrictTypes and MapRoute suites.
+
+### 📚 Documentation
+
+- Clarified the `int<min,max>` range semantics (`int<5>` ≥, `int<5,5>` exact, inclusive bounds) and added a new **Enum Constraint** tab under *Typed Parameters and Constraints* in `docs/routing/advanced-routing.md`.
+- Added a new **Literal Prefixes and Suffixes** section to `docs/routing/advanced-routing.md` covering prefix, suffix, prefix+suffix, type composition, and the exact-match / single-segment / empty-capture rules.
+
+
+
+
+---
+
+
+
+
+## v2.0.14 (Stable) (PHP 8.4)
 
 **Installation:**
 ```bash

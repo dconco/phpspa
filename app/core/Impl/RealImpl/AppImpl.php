@@ -133,6 +133,35 @@ abstract class AppImpl implements ApplicationContract {
 
    private bool $combineAssets = false;
 
+   /**
+    * Memoized result of resolving the asset URL for the current request:
+    *   - array : the decoded, HMAC-verified asset info (reused by every App);
+    *   - false : the request is NOT an asset;
+    *   - null  : not yet computed.
+    * Keyed by `$resolvedAssetUri` so a different request never reuses it.
+    *
+    * @var array|false|null
+    */
+   private static array|false|null $resolvedAssetInfo = null;
+
+   /**
+    * The request URI `$resolvedAssetInfo` was decoded for; the memo is reused
+    * only when it matches the current request.
+    *
+    * @var string|null
+    */
+   private static ?string $resolvedAssetUri = null;
+
+   /**
+    * Lazily-computed, content-derived global-asset scope id for THIS App (a hash
+    * of its registered globals' file/line/mtime signatures). Null until first
+    * computed by `globalScopeId()`. Position-independent, so removing another
+    * App never changes this one's id. See `globalScopeId()`.
+    *
+    * @var string|null
+    */
+   private ?string $scopeIdCache = null;
+
    private ?string $generatedCacheDirectory = null;
 
    private bool $useEsbuild = true;
@@ -376,9 +405,21 @@ abstract class AppImpl implements ApplicationContract {
       // Auto-detect and set base path for proper asset URL resolution
       PathResolver::autoDetectBasePath();
 
-      $assetInfo = AssetLinkManager::resolveAssetRequest(static::$request_uri);
+      // #2 -- Decode + HMAC-verify the asset URL ONCE per request and reuse the
+      // result for every App, instead of re-validating the same link each time.
+      $assetInfo = self::resolveAssetRequestMemoized(static::$request_uri);
+
       if ($assetInfo !== null) {
-         $this->serveAsset($assetInfo);
+         // #3 -- Fast skip: an instance-scoped global asset (`__global__:<id>`)
+         // owned by a DIFFERENT App is not ours; do nothing and let the owning
+         // App's run() handle it, without entering serveAsset at all.
+         if ($this->globalAssetOwnership($assetInfo['componentRoute']) === -1) {
+            if ($return) return null;
+            return;
+         }
+
+         $assetOutput = $this->serveAsset($assetInfo, $return);
+         if ($return) return $assetOutput;
          return;
       }
 
@@ -956,10 +997,25 @@ abstract class AppImpl implements ApplicationContract {
 
       // --- Get the primary route for mapping purposes ---
       $primaryRoute = \is_array($route) ? $route[0] ?? null : $route;
+      
+            // --- Empty / match-all routes have no route string; use a stable sentinel so
+            // --- asset links (and their cache keys) are valid and round-trip back to the
+            // --- correct component via findComponentByRoute(). Without this, a null route
+            // --- hits generateCssLink()/generateJsLink()'s non-nullable string param. ---
+            if ($primaryRoute === null || $primaryRoute === '') {
+               $primaryRoute = '__root__';
+            }
+
+      // --- Scoped global route: `__global__:<appId>` binds a global asset link to
+      // --- THIS App instance, so a second `new App()` with its own global callables
+      // --- can't have its global served by the first App (or vice versa). The bare
+      // --- `__global__` is reserved for framework-owned assets (the phpspa SPA
+      // --- script at index -1), which every App serves identically. ---
+      $globalRoute = '__global__:' . $this->globalScopeId();
 
       // ==================== COMBINED ASSETS PROTOTYPE ====================
       if ($this->combineAssets) {
-         return $this->generateCombinedAssetLinks($primaryRoute, $scripts, $stylesheets, $globalScripts, $globalStylesheets, $isPhpSpaRequest);
+         return $this->generateCombinedAssetLinks($primaryRoute, $globalRoute, $scripts, $stylesheets, $globalScripts, $globalStylesheets, $isPhpSpaRequest);
       }
       // ==================== END COMBINED ASSETS PROTOTYPE ====================
 
@@ -970,7 +1026,7 @@ abstract class AppImpl implements ApplicationContract {
 
             if (is_callable($stylesheet['content'])) {
                $modificationTime = new FileFunction($stylesheet['content'])->getFileModificationTime();
-               $stylesheet['href'] = AssetLinkManager::generateCssLink("__global__", $index, $modificationTime, $this->randomizeAssetName ? null : ($stylesheet['name'] ?? null));
+               $stylesheet['href'] = AssetLinkManager::generateCssLink($globalRoute, $index, $modificationTime, $this->randomizeAssetName ? null : ($stylesheet['name'] ?? null));
             } else
                $stylesheet['href'] = $stylesheet['content'];
 
@@ -1046,7 +1102,7 @@ abstract class AppImpl implements ApplicationContract {
 
             if (is_callable($script['content'])) {
                $modificationTime = new FileFunction($script['content'])->getFileModificationTime();
-               $script['src'] = AssetLinkManager::generateJsLink("__global__", $index, $modificationTime, $this->randomizeAssetName ? null : ($script['name'] ?? null), $script['type']);
+               $script['src'] = AssetLinkManager::generateJsLink($globalRoute, $index, $modificationTime, $this->randomizeAssetName ? null : ($script['name'] ?? null), $script['type']);
             } else {
                $script['src'] = $script['content'];
                $isLink = true;
@@ -1101,7 +1157,7 @@ abstract class AppImpl implements ApplicationContract {
     * @param bool $isPhpSpaRequest Whether this is an SPA request
     * @return array Asset links result
     */
-   private function generateCombinedAssetLinks (?string $primaryRoute, array $scripts, array $stylesheets, array $globalScripts, array $globalStylesheets, bool $isPhpSpaRequest): array
+   private function generateCombinedAssetLinks (?string $primaryRoute, string $globalRoute, array $scripts, array $stylesheets, array $globalScripts, array $globalStylesheets, bool $isPhpSpaRequest): array
    {
       $result = [
          'component' => [ 'scripts' => '', 'stylesheets' => '' ],
@@ -1139,7 +1195,7 @@ abstract class AppImpl implements ApplicationContract {
          // Combined callable groups
          foreach ($grouped['groups'] as $rel => $group) {
             $maxMtime = \max($group['mtimes']);
-            $href = AssetLinkManager::generateCombinedCssLink("__global__", $group['indexes'], $maxMtime, $group['attrs']['type'] ?? 'text/css');
+            $href = AssetLinkManager::generateCombinedCssLink($globalRoute, $group['indexes'], $maxMtime, $group['attrs']['type'] ?? 'text/css');
 
             $attrs = $group['attrs'];
             $attrs['href'] = $href;
@@ -1209,7 +1265,7 @@ abstract class AppImpl implements ApplicationContract {
 
          foreach ($grouped['groups'] as $type => $group) {
             $maxMtime = \max($group['mtimes']);
-            $src = AssetLinkManager::generateCombinedJsLink("__global__", $group['indexes'], $maxMtime, $type);
+            $src = AssetLinkManager::generateCombinedJsLink($globalRoute, $group['indexes'], $maxMtime, $type);
 
             $attrs = $group['attrs'];
             $attrs['src'] = $src;
@@ -1256,30 +1312,53 @@ abstract class AppImpl implements ApplicationContract {
     * Serve CSS/JS asset content from session-based links
     *
     * @param array $assetInfo Asset information from AssetLinkManager
-    * @return void
     */
-   private function serveAsset (array $assetInfo): void
+   private function serveAsset (array $assetInfo, bool $return = false)
    {
       $request = new HttpRequest();
       $currentLevel = Compressor::getLevel();
-      $isGlobalAsset = $assetInfo['componentRoute'] === '__global__';
+      $ownership = $this->globalAssetOwnership($assetInfo['componentRoute']);
+
+      // --- A global asset owned by a DIFFERENT App instance: do not serve it
+      // --- here, let the request fall through to the owning app's run(). This
+      // --- is what stops App A from serving App B's global callable script. ---
+      if ($ownership === -1) {
+         return;
+      }
+
+      $isGlobalAsset = $ownership === 1;
       $isPhpSpaRequest = $request->requestedWith() === 'PHPSPA_REQUEST' || $request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT';
       $isJS = strtolower($assetInfo['assetType']) === 'js';
 
       // ==================== COMBINED ASSETS PROTOTYPE ====================
       if ($this->combineAssets && isset($assetInfo['assetIndexes']) && \is_array($assetInfo['assetIndexes'])) {
-         $this->serveCombinedAsset($assetInfo, $currentLevel, $isGlobalAsset, $isPhpSpaRequest, $isJS);
-         return;
+         return $this->serveCombinedAsset($assetInfo, $currentLevel, $isGlobalAsset, $isPhpSpaRequest, $isJS, $return);
       }
       // ==================== END COMBINED ASSETS PROTOTYPE ====================
 
       if ($isGlobalAsset) {
+         $isScopedGlobal = \str_starts_with($assetInfo['componentRoute'], '__global__:');
+
          if ($assetInfo['assetType'] === 'css') {
-            $callable = $this->stylesheets[$assetInfo['assetIndex']] ?? null;
-            $callable = $callable['content'] ?? null;
+            $entry = $this->stylesheets[$assetInfo['assetIndex']] ?? null;
+            $callable = $entry['content'] ?? null;
          } else {
-            $callable = $this->scripts[$assetInfo['assetIndex']] ?? null;
-            $callable = $callable['content'] ?? null;
+            $entry = $this->scripts[$assetInfo['assetIndex']] ?? null;
+            $callable = $entry['content'] ?? null;
+         }
+
+         // --- Scope-id match is necessary but not sufficient. The instance id is
+         // --- a monotonic per-process counter, so a removed App's id can be
+         // --- reused by a later App. A stale cached (or CDN-held) `__global__:<id>`
+         // --- URL would then resolve to a DIFFERENT App holding that id, which
+         // --- would serve its OWN global at that index -- wrong bytes with a 200.
+         // --- Guard it like a component asset is guarded by route: if the
+         // --- scoped-global index has no entry on THIS app, the URL does not
+         // --- belong here -> skip (404) instead of a mismatched serve. The bare
+         // --- framework `__global__` (index -1, from the SPA script file) is
+         // --- exempt, so $isScopedGlobal gates the check. ---
+         if ($isScopedGlobal && $entry === null) {
+            return;
          }
       } else {
          // --- Find the component that matches the asset's route ---
@@ -1319,6 +1398,7 @@ abstract class AppImpl implements ApplicationContract {
 
                   $content = Compressor::applyBinaryCompression($content);
                   $this->setAssetHeaders($assetInfo['type']);
+                  if ($return) return $content;
                   echo $content;
                   exit(0);
                }
@@ -1373,6 +1453,7 @@ abstract class AppImpl implements ApplicationContract {
       // --- Set appropriate headers ---
       $this->setAssetHeaders($assetInfo['type']);
       // --- Output the content ---
+      if ($return) return $content;
       echo $content;
       exit(0);
    }
@@ -1389,7 +1470,7 @@ abstract class AppImpl implements ApplicationContract {
     * @param bool $isJS Whether this is a JavaScript asset
     * @return void
     */
-   private function serveCombinedAsset (array $assetInfo, int $currentLevel, bool $isGlobalAsset, bool $isPhpSpaRequest, bool $isJS): void
+   private function serveCombinedAsset (array $assetInfo, int $currentLevel, bool $isGlobalAsset, bool $isPhpSpaRequest, bool $isJS, bool $return = false)
    {
       $indexes = $assetInfo['assetIndexes'];
       $isCss = $assetInfo['assetType'] === 'css';
@@ -1400,9 +1481,20 @@ abstract class AppImpl implements ApplicationContract {
       $firstFileName = null;
 
       if ($isGlobalAsset) {
+         $isScopedGlobal = \str_starts_with($assetInfo['componentRoute'], '__global__:');
          $sourceArray = $isCss ? $this->stylesheets : $this->scripts;
          foreach ($indexes as $idx) {
             $item = $sourceArray[$idx] ?? null;
+
+            // --- Scoped global: the scope id can be reused after an App is
+            // --- removed, so a stale URL may land on a different App that holds
+            // --- the same id. If ANY requested index is missing on this app, the
+            // --- combined URL does not belong here -> skip (404) rather than
+            // --- serve a partial / mismatched bundle. ---
+            if ($isScopedGlobal && $item === null) {
+               return;
+            }
+
             if ($item && \is_callable($item['content'])) {
                $callables[$idx] = $item['content'];
                $ff = new FileFunction($item['content']);
@@ -1444,6 +1536,7 @@ abstract class AppImpl implements ApplicationContract {
             $content = require $newName;
             $content = Compressor::applyBinaryCompression($content);
             $this->setAssetHeaders($assetInfo['type']);
+            if ($return) return $content;
             echo $content;
             exit(0);
          }
@@ -1485,6 +1578,7 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       $this->setAssetHeaders($assetInfo['type']);
+      if ($return) return $content;
       echo $content;
       exit(0);
    }
@@ -1500,6 +1594,11 @@ abstract class AppImpl implements ApplicationContract {
       foreach ($this->components as $component) {
          $route = CallableInspector::getProperty($component, 'route');
 
+         // --- '__root__' is the sentinel for an empty / match-all (null) route. ---
+         if ($targetRoute === '__root__' && ($route === null || $route === '')) {
+            return $component;
+         }
+
          if (\is_array($route)) {
             if (\in_array($targetRoute, $route)) {
                return $component;
@@ -1511,6 +1610,153 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       return null;
+   }
+
+   /**
+    * Stable identity for THIS App instance's global asset scope.
+    *
+    * Global scripts/stylesheets are registered per-App (`$this->scripts`,
+    * `$this->stylesheets`), but a global asset link previously encoded only the
+    * literal `__global__` route with an index. When two separate `new App()`
+    * instances each registered global callables, both produced identical
+    * `__global__` + index links, so whichever App's `run()` intercepted the
+    * asset request would serve ITS OWN global at that index -- leaking one App's
+    * global script into another App.
+    *
+    * The id disambiguates the owner. It is derived from the CONTENT identity of
+    * this App's registered globals (each callable's defining file, start line
+    * and modification time), not from construction order. A monotonic counter
+    * was rejected because any positional id shifts when an App is removed: drop
+    * App B and App C becomes the "second" App, inheriting B's old id and
+    * matching B's stale cached URLs -- serving the wrong bytes with a 200. A
+    * content hash is position-independent, so removing one App never changes
+    * another App's id, and a stale URL for a removed App matches nobody.
+    *
+    * Two Apps that register byte-identical globals DO hash to the same id, but
+    * then their global assets are literally the same, so serving one for the
+    * other is harmless. Computed from reflection + filemtime only -- the global
+    * callables are NEVER invoked to derive the id. Cached per instance; the
+    * cache is invalidated implicitly because registration happens before the
+    * first link generation.
+    *
+    * @return string The content-derived scope id for this app's globals
+    */
+   private function globalScopeId (): string
+   {
+      if ($this->scopeIdCache !== null) {
+         return $this->scopeIdCache;
+      }
+
+      $signatures = [];
+
+      foreach ([$this->scripts, $this->stylesheets] as $kind => $assets) {
+         foreach ($assets as $asset) {
+            $content = $asset['content'] ?? null;
+
+            if (\is_callable($content)) {
+               try {
+                  $ff = new FileFunction($content);
+                  $fn = $ff->getFunction();
+                  $file = $ff->getFileName();
+                  $line = $fn->getStartLine();
+                  $mtime = $ff->getFileModificationTime();
+                  $signatures[] = "{$kind}:{$file}:{$line}:{$mtime}";
+               } catch (\Throwable) {
+                  // --- Unreflectable callable: fall back to a spl hash so it
+                  // --- still contributes a stable-per-process signature. ---
+                  $signatures[] = "{$kind}:" . \spl_object_hash((object) ['c' => $content]);
+               }
+            } elseif (\is_string($content)) {
+               // --- A string asset (external URL / literal) is its own identity. ---
+               $signatures[] = "{$kind}:str:{$content}";
+            }
+         }
+      }
+
+      // --- Sort so registration order does not change the id; an App with no
+      // --- globals hashes an empty set to a stable constant. ---
+      \sort($signatures);
+      $this->scopeIdCache = \substr(\md5(\implode('|', $signatures)), 0, 12);
+
+      return $this->scopeIdCache;
+   }
+
+   /**
+    * Per-instance cache for the content-derived scope id. Reset implicitly with
+    * the object; recomputed on first use after all globals are registered.
+    *
+    * @return void
+    */
+   protected function initGlobalScope (): void
+   {
+      $this->scopeIdCache = null;
+   }
+
+   /**
+    * Reset the per-request asset statics. Call at the start of a request in
+    * long-lived worker runtimes (Swoole/RoadRunner) so a warm process does not
+    * reuse a previous request's memoized asset decode. One-shot web SAPIs do
+    * not need it (statics die with the process). The scope id is per-instance
+    * and content-derived, so it needs no reset.
+    *
+    * @return void
+    */
+   public static function resetAssetRequestState (): void
+   {
+      self::$resolvedAssetInfo = null;
+      self::$resolvedAssetUri = null;
+   }
+
+   /**
+    * Decode + HMAC-verify + expiry-check the asset URL ONCE per request, then
+    * memoize the result so every subsequent App's run() reuses it instead of
+    * re-validating the same link.
+    *
+    * In a multi-App request the asset URL is identical for every App, so the
+    * expensive base64 + HMAC verification only needs to happen for the first one.
+    * The memo is keyed by the request URI, so a different request (worker reuse,
+    * a multi-request test run) never reuses a stale decode.
+    *
+    * @param string $uri The current request URI.
+    * @return array|null The decoded asset info, or null when not an asset.
+    */
+   private static function resolveAssetRequestMemoized (string $uri): ?array
+   {
+      if (self::$resolvedAssetUri === $uri) {
+         return self::$resolvedAssetInfo === false ? null : self::$resolvedAssetInfo;
+      }
+
+      $info = AssetLinkManager::resolveAssetRequest($uri);
+      self::$resolvedAssetUri = $uri;
+      self::$resolvedAssetInfo = $info ?? false;
+      return $info;
+   }
+
+   /**
+    * Classify a global asset request against THIS App instance.
+    *
+    * @param string $componentRoute The decoded route from the asset link
+    * @return int One of: 0 = not a global asset (component-scoped);
+    *             1 = global owned by this app (serve it);
+    *             -1 = global owned by a DIFFERENT app (do not serve; fall through).
+    */
+   private function globalAssetOwnership (string $componentRoute): int
+   {
+      // --- Bare `__global__` = framework-owned (e.g. the phpspa SPA script at
+      // --- index -1). Every app serves it identically. ---
+      if ($componentRoute === '__global__') {
+         return 1;
+      }
+
+      // --- Scoped `__global__:<appId>` = a per-App global. Only the app whose
+      // --- id matches may serve it; otherwise fall through so the owning app's
+      // --- run() handles the request. ---
+      if (\str_starts_with($componentRoute, '__global__:')) {
+         $id = \substr($componentRoute, \strlen('__global__:'));
+         return $id === $this->globalScopeId() ? 1 : -1;
+      }
+
+      return 0;
    }
 
    /**

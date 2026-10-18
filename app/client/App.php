@@ -36,6 +36,7 @@ use PhpSPA\Interfaces\ApplicationContract;
  * @method ApplicationContract useModule() Enable this to prevent the application from adding the phpspa CDN script tag, allowing you to load it yourself with the phpspa js library `npm i @dconco/phpspa` and use it in your own custom way.
  * @method ApplicationContract disableMinificationWithEsbuild() Disable esbuild for JS minification, use default C++ minification instead
  * @method ApplicationContract randomizeAssetName() Randomize asset names
+ * @method ApplicationContract combineAssetsPerComponent() Combine all same-type assets per component (and per global scope) into a single link each. Prototype, recommended for production only. Force-enables randomizeAssetName().
  * @method ApplicationContract setGeneratedCacheDirectory(string $path) Set the generated cache directory
  * @method ApplicationContract setCustomCompressorLibraryPath(string $path) Set a custom compressor library path
  * @method ApplicationContract forceNativeCompression() Force native compression
@@ -63,6 +64,10 @@ class App extends AppImpl implements ApplicationContract {
     {
         $this->layout = $layout;
         static::$request_uri = (new HttpRequest())->path();
+
+        // Assign a distinct, construction-order global-asset scope id so each
+        // App instance's global scripts/stylesheets bind to it alone.
+        $this->initGlobalScope();
 
         // Initialize HTML compression based on environment
         if ($autoInitCompression) {

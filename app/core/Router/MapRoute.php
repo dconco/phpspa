@@ -138,19 +138,53 @@ class MapRoute implements MapInterface
         if (empty($reqUri[$index])) {
            return false;
          }
-         
+
+         /**
+          *   --------------------------------------------------------------------------------
+          *   |   A param segment may carry a literal prefix and/or suffix around the brace,
+          *   |   e.g. "@{username}" or "{id}.json". Split the route segment into
+          *   |   prefix + {param} + suffix so the literals are REQUIRED in the incoming
+          *   |   segment and stripped from the captured value (so "@john" -> "john").
+          *   --------------------------------------------------------------------------------
+         */
+         $braceStart = strpos($uri[$index], '{');
+         $braceEnd   = strrpos($uri[$index], '}');
+         $prefix     = substr($uri[$index], 0, $braceStart);
+         $suffix     = substr($uri[$index], $braceEnd + 1);
+
+         $segmentValue = $reqUri[$index];
+
+         // require the literal prefix/suffix on the incoming segment, then strip them
+         if ($prefix !== '') {
+            if (!str_starts_with($segmentValue, $prefix)) {
+               return false;
+            }
+            $segmentValue = substr($segmentValue, \strlen($prefix));
+         }
+         if ($suffix !== '') {
+            if (!str_ends_with($segmentValue, $suffix)) {
+               return false;
+            }
+            $segmentValue = substr($segmentValue, 0, \strlen($segmentValue) - \strlen($suffix));
+         }
+
+         // an empty capture after stripping literals is not a valid match
+         if ($segmentValue === '') {
+            return false;
+         }
+
          if (str_contains($paramKey[$key], ':')) {
-            $unvalidate_req[] = [ $paramKey[$key], $reqUri[$index] ];
+            $unvalidate_req[] = [ $paramKey[$key], $segmentValue ];
          }
          
          // setting params with params names
          $key = trim((string) explode(':', $paramKey[$key], 2)[0]);
-         $req[$key] = $reqUri[$index];
-         $req_value[] = $reqUri[$index];
+         $req[$key] = $segmentValue;
+         $req_value[] = $segmentValue;
          
-         // this is to create a regex for comparing route address
-         // Use [^/]+ to match only one path segment (not including slashes)
-         $reqUri[$index] = '([^/]+)';
+         // this is to create a regex for comparing route address: require the
+         // literal prefix/suffix, capture only the param portion within the segment
+         $reqUri[$index] = preg_quote($prefix, '/') . '([^/]+?)' . preg_quote($suffix, '/');
       }
       // converting array to string
       $reqUri = implode('/', $reqUri);
