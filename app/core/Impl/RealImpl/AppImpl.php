@@ -11,6 +11,7 @@ use PhpSPA\Core\Router\MapRoute;
 use PhpSPA\Core\Router\PrefixRouter;
 use PhpSPA\Core\Http\HttpRequest;
 use PhpSPA\Compression\Compressor;
+use PhpSPA\Core\Compression\OxcCompressor;
 use PhpSPA\Core\Config\CompressionConfig;
 use PhpSPA\Core\Helper\CsrfManager;
 use PhpSPA\Core\Helper\SessionHandler;
@@ -164,7 +165,9 @@ abstract class AppImpl implements ApplicationContract {
 
    private ?string $generatedCacheDirectory = null;
 
-   private bool $useEsbuild = true;
+   private bool $useEsbuild = false;
+
+   private bool $useOxc = false;
 
    public function defaultTargetID (string $targetID): ApplicationContract
    {
@@ -251,8 +254,18 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
+   public function setCustomOxcLibraryPath(string $path): ApplicationContract
+   {
+      putenv("PHPSPA_OXC_LIB=$path");
+      return $this;
+   }
+
    public function forceNativeCompression(): ApplicationContract
    {
+      // "Native" here means the native (FFI) compression path — C++, esbuild,
+      // or Oxc — must NOT fall back to the PHP minifier. If the chosen native
+      // engine fails/unavailable, throw instead of silently degrading to PHP.
+      // It does NOT change which JS engine is selected; Oxc/esbuild opt-ins stay.
       putenv("PHPSPA_COMPRESSION_STRATEGY=native");
       return $this;
    }
@@ -360,8 +373,12 @@ abstract class AppImpl implements ApplicationContract {
       $this->module = true; return $this;
    }
 
-   public function disableMinificationWithEsbuild(): ApplicationContract {
-      $this->useEsbuild = false; return $this;
+   public function useEsbuildForJsMinification(): ApplicationContract {
+      $this->useEsbuild = true; return $this;
+   }
+
+   public function useOxcForJsMinification(): ApplicationContract {
+      $this->useOxc = true; return $this;
    }
 
    public function disableLogs(int $flags = DISABLE_COMPRESSION_LOG | DISABLE_LIBRARY_LOG | DISABLE_PRELOAD_LOG): ApplicationContract {
@@ -1838,7 +1855,41 @@ abstract class AppImpl implements ApplicationContract {
          default => 'HTML',
       };
 
-      return Compressor::compressWithLevel($content, $level, $type, $scope, $this->useEsbuild, $this->disableLogs);
+      return Compressor::compressWithLevel($content, $level, $type, $scope, $this->resolveJsEngine(), $this->disableLogs);
+   }
+
+   /**
+    * Resolve which JS minification engine to use for this request, by priority.
+    *
+    * Priority (highest first):
+    *   1. Oxc — if `useOxcForJsMinification()` was called. Oxc is preload-only;
+    *      when it is enabled but not preloaded/available it degrades to PHP
+    *      (never C++), or throws under `forceNativeCompression()`.
+    *   2. If BOTH Oxc and esbuild are enabled, Oxc wins when it is actually
+    *      available (preloaded); otherwise esbuild handles the request. This uses
+    *      the real preload signal — there is no path-based tie-break, because Oxc
+    *      cannot be loaded from a runtime path (it must be in `ffi.preload`).
+    *   3. esbuild — if `useEsbuildForJsMinification()` was called.
+    *   4. native C++ — the default, zero-process in-process minifier.
+    *
+    * @return string engine enum['oxc', 'esbuild', 'native']
+    */
+   private function resolveJsEngine(): string
+   {
+      if ($this->useOxc) {
+         // When only Oxc is on, it always takes the request (and HtmlCompressor
+         // decides available-Oxc vs PHP-fallback/throw). When both are on, defer
+         // to esbuild only if Oxc isn't actually preloaded/available.
+         if (!$this->useEsbuild || OxcCompressor::isAvailable()) {
+            return 'oxc';
+         }
+      }
+
+      if ($this->useEsbuild) {
+         return 'esbuild';
+      }
+
+      return 'native';
    }
 
    /**

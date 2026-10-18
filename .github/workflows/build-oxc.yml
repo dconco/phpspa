@@ -3,15 +3,8 @@ name: Build Oxc JS Minifier
 permissions:
   contents: write
 
-# The Oxc cdylib (in-process JS minifier) is built on two triggers:
-#   - push to build_oxc  -> prove it compiles on all three OSes (artifacts only,
-#                           nothing attached to a release, nothing committed).
-#   - release published  -> the real target: attach the shared libraries to the
-#                           GitHub release so deployments can download them.
 on:
   workflow_dispatch:
-  push:
-    branches: [build_oxc]
   release:
     types: [published]
 

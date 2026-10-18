@@ -4,168 +4,63 @@ declare(strict_types=1);
 
 namespace PhpSPA\Core\Compression;
 
-final class NativeCompressor
+/**
+ * Shared contract for the native (FFI-backed) minification engines.
+ *
+ * Both {@see CppCompressor} (the in-process C++ compressor, which also hosts the
+ * esbuild path) and {@see OxcCompressor} (the in-process Oxc/Rust JS minifier)
+ * implement this interface. {@see \PhpSPA\Core\Utils\HtmlCompressor} is the single
+ * base that decides which concrete native engine to use per request, then calls
+ * it polymorphically — e.g.:
+ *
+ *   $compressor = OxcCompressor::isAvailable() ? OxcCompressor::class : CppCompressor::class;
+ *   $compressor::compress($content, $level, $type, $scope, $useEsbuild, $logs);
+ *
+ * The signature is unified across engines; an engine ignores the parameters it
+ * does not need (Oxc, for instance, is JS-only and single-level, so it uses only
+ * $content and $scope).
+ *
+ * @since v2.1.0
+ */
+interface NativeCompressor
 {
-   private const string ENV_LIBRARY_PATH = 'PHPSPA_COMPRESSOR_LIB';
-
-   private static ?bool $available = null;
-
-   private static ?string $lastError = null;
-
-   private static ?\FFI $ffi = null;
-
-   private static ?string $libraryPath = null;
-
-   public static function isAvailable(): bool
-   {
-      if (self::$available !== null) return self::$available;
-
-      return self::$available = self::initialize(disableLogs: DISABLE_LIBRARY_LOG | DISABLE_PRELOAD_LOG);
-   }
-
-   public static function getLastError(): ?string
-   {
-      return self::$lastError;
-   }
+   /**
+    * Whether this native engine is loaded and usable right now.
+    */
+   public static function isAvailable(): bool;
 
    /**
-    * Compress HTML using the native shared library.
-    *
-    * @param string $content Content payload to compress
-    * @param int $nativeLevel Native compressor level (1-3)
-    * @param string $type Content type enum['HTML', 'JS', 'CSS']
-    * @param string $scope Compression scope enum['GLOBAL', 'SCOPED']
-    * @param bool $useEsbuild Use esbuild for minification
-    * @return string
+    * The last initialization/availability error, or null if none.
     */
-   public static function compress(string $content, int $nativeLevel, string $type, string $scope, bool $useEsbuild, int $disableLogs = 0): string
-   {
-      if (!self::initialize($disableLogs)) {
-         throw new \RuntimeException(self::$lastError ?? 'Native compressor is unavailable.');
-      }
+   public static function getLastError(): ?string;
 
-      $level = max(1, min(3, $nativeLevel));
-      $outLen = self::$ffi->new('size_t');
-      $debugOutput = self::$ffi->new('char[1024]');
+   /**
+    * The path to the native library file backing this engine, or null if unknown.
+    */
+   public static function getLibraryPath(): ?string;
 
-      if ($useEsbuild)
-         $resultPointer = self::invoke('phpspa_compress_html_esbuild', $content, $level, $type, $scope, $debugOutput, \FFI::addr($outLen));
-      else
-         $resultPointer = self::invoke('phpspa_compress_html', $content, $level, $type, \FFI::addr($outLen));
-
-      if ($resultPointer === null || \FFI::isNull($resultPointer)) {
-         throw new \RuntimeException('Native compressor returned a null pointer.');
-      }
-      if (!($disableLogs & DISABLE_LIBRARY_LOG)) error_log(\FFI::string($debugOutput));
-
-      try {
-         return \FFI::string($resultPointer, $outLen->cdata ?? 0);
-      } finally {
-         self::invoke('phpspa_free_string', $resultPointer);
-      }
-   }
-
-   public static function getLibraryPath(): ?string
-   {
-      return self::$libraryPath;
-   }
-
-   private static function initialize(int $disableLogs): bool
-   {
-      if (self::$ffi !== null) {
-         return true;
-      }
-
-      self::$lastError = null;
-
-      if (!\extension_loaded('FFI')) {
-         self::$lastError = 'FFI extension is not loaded.';
-         return false;
-      }
-
-      // Check if already preloaded into shared OPcache memory
-      try {
-         self::$ffi = \FFI::scope('phpspa_compressor');
-         return true;
-      } catch (\FFI\Exception $e) {
-         if (!($disableLogs & DISABLE_PRELOAD_LOG)) error_log("phpspa_compressor isn't preloaded in PHP INI, falling back to loading directly from the shared library.");
-         // Not preloaded; proceed to dynamic loading below
-      }
-
-      $libraryPath = self::resolveLibraryPath($disableLogs);
-      if ($libraryPath === null) {
-         $ENV_LIBRARY_PATH = self::ENV_LIBRARY_PATH;
-         self::$lastError = "Native compressor library not found. Set {$ENV_LIBRARY_PATH} to an absolute path to compressor.dll or libcompressor.so";
-         return false;
-      }
-
-      try {
-         self::$ffi = \FFI::cdef(self::cDefinition(), $libraryPath);
-         self::$libraryPath = $libraryPath;
-         return true;
-      } catch (\Throwable $e) {
-         self::$ffi = null;
-         self::$lastError = 'FFI failed to load ' . $libraryPath . ': ' . $e->getMessage();
-         return false;
-      }
-   }
-
-   private static function resolveLibraryPath(int $disableLogs): ?string
-   {
-      $envPath = $_ENV[self::ENV_LIBRARY_PATH] ?? '';
-      if (\is_string($envPath) && $envPath !== '' && \is_file($envPath)) {
-         if (!($disableLogs & DISABLE_LIBRARY_LOG)) error_log("Using native compressor library from environment variable: $envPath");
-         return $envPath;
-      }
-
-      $baseDir = \dirname(__DIR__, 3);
-      $directories = [
-         $baseDir . '/src/bin',
-         $baseDir . '/build/MinSizeRel',
-         $baseDir . '/build/Release',
-         $baseDir . '/build/RelWithDebInfo',
-         $baseDir . '/build/Debug',
-         $baseDir . '/build',
-      ];
-
-      foreach ($directories as $directory) {
-         foreach (self::libraryFilenames() as $filename) {
-            $candidate = $directory . '/' . $filename;
-            if (\is_file($candidate)) {
-               if (!($disableLogs & DISABLE_LIBRARY_LOG)) error_log('Found native compressor library: ' . $candidate);
-               return $candidate;
-            }
-         }
-      }
-
-      return null;
-   }
-
-   private static function invoke(string $symbol, mixed ...$arguments): mixed
-   {
-      if (self::$ffi === null) {
-         throw new \RuntimeException('Native compressor is not initialized.');
-      }
-
-      $callable = [self::$ffi, $symbol];
-      return $callable(...$arguments);
-   }
-
-   private static function libraryFilenames(): array
-   {
-      return match (\PHP_OS_FAMILY) {
-         'Windows' => ['compressor.dll'],
-         'Darwin' => ['libcompressor.dylib', 'compressor.dylib'],
-         default => ['libcompressor.so', 'compressor.so'],
-      };
-   }
-
-   private static function cDefinition(): string
-   {
-      return <<<'CDEF'
-char* phpspa_compress_html(const char* input, int level, const char* type, size_t* out_len);
-char* phpspa_compress_html_esbuild(const char* input, int level, const char* type, const char* scope, char* debugOutput, size_t* out_len);
-void phpspa_free_string(char* buffer);
-CDEF;
-   }
+   /**
+    * Compress/minify content with this native engine.
+    *
+    * @param string $content     Content payload to compress
+    * @param int    $nativeLevel Native compressor level (1-3); engines that are
+    *                            single-level (Oxc) ignore it
+    * @param string $type        Content type enum['HTML', 'JS', 'CSS']
+    * @param string $scope       Compression scope enum['global', 'scoped']
+    * @param bool   $useEsbuild  Use esbuild for JS minification (C++ engine only;
+    *                            ignored by engines that are not esbuild-backed)
+    * @param int    $disableLogs Log-suppression bit flags
+    * @return string Compressed content
+    *
+    * @throws \RuntimeException on a genuine runtime FFI failure (after the engine
+    *                           was confirmed available via {@see isAvailable()}).
+    */
+   public static function compress(
+      string $content,
+      int $nativeLevel,
+      string $type,
+      string $scope,
+      bool $useEsbuild,
+      int $disableLogs = 0
+   ): string;
 }
