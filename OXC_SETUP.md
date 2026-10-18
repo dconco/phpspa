@@ -16,7 +16,12 @@ The crate lives in the **project root** — same place the C++ compressor source
 live. The CI workflow (`.github/workflows/build-oxc.yml`) builds it from the
 root `Cargo.toml`, so there is no separate repo or subdirectory to manage.
 
-Put this `Cargo.toml` at the project root:
+The repo's `src/` is already the C++/PHP tree, so the Rust source is kept out of
+it: `Cargo.toml` points `[lib] path` at `oxc/lib.rs` instead of Cargo's default
+`src/lib.rs`. Both files already exist in the repo — this section just explains
+what they contain.
+
+`Cargo.toml` (project root):
 
 ```toml
 [package]
@@ -27,6 +32,9 @@ edition = "2021"
 [lib]
 name = "oxc_php_minifier"
 crate-type = ["cdylib"]
+# The repo's src/ is the C++/PHP tree, so the Rust source is isolated under oxc/
+# rather than Cargo's default src/lib.rs (which would collide with that tree).
+path = "oxc/lib.rs"
 
 [dependencies]
 # Pin to one real published Oxc release — the minifier API is pre-1.0 and its
@@ -45,7 +53,7 @@ lto = true
 codegen-units = 1
 ```
 
-Write the export functions in `src/lib.rs`.
+The export functions live in `oxc/lib.rs`.
 
 **The scope argument mirrors the esbuild contract exactly** (`minifyJS.cpp`):
 

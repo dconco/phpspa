@@ -1,0 +1,27 @@
+[package]
+name = "oxc_php_minifier"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "oxc_php_minifier"
+crate-type = ["cdylib"]
+# The repo's src/ is the C++/PHP tree, so the Rust source is isolated under oxc/
+# rather than Cargo's default src/lib.rs (which would collide with that tree).
+path = "oxc/lib.rs"
+
+[dependencies]
+# Pin to one real published Oxc release — the minifier API is pre-1.0 and its
+# option shape changes between versions. Confirm these compile on the
+# build_oxc branch before trusting the pin.
+oxc_allocator = "0.153"
+oxc_parser = "0.153"
+oxc_minifier = "0.153"
+oxc_codegen = "0.153"
+oxc_span = "0.153"
+
+# Release build tuned for a minifier called per request.
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
