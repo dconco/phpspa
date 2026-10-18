@@ -275,11 +275,11 @@ If you prefer faster compression time with less aggressive minification, or if y
 use PhpSPA\App;
 
 $app = new App($layout);
-$app->disableMinificationWithEsbuild();
+$app->useEsbuildForJsMinification();
 ```
 
 !!! warning "Trade-off"
-    Disabling esbuild means JavaScript will be minified using the built-in C++/PHP minifier, which currently provides less compression. It is recommended to keep esbuild enabled for production use.
+    By default JavaScript is minified by the fast in-process C++ minifier (no external process). Calling `useEsbuildForJsMinification()` opts into esbuild for more aggressive, AST-accurate minification, at the cost of an external process on asset (re)generation. Use it when you want maximum JS compression and have esbuild available.
 
 | Minifier | Speed | Compression Quality | Tree-Shaking | Bundling |
 |----------|-------|---------------------|--------------|----------|
@@ -377,8 +377,8 @@ $app->setCustomCompressorLibraryPath(__DIR__ . '/bin/libcompressor.so');
 // Use extreme compression with Gzip
 $app->compression(Compressor::LEVEL_EXTREME, true);
 
-// esbuild is enabled by default, but you can disable it:
-// $app->disableMinificationWithEsbuild();
+// The fast in-process C++ JS minifier is the default. Opt into esbuild for more aggressive minification:
+// $app->useEsbuildForJsMinification();
 
 $app->run();
 ```

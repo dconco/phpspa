@@ -264,14 +264,41 @@ interface ApplicationContract {
     public function setGeneratedCacheDirectory(string $path): self;
 
     /**
-     * Disables esbuild for JS minification. When called, the application will use the default C++ minification method instead of esbuild for JavaScript assets.
-     * Disable this if you want want a faster compression time and are okay with less aggressive minification, or if you encounter any issues with esbuild minification in your environment.
-     * The default C++ and PHP minification for JS isn't good yet, so it's recommended to keep esbuild enabled for production use until the native compressor's JS minification is improved in a future release.
-     * 
-     * @since v2.0.9
+     * Enables esbuild for JavaScript minification. By default the application uses the fast in-process C++ JS minifier, which spawns no external process. Call this to opt into esbuild instead for more aggressive, AST-accurate minification of JavaScript assets.
+     * esbuild runs as an external process on asset (re)generation (cache-miss), not on every request, and falls back to the C++ minifier if the esbuild process fails or times out.
+     * Enable this if you want the most aggressive minification and have esbuild available in your environment; otherwise the default C++ minifier is recommended for its zero-process speed.
+     *
+     * @since v2.1.0
      * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
      */
-    public function disableMinificationWithEsbuild(): self;
+    public function useEsbuildForJsMinification(): self;
+
+    /**
+     * Enables the Oxc (Rust) in-process JavaScript minifier. Oxc is the recommended
+     * high-performance engine: AST-accurate (maximum minification, won't silently
+     * corrupt JS) and in-process (no subprocess, unlike esbuild), making it ideal
+     * for high-concurrency production traffic.
+     *
+     * Oxc is OPT-IN. It loads either from `ffi.preload` (preferred, FFI_SCOPE=
+     * "phpspa_oxc" — see examples/phpspa_oxc.h) or, when not preloaded, dynamically
+     * via `FFI::cdef` from the path set with `setCustomOxcLibraryPath()`.
+     * If Oxc is enabled but unavailable (not preloaded, no library path, FFI
+     * disabled), it degrades to the PHP minifier — it NEVER falls back to the C++
+     * minifier (that is esbuild's behaviour). Call `forceNativeCompression()` to
+     * make an unavailable Oxc throw instead of degrading to PHP. A developer's own
+     * invalid JS is returned as a visible console error, not thrown.
+     *
+     * Priority: Oxc takes precedence over every other engine when enabled. If both
+     * Oxc and esbuild are enabled, Oxc wins when it is actually preloaded/available,
+     * otherwise esbuild handles the request. `forceNativeCompression()` does not
+     * disable Oxc — it makes an unavailable Oxc throw instead of degrading to PHP.
+     *
+     * Applies only to JavaScript — HTML and CSS always use the native C++ compressor.
+     *
+     * @since v2.1.0
+     * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
+     */
+    public function useOxcForJsMinification(): self;
 
     /**
      * Sets a custom path for the native compressor shared library.
@@ -287,6 +314,23 @@ interface ApplicationContract {
      * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
      */
     public function setCustomCompressorLibraryPath(string $path): self;
+
+    /**
+     * Sets a custom path for the Oxc JS minifier shared library.
+     *
+     * Sets the `PHPSPA_OXC_LIB` environment variable to an absolute path of the Oxc
+     * shared library (liboxc_php_minifier.so / oxc_php_minifier.dll /
+     * liboxc_php_minifier.dylib). This path is used when Oxc is NOT preloaded: the
+     * library is then loaded dynamically with `FFI::cdef` from here, instead of the
+     * preloaded `phpspa_oxc` FFI scope. Preloading remains the faster option; use
+     * this when you prefer a direct dynamic load over editing `ffi.preload`.
+     *
+     * @param string $path Absolute path to the Oxc shared library.
+     * @return self
+     * @since v2.1.0
+     * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
+     */
+    public function setCustomOxcLibraryPath(string $path): self;
 
     /**
      * Forces the application to use native (C++) compression instead of the default PHP minification.

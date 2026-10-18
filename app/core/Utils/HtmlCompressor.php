@@ -7,6 +7,8 @@ use function is_string;
 use RuntimeException;
 use PhpSPA\Compression\Compressor;
 use PhpSPA\Core\Compression\NativeCompressor;
+use PhpSPA\Core\Compression\CppCompressor;
+use PhpSPA\Core\Compression\OxcCompressor;
 
 /**
  * HTML Compression Utility
@@ -111,13 +113,18 @@ trait HtmlCompressor
     * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @param int $level Compression level
     * @param string $scope Compression scope enum['GLOBAL', 'SCOPED']
-    * @param bool $useEsbuild Whether to use esbuild for JavaScript processing
+    * @param string $engine JS minification engine enum['native', 'esbuild', 'oxc']
     * @param int $disableLogs Flag to disable logging
     * @return string Minified HTML
     */
-   private static function minify(string $content, $type, int $level, string $scope = 'global', bool $useEsbuild = false, int $disableLogs = 0): string
+   private static function minify(string $content, $type, int $level, string $scope = 'global', string $engine = 'native', int $disableLogs = 0): string
    {
       if ($level === Compressor::LEVEL_NONE) return $content;
+
+      // Oxc is a JS-only engine; for HTML/CSS (or when Oxc isn't the selected
+      // engine) the request uses the C++/esbuild native path. Normalise here so
+      // the single native decision below is engine-aware.
+      $engine = ($engine === 'oxc' && $type !== 'JS') ? 'native' : $engine;
 
       $preservedBlocks = null;
       if ($type === 'HTML') {
@@ -128,8 +135,14 @@ trait HtmlCompressor
          $level = self::detectOptimalLevel($content);
       }
 
-      if (self::isNativeCompressorAvailable()) {
-         $result = self::compressWithNative($content, $level, $type, $scope, $useEsbuild, $disableLogs);
+      // Single base decision: is a native engine available for THIS engine choice?
+      //   - available              -> compressWithNative() picks C++ / esbuild / Oxc.
+      //   - unavailable + forced    -> isNativeCompressorAvailable() throws.
+      //   - unavailable otherwise   -> PHP fallback.
+      // Oxc never falls back to C++: when Oxc is the engine, the native path below
+      // calls Oxc directly, and the PHP branch here is its only non-forced fallback.
+      if (self::isNativeCompressorAvailable($engine)) {
+         $result = self::compressWithNative($content, $level, $type, $scope, $engine, $disableLogs);
       } else {
          // Fallback to PHP implementation
          $result = self::compressWithFallback($content, $level, $type, $scope);
@@ -178,25 +191,75 @@ trait HtmlCompressor
       return $placeholderMap === [] ? $html : strtr($html, $placeholderMap);
    }
 
-   private static function isNativeCompressorAvailable(): bool
+   /**
+    * Pick the concrete native engine class for this engine choice.
+    *
+    * Both returned classes implement {@see NativeCompressor}. Oxc is selected
+    * only when it is the requested engine AND actually available (preloaded);
+    * everything else — including the esbuild path, which lives inside the C++
+    * library — uses {@see CppCompressor}. This is the single point where
+    * HtmlCompressor decides "which native".
+    *
+    * @param string $engine enum['native', 'esbuild', 'oxc']
+    * @return class-string<NativeCompressor>
+    */
+   private static function resolveNativeCompressor(string $engine): string
+   {
+      if ($engine === 'oxc' && OxcCompressor::isAvailable()) {
+         return OxcCompressor::class;
+      }
+
+      return CppCompressor::class;
+   }
+
+   /**
+    * Whether a native engine is available for this request's engine choice.
+    *
+    * Oxc never falls back to C++: when Oxc is the selected engine it is either
+    * available (used), or — per strategy — this throws (forced) or returns false
+    * so the caller degrades to the PHP minifier. The C++/esbuild path keeps its
+    * existing behaviour.
+    *
+    * @param string $engine enum['native', 'esbuild', 'oxc']
+    */
+   private static function isNativeCompressorAvailable(string $engine = 'native'): bool
    {
       $strategy = self::compressionStrategy();
 
+      // The concrete engine that would actually run. For 'oxc' this is
+      // OxcCompressor only when it's available; otherwise CppCompressor — but a
+      // selected-but-unavailable Oxc must NOT silently become C++, so handle it
+      // explicitly here rather than letting the resolver swap it.
+      if ($engine === 'oxc' && !OxcCompressor::isAvailable()) {
+         if ($strategy === 'native') {
+            $details = OxcCompressor::getLastError();
+            $suffix = $details ? ' (' . $details . ')' : '';
+            throw new RuntimeException('Oxc minifier is required but unavailable' . $suffix . '.');
+         }
+
+         // Not forced: degrade to PHP (NOT C++).
+         self::setCompressionEngine('php');
+         self::emitEngineHeader();
+         return false;
+      }
+
+      $compressor = self::resolveNativeCompressor($engine);
+
       if ($strategy !== 'fallback') {
-         if (NativeCompressor::isAvailable()) {
+         if ($compressor::isAvailable()) {
                try {
                   self::setCompressionEngine('native');
                   self::emitEngineHeader();
                   return true;
                } catch (\Throwable $exception) {
                   if ($strategy === 'native') {
-                     $details = NativeCompressor::getLastError();
+                     $details = $compressor::getLastError();
                      $suffix = $details ? ' (' . $details . ')' : '';
                      throw new RuntimeException('Native compressor is required but failed to execute' . $suffix . '.', 0, $exception);
                   }
                };
          } elseif ($strategy === 'native') {
-            $details = NativeCompressor::getLastError();
+            $details = $compressor::getLastError();
             $suffix = $details ? ' (' . $details . ')' : '';
             throw new RuntimeException('Native compressor is required but unavailable' . $suffix . '.');
          }
@@ -208,9 +271,13 @@ trait HtmlCompressor
    }
 
    /**
-    * Compress using the native shared library via FFI
+    * Compress using a native engine via FFI. The concrete engine (C++ / esbuild
+    * / Oxc) is chosen by {@see resolveNativeCompressor()} and invoked through the
+    * shared {@see NativeCompressor} contract.
+    *
+    * @param string $engine enum['native', 'esbuild', 'oxc']
     */
-   private static function compressWithNative(string $html, int $level, string $type, string $scope, bool $useEsbuild, int $disableLogs): string
+   private static function compressWithNative(string $html, int $level, string $type, string $scope, string $engine, int $disableLogs): string
    {
 		$nativeLevel = match ($level) {
          Compressor::LEVEL_AGGRESSIVE => 2,
@@ -218,7 +285,10 @@ trait HtmlCompressor
          default => 1,
       };
 
-      return NativeCompressor::compress($html, $nativeLevel, $type, $scope, $useEsbuild, $disableLogs);
+      $compressor = self::resolveNativeCompressor($engine);
+      $useEsbuild = ($engine === 'esbuild');
+
+      return $compressor::compress($html, $nativeLevel, $type, $scope, $useEsbuild, $disableLogs);
    }
 
    /**
@@ -385,7 +455,7 @@ trait HtmlCompressor
       if (self::getLevel() === Compressor::LEVEL_NONE) return $content;
 
       // Apply minification based on compression level
-      return self::minify($content, 'HTML', Compressor::LEVEL_EXTREME, 'global', false, $disableLogs);
+      return self::minify($content, 'HTML', Compressor::LEVEL_EXTREME, 'global', 'native', $disableLogs);
    }
 
 
@@ -429,13 +499,13 @@ trait HtmlCompressor
     * @param int $level Compression level
     * @param string $type Content type enum['HTML', 'JS', 'CSS']
     * @param string $scope Compression scope enum['GLOBAL', 'SCOPED']
-    * @param bool $useEsbuild Use esbuild for minification
+    * @param string $engine JS minification engine enum['native', 'esbuild', 'oxc']
     * @param int $disableLogs Flag to disable logging
     * @return string Compressed content
     */
-   public static function compressWithLevel(string $content, int $level, string $type = 'HTML', string $scope = 'global', bool $useEsbuild = false, int $disableLogs = 0): string
+   public static function compressWithLevel(string $content, int $level, string $type = 'HTML', string $scope = 'global', string $engine = 'native', int $disableLogs = 0): string
    {
-      return self::minify($content, $type, $level, $scope, $useEsbuild, $disableLogs);
+      return self::minify($content, $type, $level, $scope, $engine, $disableLogs);
    }
 
    public static function getCompressionEngine(): string
