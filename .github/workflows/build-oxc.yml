@@ -4,6 +4,8 @@ permissions:
   contents: write
 
 on:
+  push:
+    branches: [build_oxc]
   workflow_dispatch:
   release:
     types: [published]
