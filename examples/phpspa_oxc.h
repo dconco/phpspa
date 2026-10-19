@@ -8,7 +8,7 @@
 //   1. Preloaded under this FFI_SCOPE via ffi.preload (preferred — the library
 //      is already in shared OPcache memory, no per-request load).
 //   2. If NOT preloaded, dynamically via FFI::cdef from the path set with
-//      $app->setCustomOxcLibraryPath('/abs/path/to/lib') (or PHPSPA_OXC_LIB).
+//      $app->setOxcLibraryPath('/abs/path/to/lib') (or PHPSPA_OXC_LIB).
 // When Oxc is enabled but neither is available it degrades to the PHP minifier
 // (never C++); forceNativeCompression() makes it throw instead.
 //

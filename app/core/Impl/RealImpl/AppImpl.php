@@ -254,7 +254,7 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
-   public function setCustomOxcLibraryPath(string $path): ApplicationContract
+   public function setOxcLibraryPath(string $path): ApplicationContract
    {
       putenv("PHPSPA_OXC_LIB=$path");
       return $this;
@@ -375,6 +375,19 @@ abstract class AppImpl implements ApplicationContract {
 
    public function useEsbuildForJsMinification(): ApplicationContract {
       $this->useEsbuild = true; return $this;
+   }
+
+   /**
+    * @deprecated Since v2.1.0. No-op — esbuild is no longer the default engine, so
+    *             there is nothing to disable. Opt INTO esbuild with
+    *             {@see useEsbuildForJsMinification()} instead. Will be removed in a
+    *             future version.
+    */
+   public function disableMinificationWithEsbuild(): ApplicationContract {
+      // Intentionally does nothing. Back when esbuild was the default JS engine
+      // this turned it off; now C++ is the default (esbuild is opt-in), so the
+      // "disabled" state is already the default and this call has no effect.
+      return $this;
    }
 
    public function useOxcForJsMinification(): ApplicationContract {

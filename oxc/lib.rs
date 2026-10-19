@@ -8,13 +8,19 @@
 //!                        inside is fair game to mangle.
 //!
 //! Level maps phpspa's compression levels (the `nativeLevel` the PHP side sends):
-//!   - 1 = BASIC      -> baseline minify. Mangle exactly as it was first shipped
-//!                       (global: none, scoped: default). Comments left to codegen.
-//!   - 2 = AGGRESSIVE -> BASIC + strip ALL comments.
-//!   - 3 = EXTREME    -> strip ALL comments + mangle as hard as Oxc allows in BOTH
-//!                       scopes (global still keeps its TOP-LEVEL names, but inner
-//!                       scopes are mangled; scoped mangles everything) + the
-//!                       smallest CompressOptions.
+//!   - 1 = BASIC      -> light output: codegen `minify: false`, so whitespace is
+//!                       trimmed lightly and COMMENTS ARE KEPT. Mangle as first
+//!                       shipped (global: none, scoped: default).
+//!   - 2 = AGGRESSIVE -> codegen `minify: true` -> strips ALL whitespace AND
+//!                       comments. Same mangle policy as BASIC.
+//!   - 3 = EXTREME    -> `minify: true` (whitespace + comments) + mangle as hard
+//!                       as Oxc allows in BOTH scopes (global still keeps its
+//!                       TOP-LEVEL names, but inner scopes are mangled; scoped
+//!                       mangles everything) + the smallest CompressOptions.
+//!
+//! The per-level lever is the codegen `minify` flag: it strips BOTH whitespace
+//! and comments, so forcing it on at every level (the previous behaviour) made
+//! all three levels produce identical output. It is now gated by level.
 //!
 //! No fallback: a parse error (the developer's broken JS) is returned as
 //! `__OXC_ERROR__<message>` so the caller can serve it verbatim as the JS body;
@@ -24,7 +30,7 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
 
 use oxc_allocator::Allocator;
-use oxc_codegen::{Codegen, CodegenOptions, CommentOptions};
+use oxc_codegen::{Codegen, CodegenOptions};
 use oxc_minifier::{
 	CompressOptions, MangleOptions, MangleOptionsKeepNames, Minifier, MinifierOptions,
 };
@@ -120,9 +126,6 @@ pub extern "C" fn oxc_minify(
 	};
 	let scoped = scope_str.eq_ignore_ascii_case("scoped");
 
-	// Comments: stripped for AGGRESSIVE and EXTREME; left to codegen for BASIC.
-	let strip_comments = level == LEVEL_AGGRESSIVE || level == LEVEL_EXTREME;
-
 	let allocator = Allocator::default();
 	// Plain browser script semantics, NOT a module — matches esbuild's
 	// --platform=browser. Module mode (mjs) would force strict mode and change
@@ -144,11 +147,19 @@ pub extern "C" fn oxc_minify(
 
 	let mut program = ret.program;
 
+	// Human-readable level name for the log line below.
+	let level_name = match level {
+		LEVEL_BASIC => "BASIC",
+		LEVEL_AGGRESSIVE => "AGGRESSIVE",
+		LEVEL_EXTREME => "EXTREME",
+		_ => "UNKNOWN",
+	};
+
 	// 2. Compress. Mangle policy is scope + level dependent (see mangle_options).
 	//    CompressOptions::smallest() is the hardest Oxc offers and is used at
-	//    every level — the per-level difference is mangling + comments, matching
-	//    phpspa's "basic keeps it as-is, aggressive strips comments, extreme
-	//    does everything" contract.
+	//    every level — the per-level difference is mangling + whitespace/comments
+	//    (the codegen `minify` flag below), matching phpspa's "basic keeps it
+	//    light, aggressive strips whitespace+comments, extreme also mangles".
 	let options = MinifierOptions {
 		mangle: mangle_options(scoped, level),
 		mangle_properties: None,
@@ -156,20 +167,33 @@ pub extern "C" fn oxc_minify(
 	};
 	Minifier::new(options).minify(&allocator, &mut program);
 
-	// 3. Print minified code. `minify: true` removes whitespace; comments are
-	//    removed by codegen when stripping, otherwise left to its default (only
-	//    some leading comments survive — which is the current BASIC behaviour).
-	let mut codegen_options = CodegenOptions {
-		minify: true,
+	// 3. Print. The codegen `minify` flag is THE per-level whitespace/comment
+	//    lever — `minify: true` strips BOTH whitespace and comments, so turning
+	//    it on at every level is what made BASIC/AGGRESSIVE/EXTREME look
+	//    identical. Gate it by level instead:
+	//      - BASIC      -> minify: false  (light output, comments kept)
+	//      - AGGRESSIVE -> minify: true   (whitespace + comments stripped)
+	//      - EXTREME    -> minify: true   (stripped + the mangling above)
+	let full_minify = level == LEVEL_AGGRESSIVE || level == LEVEL_EXTREME;
+	let codegen_options = CodegenOptions {
+		minify: full_minify,
 		..CodegenOptions::default()
 	};
-	if strip_comments {
-		codegen_options.comments = CommentOptions::disabled();
-	}
 	let mut minified = Codegen::new()
 		.with_options(codegen_options)
 		.build(&program)
 		.code;
+
+	// Report to stderr what level/scope actually ran. PHP's FFI inherits this
+	// process's stderr, so the line shows up in the PHP error log — the log the
+	// caller asked the Rust side to emit, confirming the level is not stuck.
+	eprintln!(
+		"[phpspa_oxc] minified scope={} level={} (minify={}, mangle={})",
+		if scoped { "scoped" } else { "global" },
+		level_name,
+		full_minify,
+		mangle_options(scoped, level).is_some(),
+	);
 
 	// 4. Scoped scripts are sealed in an IIFE so their locals never leak into
 	//    the global namespace — the same guarantee esbuild's --format=iife gives.

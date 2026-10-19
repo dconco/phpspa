@@ -1,10 +1,10 @@
 # CHANGELOG
 
-## v2.0.15 (Stable) (Latest) (PHP 8.4)
+## dev-support/php-8.4 (PHP 8.4) (v2.1.0)
 
 **Installation:**
 ```bash
-composer require dconco/phpspa:v2.0.15
+composer require dconco/phpspa:dev-support/php-8.4
 ```
 
 ### ✨ New Features
@@ -36,7 +36,24 @@ composer require dconco/phpspa:v2.0.15
 
 **Documentation:** [routing/advanced-routing#literal-prefixes-and-suffixes](https://phpspa.tech/routing/advanced-routing/#literal-prefixes-and-suffixes)
 
+#### **Selectable JavaScript Minification Engines (C++ default, Oxc, esbuild)**
+
+- JavaScript minification now routes through a pluggable native engine behind a shared `NativeCompressor` interface, with two concrete engines (`CppCompressor`, `OxcCompressor`) that `HtmlCompressor` selects between:
+  - **C++ (default)** — the fast in-process minifier. No configuration required; used unless another engine is opted into.
+  - **Oxc** — `useOxcForJsMinification()`. A Rust/Oxc-based minifier, milliseconds per run (vs esbuild's seconds). The shared library is **not** shipped with the package: enable it by either adding `phpspa_oxc.h` to your `ffi.preload` INI, **or** calling `setOxcLibraryPath('/path/to/oxc_php_minifier.{so,dll,dylib}')` for a dynamic `FFI::cdef` load. If Oxc is enabled but neither is provided, compression degrades to the PHP minifier (or throws under `forceNativeCompression()`) — it never silently falls back to C++.
+  - **esbuild** — `useEsbuildForJsMinification()`, opt-in (no longer the default).
+- Engine selection priority when multiple are enabled: Oxc (only when actually available) → esbuild → C++.
+- Oxc honours the compression level: **BASIC** runs the base options, **AGGRESSIVE** adds full comment stripping, **EXTREME** also mangles symbols (global scope preserves top-level names while mangling inner-scope locals, with the UMD `exports`/`module` names reserved; component scope mangles fully and IIFE-wraps).
+
+**Documentation:** [performance/html-compression](https://phpspa.tech/performance/html-compression/)
+
 ### ⚡ Performance
+
+#### **BASIC-level no-op skip for CSS and C++ JS**
+
+- At `LEVEL_BASIC`, CSS minification is a no-op in every engine (both the C++ `minifyCSS` and the PHP fallback bail out below `AGGRESSIVE`), and C++ JS minification is skipped on the C++/PHP path. `HtmlCompressor::minify()` now short-circuits these cases **before** the FFI boundary, returning the content verbatim with the engine header set to `disabled` — so no-op assets never pay the native-call cost. esbuild and an available Oxc still run at BASIC, since they do meaningful work there.
+
+
 
 #### **Per-request Asset Resolve Memoization**
 
@@ -45,6 +62,10 @@ composer require dconco/phpspa:v2.0.15
 #### **Scope-id Fast Skip for Non-owning Apps**
 
 - When multiple `App` instances share a request lifecycle, an `App` that does not own a scoped global asset (`__global__:<id>` mismatch) now bails out of the serve path in O(1) instead of walking its own asset resolution.
+
+### ⚠️ Deprecations
+
+- **`disableMinificationWithEsbuild()` is deprecated and is now a no-op.** In earlier versions esbuild was the default JavaScript minifier and this method turned it off. The default is now the fast in-process **C++** minifier (esbuild is opt-in via `useEsbuildForJsMinification()`), so there is nothing left to disable — the method does nothing and simply returns `$this`. It is kept only so existing code keeps working (calling it is **not** a fatal error) and **will be removed in a future version**. Migrate by deleting the call; to use esbuild, opt in explicitly with `useEsbuildForJsMinification()`.
 
 ### 🐛 Bug Fixes
 
@@ -71,7 +92,7 @@ composer require dconco/phpspa:v2.0.15
 
 
 
-## v2.0.14 (Stable) (PHP 8.4)
+## v2.0.14 (Stable) (Latest) (PHP 8.4)
 
 **Installation:**
 ```bash

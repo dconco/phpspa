@@ -274,6 +274,22 @@ interface ApplicationContract {
     public function useEsbuildForJsMinification(): self;
 
     /**
+     * Disables esbuild for JavaScript minification.
+     *
+     * @deprecated Since v2.1.0. This method is a no-op and does nothing. In earlier
+     *             versions esbuild was the default JS engine and this turned it off;
+     *             now the fast in-process C++ minifier is the default and esbuild is
+     *             opt-in, so there is nothing to disable. It is kept only so existing
+     *             code keeps working, and it WILL BE REMOVED in a future version.
+     *             To use esbuild, opt in with {@see useEsbuildForJsMinification()}.
+     *
+     * @see useEsbuildForJsMinification()
+     * @since v2.1.0
+     * @return self
+     */
+    public function disableMinificationWithEsbuild(): self;
+
+    /**
      * Enables the Oxc (Rust) in-process JavaScript minifier. Oxc is the recommended
      * high-performance engine: AST-accurate (maximum minification, won't silently
      * corrupt JS) and in-process (no subprocess, unlike esbuild), making it ideal
@@ -281,7 +297,7 @@ interface ApplicationContract {
      *
      * Oxc is OPT-IN. It loads either from `ffi.preload` (preferred, FFI_SCOPE=
      * "phpspa_oxc" — see examples/phpspa_oxc.h) or, when not preloaded, dynamically
-     * via `FFI::cdef` from the path set with `setCustomOxcLibraryPath()`.
+     * via `FFI::cdef` from the path set with `setOxcLibraryPath()`.
      * If Oxc is enabled but unavailable (not preloaded, no library path, FFI
      * disabled), it degrades to the PHP minifier — it NEVER falls back to the C++
      * minifier (that is esbuild's behaviour). Call `forceNativeCompression()` to
@@ -316,21 +332,26 @@ interface ApplicationContract {
     public function setCustomCompressorLibraryPath(string $path): self;
 
     /**
-     * Sets a custom path for the Oxc JS minifier shared library.
+     * Sets the path for the Oxc JS minifier shared library.
      *
      * Sets the `PHPSPA_OXC_LIB` environment variable to an absolute path of the Oxc
      * shared library (liboxc_php_minifier.so / oxc_php_minifier.dll /
-     * liboxc_php_minifier.dylib). This path is used when Oxc is NOT preloaded: the
-     * library is then loaded dynamically with `FFI::cdef` from here, instead of the
-     * preloaded `phpspa_oxc` FFI scope. Preloading remains the faster option; use
-     * this when you prefer a direct dynamic load over editing `ffi.preload`.
+     * liboxc_php_minifier.dylib). The library is then loaded dynamically with
+     * `FFI::cdef` from here, instead of the preloaded `phpspa_oxc` FFI scope.
+     *
+     * When Oxc is enabled via {@see useOxcForJsMinification()}, you MUST provide the
+     * library one of two ways: preload it in `ffi.preload` (FFI_SCOPE "phpspa_oxc"),
+     * or set this path. Preloading is the faster option; use this when you prefer a
+     * direct dynamic load over editing `ffi.preload`. With neither, Oxc is
+     * unavailable and degrades to the PHP minifier (or throws under
+     * {@see forceNativeCompression()}).
      *
      * @param string $path Absolute path to the Oxc shared library.
      * @return self
      * @since v2.1.0
      * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
      */
-    public function setCustomOxcLibraryPath(string $path): self;
+    public function setOxcLibraryPath(string $path): self;
 
     /**
      * Forces the application to use native (C++) compression instead of the default PHP minification.
@@ -414,7 +435,7 @@ interface ApplicationContract {
      * as individual tags.
      *
      * @return self
-     * @since v2.0.15
+     * @since v2.1.0
      * @see https://phpspa.tech/performance/managing-styles-and-scripts/#combining-assets-per-component
      */
     public function combineAssetsPerComponent(): self;

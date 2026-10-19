@@ -12,8 +12,7 @@ namespace PhpSPA\Core\Compression;
  *   1. Preloaded under the `phpspa_oxc` FFI scope via `ffi.preload` (preferred —
  *      the library is already in shared OPcache memory, zero per-request load).
  *   2. Dynamically via `FFI::cdef` from the library path set with
- *      `setCustomOxcLibraryPath()` (or auto-resolved from the build dirs) when it
- *      is not preloaded.
+ *      `setOxcLibraryPath()` when it is not preloaded.
  *
  * Fallback policy (decided by the caller, {@see \PhpSPA\Core\Utils\HtmlCompressor}):
  *   - Oxc available              -> used.
@@ -42,9 +41,9 @@ final class OxcCompressor implements NativeCompressor
 
    /**
     * Env var pointing at the Oxc shared library file. Set via
-    * `setCustomOxcLibraryPath()`. Used when the library is NOT preloaded: Oxc is
-    * then loaded dynamically with `FFI::cdef` from this path (or an auto-resolved
-    * build path), mirroring {@see CppCompressor}.
+    * `setOxcLibraryPath()`. Used when the library is NOT preloaded: Oxc is
+    * then loaded dynamically with `FFI::cdef` from this path, mirroring
+    * {@see CppCompressor}.
     */
    private const string ENV_LIBRARY_PATH = 'PHPSPA_OXC_LIB';
 
@@ -64,8 +63,8 @@ final class OxcCompressor implements NativeCompressor
 
    /**
     * Whether the Oxc library is usable — either preloaded under the `phpspa_oxc`
-    * FFI scope, or dynamically loadable via `FFI::cdef` from a configured/auto
-    * path ({@see setCustomOxcLibraryPath}).
+    * FFI scope, or dynamically loadable via `FFI::cdef` from the configured
+    * path ({@see setOxcLibraryPath}).
     */
    public static function isAvailable(): bool
    {
@@ -172,7 +171,7 @@ final class OxcCompressor implements NativeCompressor
          self::$lastError =
             "Oxc minifier is not preloaded and no library was found. Either add "
             . "the Oxc header to ffi.preload (FFI_SCOPE=\"" . self::FFI_SCOPE . "\"), "
-            . "or set {$env} (via setCustomOxcLibraryPath()) to the Oxc shared library.";
+            . "or set {$env} (via setOxcLibraryPath()) to the Oxc shared library.";
          return false;
       }
 
@@ -196,7 +195,7 @@ final class OxcCompressor implements NativeCompressor
    /**
     * Resolve the Oxc shared library path for dynamic loading. The Oxc library is
     * NOT shipped with phpspa (unlike the C++ compressor) — the user downloads it
-    * from the release and points at it with `setCustomOxcLibraryPath()`. So this
+    * from the release and points at it with `setOxcLibraryPath()`. So this
     * uses ONLY the configured {@see ENV_LIBRARY_PATH}; there is no build-dir scan.
     */
    private static function resolveLibraryPath(int $disableLogs = 0): ?string

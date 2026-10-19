@@ -91,11 +91,15 @@ $app->compression(Compressor::LEVEL_EXTREME, true);
 
 !!! success "Compression Levels"
     There are several levels available, from basic to extreme:
-    
+
     - **`Compressor::LEVEL_NONE`**: No compression is applied
-    - **`Compressor::LEVEL_BASIC`**: Removes comments and basic whitespace
-    - **`Compressor::LEVEL_AGGRESSIVE`**: Performs more intense whitespace removal
-    - **`Compressor::LEVEL_EXTREME`**: Applies the most aggressive minification for the smallest possible file size
+    - **`Compressor::LEVEL_AUTO`**: Auto-detect a sensible level for the environment
+    - **`Compressor::LEVEL_BASIC`**: Whitespace removal with light minification; most comments are left untouched
+    - **`Compressor::LEVEL_AGGRESSIVE`**: Basic minification **plus full comment stripping**
+    - **`Compressor::LEVEL_EXTREME`**: Everything the engine can do — comment stripping **and** symbol mangling for the smallest possible output
+
+!!! info "Levels behave per-engine"
+    The level is a shared intent; each JS engine honours it in its own way. The three-tier behaviour above describes the **Oxc** engine precisely (see [JavaScript Minification Engines](#javascript-minification-engines)). The C++ and esbuild engines apply their own equivalent of each tier.
 
 ## Asset Caching Behavior
 
@@ -209,12 +213,15 @@ This ensures:
 - Variables and functions are properly isolated
 - Global scripts are not wrapped to allow other scripts (global and components) to reuse variables, functions and classes.
 
+!!! tip "Global scripts still get minified inside"
+    "Never wrapped" refers to the IIFE only. The global script's **body** is still minified — and with the Oxc engine at `LEVEL_EXTREME`, inner-scope functions/classes/variables are renamed to short names while the reusable **top-level** names are preserved. See [What each level does with Oxc](#oxc-minifier).
+
 ---
 
 ## ⚙️ Native Compressor Configuration { #native-compressor-configuration }
 
-!!! success "New in v2.0.9"
-    :material-new-box: Three new methods give you full control over the native compressor and esbuild behavior.
+!!! success "JavaScript engines"
+    :material-new-box: JavaScript is minified by the in-process **C++** engine by default. Opt into **Oxc** (`useOxcForJsMinification()`) or **esbuild** (`useEsbuildForJsMinification()`) — see [JavaScript Minification Engines](#javascript-minification-engines).
 
 ---
 
@@ -253,22 +260,20 @@ opcache.enable = 1
 
 ---
 
-### 🚀 JavaScript Minification with esbuild
+### 🚀 JavaScript Minification Engines { #javascript-minification-engines }
 
-Starting from **v2.0.9**, PhpSPA uses the professional [`esbuild`](https://esbuild.github.io/) bundler **by default** for JavaScript minification. Esbuild provides superior minification, bundling, and tree-shaking compared to the built-in C++/PHP minifier.
+PhpSPA can minify your JavaScript with one of **three** engines. By default it uses the fast, in-process **C++ minifier** — no external process, no extra download, no setup. The other two are opt-in.
 
-!!! info "Installing esbuild"
-    For best performance, install esbuild globally:
+| Engine | How it runs | Speed | Setup | Best for |
+|--------|-------------|-------|-------|----------|
+| **C++** (default) | In-process, bundled | Fast | None | Everyone — zero config |
+| **Oxc** | In-process via FFI (Rust) | ⚡ Fastest (milliseconds) | Download the release binary + point PhpSPA at it | Aggressive JS minification without a process-per-asset penalty |
+| **esbuild** | External Node process | Slow (seconds; slower as more processes spawn) | `npm i -g esbuild` | Bundling / tree-shaking when you specifically need esbuild |
 
-    ```bash
-    npm install --global esbuild
-    ```
+!!! warning "Breaking change"
+    In earlier versions esbuild was the **default**. It no longer is — **C++ is the default**. If you relied on esbuild-by-default you must now opt in explicitly with `useEsbuildForJsMinification()`. The old `disableMinificationWithEsbuild()` method is **deprecated** and is now a **no-op** (esbuild is no longer the default, so there is nothing to disable) — existing calls keep working but have no effect, and the method **will be removed in a future version**. Opt into esbuild with `useEsbuildForJsMinification()` instead.
 
-    If esbuild is not found globally, PhpSPA falls back to `npx` which will download it automatically (slower on first run).
-
-#### Disabling esbuild
-
-If you prefer faster compression time with less aggressive minification, or if you encounter issues with esbuild in your environment, you can disable it:
+#### Opting into esbuild
 
 ```php
 <?php
@@ -278,13 +283,102 @@ $app = new App($layout);
 $app->useEsbuildForJsMinification();
 ```
 
-!!! warning "Trade-off"
-    By default JavaScript is minified by the fast in-process C++ minifier (no external process). Calling `useEsbuildForJsMinification()` opts into esbuild for more aggressive, AST-accurate minification, at the cost of an external process on asset (re)generation. Use it when you want maximum JS compression and have esbuild available.
+!!! info "Installing esbuild"
+    ```bash
+    npm install --global esbuild
+    ```
+    If esbuild is not found globally, PhpSPA falls back to `npx`, which downloads it on first run (slower).
 
-| Minifier | Speed | Compression Quality | Tree-Shaking | Bundling |
-|----------|-------|---------------------|--------------|----------|
-| **esbuild** (default) | Fast | ⭐⭐⭐ Excellent | ✅ Yes | ✅ Yes |
-| **Built-in C++/PHP** | Faster | ⭐ Basic | ❌ No | ❌ No |
+!!! warning "esbuild is slow"
+    esbuild runs an **external process per asset**, so compression time is measured in **seconds**, not milliseconds, and degrades as more processes spawn. Prefer the C++ default or Oxc unless you specifically need esbuild's bundling/tree-shaking.
+
+---
+
+### ⚡ Oxc JavaScript Minifier { #oxc-minifier }
+
+[Oxc](https://oxc.rs/) is a Rust-based JavaScript toolchain. PhpSPA can load its minifier through FFI for **extremely fast** (millisecond) in-process minification — far faster than esbuild, with no process-per-asset penalty.
+
+!!! info "The Oxc library is not shipped with PhpSPA"
+    Unlike the C++ compressor (whose binary ships inside the package), the Oxc shared library is **not** bundled. You download the platform binary from the [GitHub Releases](https://github.com/dconco/phpspa/releases/latest) and point PhpSPA at it yourself.
+
+| Platform | Library File |
+|----------|-------------|
+| :fontawesome-brands-windows: Windows | `oxc_php_minifier.dll` |
+| :fontawesome-brands-linux: Linux | `liboxc_php_minifier.so` |
+| :fontawesome-brands-apple: macOS | `liboxc_php_minifier.dylib` |
+
+#### Enabling Oxc
+
+```php
+<?php
+use PhpSPA\App;
+
+$app = new App($layout);
+
+$app->useOxcForJsMinification()
+    ->setOxcLibraryPath('/absolute/path/to/oxc_php_minifier.dll');
+```
+
+Oxc loads in one of two ways:
+
+=== "Dynamic load (simplest)"
+
+    Point PhpSPA at the downloaded binary — no `php.ini` edit needed:
+
+    ```php
+    <?php
+    $app->useOxcForJsMinification()
+        ->setOxcLibraryPath(__DIR__ . '/bin/oxc_php_minifier.dll');
+    ```
+
+    Or via environment variable:
+
+    ```bash
+    export PHPSPA_OXC_LIB="/absolute/path/to/liboxc_php_minifier.so"
+    ```
+
+=== "Preload (fastest in production)"
+
+    Preload the library once at server startup via OPcache. Create `phpspa_oxc.h`:
+
+    ```c
+    #define FFI_LIB "/absolute/path/to/liboxc_php_minifier.so"
+    #define FFI_SCOPE "phpspa_oxc"
+
+    char* oxc_minify(const char* source, const char* scope, int level);
+    void oxc_free_string(char* ptr);
+    ```
+
+    Then in `php.ini`:
+
+    ```ini
+    ffi.enable = "preload"
+    ffi.preload = "/absolute/path/to/phpspa_oxc.h"
+    opcache.enable = 1
+    ```
+
+    Restart your web server afterwards. When preloaded, `setOxcLibraryPath()` is not required.
+
+#### What each level does with Oxc
+
+Oxc distinguishes **global** scripts (reused across the page, e.g. a UMD-wrapped loader) from **component (scoped)** scripts (wrapped in an IIFE):
+
+| Level | Global script | Component (scoped) script |
+|-------|---------------|---------------------------|
+| **`LEVEL_BASIC`** | Minified; top-level **and** inner names preserved; comments left as-is | Minified + IIFE-wrapped; comments left as-is |
+| **`LEVEL_AGGRESSIVE`** | Same as basic **+ all comments stripped** | Same as basic **+ all comments stripped** |
+| **`LEVEL_EXTREME`** | Comments stripped; **top-level names preserved** (so other scripts can still reference them) while **inner-scope functions/classes/variables are mangled** to short names | Comments stripped; **everything mangled** + IIFE-wrapped |
+
+!!! tip "Why top-level names survive in global scripts"
+    Global scripts expose functions, classes and variables that your page and your component scripts reference by name. Oxc keeps those top-level names intact at every level, and reserves the UMD `exports`/`module` bindings, while still shrinking the code inside each function body at `LEVEL_EXTREME`.
+
+#### Oxc fallback behaviour
+
+!!! info "Oxc degrades to PHP, never to C++"
+    If Oxc is enabled but unavailable (not preloaded, no path set, or FFI disabled), PhpSPA falls back to the **PHP** minifier — not the C++ engine. The only exception is [`forceNativeCompression()`](#force-native-compression): with that enabled, an unavailable Oxc throws a `RuntimeException` instead of degrading.
+
+!!! note "Invalid JavaScript"
+    If a developer's JS fails to parse, Oxc does not throw and does not silently drop it — it returns a `console.error(...)` payload so the broken script is visible in the browser console and the page still loads.
 
 ---
 
@@ -326,9 +420,9 @@ You can specify an absolute path to the native compressor shared library. This i
 
 ---
 
-### 🔒 Force Native Compression
+### 🔒 Force Native Compression { #force-native-compression }
 
-By default, PhpSPA automatically falls back to PHP compression if the native library is unavailable. Use `forceNativeCompression()` to enforce native-only mode — the app will throw an exception if the library cannot be loaded.
+By default, PhpSPA falls back to the **PHP** minifier when a native engine is unavailable. `forceNativeCompression()` turns that fallback off: if the selected native engine (C++, esbuild, or Oxc) cannot run, the app throws a `RuntimeException` instead of degrading to PHP.
 
 ```php
 <?php
@@ -338,8 +432,14 @@ $app = new App($layout);
 $app->forceNativeCompression();
 ```
 
+!!! info "It controls the fallback policy, not the engine"
+    `forceNativeCompression()` does **not** pick an engine — it only says *"never fall back to PHP"*. It applies to whichever JS engine you selected:
+
+    - **C++ / esbuild** — a failure throws instead of dropping to PHP (esbuild still falls back to C++ first, since they share the same binary).
+    - **Oxc** — an unavailable Oxc throws instead of degrading to PHP. (Oxc never falls back to C++ in either mode.)
+
 !!! warning "Use with caution"
-    Only enable this in environments where you are certain the native library is available. If the library fails to load, your application will throw a `RuntimeException` instead of falling back to PHP compression.
+    Only enable this where you are certain the native engine is available. If it fails to load, your application throws instead of serving a PHP-minified page.
 
 === "Recommended: Production"
 
@@ -368,16 +468,22 @@ use PhpSPA\Compression\Compressor;
 
 $app = new App($layout);
 
-// Force native compression (no PHP fallback)
+// Never fall back to the PHP minifier — throw if a native engine fails
 $app->forceNativeCompression();
 
-// Point to a specific library build
+// Point to a specific C++ compressor build (optional)
 $app->setCustomCompressorLibraryPath(__DIR__ . '/bin/libcompressor.so');
 
 // Use extreme compression with Gzip
 $app->compression(Compressor::LEVEL_EXTREME, true);
 
-// The fast in-process C++ JS minifier is the default. Opt into esbuild for more aggressive minification:
+// JavaScript engine (choose ONE — C++ is the default if you call neither):
+//
+//   Oxc — fastest, in-process via FFI (download the release binary):
+// $app->useOxcForJsMinification()
+//     ->setOxcLibraryPath(__DIR__ . '/bin/oxc_php_minifier.so');
+//
+//   esbuild — external Node process, slower, adds bundling/tree-shaking:
 // $app->useEsbuildForJsMinification();
 
 $app->run();
@@ -389,7 +495,8 @@ $app->run();
     ```php
     <?php
     $app->forceNativeCompression()
-        ->setCustomCompressorLibraryPath('/path/to/lib.so')
+        ->useOxcForJsMinification()
+        ->setOxcLibraryPath(__DIR__ . '/bin/oxc_php_minifier.so')
         ->compression(Compressor::LEVEL_EXTREME, true)
         ->run();
     ```
