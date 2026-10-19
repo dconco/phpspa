@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [profile.release]
-opt-level = "z"     # Optimize for size ('s' or 'z')
+opt-level = 3       # Raw throughput / Execution speed
 lto = true          # Enable Link-Time Optimization
 codegen-units = 1   # Maximize LTO optimization across crates
 panic = "abort"     # Remove stack unwinding code
@@ -26,9 +26,3 @@ oxc_parser = "0.153"
 oxc_minifier = "0.153"
 oxc_codegen = "0.153"
 oxc_span = "0.153"
-
-# Release build tuned for a minifier called per request.
-[profile.release]
-opt-level = 3
-lto = true
-codegen-units = 1
