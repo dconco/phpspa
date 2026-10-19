@@ -44,6 +44,18 @@ jobs:
       - name: Build release cdylib
         run: cargo build --release
 
+      # compress windows dll with upx on linux only
+      - if: runner.os == 'Linux'
+        name: Install UPX
+        run: sudo apt-get update && sudo apt-get install -y upx
+
+      - if: runner.os == 'Linux'
+        name: Compress shared libraries with UPX
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            upx --best --lzma target/release/oxc_php_minifier.dll
+          fi
+
       - name: Upload shared library artifact
         uses: actions/upload-artifact@v4
         with:
