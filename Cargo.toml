@@ -3,6 +3,13 @@ name = "oxc_php_minifier"
 version = "0.1.0"
 edition = "2021"
 
+[profile.release]
+opt-level = "z"     # Optimize for size ('s' or 'z')
+lto = true          # Enable Link-Time Optimization
+codegen-units = 1   # Maximize LTO optimization across crates
+panic = "abort"     # Remove stack unwinding code
+strip = true        # Automatically strip symbols/debug info
+
 [lib]
 name = "oxc_php_minifier"
 crate-type = ["cdylib"]
