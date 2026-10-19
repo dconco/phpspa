@@ -369,7 +369,7 @@ trait HtmlCompressor
      * @return string Compressed content
      */
    public static function applyBinaryCompression(
-      string $content,
+      string &$content,
       ?string $contentType = null,
    ): string {
       if (!self::$useGzip) {

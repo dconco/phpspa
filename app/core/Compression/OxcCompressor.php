@@ -82,17 +82,26 @@ final class OxcCompressor implements NativeCompressor
    /**
     * Minify JavaScript using the Oxc shared library.
     *
-    * Implements the shared {@see NativeCompressor} signature. Oxc is JS-only and
-    * single-level, so `$nativeLevel`, `$type` and `$useEsbuild` are accepted for
-    * interface compatibility but ignored — only `$content` and `$scope` drive the
-    * minification. `$disableLogs` is honoured (it gates the FFI load log lines).
+    * Implements the shared {@see NativeCompressor} signature. Oxc is JS-only, so
+    * `$type` and `$useEsbuild` are accepted for interface compatibility but
+    * ignored. `$nativeLevel` and `$scope` BOTH drive the minification:
+    *
+    *   level 1 (BASIC)      — baseline minify; global keeps all names, scoped
+    *                          mangles + IIFE. Comments left to codegen.
+    *   level 2 (AGGRESSIVE) — BASIC + strip ALL comments.
+    *   level 3 (EXTREME)    — strip ALL comments + mangle hardest Oxc allows:
+    *                          global keeps TOP-LEVEL names but mangles inner
+    *                          scopes (UMD `exports`/`module` reserved); scoped
+    *                          mangles everything.
+    *
+    * `$disableLogs` is honoured (it gates the FFI load log lines).
     *
     * @param string $content     JavaScript source
-    * @param int    $nativeLevel Ignored (Oxc is single-level)
+    * @param int    $nativeLevel Minify level: 1=basic, 2=aggressive, 3=extreme
     * @param string $type        Ignored (Oxc is JS-only; HtmlCompressor guarantees JS)
     * @param string $scope       Compression scope enum['global', 'scoped']
-    *                            - 'global' keeps identifier names
-    *                            - 'scoped' mangles names + wraps in an IIFE
+    *                            - 'global' keeps top-level names
+    *                            - 'scoped' mangles + wraps in an IIFE
     * @param bool   $useEsbuild  Ignored (Oxc is not esbuild-backed)
     * @param int    $disableLogs Log-suppression bit flags for the FFI load
     * @return string Minified JS, or Oxc's error body verbatim on a parse error
@@ -111,7 +120,7 @@ final class OxcCompressor implements NativeCompressor
       // upstream 'GLOBAL'/'SCOPED' still selects the right branch.
       $oxcScope = \strtolower($scope) === 'scoped' ? 'scoped' : 'global';
 
-      $resultPointer = self::invoke('oxc_minify', $content, $oxcScope);
+      $resultPointer = self::invoke('oxc_minify', $content, $oxcScope, $nativeLevel);
 
       // Null == hard FFI/allocation failure → throw (no fallback). A parse error
       // is NOT null; it comes back as a `__OXC_ERROR__…` string handled below.
@@ -211,7 +220,7 @@ final class OxcCompressor implements NativeCompressor
    private static function cDefinition(): string
    {
       return <<<'CDEF'
-char* oxc_minify(const char* source, const char* scope);
+char* oxc_minify(const char* source, const char* scope, int level);
 void oxc_free_string(char* ptr);
 CDEF;
    }
