@@ -117,7 +117,7 @@ After `randomizeAssetName()`: the label is gone and only the hash remains, so th
 
 ## Combining Assets Per Component
 
-By default, PhpSPA generates **one link per asset** — if a component attaches 6 stylesheets and 4 scripts, that's 10 separate asset URLs, and each one is compressed in its own request (its own esbuild/native-compressor invocation).
+By default, PhpSPA generates **one link per asset** — if a component attaches 6 stylesheets and 4 scripts, that's 10 separate asset URLs, and each one is compressed in its own request (its own native-compressor invocation).
 
 `combineAssetsPerComponent()` changes that. When enabled, PhpSPA **bundles all callable assets of the same kind into a single link**, so instead of N requests you get at most:
 
@@ -184,5 +184,5 @@ Assets are combined **by type**, so they can be merged into a single tag safely:
 !!! note "Auto-enables randomizeAssetName"
     A combined bundle has no single readable name, so `combineAssetsPerComponent()` automatically enables [`randomizeAssetName()`](#randomizing-asset-names) — combined links are hash-only.
 
-!!! info "Since v2.0.15"
+!!! info "Since v2.1.0"
     `combineAssetsPerComponent()` is chainable and returns the `App` instance. Component JavaScript bundles are still wrapped in an IIFE so component scope stays isolated across SPA navigation.

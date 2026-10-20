@@ -8,13 +8,26 @@
 //!                        inside is fair game to mangle.
 //!
 //! Level maps phpspa's compression levels (the `nativeLevel` the PHP side sends):
-//!   - 1 = BASIC      -> baseline minify. Mangle exactly as it was first shipped
-//!                       (global: none, scoped: default). Comments left to codegen.
-//!   - 2 = AGGRESSIVE -> BASIC + strip ALL comments.
-//!   - 3 = EXTREME    -> strip ALL comments + mangle as hard as Oxc allows in BOTH
-//!                       scopes (global still keeps its TOP-LEVEL names, but inner
-//!                       scopes are mangled; scoped mangles everything) + the
-//!                       smallest CompressOptions.
+//!   - 1 = BASIC      -> light output: codegen `minify: false` (whitespace only
+//!                       trimmed) and COMMENTS KEPT. Mangle as first shipped
+//!                       (global: none, scoped: default).
+//!   - 2 = AGGRESSIVE -> codegen `minify: true` (strips whitespace) + comments
+//!                       disabled via `CommentOptions::disabled()`. Same mangle
+//!                       policy as BASIC.
+//!   - 3 = EXTREME    -> `minify: true` + comments disabled + mangle as hard as
+//!                       Oxc allows in BOTH scopes (global still keeps its
+//!                       TOP-LEVEL names, but inner scopes are mangled; scoped
+//!                       mangles everything) + the smallest CompressOptions.
+//!
+//! Two INDEPENDENT codegen levers (verified against oxc 0.153 docs + the
+//! upstream `minifier.rs` example): the `minify` flag strips WHITESPACE only,
+//! and `CommentOptions` controls COMMENTS. The `minify` flag does NOT remove
+//! comments on its own — relying on it for that left comments in the output.
+//!
+//! The mangler writes renamed symbols into a `Scoping` table returned by
+//! `Minifier::minify`; that table is passed to codegen with `.with_scoping(...)`
+//! so the short names actually print. Dropping it (the earlier bug) ran the
+//! mangler but discarded its result, printing the original names.
 //!
 //! No fallback: a parse error (the developer's broken JS) is returned as
 //! `__OXC_ERROR__<message>` so the caller can serve it verbatim as the JS body;
@@ -74,7 +87,7 @@ fn mangle_options(scoped: bool, level: c_int) -> Option<MangleOptions> {
 			reserved: if scoped {
 				Default::default()
 			} else {
-				["exports", "module"].into_iter().map(Into::into).collect()
+				["module"].into_iter().map(Into::into).collect()
 			},
 			debug: false,
 		}),
@@ -120,9 +133,6 @@ pub extern "C" fn oxc_minify(
 	};
 	let scoped = scope_str.eq_ignore_ascii_case("scoped");
 
-	// Comments: stripped for AGGRESSIVE and EXTREME; left to codegen for BASIC.
-	let strip_comments = level == LEVEL_AGGRESSIVE || level == LEVEL_EXTREME;
-
 	let allocator = Allocator::default();
 	// Plain browser script semantics, NOT a module — matches esbuild's
 	// --platform=browser. Module mode (mjs) would force strict mode and change
@@ -144,32 +154,73 @@ pub extern "C" fn oxc_minify(
 
 	let mut program = ret.program;
 
+	// Human-readable level name for the log line below.
+	let level_name = match level {
+		LEVEL_BASIC => "BASIC",
+		LEVEL_AGGRESSIVE => "AGGRESSIVE",
+		LEVEL_EXTREME => "EXTREME",
+		_ => "UNKNOWN",
+	};
+
 	// 2. Compress. Mangle policy is scope + level dependent (see mangle_options).
 	//    CompressOptions::smallest() is the hardest Oxc offers and is used at
-	//    every level — the per-level difference is mangling + comments, matching
-	//    phpspa's "basic keeps it as-is, aggressive strips comments, extreme
-	//    does everything" contract.
+	//    every level — the per-level difference is mangling + whitespace/comments
+	//    (the codegen `minify` flag below), matching phpspa's "basic keeps it
+	//    light, aggressive strips whitespace+comments, extreme also mangles".
+	let mangle = mangle_options(scoped, level);
+	let mangled = mangle.is_some();
 	let options = MinifierOptions {
-		mangle: mangle_options(scoped, level),
+		mangle,
 		mangle_properties: None,
 		compress: Some(CompressOptions::smallest()),
 	};
-	Minifier::new(options).minify(&allocator, &mut program);
+	// CRITICAL: the Minifier computes the renamed-symbol table into `ret.scoping`.
+	// That table MUST be handed to Codegen via `.with_scoping(...)` below, or the
+	// mangled names are silently discarded and codegen prints the ORIGINAL names.
+	// (This was the bug: the return value was dropped, so mangle ran but never
+	// showed up in the output.)
+	let ret = Minifier::new(options).minify(&allocator, &mut program);
 
-	// 3. Print minified code. `minify: true` removes whitespace; comments are
-	//    removed by codegen when stripping, otherwise left to its default (only
-	//    some leading comments survive — which is the current BASIC behaviour).
-	let mut codegen_options = CodegenOptions {
-		minify: true,
+	// 3. Print. Two independent, per-level levers — verified against the oxc
+	//    0.153 codegen docs and the upstream `minifier.rs` example:
+	//      - `minify` flag          -> strips WHITESPACE only.
+	//      - `comments` option       -> strips COMMENTS (the `minify` flag does
+	//                                    NOT remove comments; `CommentOptions`
+	//                                    does). BASIC keeps comments; AGGRESSIVE
+	//                                    and EXTREME disable them.
+	//    Mapping:
+	//      - BASIC      -> minify: false, comments kept        (light output)
+	//      - AGGRESSIVE -> minify: true,  comments stripped
+	//      - EXTREME    -> minify: true,  comments stripped + mangling applied
+	let strip = level == LEVEL_AGGRESSIVE || level == LEVEL_EXTREME;
+	let codegen_options = CodegenOptions {
+		minify: strip,
+		comments: if strip {
+			CommentOptions::disabled()
+		} else {
+			CommentOptions::default()
+		},
 		..CodegenOptions::default()
 	};
-	if strip_comments {
-		codegen_options.comments = CommentOptions::disabled();
-	}
 	let mut minified = Codegen::new()
 		.with_options(codegen_options)
+		// Apply the mangler's renamed-symbol table so the short names actually
+		// appear in the printed source.
+		.with_scoping(ret.scoping)
 		.build(&program)
 		.code;
+
+	// Report to stderr what level/scope actually ran. PHP's FFI inherits this
+	// process's stderr, so the line shows up in the PHP error log — the log the
+	// caller asked the Rust side to emit, confirming the level is not stuck.
+	eprintln!(
+		"[phpspa_oxc] minified scope={} level={} (minify={}, comments_stripped={}, mangle={})",
+		if scoped { "scoped" } else { "global" },
+		level_name,
+		strip,
+		strip,
+		mangled,
+	);
 
 	// 4. Scoped scripts are sealed in an IIFE so their locals never leak into
 	//    the global namespace — the same guarantee esbuild's --format=iife gives.

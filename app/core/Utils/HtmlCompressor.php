@@ -135,6 +135,31 @@ trait HtmlCompressor
          $level = self::detectOptimalLevel($content);
       }
 
+      // BASIC is a no-op for CSS and for C++-minified JS, so skip those cases
+      // entirely instead of handing them to the native path (which would reach
+      // the C++ library only to copy the input back verbatim):
+      //
+      //   - CSS at BASIC: both the C++ minifyCSS() and the PHP fallback bail out
+      //     below AGGRESSIVE — CSS is never touched at BASIC by any engine, so
+      //     short-circuit regardless of engine.
+      //   - JS at BASIC: skip ONLY when the engine that would run is C++ (either
+      //     the resolved native engine is C++, or the native path is unavailable
+      //     and PHP fallback — also a BASIC JS no-op — would run). esbuild and an
+      //     available Oxc DO perform real work at BASIC, so they are never skipped.
+      //
+      // Nothing is minified in the skipped cases, so the honest engine header is
+      // 'disabled', matching LEVEL_NONE.
+      if ($level === Compressor::LEVEL_BASIC && self::isBasicNoOp($type, $engine)) {
+         self::setCompressionEngine('disabled');
+         self::emitEngineHeader();
+
+         if ($type === 'HTML' && \is_array($preservedBlocks) && $preservedBlocks !== []) {
+            $content = self::restorePreformattedBlocks($content, $preservedBlocks);
+         }
+
+         return $content;
+      }
+
       // Single base decision: is a native engine available for THIS engine choice?
       //   - available              -> compressWithNative() picks C++ / esbuild / Oxc.
       //   - unavailable + forced    -> isNativeCompressorAvailable() throws.
@@ -210,6 +235,46 @@ trait HtmlCompressor
       }
 
       return CppCompressor::class;
+   }
+
+   /**
+    * Whether compressing this content at LEVEL_BASIC would be a no-op, so the
+    * request can skip the native/fallback path entirely.
+    *
+    *   - CSS: always a no-op at BASIC. Both the C++ minifyCSS() and the PHP
+    *     fallback return early below AGGRESSIVE, so CSS is never minified at
+    *     BASIC by any engine.
+    *   - JS: a no-op at BASIC ONLY when the C++ engine would run it — i.e. the
+    *     resolved native engine is C++ (the C++ minifyJS BASIC pass is the
+    *     redundant work we skip), or the native path is unavailable so the PHP
+    *     fallback (also a BASIC JS no-op) would run. esbuild and an available
+    *     Oxc perform real work at BASIC and are therefore NOT skipped.
+    *   - HTML and anything else: never skipped here (HTML whitespace collapse
+    *     is meaningful at BASIC).
+    *
+    * @param string $type   Content type enum['HTML', 'JS', 'CSS']
+    * @param string $engine Resolved engine enum['native', 'esbuild', 'oxc']
+    */
+   private static function isBasicNoOp(string $type, string $engine): bool
+   {
+      if ($type === 'CSS') {
+         return true;
+      }
+
+      if ($type === 'JS') {
+         // esbuild always does real BASIC work; Oxc does when it's available.
+         // Everything else means the C++ (or PHP-fallback) path would run it —
+         // a BASIC JS no-op worth skipping.
+         if ($engine === 'esbuild') {
+            return false;
+         }
+         if ($engine === 'oxc' && OxcCompressor::isAvailable()) {
+            return false;
+         }
+         return true;
+      }
+
+      return false;
    }
 
    /**
@@ -369,7 +434,7 @@ trait HtmlCompressor
      * @return string Compressed content
      */
    public static function applyBinaryCompression(
-      string &$content,
+      string $content,
       ?string $contentType = null,
    ): string {
       if (!self::$useGzip) {

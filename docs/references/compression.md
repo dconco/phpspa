@@ -189,8 +189,13 @@ Check which compression engine handled your request:
 
 ```http
 X-PhpSPA-Compression-Engine: native
-X-PhpSPA-Compression-Level: 2
+X-PhpSPA-Compression-Level: 4
 ```
+
+!!! info "`native` covers all three JS engines"
+    The engine header reports `native`, `php`, or `disabled`. All three native JavaScript engines — the default **C++** minifier, **Oxc**, and **esbuild** — report as `native`; the header does not distinguish between them. `php` means a fallback to the PHP minifier, and `disabled` means compression was off.
+
+    To choose and configure the JavaScript engine, see the [JavaScript Minification Engines](../performance/html-compression.md#javascript-minification-engines) guide.
 
 ---
 
@@ -210,10 +215,17 @@ $app->compression(Compressor::LEVEL_AGGRESSIVE, true);
 
 | Level | Constant | Description |
 |-------|----------|-------------|
-| **0** | `LEVEL_DISABLED` | No compression |
-| **1** | `LEVEL_BASIC` | Remove comments only |
-| **2** | `LEVEL_AGGRESSIVE` | Basic + whitespace removal |
-| **3** | `LEVEL_EXTREME` | Aggressive + CSS/JS minification |
+| **0** | `LEVEL_NONE` | No compression |
+| **1** | `LEVEL_AUTO` | Auto-detect a sensible level for the environment |
+| **2** | `LEVEL_BASIC` | Whitespace removal with light minification; comments kept. **HTML and JS only — CSS is not minified at this level** |
+| **3** | `LEVEL_AGGRESSIVE` | Basic **+ full comment stripping**; CSS minification engages here |
+| **4** | `LEVEL_EXTREME` | Comment stripping **+ symbol mangling** — smallest output |
+
+!!! warning "`LEVEL_BASIC` skips CSS"
+    `LEVEL_BASIC` minifies **HTML and JavaScript** but leaves **CSS untouched** (served verbatim). CSS minification only engages from `LEVEL_AGGRESSIVE` up. This is intentional — set `LEVEL_AGGRESSIVE` or higher to minify CSS.
+
+!!! info "JS engines honour levels differently"
+    The table above is the shared intent. Each JavaScript engine (C++ default, Oxc, esbuild) applies its own equivalent per level — see the [JavaScript Minification Engines](../performance/html-compression.md#javascript-minification-engines) guide for the exact per-engine behaviour.
 
 ---
 

@@ -33,7 +33,7 @@ final class CppCompressor implements NativeCompressor
    {
       if (self::$available !== null) return self::$available;
 
-      return self::$available = self::initialize(disableLogs: DISABLE_LIBRARY_LOG | DISABLE_PRELOAD_LOG);
+      return self::$available = self::initialize(disableLogs: DISABLE_LIBRARY_LOG);
    }
 
    public static function getLastError(): ?string
@@ -99,6 +99,7 @@ final class CppCompressor implements NativeCompressor
       // Check if already preloaded into shared OPcache memory
       try {
          self::$ffi = \FFI::scope('phpspa_compressor');
+         if (!($disableLogs & DISABLE_LIBRARY_LOG)) error_log('Using preloaded native compressor (FFI scope "phpspa_compressor").');
          return true;
       } catch (\FFI\Exception $e) {
          if (!($disableLogs & DISABLE_PRELOAD_LOG)) error_log("phpspa_compressor isn't preloaded in PHP INI, falling back to loading directly from the shared library.");
