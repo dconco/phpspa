@@ -35,7 +35,6 @@ use PhpSPA\Interfaces\ApplicationContract;
  * @method ApplicationContract prefix(string $path, callable|string $handler) Prefix routes
  * @method ApplicationContract useModule() Enable this to prevent the application from adding the phpspa CDN script tag, allowing you to load it yourself with the phpspa js library `npm i @dconco/phpspa` and use it in your own custom way.
  * @method ApplicationContract useEsbuildForJsMinification() Opt into esbuild for JS minification (more aggressive, AST-accurate). Default is the fast in-process C++ JS minifier.
- * @method ApplicationContract disableMinificationWithEsbuild() No-op since v2.1.0 (esbuild is no longer the default, so nothing to disable); will be removed in a future version — use useEsbuildForJsMinification() to opt into esbuild.
  * @method ApplicationContract useOxcForJsMinification() Opt into the Oxc (Rust) in-process JS minifier — recommended high-performance engine. Preload-only (see examples/phpspa_oxc.h); takes priority over esbuild/native. No fallback.
  * @method ApplicationContract randomizeAssetName() Randomize asset names
  * @method ApplicationContract disableLogs(int $flags) Disable logging for the specified log types.
