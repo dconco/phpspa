@@ -1293,6 +1293,15 @@ abstract class AppImpl implements ApplicationContract {
       if (!empty($globalScripts) && !$isPhpSpaRequest) {
          $grouped = $groupAssets($globalScripts, 'type');
 
+         // External scripts (e.g. CDN links) MUST always come first, before the
+         // combined local bundle, so dependencies like jQuery load before the
+         // callable scripts that rely on them.
+         foreach ($grouped['external'] as $ext) {
+            $ext['src'] = $ext['content'];
+            unset($ext['name'], $ext['content']);
+            $result['global']['scripts'] .= "\n      <script " . HTMLAttrInArrayToString($ext) . "></script>";
+         }
+
          foreach ($grouped['groups'] as $type => $group) {
             $maxMtime = \max($group['mtimes']);
             $src = AssetLinkManager::generateCombinedJsLink($globalRoute, $group['indexes'], $maxMtime, $type);
@@ -1302,17 +1311,20 @@ abstract class AppImpl implements ApplicationContract {
             unset($attrs['name'], $attrs['content']);
             $result['global']['scripts'] .= "\n      <script " . HTMLAttrInArrayToString($attrs) . "></script>";
          }
-
-         foreach ($grouped['external'] as $ext) {
-            $ext['src'] = $ext['content'];
-            unset($ext['name'], $ext['content']);
-            $result['global']['scripts'] .= "\n      <script " . HTMLAttrInArrayToString($ext) . "></script>";
-         }
       }
 
       // --- Generate component script links (combined) ---
       if (!empty($scripts)) {
          $grouped = $groupAssets($scripts, 'type');
+
+         // External scripts (e.g. CDN links) MUST always come first, before the
+         // combined local bundle, so dependencies load before the callable
+         // scripts that rely on them.
+         foreach ($grouped['external'] as $ext) {
+            $ext['src'] = $ext['content'];
+            unset($ext['name'], $ext['content']);
+            $result['component']['scripts'] .= "\n      <script " . HTMLAttrInArrayToString($ext) . "></script>";
+         }
 
          foreach ($grouped['groups'] as $type => $group) {
             $maxMtime = \max($group['mtimes']);
@@ -1326,12 +1338,6 @@ abstract class AppImpl implements ApplicationContract {
                ? "\n      <script data-type=\"phpspa/script\" " . HTMLAttrInArrayToString($attrs) . "></script>"
                : "\n      <script " . HTMLAttrInArrayToString($attrs) . "></script>";
             $result['component']['scripts'] .= $tag;
-         }
-
-         foreach ($grouped['external'] as $ext) {
-            $ext['src'] = $ext['content'];
-            unset($ext['name'], $ext['content']);
-            $result['component']['scripts'] .= "\n      <script " . HTMLAttrInArrayToString($ext) . "></script>";
          }
       }
 
