@@ -217,9 +217,12 @@ $app->compression(Compressor::LEVEL_AGGRESSIVE, true);
 |-------|----------|-------------|
 | **0** | `LEVEL_NONE` | No compression |
 | **1** | `LEVEL_AUTO` | Auto-detect a sensible level for the environment |
-| **2** | `LEVEL_BASIC` | Whitespace removal with light minification; most comments kept |
-| **3** | `LEVEL_AGGRESSIVE` | Basic **+ full comment stripping** |
+| **2** | `LEVEL_BASIC` | Whitespace removal with light minification; comments kept. **HTML and JS only — CSS is not minified at this level** |
+| **3** | `LEVEL_AGGRESSIVE` | Basic **+ full comment stripping**; CSS minification engages here |
 | **4** | `LEVEL_EXTREME` | Comment stripping **+ symbol mangling** — smallest output |
+
+!!! warning "`LEVEL_BASIC` skips CSS"
+    `LEVEL_BASIC` minifies **HTML and JavaScript** but leaves **CSS untouched** (served verbatim). CSS minification only engages from `LEVEL_AGGRESSIVE` up. This is intentional — set `LEVEL_AGGRESSIVE` or higher to minify CSS.
 
 !!! info "JS engines honour levels differently"
     The table above is the shared intent. Each JavaScript engine (C++ default, Oxc, esbuild) applies its own equivalent per level — see the [JavaScript Minification Engines](../performance/html-compression.md#javascript-minification-engines) guide for the exact per-engine behaviour.

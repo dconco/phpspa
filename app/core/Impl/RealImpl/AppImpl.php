@@ -1466,9 +1466,17 @@ abstract class AppImpl implements ApplicationContract {
             if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) error_log("Compressed $assetType asset output within {$timer->getFormattedElapsedTime()} | From {$assetInfo['name']}");
 
             if (!$isPhpSpaRequest) {
-               if (!is_dir($fileDir)) mkdir($fileDir);
+               // Race-safe + recursive (parent 'generated' dir may not exist).
+               if (!is_dir($fileDir) && !@mkdir($fileDir, 0755, true) && !is_dir($fileDir)) {
+                  if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+                     error_log("phpspa: failed to create generated cache directory: $fileDir");
+                  }
+               }
 
-               if ($fileName) {
+               if ($fileName && is_dir($fileDir)) {
+                  if (OxcCompressor::isErrorOutput($content) && !($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+                     error_log("phpspa: caching Oxc parse-error output for $assetType asset (will regenerate when the source changes): {$assetInfo['name']}");
+                  }
                   @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
                }
             }
@@ -1507,6 +1515,7 @@ abstract class AppImpl implements ApplicationContract {
 
       // --- Collect all callables ---
       $callables = [];
+      $names = [];
       $maxMtime = 0;
       $firstFileName = null;
 
@@ -1527,6 +1536,7 @@ abstract class AppImpl implements ApplicationContract {
 
             if ($item && \is_callable($item['content'])) {
                $callables[$idx] = $item['content'];
+               $names[$idx] = $item['name'] ?? ($isCss ? "stylesheet #$idx" : "script #$idx");
                $ff = new FileFunction($item['content']);
                $maxMtime = \max($maxMtime, $ff->getFileModificationTime());
                if ($firstFileName === null) $firstFileName = $ff->getFileName();
@@ -1544,6 +1554,7 @@ abstract class AppImpl implements ApplicationContract {
             $item = $sourceArray[$idx] ?? null;
             if ($item && \is_callable($item['content'])) {
                $callables[$idx] = $item['content'];
+               $names[$idx] = $item['name'] ?? ($isCss ? "stylesheet #$idx" : "script #$idx");
                $ff = new FileFunction($item['content']);
                $maxMtime = \max($maxMtime, $ff->getFileModificationTime());
                if ($firstFileName === null) $firstFileName = $ff->getFileName();
@@ -1573,11 +1584,32 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       // --- Concatenate all content ---
+      // Each part is prefixed with a labeled comment banner so the combined
+      // bundle is navigable. For JS, parts are also separated ASI-safely: a part
+      // ending `})()` followed by one starting `(` would otherwise fuse into
+      // `})()(...)` → "is not a function". We trim trailing whitespace/semicolons
+      // off each part and terminate it with a semicolon on its OWN line (`\n;\n`)
+      // so even a dangling `// line comment` at the end of a part cannot swallow
+      // the terminator. CSS has no such hazard (comment banner + newline only).
       $buffer = '';
       foreach ($callables as $idx => $callable) {
          $part = \call_user_func($callable);
          if (\is_array($part)) $part = $part[0] ?? '';
-         $buffer .= $part . "\n";
+
+         $label = $names[$idx] ?? "#$idx";
+         $banner = "\n/* ====================== {$label} ====================== */\n";
+
+         if ($isCss) {
+            $buffer .= $banner . $part . "\n";
+         } else {
+            // Trim trailing whitespace + semicolons, then terminate on its own
+            // line so a trailing line-comment can't eat the semicolon.
+            $part = \rtrim($part);
+            $part = \rtrim($part, ';');
+            $part = \rtrim($part);
+            if ($part === '') continue;
+            $buffer .= $banner . $part . "\n;\n";
+         }
       }
 
       // --- Compress the concatenated content ---
@@ -1594,8 +1626,19 @@ abstract class AppImpl implements ApplicationContract {
 
          // --- Cache the result ---
          if (!$isPhpSpaRequest && $fileDir) {
-            if (!is_dir($fileDir)) mkdir($fileDir, 0755, true);
-            if ($newName) {
+            // Race-safe: concurrent combined-asset requests can all pass the
+            // is_dir() check and then race into mkdir(), so the losers would
+            // throw "File exists". Suppress and re-verify instead — a dir that
+            // now exists (whoever created it) is success, not a fatal.
+            if (!is_dir($fileDir) && !@mkdir($fileDir, 0755, true) && !is_dir($fileDir)) {
+               if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+                  error_log("phpspa: failed to create generated cache directory: $fileDir");
+               }
+            }
+            if ($newName && is_dir($fileDir)) {
+               if (OxcCompressor::isErrorOutput($content) && !($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+                  error_log("phpspa: caching Oxc parse-error output for combined $assetType asset (will regenerate when a source changes)");
+               }
                @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
             }
          }

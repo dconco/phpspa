@@ -94,9 +94,20 @@ $app->compression(Compressor::LEVEL_EXTREME, true);
 
     - **`Compressor::LEVEL_NONE`**: No compression is applied
     - **`Compressor::LEVEL_AUTO`**: Auto-detect a sensible level for the environment
-    - **`Compressor::LEVEL_BASIC`**: Whitespace removal with light minification; most comments are left untouched
+    - **`Compressor::LEVEL_BASIC`**: Whitespace removal with light minification; comments are left untouched
     - **`Compressor::LEVEL_AGGRESSIVE`**: Basic minification **plus full comment stripping**
     - **`Compressor::LEVEL_EXTREME`**: Everything the engine can do — comment stripping **and** symbol mangling for the smallest possible output
+
+!!! warning "What `LEVEL_BASIC` touches per content type"
+    `LEVEL_BASIC` is **not** uniform across content types — this is by design, not a bug:
+
+    | Type | `LEVEL_BASIC` | Why |
+    |------|---------------|-----|
+    | **HTML** | **Minified** (whitespace collapsed) | The HTML minifier has no level gate — it runs at every level, `BASIC` included. |
+    | **CSS** | **Not touched** — served verbatim | CSS minification only engages from `LEVEL_AGGRESSIVE` up (`if (level < AGGRESSIVE) return;`). At `BASIC` CSS keeps all whitespace and comments. |
+    | **JS** | **Minified** (whitespace) | The JS minifier runs at `BASIC`. On the C++/PHP path a `BASIC` JS pass is skipped as a no-op *before* the native call, since that engine does only whitespace at `BASIC` anyway. |
+
+    So if you set `LEVEL_BASIC` and see fully-formatted CSS, that is expected: **use `LEVEL_AGGRESSIVE` or higher to minify CSS.**
 
 !!! info "Levels behave per-engine"
     The level is a shared intent; each JS engine honours it in its own way. The three-tier behaviour above describes the **Oxc** engine precisely (see [JavaScript Minification Engines](#javascript-minification-engines)). The C++ and esbuild engines apply their own equivalent of each tier.
@@ -358,6 +369,23 @@ Oxc loads in one of two ways:
     ```
 
     Restart your web server afterwards. When preloaded, `setOxcLibraryPath()` is not required.
+
+    !!! danger "Oxc needs its OWN header — do not merge it into `phpspa_compressor.h`"
+        Each preload header binds **one** `FFI_LIB` to **one** `FFI_SCOPE`, and every function in that file must exist in that one library. `oxc_minify` lives in the **Oxc** binary under scope `phpspa_oxc` — it is **not** in `libcompressor.so` (scope `phpspa_compressor`). Declaring `oxc_minify` inside `phpspa_compressor.h` binds it to the wrong library and fails to resolve at preload.
+
+        To run **both** the C++ compressor and Oxc, keep two separate headers and list both in `ffi.preload`. The separator is PHP's `DIRECTORY_SEPARATOR` — a **semicolon `;` on Windows**, a **colon `:` on Linux/macOS** (a comma does **not** work — PHP would treat the whole string as one filename):
+
+        ```ini
+        ; Windows — semicolon-separated
+        ffi.preload = "C:\path\to\phpspa_compressor.h;C:\path\to\phpspa_oxc.h"
+        ```
+
+        ```ini
+        ; Linux / macOS — colon-separated
+        ffi.preload = "/path/to/phpspa_compressor.h:/path/to/phpspa_oxc.h"
+        ```
+
+        PhpSPA then resolves each engine from its own scope independently — `FFI::scope('phpspa_compressor')` for C++ and `FFI::scope('phpspa_oxc')` for Oxc.
 
 #### What each level does with Oxc
 

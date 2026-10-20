@@ -87,7 +87,7 @@ fn mangle_options(scoped: bool, level: c_int) -> Option<MangleOptions> {
 			reserved: if scoped {
 				Default::default()
 			} else {
-				["exports", "module"].into_iter().map(Into::into).collect()
+				["module"].into_iter().map(Into::into).collect()
 			},
 			debug: false,
 		}),

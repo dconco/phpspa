@@ -70,12 +70,23 @@ final class OxcCompressor implements NativeCompressor
    {
       if (self::$available !== null) return self::$available;
 
-      return self::$available = self::initialize(DISABLE_LIBRARY_LOG | DISABLE_PRELOAD_LOG);
+      return self::$available = self::initialize(DISABLE_LIBRARY_LOG);
    }
 
    public static function getLastError(): ?string
    {
       return self::$lastError;
+   }
+
+   /**
+    * Whether a compressor result is an Oxc parse-error sentinel body (not real
+    * minified JS). Such a result is served verbatim so the dev sees the error in
+    * the browser console, but it must NEVER be written to the generated cache —
+    * a cached error would be re-served even after the source JS is fixed.
+    */
+   public static function isErrorOutput(string $content): bool
+   {
+      return \str_starts_with($content, self::ERROR_PREFIX);
    }
 
    /**
@@ -158,6 +169,7 @@ final class OxcCompressor implements NativeCompressor
       // 1) Preferred: already preloaded into shared OPcache memory.
       try {
          self::$ffi = \FFI::scope(self::FFI_SCOPE);
+         if (!($disableLogs & DISABLE_LIBRARY_LOG)) error_log('Using preloaded Oxc minifier (FFI scope "' . self::FFI_SCOPE . '").');
          return true;
       } catch (\FFI\Exception $e) {
          if (!($disableLogs & DISABLE_PRELOAD_LOG)) error_log("phpspa_oxc isn't preloaded in PHP INI, falling back to loading directly from the shared library.");
