@@ -32,8 +32,6 @@ class Nonce {
       'frame-src' => ["'self'"],
       'manifest-src' => ["'self'"],
       'worker-src' => ["'self'"],
-      'prefetch-src' => ["'self'"],
-      'navigate-to' => ["'self'"],
       'form-action' => ["'self'"],
       'frame-ancestors' => ["'none'"],
    ];
@@ -62,13 +60,10 @@ class Nonce {
     *    'base-uri': array<string>,
     *    'connect-src': array<string>,
     *    'frame-src': array<string>,
-    *    'child-src': array<string>,
     *    'form-action': array<string>,
     *    'frame-ancestors': array<string>,
     *    'manifest-src': array<string>,
     *    'worker-src': array<string>,
-    *    'prefetch-src': array<string>,
-    *    'navigate-to': array<string>,
     * } $sources
     *
     * @see https://phpspa.tech/security/content-security-policy
