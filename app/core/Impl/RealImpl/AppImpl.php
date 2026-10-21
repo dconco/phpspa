@@ -414,9 +414,6 @@ abstract class AppImpl implements ApplicationContract {
 
    public function run (bool $return = false)
    {
-      // --- Reset DOM/Nonce/Reset HttpRequest static state for worker mode compatibility ---
-      DOM::reset();
-      Nonce::reset();
       HttpRequest::$cachedRawPostData = null;
 
       $request = new HttpRequest();
@@ -453,6 +450,10 @@ abstract class AppImpl implements ApplicationContract {
          return;
       }
 
+      // --- Reset DOM/Nonce/Reset HttpRequest static state for worker mode compatibility ---
+      DOM::reset();
+      Nonce::reset();
+      Nonce::sendHeader();
       $success = false;
 
       foreach ($this->prefix as $prefix) {
@@ -807,7 +808,6 @@ abstract class AppImpl implements ApplicationContract {
       // --- For regular HTML requests, only include component stylesheets with the component content ---
       // --- Component scripts will be injected later to ensure proper execution order ---
       $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput;
-      $nonce = Nonce::nonce();
 
       // --- Initialize static variable once ---
       /**
@@ -870,15 +870,6 @@ abstract class AppImpl implements ApplicationContract {
                   1,
                );
             }
-         }
-
-         if ($nonce) {
-            $layoutOutput = preg_replace(
-               '/<head\b([^>]*)>/i',
-               "<head$1 x-phpspa=\"$nonce\">",
-               $layoutOutput,
-               1,
-            );
          }
 
          $tt = ' data-phpspa-target';
