@@ -1,53 +1,8 @@
 /*!
- * PhpSPA Client Runtime v2.0.17
+ * PhpSPA Client Runtime v2.1.0
  * Docs: https://phpspa.tech | Package: @dconco/phpspa
  * License: MIT
  */
-/**
- * UTF-8 safe base64 encoding function
- * Handles Unicode characters that btoa cannot process
- */
-function utf8ToBase64(str) {
-    try {
-        // First try the native btoa for performance
-        return btoa(str);
-    }
-    catch (e) {
-        // If btoa fails (due to non-Latin1 characters), use UTF-8 safe encoding
-        try {
-            // Modern replacement for unescape(encodeURIComponent(str))
-            const utf8Bytes = new TextEncoder().encode(str);
-            const binaryString = Array.from(utf8Bytes, byte => String.fromCharCode(byte)).join('');
-            return btoa(binaryString);
-        }
-        catch (fallbackError) {
-            // Final fallback: encode each character individually
-            return btoa(str.split('').map(function (c) {
-                return String.fromCharCode(c.charCodeAt(0) & 0xff);
-            }).join(''));
-        }
-    }
-}
-/**
- * UTF-8 safe base64 decoding function
- * Handles Unicode characters that atob cannot process
- */
-function base64ToUtf8(str) {
-    try {
-        // Try modern UTF-8 safe decoding first
-        const binaryString = atob(str);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-        }
-        return new TextDecoder().decode(bytes);
-    }
-    catch (e) {
-        // Fallback to regular atob
-        return atob(str);
-    }
-}
-
 /**
  * Runtime Manager for PhpSPA
  *
@@ -195,7 +150,6 @@ class RuntimeManager {
      */
     static runInlineScripts(container) {
         const scripts = container.querySelectorAll("script");
-        const nonce = document.head.getAttribute('x-phpspa');
         scripts.forEach((script) => {
             const src = script.getAttribute('src');
             const typeAttr = (script.getAttribute('type') ?? '').trim().toLowerCase();
@@ -208,7 +162,6 @@ class RuntimeManager {
                 isModule;
             if (src) {
                 const newScript = document.createElement("script");
-                newScript.nonce = nonce ?? undefined;
                 for (const attribute of Array.from(script.attributes)) {
                     newScript.setAttribute(attribute.name, attribute.value);
                 }
@@ -220,7 +173,6 @@ class RuntimeManager {
             }
             // --- Create new script element ---
             const newScript = document.createElement("script");
-            newScript.nonce = nonce ?? undefined;
             // --- Copy all attributes except the data-type identifier ---
             for (const attribute of Array.from(script.attributes)) {
                 newScript.setAttribute(attribute.name, attribute.value);
@@ -231,81 +183,17 @@ class RuntimeManager {
         });
     }
     static runPhpSpaScripts(container) {
-        const scripts = container.querySelectorAll("phpspa-script, script");
-        const nonce = document.head.getAttribute('x-phpspa');
+        const scripts = container.querySelectorAll("script");
         scripts.forEach(async (script) => {
-            const scriptUrl = script.getAttribute('src');
-            const typeAttr = (script.getAttribute('type') ?? '').trim().toLowerCase();
-            const isModule = typeAttr === 'module';
-            const isExecutable = typeAttr === '' ||
-                typeAttr === 'text/javascript' ||
-                typeAttr === 'application/javascript' ||
-                typeAttr === 'application/ecmascript' ||
-                typeAttr === 'text/ecmascript' ||
-                isModule;
-            if (!isExecutable) {
-                const newScript = document.createElement("script");
-                for (const attribute of Array.from(script.attributes)) {
-                    newScript.setAttribute(attribute.name, attribute.value);
-                }
-                newScript.textContent = script.textContent;
-                if (!newScript.getAttribute('nonce'))
-                    newScript.nonce = nonce ?? undefined;
-                // --- Execute and immediately remove from DOM ---
-                return document.head.appendChild(newScript).remove();
+            // --- Create new script element ---
+            const newScript = document.createElement("script");
+            // --- Copy all attributes ---
+            for (const attribute of Array.from(script.attributes)) {
+                newScript.setAttribute(attribute.name, attribute.value);
             }
-            if (!scriptUrl) {
-                // --- Create new script element ---
-                const newScript = document.createElement("script");
-                // --- Copy all attributes ---
-                for (const attribute of Array.from(script.attributes)) {
-                    newScript.setAttribute(attribute.name, attribute.value);
-                }
-                if (!newScript.getAttribute('nonce'))
-                    newScript.nonce = nonce ?? undefined;
-                newScript.textContent = script.textContent;
-                // --- Execute and immediately remove from DOM ---
-                return document.head.appendChild(newScript).remove();
-            }
-            // --- Check cache first, then execute the cached content else download the script ---
-            if (this.ScriptsCachedContent[scriptUrl]) {
-                const newScript = document.createElement("script");
-                newScript.textContent = this.ScriptsCachedContent[scriptUrl];
-                for (const attribute of Array.from(script.attributes)) {
-                    if (attribute.name == 'src')
-                        continue;
-                    newScript.setAttribute(attribute.name, attribute.value);
-                }
-                if (!newScript.getAttribute('nonce'))
-                    newScript.nonce = nonce ?? undefined;
-                // --- Execute and immediately remove from DOM ---
-                return document.head.appendChild(newScript).remove();
-            }
-            const response = await fetch(scriptUrl, {
-                headers: {
-                    "X-Requested-With": "PHPSPA_REQUEST_SCRIPT",
-                }
-            });
-            if (response.ok) {
-                const scriptContent = await response.text();
-                // --- Create new script element ---
-                const newScript = document.createElement("script");
-                newScript.textContent = scriptContent;
-                for (const attribute of Array.from(script.attributes)) {
-                    if (attribute.name == 'src')
-                        continue;
-                    newScript.setAttribute(attribute.name, attribute.value);
-                }
-                if (!newScript.getAttribute('nonce'))
-                    newScript.nonce = nonce ?? undefined;
-                // --- Execute and immediately remove from DOM ---
-                document.head.appendChild(newScript).remove();
-                // --- Cache the fetched script content ---
-                this.ScriptsCachedContent[scriptUrl] = scriptContent;
-            }
-            else {
-                console.error(`Failed to load script from ${scriptUrl}: ${response.statusText}`);
-            }
+            newScript.textContent = script.textContent;
+            // --- Execute and immediately remove from DOM ---
+            return document.head.appendChild(newScript).remove();
         });
     }
     /**
@@ -314,24 +202,16 @@ class RuntimeManager {
      */
     static runInlineStyles(container) {
         const styles = container.querySelectorAll("style");
-        const nonce = document.head.getAttribute('x-phpspa');
         styles.forEach((style) => {
-            // --- Use base64 encoded content as unique identifier ---
-            const contentHash = utf8ToBase64(style.textContent.trim());
-            // --- Skip if this style has already been injected ---
-            if (!this.executedStyles.has(contentHash) && style.textContent.trim() !== "") {
-                this.executedStyles.add(contentHash);
-                // --- Create new style element ---
-                const newStyle = document.createElement("style");
-                newStyle.nonce = nonce ?? undefined;
-                // --- Copy all attributes except the data-type identifier ---
-                for (const attribute of Array.from(style.attributes)) {
-                    newStyle.setAttribute(attribute.name, attribute.value);
-                }
-                // --- Copy style content and inject into head ---
-                newStyle.textContent = style.textContent;
-                document.head.appendChild(newStyle).remove();
+            // --- Create new style element ---
+            const newStyle = document.createElement("style");
+            // --- Copy all attributes except the data-type identifier ---
+            for (const attribute of Array.from(style.attributes)) {
+                newStyle.setAttribute(attribute.name, attribute.value);
             }
+            // --- Copy style content and inject into head ---
+            newStyle.textContent = style.textContent;
+            document.head.appendChild(newStyle).remove();
         });
     }
     /**
@@ -569,6 +449,51 @@ const preloadStylesFromContent = (content, scopeKey) => {
         .then(() => setScopeStyles(normalizedScopeKey, nextHrefs));
     return { element: tempElem, ready };
 };
+
+/**
+ * UTF-8 safe base64 encoding function
+ * Handles Unicode characters that btoa cannot process
+ */
+function utf8ToBase64(str) {
+    try {
+        // First try the native btoa for performance
+        return btoa(str);
+    }
+    catch (e) {
+        // If btoa fails (due to non-Latin1 characters), use UTF-8 safe encoding
+        try {
+            // Modern replacement for unescape(encodeURIComponent(str))
+            const utf8Bytes = new TextEncoder().encode(str);
+            const binaryString = Array.from(utf8Bytes, byte => String.fromCharCode(byte)).join('');
+            return btoa(binaryString);
+        }
+        catch (fallbackError) {
+            // Final fallback: encode each character individually
+            return btoa(str.split('').map(function (c) {
+                return String.fromCharCode(c.charCodeAt(0) & 0xff);
+            }).join(''));
+        }
+    }
+}
+/**
+ * UTF-8 safe base64 decoding function
+ * Handles Unicode characters that atob cannot process
+ */
+function base64ToUtf8(str) {
+    try {
+        // Try modern UTF-8 safe decoding first
+        const binaryString = atob(str);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        return new TextDecoder().decode(bytes);
+    }
+    catch (e) {
+        // Fallback to regular atob
+        return atob(str);
+    }
+}
 
 var DOCUMENT_FRAGMENT_NODE = 11;
 
