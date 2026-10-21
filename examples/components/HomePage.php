@@ -63,6 +63,16 @@ return (new Component(function (Request $request): string {
 		'homepage-style'
    )
 
+   ->link(
+      fn () => <<<CSS
+			html {
+				background-color: #d9cdcd;
+				font-family: Arial, sans-serif;
+			}
+		CSS,
+		'homepage-style'
+   )
+
    ->script(
       fn () => <<<JS
 		  	// Component script - should execute AFTER global script
@@ -100,6 +110,10 @@ return (new Component(function (Request $request): string {
    )
 
 	->script(fn() => <<<JS
-		const sup = 'hello world'
-		alert(sure);
+		alert('Sup', sup)
+	JS)
+
+	->script(fn() => <<<JS
+		var sup = 'hello world'
+		alert('Sure', sure)
 	JS);

@@ -15,18 +15,25 @@ namespace PhpSPA\Http\Security;
  * @see https://phpspa.tech/security/content-security-policy
  */
 class Nonce {
-   private static $enabled = false;   // default off
+   private static bool $enabled = false;   // default off
 
-   private static $nonce = null;
+   private static ?string $nonce = null;
 
-   private static $directives = [
-      'default-src' => [ "'self'" ],
-      'script-src' => [ "'self'" ],
-      'style-src' => [ "'self'" ],
-      'object-src' => [ "'self'" ],
-      'base-uri' => [ "'self'" ],
-      'font-src' => [ "'self'" ],
-      'img-src' => [ "'self'", "data:" ],
+   private static array $directives = [
+      'default-src' => ["'self'"],
+      'script-src' => ["'self'"],
+      'style-src' => ["'self'"],
+      'connect-src' => ["'self'"],
+      'object-src' => ["'none'"],
+      'base-uri' => ["'self'"],
+      'font-src' => ["'self'"],
+      'img-src' => ["'self'"],
+      'media-src' => ["'self'"],
+      'frame-src' => ["'self'"],
+      'manifest-src' => ["'self'"],
+      'worker-src' => ["'self'"],
+      'form-action' => ["'self'"],
+      'frame-ancestors' => ["'none'"],
    ];
 
    /**
@@ -48,8 +55,15 @@ class Nonce {
     *    'object-src': array<string>,
     *    'font-src': array<string>,
     *    'img-src': array<string>,
+    *    'media-src': array<string>,
     *    'font-src': array<string>,
-    *    'base-uri': array<string>
+    *    'base-uri': array<string>,
+    *    'connect-src': array<string>,
+    *    'frame-src': array<string>,
+    *    'form-action': array<string>,
+    *    'frame-ancestors': array<string>,
+    *    'manifest-src': array<string>,
+    *    'worker-src': array<string>,
     * } $sources
     *
     * @see https://phpspa.tech/security/content-security-policy
@@ -63,8 +77,6 @@ class Nonce {
          $existing = self::$directives[$directive] ?? [];
          self::$directives[$directive] = array_unique([...$existing, ...$values]);
       }
-
-      self::sendHeader();
    }
 
    public static function reset (): void
@@ -87,41 +99,41 @@ class Nonce {
    public static function nonce (): ?string
    {
       if (!self::$enabled) return null;
-      if (self::$nonce === null) self::$nonce = base64_encode(random_bytes(16));
+      if (self::$nonce === null) self::$nonce = bin2hex(random_bytes(16));;
 
       return self::$nonce;
    }
 
-   private static function sendHeader (): void
+   public static function sendHeader (): void
    {
       if (!self::$enabled) return;
 
       $nonce = self::nonce();
+      $directives = self::$directives;
 
-      
       // Ensure script-src and style-src get the nonce automatically
-      // Only add nonce if 'unsafe-inline' or 'unsafe-hashes' is not present
-      if (isset(self::$directives['script-src'])) {
-         $hasUnsafeInline = \in_array("'unsafe-inline'", self::$directives['script-src']);
-         $hasUnsafeHashes = \in_array("'unsafe-hashes'", self::$directives['script-src']);
+      // Only add nonce if 'unsafe-inline' and 'unsafe-hashes' is not present
+      if (isset($directives['script-src'])) {
+         $hasUnsafeInline = \in_array("'unsafe-inline'", $directives['script-src']);
+         $hasUnsafeHashes = \in_array("'unsafe-hashes'", $directives['script-src']);
 
          if (!$hasUnsafeInline && !$hasUnsafeHashes) {
-            self::$directives['script-src'][] = "'nonce-$nonce'";
+            $directives['script-src'][] = "'nonce-$nonce'";
          }
       }
-      
-      if (isset(self::$directives['style-src'])) {
-         $hasUnsafeInline = \in_array("'unsafe-inline'", self::$directives['style-src']);
-         $hasUnsafeHashes = \in_array("'unsafe-hashes'", self::$directives['style-src']);
-         
+
+      if (isset($directives['style-src'])) {
+         $hasUnsafeInline = \in_array("'unsafe-inline'", $directives['style-src']);
+         $hasUnsafeHashes = \in_array("'unsafe-hashes'", $directives['style-src']);
+
          if (!$hasUnsafeInline && !$hasUnsafeHashes) {
-            self::$directives['style-src'][] = "'nonce-$nonce'";
+            $directives['style-src'][] = "'nonce-$nonce'";
          }
       }
 
       // Build CSP string
       $parts = [];
-      foreach (self::$directives as $dir => $values) {
+      foreach ($directives as $dir => $values) {
          $parts[] = $dir . " " . implode(" ", array_unique($values));
       }
 

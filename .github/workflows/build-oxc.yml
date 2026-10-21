@@ -1,0 +1,68 @@
+name: Build Oxc JS Minifier
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches: [build_oxc]
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    name: Oxc cdylib (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: linux-oxc
+            lib: target/release/liboxc_php_minifier.so
+            release_name: liboxc_php_minifier-linux.so
+          - os: windows-latest
+            artifact: windows-oxc
+            lib: target/release/oxc_php_minifier.dll
+            release_name: oxc_php_minifier.dll
+          - os: macos-latest
+            artifact: macos-oxc
+            lib: target/release/liboxc_php_minifier.dylib
+            release_name: liboxc_php_minifier.dylib
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and target
+        uses: Swatinem/rust-cache@v2
+
+      # Build the cdylib from the root Cargo.toml.
+      - name: Build release cdylib
+        run: cargo build --release
+
+      - name: Upload shared library artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.lib }}
+
+      # Release assets need unique names; stage each build's library under the
+      # distinct release name before attaching. Only runs on a published release.
+      - name: Stage release asset
+        if: github.event_name == 'release' && github.event.action == 'published'
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          cp "${{ matrix.lib }}" "release-assets/${{ matrix.release_name }}"
+
+      - name: Attach shared library to release
+        if: github.event_name == 'release' && github.event.action == 'published'
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: release-assets/${{ matrix.release_name }}

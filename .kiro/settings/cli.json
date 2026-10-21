@@ -8,5 +8,12 @@
   },
   "kirocrew.skillDiscovery.inheritFiles": true,
   "kirocrew.skillDiscovery.inheritSource": "global",
-  "chat.disableInheritingDefaultResources": true
+  "chat.disableInheritingDefaultResources": true,
+  "chat.modelDefaults": {
+    "claude-opus-4.5": {
+      "output_config": {
+        "effort": "xhigh"
+      }
+    }
+  }
 }

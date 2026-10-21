@@ -46,6 +46,7 @@ new App(require 'layout/Layout.php')
    ->assetCacheHours(0)
    ->setGeneratedCacheDirectory(__DIR__ . '/generated')
    ->forceNativeCompression()
+   ->combineAssetsPerComponent()
    // ->setCustomCompressorLibraryPath(dirname(__DIR__, 1) . '/src/bin/libcompressor-wsl.so')
 
    ->meta(charset: 'utf-8')

@@ -180,7 +180,6 @@ export class RuntimeManager {
     */
    private static runInlineScripts(container: HTMLElement) {
       const scripts = container.querySelectorAll("script")
-      const nonce = document.head.getAttribute('x-phpspa')
 
       scripts.forEach((script: HTMLScriptElement) => {
          const src = script.getAttribute('src')
@@ -196,7 +195,6 @@ export class RuntimeManager {
 
          if (src) {
             const newScript = document.createElement("script")
-            newScript.nonce = nonce ?? undefined
 
             for (const attribute of Array.from(script.attributes)) {
                newScript.setAttribute(attribute.name, attribute.value)
@@ -214,8 +212,6 @@ export class RuntimeManager {
          // --- Create new script element ---
          const newScript = document.createElement("script")
 
-         newScript.nonce = nonce ?? undefined;
-
          // --- Copy all attributes except the data-type identifier ---
          for (const attribute of Array.from(script.attributes)) {
             newScript.setAttribute(attribute.name, attribute.value)
@@ -230,98 +226,21 @@ export class RuntimeManager {
 
 
    private static runPhpSpaScripts(container: HTMLElement) {
-      const scripts = container.querySelectorAll("phpspa-script, script") as NodeListOf<HTMLScriptElement>
-      const nonce = document.head.getAttribute('x-phpspa')
+      const scripts = container.querySelectorAll("script") as NodeListOf<HTMLScriptElement>
 
       scripts.forEach(async (script: HTMLScriptElement): Promise<void> => {
-         const scriptUrl = script.getAttribute('src')
-         const typeAttr = (script.getAttribute('type') ?? '').trim().toLowerCase()
-         const isModule = typeAttr === 'module'
-         const isExecutable =
-            typeAttr === '' ||
-            typeAttr === 'text/javascript' ||
-            typeAttr === 'application/javascript' ||
-            typeAttr === 'application/ecmascript' ||
-            typeAttr === 'text/ecmascript' ||
-            isModule
+         // --- Create new script element ---
+         const newScript = document.createElement("script")
 
-         
-         if (!isExecutable) {
-            const newScript = document.createElement("script")
-
-            for (const attribute of Array.from(script.attributes)) {
-               newScript.setAttribute(attribute.name, attribute.value)
-            }
-            newScript.textContent = script.textContent
-
-            if (!newScript.getAttribute('nonce')) newScript.nonce = nonce ?? undefined
-
-            // --- Execute and immediately remove from DOM ---
-            return document.head.appendChild(newScript).remove()
+         // --- Copy all attributes ---
+         for (const attribute of Array.from(script.attributes)) {
+            newScript.setAttribute(attribute.name, attribute.value)
          }
 
-         if (!scriptUrl) {
-            // --- Create new script element ---
-            const newScript = document.createElement("script")
+         newScript.textContent = script.textContent
 
-            // --- Copy all attributes ---
-            for (const attribute of Array.from(script.attributes)) {
-               newScript.setAttribute(attribute.name, attribute.value)
-            }
-
-            if (!newScript.getAttribute('nonce')) newScript.nonce = nonce ?? undefined
-
-            newScript.textContent = script.textContent
-
-            // --- Execute and immediately remove from DOM ---
-            return document.head.appendChild(newScript).remove()
-         }
-
-         // --- Check cache first, then execute the cached content else download the script ---
-         if (this.ScriptsCachedContent[scriptUrl]) {
-            const newScript = document.createElement("script")
-
-            newScript.textContent = this.ScriptsCachedContent[scriptUrl]
-
-            for (const attribute of Array.from(script.attributes)) {
-               if (attribute.name == 'src') continue
-               newScript.setAttribute(attribute.name, attribute.value)
-            }
-
-            if (!newScript.getAttribute('nonce')) newScript.nonce = nonce ?? undefined
-
-            // --- Execute and immediately remove from DOM ---
-            return document.head.appendChild(newScript).remove()
-         }
-
-         const response = await fetch(scriptUrl, {
-            headers: {
-               "X-Requested-With": "PHPSPA_REQUEST_SCRIPT",
-            }
-         })
-
-         if (response.ok) {
-            const scriptContent = await response.text()
-
-            // --- Create new script element ---
-            const newScript = document.createElement("script")
-            newScript.textContent = scriptContent;
-
-            for (const attribute of Array.from(script.attributes)) {
-               if (attribute.name == 'src') continue
-               newScript.setAttribute(attribute.name, attribute.value)
-            }
-
-            if (!newScript.getAttribute('nonce')) newScript.nonce = nonce ?? undefined
-
-            // --- Execute and immediately remove from DOM ---
-            document.head.appendChild(newScript).remove()
-
-            // --- Cache the fetched script content ---
-            this.ScriptsCachedContent[scriptUrl] = scriptContent;
-         } else {
-            console.error(`Failed to load script from ${scriptUrl}: ${response.statusText}`);
-         }
+         // --- Execute and immediately remove from DOM ---
+         return document.head.appendChild(newScript).remove()
       })
    }
 
@@ -332,29 +251,19 @@ export class RuntimeManager {
     */
    private static runInlineStyles(container: HTMLElement) {
       const styles = container.querySelectorAll("style")
-      const nonce = document.head.getAttribute('x-phpspa')
 
       styles.forEach((style: HTMLStyleElement) => {
-         // --- Use base64 encoded content as unique identifier ---
-         const contentHash = utf8ToBase64(style.textContent.trim())
+         // --- Create new style element ---
+         const newStyle = document.createElement("style")
 
-         // --- Skip if this style has already been injected ---
-         if (!this.executedStyles.has(contentHash) && style.textContent.trim() !== "") {
-            this.executedStyles.add(contentHash)
-
-            // --- Create new style element ---
-            const newStyle = document.createElement("style")
-            newStyle.nonce = nonce ?? undefined
-
-            // --- Copy all attributes except the data-type identifier ---
-            for (const attribute of Array.from(style.attributes)) {
-               newStyle.setAttribute(attribute.name, attribute.value)
-            }
-
-            // --- Copy style content and inject into head ---
-            newStyle.textContent = style.textContent
-            document.head.appendChild(newStyle).remove()
+         // --- Copy all attributes except the data-type identifier ---
+         for (const attribute of Array.from(style.attributes)) {
+            newStyle.setAttribute(attribute.name, attribute.value)
          }
+
+         // --- Copy style content and inject into head ---
+         newStyle.textContent = style.textContent
+         document.head.appendChild(newStyle).remove()
       })
    }
 

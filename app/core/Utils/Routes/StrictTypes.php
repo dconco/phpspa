@@ -28,12 +28,38 @@ trait StrictTypes
      * @param array $haystack The array of types to match against.
      * @return bool Returns true if the type of the string matches any type in the array, false otherwise.
      */
+    /**
+     * Uppercase a type keyword while preserving the case of any `<...>`
+     * contents (e.g. ENUM literals, ARRAY element specs).
+     *
+     * `enum<5, 20, dave>` -> `ENUM<5, 20, dave>` (keyword cased, literals kept).
+     * `int`               -> `INT`.
+     *
+     * This matters for ENUM, whose literal values must keep whatever case the
+     * router already normalized them to (the router lowercases the whole route
+     * upstream when the app is case-insensitive, so a strict comparison then
+     * honours the app's caseSensitive setting).
+     *
+     * @param string $type The raw type token.
+     * @return string The keyword-normalized type.
+     */
+    private static function normalizeTypeKeyword(string $type): string
+    {
+        $type = trim($type);
+
+        if (preg_match('/^([A-Za-z]+)(<.*>)$/s', $type, $m)) {
+            return strtoupper($m[1]) . $m[2];
+        }
+
+        return strtoupper($type);
+    }
+
     protected static function matchType(string $needle, array $haystack): bool
     {
         $is_typed_string = false;
 
         $haystack = array_map(function ($type) use (&$is_typed_string) {
-            $t = strtoupper(trim($type));
+            $t = self::normalizeTypeKeyword($type);
             if ('STRING' === $t) {
                 $is_typed_string = true;
             }
@@ -74,7 +100,7 @@ trait StrictTypes
         $is_typed_string = false;
 
         $types = array_map(function ($t) use (&$is_typed_string) {
-            $t = strtoupper(trim($t));
+            $t = self::normalizeTypeKeyword($t);
 
             if ('STRING' === $t) {
                 $is_typed_string = true;
@@ -170,25 +196,48 @@ trait StrictTypes
         }
 
         /**
-         * MATCH INT<MIN, MAX>
+         * MATCH INT<MIN> or INT<MIN, MAX>
+         *
+         * INT<5>    -> value must be >= 5 (min only, no upper bound)
+         * INT<5,5>  -> value must be exactly 5 (min 5, max 5)
+         * INT<1,10> -> value must be within [1, 10] inclusive
          */
         if (
             preg_match('/INT<(\d+)(?:,\s*(\d+))?>/', $haystack, $matches) &&
             $typeOfNeedle === 'INT'
         ) {
             $min = (int) $matches[1];
-            $max = (int) $matches[2] ?? null;
+            // isset guard: without a max group, $max stays null (no upper bound).
+            // A plain `(int) $matches[2] ?? null` would cast an absent match to 0,
+            // which both loses the "no max" case and breaks INT<0,...>.
+            $max = isset($matches[2]) && $matches[2] !== '' ? (int) $matches[2] : null;
             $needle = (int) $needle;
 
-            if (
-                (!$max && $min < $needle) ||
-                ($max && ($needle < $min || $needle > $max))
-            ) {
+            if ($needle < $min) {
                 return false;
-                // $requested = !$max ? "INT min ($min)" : "INT min ($min), max($max)";
-                // throw new AppException("Invalid request parameter type. {{$requested}} requested, but got {{$needle}}");
+            }
+            if ($max !== null && $needle > $max) {
+                return false;
             }
             return true;
+        }
+
+        /**
+         * MATCH ENUM<a, b, c> — literal value whitelist
+         *
+         * The route value matches only when the raw segment is one of the
+         * listed literals. Case sensitivity is inherited from the app: the
+         * router already lowercases both the route (incl. the enum literals)
+         * and the request URI upstream when caseSensitive is false, so a plain
+         * strict comparison here honours that setting automatically.
+         *
+         * Supports mixed literals, e.g. ENUM<5, 20, dave>.
+         */
+        if (preg_match('/^ENUM<(.+)>$/i', $haystack, $matches)) {
+            $allowed = preg_split('/,(?![^<]*>)/', $matches[1]);
+            $allowed = array_map(static fn ($v) => trim($v), $allowed);
+
+            return \in_array($needle, $allowed, true);
         }
 
         InvalidTypesException::catchInvalidStrictTypes($haystack);

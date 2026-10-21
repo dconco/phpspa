@@ -1,5 +1,99 @@
 # CHANGELOG
 
+## dev-support/php-8.4 (PHP 8.4) (v2.1.0)
+
+**Installation:**
+```bash
+composer require dconco/phpspa:dev-support/php-8.4
+```
+
+### ✨ New Features
+
+#### **Route Parameter Range Constraint — `INT<min,max>`**
+
+- Fixed and finalized the integer range constraint so it matches its documented semantics:
+  - `int<5>` — value **≥ 5** (minimum only, no upper bound).
+  - `int<5,5>` — **exactly 5**.
+  - `int<1,10>` — inclusive `[1, 10]`.
+- Resolved two long-standing bugs: the min-only comparison was inverted (it rejected values *above* the minimum), and `$max = (int)$matches[2] ?? null` made a real maximum of `0` indistinguishable from "no maximum" (e.g. `int<0,10>` misfired). A max of `0` is now preserved via an `isset` guard.
+
+**Documentation:** [routing/advanced-routing#typed-parameters-and-constraints](https://phpspa.tech/routing/advanced-routing/#typed-parameters-and-constraints)
+
+#### **Route Parameter Enum Constraint — `ENUM<...>`**
+
+- Added a literal-whitelist route parameter type: `enum<draft,published,archived>` matches only one of the listed values, is case-inheriting, and composes with union syntax.
+
+**Documentation:** [routing/advanced-routing#typed-parameters-and-constraints](https://phpspa.tech/routing/advanced-routing/#typed-parameters-and-constraints)
+
+#### **Literal Prefixes & Suffixes in Route Segments**
+
+- Route segments may now carry a literal prefix and/or suffix around a `{param}`, required on the incoming URL and stripped from the captured value:
+  - `/profile/@{username}` → `@john` captures `username = "john"` (a bare `/profile/john` does **not** match).
+  - `/download/{file}.json` → `report.json` captures `file = "report"`.
+  - `/tag/[{name}]` → `[php]` captures `name = "php"`.
+  - Composes with type constraints: `/order/#{id: int}` → `#42` captures int `42`.
+- The literal is matched exactly (special characters are not treated as regex), the capture is single-segment (never spans `/`), and an empty capture (e.g. `/profile/@` alone) is rejected.
+
+**Documentation:** [routing/advanced-routing#literal-prefixes-and-suffixes](https://phpspa.tech/routing/advanced-routing/#literal-prefixes-and-suffixes)
+
+#### **Selectable JavaScript Minification Engines (C++ default, Oxc, esbuild)**
+
+- JavaScript minification now routes through a pluggable native engine behind a shared `NativeCompressor` interface, with two concrete engines (`CppCompressor`, `OxcCompressor`) that `HtmlCompressor` selects between:
+  - **C++ (default)** — the fast in-process minifier. No configuration required; used unless another engine is opted into.
+  - **Oxc** — `useOxcForJsMinification()`. A Rust/Oxc-based minifier, milliseconds per run (vs esbuild's seconds). The shared library is **not** shipped with the package: enable it by either adding `phpspa_oxc.h` to your `ffi.preload` INI, **or** calling `setOxcLibraryPath('/path/to/oxc_php_minifier.{so,dll,dylib}')` for a dynamic `FFI::cdef` load. If Oxc is enabled but neither is provided, compression degrades to the PHP minifier (or throws under `forceNativeCompression()`) — it never silently falls back to C++.
+  - **esbuild** — `useEsbuildForJsMinification()`, opt-in (no longer the default).
+- Engine selection priority when multiple are enabled: Oxc (only when actually available) → esbuild → C++.
+- Oxc honours the compression level: **BASIC** runs the base options, **AGGRESSIVE** adds full comment stripping, **EXTREME** also mangles symbols (global scope preserves top-level names while mangling inner-scope locals, with the UMD `exports`/`module` names reserved; component scope mangles fully and IIFE-wraps).
+
+**Documentation:** [performance/html-compression](https://phpspa.tech/performance/html-compression/)
+
+### ⚡ Performance
+
+#### **BASIC-level no-op skip for CSS and C++ JS**
+
+- At `LEVEL_BASIC`, CSS minification is a no-op in every engine (both the C++ `minifyCSS` and the PHP fallback bail out below `AGGRESSIVE`), and C++ JS minification is skipped on the C++/PHP path. `HtmlCompressor::minify()` now short-circuits these cases **before** the FFI boundary, returning the content verbatim with the engine header set to `disabled` — so no-op assets never pay the native-call cost. esbuild and an available Oxc still run at BASIC, since they do meaningful work there.
+
+
+
+#### **Per-request Asset Resolve Memoization**
+
+- The asset request URL is now decoded, HMAC-verified, and expiry-checked **once per request URI** and reused by every `App` instance, instead of each `App`'s `run()` re-decoding and re-validating the same link. In a multi-`App` request this collapses N validations down to one.
+
+#### **Scope-id Fast Skip for Non-owning Apps**
+
+- When multiple `App` instances share a request lifecycle, an `App` that does not own a scoped global asset (`__global__:<id>` mismatch) now bails out of the serve path in O(1) instead of walking its own asset resolution.
+
+### ⚠️ Deprecations
+
+- **`disableMinificationWithEsbuild()` is deprecated and is now a no-op.** In earlier versions esbuild was the default JavaScript minifier and this method turned it off. The default is now the fast in-process **C++** minifier (esbuild is opt-in via `useEsbuildForJsMinification()`), so there is nothing left to disable — the method does nothing and simply returns `$this`. It is kept only so existing code keeps working (calling it is **not** a fatal error) and **will be removed in a future version**. Migrate by deleting the call; to use esbuild, opt in explicitly with `useEsbuildForJsMinification()`.
+
+### 🐛 Bug Fixes
+
+- **Oxc compression levels all produced identical output** — `LEVEL_AGGRESSIVE` and `LEVEL_EXTREME` neither stripped comments nor mangled names, so every Oxc level looked like basic minification. Two root causes in `oxc/lib.rs`, both verified against the oxc 0.153 codegen docs and the upstream `minifier.rs` example: (1) comment removal was wrongly assumed to follow the codegen `minify` flag — that flag strips **whitespace only**; comments are a separate `CommentOptions` lever, now explicitly set to `CommentOptions::disabled()` at `AGGRESSIVE`/`EXTREME` and kept at `BASIC`; (2) the mangler's renamed-symbol table (`MinifierReturn.scoping`) was discarded instead of being handed to codegen via `.with_scoping(...)`, so mangling ran but printed the original names. Both are fixed: `EXTREME` now strips comments and emits short mangled names (global keeps top-level names + mangles inner scopes; component scope mangles fully).
+- **Oxc minifier now logs the level it ran** — `oxc_minify` emits a diagnostic line to stderr (inherited by PHP's FFI process, so it lands in the PHP error log) reporting the scope, level name, and whether whitespace-strip, comment-strip, and mangling were applied — confirming the requested level actually reached the engine.
+- **Global assets leaked across `App` instances** — a global *callable* script/stylesheet registered on one `new App()` could be served for a **different** `App`'s global request. Global asset links encoded only the literal `__global__` route plus an index, so two Apps both produced identical links and whichever App's `run()` intercepted the request served *its own* global at that index. (String `->script("/cdn")` assets were never affected — they emit as literal `src` URLs, not framework asset links.) Each `App` now stamps its global links with a **scope id**, and only the owning App serves them.
+- **Scope id is now removal-stable (content-derived)** — the scope id is derived from the content identity of an App's registered globals (each callable's defining file, start line, and modification time), **not** from construction order. A positional/counter id shifts when an App is removed from the bootstrap — dropping one App makes a later App inherit the removed App's id and wrongly answer its stale (browser- or CDN-cached) URLs with the wrong bytes under a `200`. A content hash is position-independent, so removing one App never changes another App's id, and a stale URL for a removed App matches nobody. The global callable is never invoked to compute the id (reflection + `filemtime` only).
+- **Stale scoped-global URL route guard** — scope-id match is treated as necessary but not sufficient: a serving App additionally verifies it actually has the asset at the requested index before serving (mirroring how a component asset is only served when its route matches a registered component). A mismatch falls through to `404` rather than serving a mismatched global.
+- **Empty / match-all route asset crash** — a component registered with no route (empty / matches-all) resolved its route to `null`, which flowed into `generateCssLink()` / `generateJsLink()` (whose `$componentRoute` is a non-nullable `string`) and threw a `TypeError`. The empty route is now normalized to a stable `__root__` sentinel at generation, resolved back to the null-route component on serve, so the root/catch-all component's own scripts and stylesheets generate and serve correctly.
+
+### 🧪 Tests
+
+- Expanded `tests/AssetLinkTest.php` with coverage for cross-`App` global scoping (leak refusal, instance-scoped links, bare `__global__` framework assets preserved), the per-request resolve memoization and non-owning fast skip, the stale-URL route guard, and scope-id removal-stability (an App's id is unchanged whether or not another App was constructed before it).
+- Added `INT<min,max>` range cases (min-only equal/above/below, exact, inclusive bounds, zero-max regression) and literal prefix/suffix cases (prefix/suffix strip + required, prefix+suffix combo, empty-capture reject, type composition, plain-param regression) to the StrictTypes and MapRoute suites.
+
+### 📚 Documentation
+
+- Clarified the `int<min,max>` range semantics (`int<5>` ≥, `int<5,5>` exact, inclusive bounds) and added a new **Enum Constraint** tab under *Typed Parameters and Constraints* in `docs/routing/advanced-routing.md`.
+- Added a new **Literal Prefixes and Suffixes** section to `docs/routing/advanced-routing.md` covering prefix, suffix, prefix+suffix, type composition, and the exact-match / single-segment / empty-capture rules.
+
+
+
+
+---
+
+
+
+
 ## v2.0.14 (Stable) (Latest) (PHP 8.4)
 
 **Installation:**

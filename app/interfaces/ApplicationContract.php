@@ -264,14 +264,57 @@ interface ApplicationContract {
     public function setGeneratedCacheDirectory(string $path): self;
 
     /**
-     * Disables esbuild for JS minification. When called, the application will use the default C++ minification method instead of esbuild for JavaScript assets.
-     * Disable this if you want want a faster compression time and are okay with less aggressive minification, or if you encounter any issues with esbuild minification in your environment.
-     * The default C++ and PHP minification for JS isn't good yet, so it's recommended to keep esbuild enabled for production use until the native compressor's JS minification is improved in a future release.
-     * 
-     * @since v2.0.9
+     * Enables esbuild for JavaScript minification. By default the application uses the fast in-process C++ JS minifier, which spawns no external process. Call this to opt into esbuild instead for more aggressive, AST-accurate minification of JavaScript assets.
+     * esbuild runs as an external process on asset (re)generation (cache-miss), not on every request, and falls back to the C++ minifier if the esbuild process fails or times out.
+     * Enable this if you want the most aggressive minification and have esbuild available in your environment; otherwise the default C++ minifier is recommended for its zero-process speed.
+     *
+     * @since v2.1.0
      * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
      */
+    public function useEsbuildForJsMinification(): self;
+
+    /**
+     * Disables esbuild for JavaScript minification.
+     *
+     * @deprecated Since v2.1.0. This method is a no-op and does nothing. In earlier
+     *             versions esbuild was the default JS engine and this turned it off;
+     *             now the fast in-process C++ minifier is the default and esbuild is
+     *             opt-in, so there is nothing to disable. It is kept only so existing
+     *             code keeps working, and it WILL BE REMOVED in a future version.
+     *             To use esbuild, opt in with {@see useEsbuildForJsMinification()}.
+     *
+     * @see useEsbuildForJsMinification()
+     * @since v2.1.0
+     * @return self
+     */
     public function disableMinificationWithEsbuild(): self;
+
+    /**
+     * Enables the Oxc (Rust) in-process JavaScript minifier. Oxc is the recommended
+     * high-performance engine: AST-accurate (maximum minification, won't silently
+     * corrupt JS) and in-process (no subprocess, unlike esbuild), making it ideal
+     * for high-concurrency production traffic.
+     *
+     * Oxc is OPT-IN. It loads either from `ffi.preload` (preferred, FFI_SCOPE=
+     * "phpspa_oxc" — see examples/phpspa_oxc.h) or, when not preloaded, dynamically
+     * via `FFI::cdef` from the path set with `setOxcLibraryPath()`.
+     * If Oxc is enabled but unavailable (not preloaded, no library path, FFI
+     * disabled), it degrades to the PHP minifier — it NEVER falls back to the C++
+     * minifier (that is esbuild's behaviour). Call `forceNativeCompression()` to
+     * make an unavailable Oxc throw instead of degrading to PHP. A developer's own
+     * invalid JS is returned as a visible console error, not thrown.
+     *
+     * Priority: Oxc takes precedence over every other engine when enabled. If both
+     * Oxc and esbuild are enabled, Oxc wins when it is actually preloaded/available,
+     * otherwise esbuild handles the request. `forceNativeCompression()` does not
+     * disable Oxc — it makes an unavailable Oxc throw instead of degrading to PHP.
+     *
+     * Applies only to JavaScript — HTML and CSS always use the native C++ compressor.
+     *
+     * @since v2.1.0
+     * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
+     */
+    public function useOxcForJsMinification(): self;
 
     /**
      * Sets a custom path for the native compressor shared library.
@@ -287,6 +330,28 @@ interface ApplicationContract {
      * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
      */
     public function setCustomCompressorLibraryPath(string $path): self;
+
+    /**
+     * Sets the path for the Oxc JS minifier shared library.
+     *
+     * Sets the `PHPSPA_OXC_LIB` environment variable to an absolute path of the Oxc
+     * shared library (liboxc_php_minifier.so / oxc_php_minifier.dll /
+     * liboxc_php_minifier.dylib). The library is then loaded dynamically with
+     * `FFI::cdef` from here, instead of the preloaded `phpspa_oxc` FFI scope.
+     *
+     * When Oxc is enabled via {@see useOxcForJsMinification()}, you MUST provide the
+     * library one of two ways: preload it in `ffi.preload` (FFI_SCOPE "phpspa_oxc"),
+     * or set this path. Preloading is the faster option; use this when you prefer a
+     * direct dynamic load over editing `ffi.preload`. With neither, Oxc is
+     * unavailable and degrades to the PHP minifier (or throws under
+     * {@see forceNativeCompression()}).
+     *
+     * @param string $path Absolute path to the Oxc shared library.
+     * @return self
+     * @since v2.1.0
+     * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
+     */
+    public function setOxcLibraryPath(string $path): self;
 
     /**
      * Forces the application to use native (C++) compression instead of the default PHP minification.
@@ -347,4 +412,31 @@ interface ApplicationContract {
      * @param bool $return If true, returns the rendered output as a string instead of printing it.
      */
     public function run (bool $return = false);
+
+    /**
+     * Combine all assets per component into single bundled links.
+     *
+     * When enabled, instead of generating one link per CSS/JS callable, the application
+     * generates a single combined link per (scope, asset-type, script-type) group:
+     * - Global CSS callables → one combined CSS link
+     * - Global JS callables → one combined JS link (per script type)
+     * - Component CSS callables → one combined CSS link
+     * - Component JS callables → one combined JS link (per script type)
+     *
+     * This dramatically reduces the number of HTTP requests and compressor/esbuild
+     * invocations (N callables → 1 compression pass instead of N), improving
+     * page load performance in production.
+     *
+     * **Recommended for production only.** In development, individual links make
+     * debugging easier. Enabling this also forces `randomizeAssetName()` (combined
+     * bundles have no single name).
+     *
+     * External asset links (non-callable strings) are NOT combined and remain
+     * as individual tags.
+     *
+     * @return self
+     * @since v2.1.0
+     * @see https://phpspa.tech/performance/managing-styles-and-scripts/#combining-assets-per-component
+     */
+    public function combineAssetsPerComponent(): self;
 }

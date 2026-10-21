@@ -11,6 +11,7 @@ use PhpSPA\Core\Router\MapRoute;
 use PhpSPA\Core\Router\PrefixRouter;
 use PhpSPA\Core\Http\HttpRequest;
 use PhpSPA\Compression\Compressor;
+use PhpSPA\Core\Compression\OxcCompressor;
 use PhpSPA\Core\Config\CompressionConfig;
 use PhpSPA\Core\Helper\CsrfManager;
 use PhpSPA\Core\Helper\SessionHandler;
@@ -131,9 +132,42 @@ abstract class AppImpl implements ApplicationContract {
 
    private bool $randomizeAssetName = false;
 
+   private bool $combineAssets = false;
+
+   /**
+    * Memoized result of resolving the asset URL for the current request:
+    *   - array : the decoded, HMAC-verified asset info (reused by every App);
+    *   - false : the request is NOT an asset;
+    *   - null  : not yet computed.
+    * Keyed by `$resolvedAssetUri` so a different request never reuses it.
+    *
+    * @var array|false|null
+    */
+   private static array|false|null $resolvedAssetInfo = null;
+
+   /**
+    * The request URI `$resolvedAssetInfo` was decoded for; the memo is reused
+    * only when it matches the current request.
+    *
+    * @var string|null
+    */
+   private static ?string $resolvedAssetUri = null;
+
+   /**
+    * Lazily-computed, content-derived global-asset scope id for THIS App (a hash
+    * of its registered globals' file/line/mtime signatures). Null until first
+    * computed by `globalScopeId()`. Position-independent, so removing another
+    * App never changes this one's id. See `globalScopeId()`.
+    *
+    * @var string|null
+    */
+   private ?string $scopeIdCache = null;
+
    private ?string $generatedCacheDirectory = null;
 
-   private bool $useEsbuild = true;
+   private bool $useEsbuild = false;
+
+   private bool $useOxc = false;
 
    public function defaultTargetID (string $targetID): ApplicationContract
    {
@@ -220,8 +254,18 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
+   public function setOxcLibraryPath(string $path): ApplicationContract
+   {
+      putenv("PHPSPA_OXC_LIB=$path");
+      return $this;
+   }
+
    public function forceNativeCompression(): ApplicationContract
    {
+      // "Native" here means the native (FFI) compression path — C++, esbuild,
+      // or Oxc — must NOT fall back to the PHP minifier. If the chosen native
+      // engine fails/unavailable, throw instead of silently degrading to PHP.
+      // It does NOT change which JS engine is selected; Oxc/esbuild opt-ins stay.
       putenv("PHPSPA_COMPRESSION_STRATEGY=native");
       return $this;
    }
@@ -329,8 +373,25 @@ abstract class AppImpl implements ApplicationContract {
       $this->module = true; return $this;
    }
 
+   public function useEsbuildForJsMinification(): ApplicationContract {
+      $this->useEsbuild = true; return $this;
+   }
+
+   /**
+    * @deprecated Since v2.1.0. No-op — esbuild is no longer the default engine, so
+    *             there is nothing to disable. Opt INTO esbuild with
+    *             {@see useEsbuildForJsMinification()} instead. Will be removed in a
+    *             future version.
+    */
    public function disableMinificationWithEsbuild(): ApplicationContract {
-      $this->useEsbuild = false; return $this;
+      // Intentionally does nothing. Back when esbuild was the default JS engine
+      // this turned it off; now C++ is the default (esbuild is opt-in), so the
+      // "disabled" state is already the default and this call has no effect.
+      return $this;
+   }
+
+   public function useOxcForJsMinification(): ApplicationContract {
+      $this->useOxc = true; return $this;
    }
 
    public function disableLogs(int $flags = DISABLE_COMPRESSION_LOG | DISABLE_LIBRARY_LOG | DISABLE_PRELOAD_LOG): ApplicationContract {
@@ -341,15 +402,18 @@ abstract class AppImpl implements ApplicationContract {
       $this->randomizeAssetName = true; return $this;
    }
 
+   public function combineAssetsPerComponent(): ApplicationContract {
+      $this->combineAssets = true;
+      $this->randomizeAssetName = true; // Combined bundles have no single name
+      return $this;
+   }
+
    public function setGeneratedCacheDirectory(string $path): ApplicationContract {
       $this->generatedCacheDirectory = $path; return $this;
    }
 
    public function run (bool $return = false)
    {
-      // --- Reset DOM/Nonce/Reset HttpRequest static state for worker mode compatibility ---
-      DOM::reset();
-      Nonce::reset();
       HttpRequest::$cachedRawPostData = null;
 
       $request = new HttpRequest();
@@ -368,12 +432,28 @@ abstract class AppImpl implements ApplicationContract {
       // Auto-detect and set base path for proper asset URL resolution
       PathResolver::autoDetectBasePath();
 
-      $assetInfo = AssetLinkManager::resolveAssetRequest(static::$request_uri);
+      // #2 -- Decode + HMAC-verify the asset URL ONCE per request and reuse the
+      // result for every App, instead of re-validating the same link each time.
+      $assetInfo = self::resolveAssetRequestMemoized(static::$request_uri);
+
       if ($assetInfo !== null) {
-         $this->serveAsset($assetInfo);
+         // #3 -- Fast skip: an instance-scoped global asset (`__global__:<id>`)
+         // owned by a DIFFERENT App is not ours; do nothing and let the owning
+         // App's run() handle it, without entering serveAsset at all.
+         if ($this->globalAssetOwnership($assetInfo['componentRoute']) === -1) {
+            if ($return) return null;
+            return;
+         }
+
+         $assetOutput = $this->serveAsset($assetInfo, $return);
+         if ($return) return $assetOutput;
          return;
       }
 
+      // --- Reset DOM/Nonce/Reset HttpRequest static state for worker mode compatibility ---
+      DOM::reset();
+      Nonce::reset();
+      Nonce::sendHeader();
       $success = false;
 
       foreach ($this->prefix as $prefix) {
@@ -728,7 +808,6 @@ abstract class AppImpl implements ApplicationContract {
       // --- For regular HTML requests, only include component stylesheets with the component content ---
       // --- Component scripts will be injected later to ensure proper execution order ---
       $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput;
-      $nonce = Nonce::nonce();
 
       // --- Initialize static variable once ---
       /**
@@ -791,15 +870,6 @@ abstract class AppImpl implements ApplicationContract {
                   1,
                );
             }
-         }
-
-         if ($nonce) {
-            $layoutOutput = preg_replace(
-               '/<head\b([^>]*)>/i',
-               "<head$1 x-phpspa=\"$nonce\">",
-               $layoutOutput,
-               1,
-            );
          }
 
          $tt = ' data-phpspa-target';
@@ -948,6 +1018,27 @@ abstract class AppImpl implements ApplicationContract {
 
       // --- Get the primary route for mapping purposes ---
       $primaryRoute = \is_array($route) ? $route[0] ?? null : $route;
+      
+            // --- Empty / match-all routes have no route string; use a stable sentinel so
+            // --- asset links (and their cache keys) are valid and round-trip back to the
+            // --- correct component via findComponentByRoute(). Without this, a null route
+            // --- hits generateCssLink()/generateJsLink()'s non-nullable string param. ---
+            if ($primaryRoute === null || $primaryRoute === '') {
+               $primaryRoute = '__root__';
+            }
+
+      // --- Scoped global route: `__global__:<appId>` binds a global asset link to
+      // --- THIS App instance, so a second `new App()` with its own global callables
+      // --- can't have its global served by the first App (or vice versa). The bare
+      // --- `__global__` is reserved for framework-owned assets (the phpspa SPA
+      // --- script at index -1), which every App serves identically. ---
+      $globalRoute = '__global__:' . $this->globalScopeId();
+
+      // ==================== COMBINED ASSETS PROTOTYPE ====================
+      if ($this->combineAssets) {
+         return $this->generateCombinedAssetLinks($primaryRoute, $globalRoute, $scripts, $stylesheets, $globalScripts, $globalStylesheets, $isPhpSpaRequest);
+      }
+      // ==================== END COMBINED ASSETS PROTOTYPE ====================
 
       // --- Generate global stylesheet links ---
       if (!empty($globalStylesheets) && !$isPhpSpaRequest) {
@@ -956,21 +1047,24 @@ abstract class AppImpl implements ApplicationContract {
 
             if (is_callable($stylesheet['content'])) {
                $modificationTime = new FileFunction($stylesheet['content'])->getFileModificationTime();
-               $stylesheet['href'] = AssetLinkManager::generateCssLink("__global__", $index, $modificationTime, $this->randomizeAssetName ? null : ($stylesheet['name'] ?? null));
+               $stylesheet['href'] = AssetLinkManager::generateCssLink($globalRoute, $index, $modificationTime, $this->randomizeAssetName ? null : ($stylesheet['name'] ?? null));
             } else
                $stylesheet['href'] = $stylesheet['content'];
 
             unset($stylesheet['name']);
             unset($stylesheet['content']);
 
-            if ($stylesheet['rel'] === 'stylesheet') {
-               $preloadStylesheet = $stylesheet;
-
-               $preloadStylesheet['rel'] = 'preload';
-               $preloadStylesheet['as'] = 'style';
-               $attributes = HTMLAttrInArrayToString($preloadStylesheet);
-               $result['global']['stylesheets'] .= "\n      <link $attributes />";
-            }
+            // --- Preload hint disabled: styles already sit at the top of <head>,
+            // --- so the browser discovers them nearly as early without the extra tag.
+            // --- Revisit with HTTP `Link:` / 103 Early Hints in a future release.
+            // if ($stylesheet['rel'] === 'stylesheet') {
+            //    $preloadStylesheet = $stylesheet;
+            //
+            //    $preloadStylesheet['rel'] = 'preload';
+            //    $preloadStylesheet['as'] = 'style';
+            //    $attributes = HTMLAttrInArrayToString($preloadStylesheet);
+            //    $result['global']['stylesheets'] .= "\n      <link $attributes />";
+            // }
 
             $attributes = HTMLAttrInArrayToString($stylesheet);
             $result['global']['stylesheets'] .= "\n      <link $attributes />";
@@ -991,17 +1085,20 @@ abstract class AppImpl implements ApplicationContract {
             unset($stylesheet['name']);
             unset($stylesheet['content']);
 
-            if ($stylesheet['rel'] === 'stylesheet' && !$isPhpSpaRequest) {
-               $preloadStylesheet = $stylesheet;
-
-               unset($preloadStylesheet['name']);
-               unset($preloadStylesheet['content']);
-
-               $preloadStylesheet['rel'] = 'preload';
-               $preloadStylesheet['as'] = 'style';
-               $attributes = HTMLAttrInArrayToString($preloadStylesheet);
-               $result['component']['stylesheets'] .= "\n      <link $attributes />";
-            }
+            // --- Preload hint disabled: styles already sit at the top of <head>,
+            // --- so the browser discovers them nearly as early without the extra tag.
+            // --- Revisit with HTTP `Link:` / 103 Early Hints in a future release.
+            // if ($stylesheet['rel'] === 'stylesheet' && !$isPhpSpaRequest) {
+            //    $preloadStylesheet = $stylesheet;
+            //
+            //    unset($preloadStylesheet['name']);
+            //    unset($preloadStylesheet['content']);
+            //
+            //    $preloadStylesheet['rel'] = 'preload';
+            //    $preloadStylesheet['as'] = 'style';
+            //    $attributes = HTMLAttrInArrayToString($preloadStylesheet);
+            //    $result['component']['stylesheets'] .= "\n      <link $attributes />";
+            // }
 
             $attributes = HTMLAttrInArrayToString($stylesheet);
             $result['component']['stylesheets'] .= "\n      <link $attributes />";
@@ -1026,7 +1123,7 @@ abstract class AppImpl implements ApplicationContract {
 
             if (is_callable($script['content'])) {
                $modificationTime = new FileFunction($script['content'])->getFileModificationTime();
-               $script['src'] = AssetLinkManager::generateJsLink("__global__", $index, $modificationTime, $this->randomizeAssetName ? null : ($script['name'] ?? null), $script['type']);
+               $script['src'] = AssetLinkManager::generateJsLink($globalRoute, $index, $modificationTime, $this->randomizeAssetName ? null : ($script['name'] ?? null), $script['type']);
             } else {
                $script['src'] = $script['content'];
                $isLink = true;
@@ -1068,26 +1165,227 @@ abstract class AppImpl implements ApplicationContract {
    }
 
    /**
+    * Generate combined asset links (prototype for combineAssetsPerComponent)
+    *
+    * Groups callable assets by (scope, type) and generates one combined link per group.
+    * External links (non-callables) are emitted individually.
+    *
+    * @param string|null $primaryRoute Component route
+    * @param array $scripts Component scripts
+    * @param array $stylesheets Component stylesheets
+    * @param array $globalScripts Global scripts
+    * @param array $globalStylesheets Global stylesheets
+    * @param bool $isPhpSpaRequest Whether this is an SPA request
+    * @return array Asset links result
+    */
+   private function generateCombinedAssetLinks (?string $primaryRoute, string $globalRoute, array $scripts, array $stylesheets, array $globalScripts, array $globalStylesheets, bool $isPhpSpaRequest): array
+   {
+      $result = [
+         'component' => [ 'scripts' => '', 'stylesheets' => '' ],
+         'global' => [ 'scripts' => '', 'stylesheets' => '' ]
+      ];
+
+      // --- Helper to group callables by type and collect external links ---
+      $groupAssets = function (array $assets, string $typeKey = 'type') {
+         $callableGroups = []; // grouped by script/rel type
+         $externalLinks = [];
+         $mtimes = [];
+
+         foreach ($assets as $index => $asset) {
+            $asset = (array) Validate::validate($asset);
+
+            if (\is_callable($asset['content'])) {
+               $assetType = $asset[$typeKey] ?? 'default';
+               if (!isset($callableGroups[$assetType])) {
+                  $callableGroups[$assetType] = ['indexes' => [], 'mtimes' => [], 'attrs' => $asset];
+               }
+               $callableGroups[$assetType]['indexes'][] = $index;
+               $callableGroups[$assetType]['mtimes'][] = (new FileFunction($asset['content']))->getFileModificationTime();
+            } else {
+               $externalLinks[] = $asset;
+            }
+         }
+
+         return ['groups' => $callableGroups, 'external' => $externalLinks];
+      };
+
+      // --- Generate global stylesheet links (combined) ---
+      if (!empty($globalStylesheets) && !$isPhpSpaRequest) {
+         $grouped = $groupAssets($globalStylesheets, 'rel');
+
+         // Combined callable groups
+         foreach ($grouped['groups'] as $rel => $group) {
+            $maxMtime = \max($group['mtimes']);
+            $href = AssetLinkManager::generateCombinedCssLink($globalRoute, $group['indexes'], $maxMtime, $group['attrs']['type'] ?? 'text/css');
+
+            $attrs = $group['attrs'];
+            $attrs['href'] = $href;
+            unset($attrs['name'], $attrs['content']);
+
+            // --- Preload hint disabled: styles already sit at the top of <head>,
+            // --- so the browser discovers them nearly as early without the extra tag.
+            // --- Revisit with HTTP `Link:` / 103 Early Hints in a future release.
+            // if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet') {
+            //    $preload = $attrs;
+            //    $preload['rel'] = 'preload';
+            //    $preload['as'] = 'style';
+            //    $result['global']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($preload) . " />";
+            // }
+            $result['global']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($attrs) . " />";
+         }
+
+         // External links (non-callable)
+         foreach ($grouped['external'] as $ext) {
+            $ext['href'] = $ext['content'];
+            unset($ext['name'], $ext['content']);
+            $result['global']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($ext) . " />";
+         }
+      }
+
+      // --- Generate component stylesheet links (combined) ---
+      if (!empty($stylesheets)) {
+         $grouped = $groupAssets($stylesheets, 'rel');
+
+         foreach ($grouped['groups'] as $rel => $group) {
+            $maxMtime = \max($group['mtimes']);
+            $href = AssetLinkManager::generateCombinedCssLink($primaryRoute, $group['indexes'], $maxMtime, $group['attrs']['type'] ?? 'text/css');
+
+            $attrs = $group['attrs'];
+            $attrs['href'] = $href;
+            unset($attrs['name'], $attrs['content']);
+
+            // --- Preload hint disabled: styles already sit at the top of <head>,
+            // --- so the browser discovers them nearly as early without the extra tag.
+            // --- Revisit with HTTP `Link:` / 103 Early Hints in a future release.
+            // if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet' && !$isPhpSpaRequest) {
+            //    $preload = $attrs;
+            //    $preload['rel'] = 'preload';
+            //    $preload['as'] = 'style';
+            //    $result['component']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($preload) . " />";
+            // }
+            $result['component']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($attrs) . " />";
+         }
+
+         foreach ($grouped['external'] as $ext) {
+            $ext['href'] = $ext['content'];
+            unset($ext['name'], $ext['content']);
+            $result['component']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($ext) . " />";
+         }
+      }
+
+      // --- Automatically add phpspa script for SPA functionality ---
+      if (!$isPhpSpaRequest && !$this->module) {
+         $modificationTime = filemtime($this->getPhpSPAScriptPath());
+         $jsLink = AssetLinkManager::generateJsLink("__global__", -1, $modificationTime);
+         $result['global']['stylesheets'] .= "\n      <script type=\"text/javascript\" src=\"$jsLink\"></script>\n";
+      }
+
+      // --- Generate global script links (combined) ---
+      if (!empty($globalScripts) && !$isPhpSpaRequest) {
+         $grouped = $groupAssets($globalScripts, 'type');
+
+         // External scripts (e.g. CDN links) MUST always come first, before the
+         // combined local bundle, so dependencies like jQuery load before the
+         // callable scripts that rely on them.
+         foreach ($grouped['external'] as $ext) {
+            $ext['src'] = $ext['content'];
+            unset($ext['name'], $ext['content']);
+            $result['global']['scripts'] .= "\n      <script " . HTMLAttrInArrayToString($ext) . "></script>";
+         }
+
+         foreach ($grouped['groups'] as $type => $group) {
+            $maxMtime = \max($group['mtimes']);
+            $src = AssetLinkManager::generateCombinedJsLink($globalRoute, $group['indexes'], $maxMtime, $type);
+
+            $attrs = $group['attrs'];
+            $attrs['src'] = $src;
+            unset($attrs['name'], $attrs['content']);
+            $result['global']['scripts'] .= "\n      <script " . HTMLAttrInArrayToString($attrs) . "></script>";
+         }
+      }
+
+      // --- Generate component script links (combined) ---
+      if (!empty($scripts)) {
+         $grouped = $groupAssets($scripts, 'type');
+
+         // External scripts (e.g. CDN links) MUST always come first, before the
+         // combined local bundle, so dependencies load before the callable
+         // scripts that rely on them.
+         foreach ($grouped['external'] as $ext) {
+            $ext['src'] = $ext['content'];
+            unset($ext['name'], $ext['content']);
+            $result['component']['scripts'] .= "\n      <script " . HTMLAttrInArrayToString($ext) . "></script>";
+         }
+
+         foreach ($grouped['groups'] as $type => $group) {
+            $maxMtime = \max($group['mtimes']);
+            $src = AssetLinkManager::generateCombinedJsLink($primaryRoute, $group['indexes'], $maxMtime, $type);
+
+            $attrs = $group['attrs'];
+            $attrs['src'] = $src;
+            unset($attrs['name'], $attrs['content']);
+
+            $tag = $isPhpSpaRequest
+               ? "\n      <script data-type=\"phpspa/script\" " . HTMLAttrInArrayToString($attrs) . "></script>"
+               : "\n      <script " . HTMLAttrInArrayToString($attrs) . "></script>";
+            $result['component']['scripts'] .= $tag;
+         }
+      }
+
+      return $result;
+   }
+
+   /**
     * Serve CSS/JS asset content from session-based links
     *
     * @param array $assetInfo Asset information from AssetLinkManager
-    * @return void
     */
-   private function serveAsset (array $assetInfo): void
+   private function serveAsset (array $assetInfo, bool $return = false)
    {
       $request = new HttpRequest();
       $currentLevel = Compressor::getLevel();
-      $isGlobalAsset = $assetInfo['componentRoute'] === '__global__';
+      $ownership = $this->globalAssetOwnership($assetInfo['componentRoute']);
+
+      // --- A global asset owned by a DIFFERENT App instance: do not serve it
+      // --- here, let the request fall through to the owning app's run(). This
+      // --- is what stops App A from serving App B's global callable script. ---
+      if ($ownership === -1) {
+         return;
+      }
+
+      $isGlobalAsset = $ownership === 1;
       $isPhpSpaRequest = $request->requestedWith() === 'PHPSPA_REQUEST' || $request->requestedWith() === 'PHPSPA_REQUEST_SCRIPT';
       $isJS = strtolower($assetInfo['assetType']) === 'js';
 
+      // ==================== COMBINED ASSETS PROTOTYPE ====================
+      if ($this->combineAssets && isset($assetInfo['assetIndexes']) && \is_array($assetInfo['assetIndexes'])) {
+         return $this->serveCombinedAsset($assetInfo, $currentLevel, $isGlobalAsset, $isPhpSpaRequest, $isJS, $return);
+      }
+      // ==================== END COMBINED ASSETS PROTOTYPE ====================
+
       if ($isGlobalAsset) {
+         $isScopedGlobal = \str_starts_with($assetInfo['componentRoute'], '__global__:');
+
          if ($assetInfo['assetType'] === 'css') {
-            $callable = $this->stylesheets[$assetInfo['assetIndex']] ?? null;
-            $callable = $callable['content'] ?? null;
+            $entry = $this->stylesheets[$assetInfo['assetIndex']] ?? null;
+            $callable = $entry['content'] ?? null;
          } else {
-            $callable = $this->scripts[$assetInfo['assetIndex']] ?? null;
-            $callable = $callable['content'] ?? null;
+            $entry = $this->scripts[$assetInfo['assetIndex']] ?? null;
+            $callable = $entry['content'] ?? null;
+         }
+
+         // --- Scope-id match is necessary but not sufficient. The instance id is
+         // --- a monotonic per-process counter, so a removed App's id can be
+         // --- reused by a later App. A stale cached (or CDN-held) `__global__:<id>`
+         // --- URL would then resolve to a DIFFERENT App holding that id, which
+         // --- would serve its OWN global at that index -- wrong bytes with a 200.
+         // --- Guard it like a component asset is guarded by route: if the
+         // --- scoped-global index has no entry on THIS app, the URL does not
+         // --- belong here -> skip (404) instead of a mismatched serve. The bare
+         // --- framework `__global__` (index -1, from the SPA script file) is
+         // --- exempt, so $isScopedGlobal gates the check. ---
+         if ($isScopedGlobal && $entry === null) {
+            return;
          }
       } else {
          // --- Find the component that matches the asset's route ---
@@ -1127,6 +1425,7 @@ abstract class AppImpl implements ApplicationContract {
 
                   $content = Compressor::applyBinaryCompression($content);
                   $this->setAssetHeaders($assetInfo['type']);
+                  if ($return) return $content;
                   echo $content;
                   exit(0);
                }
@@ -1164,9 +1463,17 @@ abstract class AppImpl implements ApplicationContract {
             if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) error_log("Compressed $assetType asset output within {$timer->getFormattedElapsedTime()} | From {$assetInfo['name']}");
 
             if (!$isPhpSpaRequest) {
-               if (!is_dir($fileDir)) mkdir($fileDir);
+               // Race-safe + recursive (parent 'generated' dir may not exist).
+               if (!is_dir($fileDir) && !@mkdir($fileDir, 0755, true) && !is_dir($fileDir)) {
+                  if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+                     error_log("phpspa: failed to create generated cache directory: $fileDir");
+                  }
+               }
 
-               if ($fileName) {
+               if ($fileName && is_dir($fileDir)) {
+                  if (OxcCompressor::isErrorOutput($content) && !($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+                     error_log("phpspa: caching Oxc parse-error output for $assetType asset (will regenerate when the source changes): {$assetInfo['name']}");
+                  }
                   @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
                }
             }
@@ -1181,6 +1488,167 @@ abstract class AppImpl implements ApplicationContract {
       // --- Set appropriate headers ---
       $this->setAssetHeaders($assetInfo['type']);
       // --- Output the content ---
+      if ($return) return $content;
+      echo $content;
+      exit(0);
+   }
+
+   /**
+    * Serve combined CSS/JS asset content (prototype for combineAssetsPerComponent)
+    *
+    * Loops through all indexes, concatenates content, compresses once, serves.
+    *
+    * @param array $assetInfo Asset information with assetIndexes array
+    * @param int $currentLevel Current compression level
+    * @param bool $isGlobalAsset Whether this is a global asset
+    * @param bool $isPhpSpaRequest Whether this is an SPA request
+    * @param bool $isJS Whether this is a JavaScript asset
+    * @return void
+    */
+   private function serveCombinedAsset (array $assetInfo, int $currentLevel, bool $isGlobalAsset, bool $isPhpSpaRequest, bool $isJS, bool $return = false)
+   {
+      $indexes = $assetInfo['assetIndexes'];
+      $isCss = $assetInfo['assetType'] === 'css';
+
+      // --- Collect all callables ---
+      $callables = [];
+      $names = [];
+      $maxMtime = 0;
+      $firstFileName = null;
+
+      if ($isGlobalAsset) {
+         $isScopedGlobal = \str_starts_with($assetInfo['componentRoute'], '__global__:');
+         $sourceArray = $isCss ? $this->stylesheets : $this->scripts;
+         foreach ($indexes as $idx) {
+            $item = $sourceArray[$idx] ?? null;
+
+            // --- Scoped global: the scope id can be reused after an App is
+            // --- removed, so a stale URL may land on a different App that holds
+            // --- the same id. If ANY requested index is missing on this app, the
+            // --- combined URL does not belong here -> skip (404) rather than
+            // --- serve a partial / mismatched bundle. ---
+            if ($isScopedGlobal && $item === null) {
+               return;
+            }
+
+            if ($item && \is_callable($item['content'])) {
+               $callables[$idx] = $item['content'];
+               $names[$idx] = $item['name'] ?? ($isCss ? "stylesheet #$idx" : "script #$idx");
+               $ff = new FileFunction($item['content']);
+               $maxMtime = \max($maxMtime, $ff->getFileModificationTime());
+               if ($firstFileName === null) $firstFileName = $ff->getFileName();
+            }
+         }
+      } else {
+         $component = $this->findComponentByRoute($assetInfo['componentRoute']);
+         if ($component === null) return;
+
+         $sourceArray = $isCss
+            ? CallableInspector::getProperty($component, 'stylesheets')
+            : CallableInspector::getProperty($component, 'scripts');
+
+         foreach ($indexes as $idx) {
+            $item = $sourceArray[$idx] ?? null;
+            if ($item && \is_callable($item['content'])) {
+               $callables[$idx] = $item['content'];
+               $names[$idx] = $item['name'] ?? ($isCss ? "stylesheet #$idx" : "script #$idx");
+               $ff = new FileFunction($item['content']);
+               $maxMtime = \max($maxMtime, $ff->getFileModificationTime());
+               if ($firstFileName === null) $firstFileName = $ff->getFileName();
+            }
+         }
+      }
+
+      if (empty($callables)) return;
+
+      // --- Check generated cache ---
+      $indexesKey = \implode(',', $indexes);
+      $hashed = md5($assetInfo['componentRoute'] . $indexesKey . $maxMtime . $assetInfo['assetType']);
+      $fileDir = $this->generatedCacheDirectory ?? ($firstFileName ? (pathinfo($firstFileName, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 'generated') : null);
+      $newName = $fileDir ? ($fileDir . DIRECTORY_SEPARATOR . $hashed . ".generated.php") : null;
+
+      if ($newName && file_exists($newName)) {
+         if ($currentLevel === Compressor::LEVEL_NONE) {
+            unlink($newName);
+         } else {
+            $content = require $newName;
+            $content = Compressor::applyBinaryCompression($content);
+            $this->setAssetHeaders($assetInfo['type']);
+            if ($return) return $content;
+            echo $content;
+            exit(0);
+         }
+      }
+
+      // --- Concatenate all content ---
+      // Each part is prefixed with a labeled comment banner so the combined
+      // bundle is navigable. For JS, parts are also separated ASI-safely: a part
+      // ending `})()` followed by one starting `(` would otherwise fuse into
+      // `})()(...)` → "is not a function". We trim trailing whitespace/semicolons
+      // off each part and terminate it with a semicolon on its OWN line (`\n;\n`)
+      // so even a dangling `// line comment` at the end of a part cannot swallow
+      // the terminator. CSS has no such hazard (comment banner + newline only).
+      $buffer = '';
+      foreach ($callables as $idx => $callable) {
+         $part = \call_user_func($callable);
+         if (\is_array($part)) $part = $part[0] ?? '';
+
+         $label = $names[$idx] ?? "#$idx";
+         $banner = "\n/* ====================== {$label} ====================== */\n";
+
+         if ($isCss) {
+            $buffer .= $banner . $part . "\n";
+         } else {
+            // Trim trailing whitespace + semicolons, then terminate on its own
+            // line so a trailing line-comment can't eat the semicolon.
+            $part = \rtrim($part);
+            $part = \rtrim($part, ';');
+            $part = \rtrim($part);
+            if ($part === '') continue;
+            $buffer .= $banner . $part . "\n;\n";
+         }
+      }
+
+      // --- Compress the concatenated content ---
+      $compressionLevel = $isPhpSpaRequest ? Compressor::LEVEL_EXTREME : $currentLevel;
+
+      if ($currentLevel !== Compressor::LEVEL_NONE) {
+         $timer = new Timer();
+         $assetType = strtoupper($assetInfo['assetType']);
+
+         $timer->start();
+         $content = $this->compressAssetContent($buffer, $compressionLevel, $assetInfo['type'], $isGlobalAsset ? 'global' : 'scoped');
+         $count = \count($indexes);
+         if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) error_log("Compressed combined $assetType asset ({$count} files) within {$timer->getFormattedElapsedTime()}");
+
+         // --- Cache the result ---
+         if (!$isPhpSpaRequest && $fileDir) {
+            // Race-safe: concurrent combined-asset requests can all pass the
+            // is_dir() check and then race into mkdir(), so the losers would
+            // throw "File exists". Suppress and re-verify instead — a dir that
+            // now exists (whoever created it) is success, not a fatal.
+            if (!is_dir($fileDir) && !@mkdir($fileDir, 0755, true) && !is_dir($fileDir)) {
+               if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+                  error_log("phpspa: failed to create generated cache directory: $fileDir");
+               }
+            }
+            if ($newName && is_dir($fileDir)) {
+               if (OxcCompressor::isErrorOutput($content) && !($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+                  error_log("phpspa: caching Oxc parse-error output for combined $assetType asset (will regenerate when a source changes)");
+               }
+               @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
+            }
+         }
+      } else {
+         $content = $buffer;
+         // --- Wrap component JS in IIFE ---
+         if (!$isGlobalAsset && $isJS) {
+            $content = "(()=>{{$content}})()";
+         }
+      }
+
+      $this->setAssetHeaders($assetInfo['type']);
+      if ($return) return $content;
       echo $content;
       exit(0);
    }
@@ -1196,6 +1664,11 @@ abstract class AppImpl implements ApplicationContract {
       foreach ($this->components as $component) {
          $route = CallableInspector::getProperty($component, 'route');
 
+         // --- '__root__' is the sentinel for an empty / match-all (null) route. ---
+         if ($targetRoute === '__root__' && ($route === null || $route === '')) {
+            return $component;
+         }
+
          if (\is_array($route)) {
             if (\in_array($targetRoute, $route)) {
                return $component;
@@ -1207,6 +1680,153 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       return null;
+   }
+
+   /**
+    * Stable identity for THIS App instance's global asset scope.
+    *
+    * Global scripts/stylesheets are registered per-App (`$this->scripts`,
+    * `$this->stylesheets`), but a global asset link previously encoded only the
+    * literal `__global__` route with an index. When two separate `new App()`
+    * instances each registered global callables, both produced identical
+    * `__global__` + index links, so whichever App's `run()` intercepted the
+    * asset request would serve ITS OWN global at that index -- leaking one App's
+    * global script into another App.
+    *
+    * The id disambiguates the owner. It is derived from the CONTENT identity of
+    * this App's registered globals (each callable's defining file, start line
+    * and modification time), not from construction order. A monotonic counter
+    * was rejected because any positional id shifts when an App is removed: drop
+    * App B and App C becomes the "second" App, inheriting B's old id and
+    * matching B's stale cached URLs -- serving the wrong bytes with a 200. A
+    * content hash is position-independent, so removing one App never changes
+    * another App's id, and a stale URL for a removed App matches nobody.
+    *
+    * Two Apps that register byte-identical globals DO hash to the same id, but
+    * then their global assets are literally the same, so serving one for the
+    * other is harmless. Computed from reflection + filemtime only -- the global
+    * callables are NEVER invoked to derive the id. Cached per instance; the
+    * cache is invalidated implicitly because registration happens before the
+    * first link generation.
+    *
+    * @return string The content-derived scope id for this app's globals
+    */
+   private function globalScopeId (): string
+   {
+      if ($this->scopeIdCache !== null) {
+         return $this->scopeIdCache;
+      }
+
+      $signatures = [];
+
+      foreach ([$this->scripts, $this->stylesheets] as $kind => $assets) {
+         foreach ($assets as $asset) {
+            $content = $asset['content'] ?? null;
+
+            if (\is_callable($content)) {
+               try {
+                  $ff = new FileFunction($content);
+                  $fn = $ff->getFunction();
+                  $file = $ff->getFileName();
+                  $line = $fn->getStartLine();
+                  $mtime = $ff->getFileModificationTime();
+                  $signatures[] = "{$kind}:{$file}:{$line}:{$mtime}";
+               } catch (\Throwable) {
+                  // --- Unreflectable callable: fall back to a spl hash so it
+                  // --- still contributes a stable-per-process signature. ---
+                  $signatures[] = "{$kind}:" . \spl_object_hash((object) ['c' => $content]);
+               }
+            } elseif (\is_string($content)) {
+               // --- A string asset (external URL / literal) is its own identity. ---
+               $signatures[] = "{$kind}:str:{$content}";
+            }
+         }
+      }
+
+      // --- Sort so registration order does not change the id; an App with no
+      // --- globals hashes an empty set to a stable constant. ---
+      \sort($signatures);
+      $this->scopeIdCache = \substr(\md5(\implode('|', $signatures)), 0, 12);
+
+      return $this->scopeIdCache;
+   }
+
+   /**
+    * Per-instance cache for the content-derived scope id. Reset implicitly with
+    * the object; recomputed on first use after all globals are registered.
+    *
+    * @return void
+    */
+   protected function initGlobalScope (): void
+   {
+      $this->scopeIdCache = null;
+   }
+
+   /**
+    * Reset the per-request asset statics. Call at the start of a request in
+    * long-lived worker runtimes (Swoole/RoadRunner) so a warm process does not
+    * reuse a previous request's memoized asset decode. One-shot web SAPIs do
+    * not need it (statics die with the process). The scope id is per-instance
+    * and content-derived, so it needs no reset.
+    *
+    * @return void
+    */
+   public static function resetAssetRequestState (): void
+   {
+      self::$resolvedAssetInfo = null;
+      self::$resolvedAssetUri = null;
+   }
+
+   /**
+    * Decode + HMAC-verify + expiry-check the asset URL ONCE per request, then
+    * memoize the result so every subsequent App's run() reuses it instead of
+    * re-validating the same link.
+    *
+    * In a multi-App request the asset URL is identical for every App, so the
+    * expensive base64 + HMAC verification only needs to happen for the first one.
+    * The memo is keyed by the request URI, so a different request (worker reuse,
+    * a multi-request test run) never reuses a stale decode.
+    *
+    * @param string $uri The current request URI.
+    * @return array|null The decoded asset info, or null when not an asset.
+    */
+   private static function resolveAssetRequestMemoized (string $uri): ?array
+   {
+      if (self::$resolvedAssetUri === $uri) {
+         return self::$resolvedAssetInfo === false ? null : self::$resolvedAssetInfo;
+      }
+
+      $info = AssetLinkManager::resolveAssetRequest($uri);
+      self::$resolvedAssetUri = $uri;
+      self::$resolvedAssetInfo = $info ?? false;
+      return $info;
+   }
+
+   /**
+    * Classify a global asset request against THIS App instance.
+    *
+    * @param string $componentRoute The decoded route from the asset link
+    * @return int One of: 0 = not a global asset (component-scoped);
+    *             1 = global owned by this app (serve it);
+    *             -1 = global owned by a DIFFERENT app (do not serve; fall through).
+    */
+   private function globalAssetOwnership (string $componentRoute): int
+   {
+      // --- Bare `__global__` = framework-owned (e.g. the phpspa SPA script at
+      // --- index -1). Every app serves it identically. ---
+      if ($componentRoute === '__global__') {
+         return 1;
+      }
+
+      // --- Scoped `__global__:<appId>` = a per-App global. Only the app whose
+      // --- id matches may serve it; otherwise fall through so the owning app's
+      // --- run() handles the request. ---
+      if (\str_starts_with($componentRoute, '__global__:')) {
+         $id = \substr($componentRoute, \strlen('__global__:'));
+         return $id === $this->globalScopeId() ? 1 : -1;
+      }
+
+      return 0;
    }
 
    /**
@@ -1288,7 +1908,41 @@ abstract class AppImpl implements ApplicationContract {
          default => 'HTML',
       };
 
-      return Compressor::compressWithLevel($content, $level, $type, $scope, $this->useEsbuild, $this->disableLogs);
+      return Compressor::compressWithLevel($content, $level, $type, $scope, $this->resolveJsEngine(), $this->disableLogs);
+   }
+
+   /**
+    * Resolve which JS minification engine to use for this request, by priority.
+    *
+    * Priority (highest first):
+    *   1. Oxc — if `useOxcForJsMinification()` was called. Oxc is preload-only;
+    *      when it is enabled but not preloaded/available it degrades to PHP
+    *      (never C++), or throws under `forceNativeCompression()`.
+    *   2. If BOTH Oxc and esbuild are enabled, Oxc wins when it is actually
+    *      available (preloaded); otherwise esbuild handles the request. This uses
+    *      the real preload signal — there is no path-based tie-break, because Oxc
+    *      cannot be loaded from a runtime path (it must be in `ffi.preload`).
+    *   3. esbuild — if `useEsbuildForJsMinification()` was called.
+    *   4. native C++ — the default, zero-process in-process minifier.
+    *
+    * @return string engine enum['oxc', 'esbuild', 'native']
+    */
+   private function resolveJsEngine(): string
+   {
+      if ($this->useOxc) {
+         // When only Oxc is on, it always takes the request (and HtmlCompressor
+         // decides available-Oxc vs PHP-fallback/throw). When both are on, defer
+         // to esbuild only if Oxc isn't actually preloaded/available.
+         if (!$this->useEsbuild || OxcCompressor::isAvailable()) {
+            return 'oxc';
+         }
+      }
+
+      if ($this->useEsbuild) {
+         return 'esbuild';
+      }
+
+      return 'native';
    }
 
    /**
