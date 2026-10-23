@@ -7,10 +7,10 @@ use PhpSPA\Core\Utils\Validate;
 
 class FormatComponent implements ArrayAccess {
 
-   public function __construct(private $data) {
+   public function __construct(private mixed $data) {
       $this->data = Validate::validate($data);
    }
-   
+
    public function __toString(): string {
       return base64_encode(serialize($this->data));
    }

@@ -15,10 +15,10 @@ class CsrfManager implements CsrfManagerInterface
     protected string $name;
 
     /** @var string Session storage key for CSRF tokens */
-    private string $sessionKey;
+    protected string $sessionKey;
 
     /** @var int Length of generated tokens in bytes (converted to hex) */
-    private int $tokenLength = 32;
+    protected int $tokenLength = 32;
 
     /** @var int Maximum number of tokens to store simultaneously */
     protected int $maxTokens = 10; // Limit stored tokens
@@ -26,12 +26,13 @@ class CsrfManager implements CsrfManagerInterface
     /** @var int Maximum age of tokens to last */
     protected int $tokenLifetime = 3600; // Token last for 1 hour
 
-    public function __construct(
-        string $name,
-        string $sessionKey = '_csrf_tokens',
-    ) {
+    /** @var mixed Optional metadata for the CSRF token */
+    protected $metadata;
+
+    public function __construct(string $name, mixed $metadata = null, string $sessionKey = '_csrf_tokens') {
         $this->name = $name;
         $this->sessionKey = $sessionKey;
+        $this->metadata = $metadata;
 
         // Clean up old tokens if too many
         $this->cleanupTokens();
@@ -43,7 +44,7 @@ class CsrfManager implements CsrfManagerInterface
         $tokenData = [
             'token' => $token,
             'created' => time(),
-            'form' => $this->name,
+            'metadata' => $this->metadata,
         ];
 
         // Add new token
@@ -52,13 +53,13 @@ class CsrfManager implements CsrfManagerInterface
         return $token;
     }
 
-    public function verify(bool $expireAfterUse = true): bool
+    public function verify(bool $expireAfterUse = true, mixed $matchMetadata = null): mixed
     {
-        if (empty($this->getSessionData()[$this->name])) {
+        $storedTokenData = $this->getSessionData()[$this->name] ?? null;
+
+        if (empty($storedTokenData)) {
             return false;
         }
-
-        $storedTokenData = $this->getSessionData()[$this->name];
 
         $request = new HttpRequest();
         $token = $request($this->name, $request->csrf());
@@ -77,10 +78,17 @@ class CsrfManager implements CsrfManagerInterface
             $this->removeForm();
         }
 
+        if ($isValid && $matchMetadata !== null) {
+            if (!hash_equals($storedTokenData['metadata'], $matchMetadata)) {
+                return false;
+            }
+            return $storedTokenData['metadata'];
+        }
+
         return $isValid;
     }
 
-    public function verifyToken(string $token, bool $expireAfterUse = true): bool
+    public function verifyToken(string $token, bool $expireAfterUse = true, mixed $matchMetadata = null): mixed
     {
         if (empty($this->getSessionData()[$this->name])) {
             return false;
@@ -99,6 +107,13 @@ class CsrfManager implements CsrfManagerInterface
         // Remove token after successful use
         if ($isValid && $expireAfterUse) {
             $this->removeForm();
+        }
+
+        if ($isValid && $matchMetadata !== null) {
+            if (!hash_equals($storedTokenData['metadata'], $matchMetadata)) {
+                return false;
+            }
+            return $storedTokenData['metadata'];
         }
 
         return $isValid;

@@ -99,7 +99,7 @@ class Nonce {
    public static function nonce (): ?string
    {
       if (!self::$enabled) return null;
-      if (self::$nonce === null) self::$nonce = bin2hex(random_bytes(16));;
+      if (self::$nonce === null) self::$nonce = base64_encode(random_bytes(16));;
 
       return self::$nonce;
    }

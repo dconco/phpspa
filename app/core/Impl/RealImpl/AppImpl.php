@@ -25,6 +25,7 @@ use PhpSPA\Core\Utils\Validate;
 use PhpSPA\Core\Utils\Timer;
 use PhpSPA\Interfaces\ApplicationContract;
 use PhpSPA\Interfaces\IComponent;
+use ReflectionFunction;
 
 use function Component\HTMLAttrInArrayToString;
 
@@ -532,21 +533,63 @@ abstract class AppImpl implements ApplicationContract {
 
          } else if (isset($data['__call'])) {
             try {
+               $raw = base64_decode($data['__call']['token'] ?? '');
+
                /**
                 * @var array{0: string, 1: string, 2: bool} $tokenData
                 */
-               $tokenData = json_decode(base64_decode($data['__call']['token'] ?? ''));
+               $payload = ($raw !== false && $raw !== '') ? @unserialize($raw) : null;
 
-               $token = $tokenData[1] ?? null;
-               $functionName = $tokenData[0] ?? null;
-               $use_once = $tokenData[2] ?? false;
-               $csrf = new CsrfManager($functionName, CALL_FUNC_HANDLE);
+               $publicName = $payload[0] ?? null;
+               $token = $payload[1] ?? null;
+               $use_once = $payload[2] ?? false;
 
-               if ($csrf->verifyToken($token, $use_once)) {
-                  $res = \call_user_func_array(
-                     $functionName,
-                     $data['__call']['args'],
-                  );
+               if (!$publicName || !$token) {
+                  throw new \Exception('Invalid or Expired Token');
+               }
+
+               $csrf = new CsrfManager($publicName, CALL_FUNC_HANDLE);
+
+               if ($functionName = $csrf->verifyToken($token, $use_once)) {
+                  $func = new ReflectionFunction($functionName);
+                  $totalRequiredParams = $func->getNumberOfRequiredParameters();
+                  $totalParams = $func->getNumberOfParameters();
+
+                  $args = $data['__call']['args'] ?? [];
+                  $totalReceivedArgs = \count($args);
+                  $validatedParams = [];
+
+                  if ($totalReceivedArgs < $totalRequiredParams) throw new \InvalidArgumentException('Missing required arguments');
+                  if ($totalReceivedArgs > $totalParams) throw new \InvalidArgumentException('Too many arguments');
+
+                  foreach ($func->getParameters() as $param) {
+                     $paramName = $param->getName();
+                     $paramTypes = CallableInspector::getParamTypes($param);
+
+                     if (!array_key_exists($paramName, $args)) {
+                        if ($param->isDefaultValueAvailable()) {
+                           $validatedParams[$paramName] = $param->getDefaultValue();
+                           continue;
+                        }
+                        throw new \InvalidArgumentException("Missing required parameter: {$paramName}");
+                     }
+
+                     $argsValue = Validate::validate($args[$paramName] ?? null);
+                     if (!Validate::matchesType($argsValue, $paramTypes)) {
+                        throw new \InvalidArgumentException("Invalid type for parameter: {$paramName}");
+                     }
+
+                     $validatedParams[$paramName] = $argsValue;
+                  }
+
+                  $extraKeys = \array_diff_key($args, $validatedParams);
+
+                  if (!empty($extraKeys)) {
+                     $unknown = \implode(', ', \array_keys($extraKeys));
+                     throw new \InvalidArgumentException("Received unexpected arguments: {$unknown}");
+                  }
+
+                  $res = \call_user_func_array($functionName, $validatedParams);
 
                   print_r(
                      json_encode([
@@ -557,8 +600,7 @@ abstract class AppImpl implements ApplicationContract {
                else {
                   throw new \Exception('Invalid or Expired Token');
                }
-            }
-            catch ( \Exception $e ) {
+            } catch ( \Exception $e ) {
                print_r($e->getMessage());
             }
             exit();
