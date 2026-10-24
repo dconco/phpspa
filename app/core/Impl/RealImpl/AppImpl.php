@@ -560,7 +560,7 @@ abstract class AppImpl implements ApplicationContract {
 
                if ($functionName = $csrf->verifyToken($token, $use_once)) {
                   // Convert ANY callable into a single Closure object
-                  $closure = ($functionName instanceof Closure) ? $functionName : \Closure::fromCallable($functionName);
+                  $closure = ($functionName instanceof \Closure) ? $functionName : \Closure::fromCallable($functionName);
                   $func = new ReflectionFunction($closure);
                   $totalRequiredParams = $func->getNumberOfRequiredParameters();
                   $totalParams = $func->getNumberOfParameters();
@@ -568,7 +568,6 @@ abstract class AppImpl implements ApplicationContract {
                   $args = $data['__call']['args'] ?? [];
 
                   $totalReceivedArgs = \count($args);
-                  console_log("ARGS", json_encode($args), "TOTAL", $totalRequiredParams, "RECEIVED", $totalReceivedArgs);
                   $validatedParams = [];
 
                   if ($totalReceivedArgs < $totalRequiredParams) throw new \InvalidArgumentException('Missing required arguments');
