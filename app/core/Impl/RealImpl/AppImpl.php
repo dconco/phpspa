@@ -170,6 +170,11 @@ abstract class AppImpl implements ApplicationContract {
 
    private bool $useOxc = false;
 
+   /**
+    * @var array<string,string>
+    */
+   private static array $staticFilesCache = [];
+
    public function defaultTargetID (string $targetID): ApplicationContract
    {
       $this->defaultTargetID = $targetID;
@@ -1455,6 +1460,12 @@ abstract class AppImpl implements ApplicationContract {
 
          if ($fileName) {
             $hashed = md5($assetInfo['componentRoute'] . $assetInfo['assetIndex'] . $fileModifyTime . $assetInfo['assetType']);
+
+            if (isset(static::$staticFilesCache[$hashed])) {
+               $content = static::$staticFilesCache[$hashed];
+               goto FINALIZE;
+            }
+
             $fileDir = $this->generatedCacheDirectory ?? (pathinfo($fileName, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 'generated');
             $newName = $fileDir . DIRECTORY_SEPARATOR . $hashed . ".generated.php";
 
@@ -1464,12 +1475,10 @@ abstract class AppImpl implements ApplicationContract {
                }
                else {
                   $content = require $newName;
-
                   $content = Compressor::applyBinaryCompression($content);
-                  $this->setAssetHeaders($assetInfo['type']);
-                  if ($return) return $content;
-                  echo $content;
-                  exit(0);
+                  // --- Save to cache ---
+                  static::$staticFilesCache[$hashed] = $content;
+                  goto FINALIZE;
                }
             }
          }
@@ -1504,7 +1513,7 @@ abstract class AppImpl implements ApplicationContract {
             $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type'], $isGlobalAsset ? 'global' : 'scoped');
             if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) error_log("Compressed $assetType asset output within {$timer->getFormattedElapsedTime()} | From {$assetInfo['name']}");
 
-            if (!$isPhpSpaRequest) {
+            if (!$isPhpSpaRequest && $fileName) {
                // Race-safe + recursive (parent 'generated' dir may not exist).
                if (!is_dir($fileDir) && !@mkdir($fileDir, 0755, true) && !is_dir($fileDir)) {
                   if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
@@ -1512,11 +1521,13 @@ abstract class AppImpl implements ApplicationContract {
                   }
                }
 
-               if ($fileName && is_dir($fileDir)) {
-                  if (OxcCompressor::isErrorOutput($content) && !($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
-                     error_log("phpspa: caching Oxc parse-error output for $assetType asset (will regenerate when the source changes): {$assetInfo['name']}");
+               if (OxcCompressor::isErrorOutput($content) && !($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+                  error_log("phpspa: caching Oxc parse-error output for $assetType asset (will regenerate when the source changes): {$assetInfo['name']}");
+               }
+               if (!@file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;")) {
+                  if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+                     error_log("phpspa: failed to cache asset: $newName");
                   }
-                  @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
                }
             }
          } else {
@@ -1526,6 +1537,13 @@ abstract class AppImpl implements ApplicationContract {
             }
          }
       }
+
+      // --- Set compression ---
+      $content = Compressor::applyBinaryCompression($content);
+      // --- Cache the content ---
+      static::$staticFilesCache[$hashed] = $content;
+
+      FINALIZE:
 
       // --- Set appropriate headers ---
       $this->setAssetHeaders($assetInfo['type']);
@@ -1606,6 +1624,12 @@ abstract class AppImpl implements ApplicationContract {
       // --- Check generated cache ---
       $indexesKey = \implode(',', $indexes);
       $hashed = md5($assetInfo['componentRoute'] . $indexesKey . $maxMtime . $assetInfo['assetType']);
+
+      if (isset(static::$staticFilesCache[$hashed])) {
+         $content = static::$staticFilesCache[$hashed];
+         goto FINALIZE_COMBINED;
+      }
+
       $fileDir = $this->generatedCacheDirectory ?? ($firstFileName ? (pathinfo($firstFileName, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 'generated') : null);
       $newName = $fileDir ? ($fileDir . DIRECTORY_SEPARATOR . $hashed . ".generated.php") : null;
 
@@ -1615,10 +1639,9 @@ abstract class AppImpl implements ApplicationContract {
          } else {
             $content = require $newName;
             $content = Compressor::applyBinaryCompression($content);
-            $this->setAssetHeaders($assetInfo['type']);
-            if ($return) return $content;
-            echo $content;
-            exit(0);
+            // --- Save to cache ---
+            static::$staticFilesCache[$hashed] = $content;
+            goto FINALIZE_COMBINED;
          }
       }
 
@@ -1664,7 +1687,7 @@ abstract class AppImpl implements ApplicationContract {
          if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) error_log("Compressed combined $assetType asset ({$count} files) within {$timer->getFormattedElapsedTime()}");
 
          // --- Cache the result ---
-         if (!$isPhpSpaRequest && $fileDir) {
+         if (!$isPhpSpaRequest && $fileName) {
             // Race-safe: concurrent combined-asset requests can all pass the
             // is_dir() check and then race into mkdir(), so the losers would
             // throw "File exists". Suppress and re-verify instead — a dir that
@@ -1674,11 +1697,13 @@ abstract class AppImpl implements ApplicationContract {
                   error_log("phpspa: failed to create generated cache directory: $fileDir");
                }
             }
-            if ($newName && is_dir($fileDir)) {
-               if (OxcCompressor::isErrorOutput($content) && !($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
-                  error_log("phpspa: caching Oxc parse-error output for combined $assetType asset (will regenerate when a source changes)");
+            if (OxcCompressor::isErrorOutput($content) && !($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+               error_log("phpspa: caching Oxc parse-error output for combined $assetType asset (will regenerate when a source changes)");
+            }
+            if (!@file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;")) {
+               if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+                  error_log("phpspa: failed to cache combined asset: $newName");
                }
-               @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
             }
          }
       } else {
@@ -1688,6 +1713,12 @@ abstract class AppImpl implements ApplicationContract {
             $content = "(()=>{{$content}})()";
          }
       }
+
+      // --- Apply binary compression (gzip/deflate) if requested ---
+      $content = Compressor::applyBinaryCompression($content);
+      static::$staticFilesCache[$hashed] = $content;
+
+      FINALIZE_COMBINED:
 
       $this->setAssetHeaders($assetInfo['type']);
       if ($return) return $content;
