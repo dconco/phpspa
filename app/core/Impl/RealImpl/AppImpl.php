@@ -600,7 +600,7 @@ abstract class AppImpl implements ApplicationContract {
                      throw new \InvalidArgumentException("Received unexpected arguments: {$unknown}");
                   }
 
-                  $res = \call_user_func($func, ...$validatedParams);
+                  $res = \call_user_func($closure, ...$validatedParams);
 
                   if ($res instanceof Response) {
                      print_r(
