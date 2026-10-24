@@ -1529,19 +1529,20 @@ abstract class AppImpl implements ApplicationContract {
                      error_log("phpspa: failed to cache asset: $newName");
                   }
                }
+
+               // --- Set compression ---
+               $content = Compressor::applyBinaryCompression($content);
+               // --- Cache the content ---
+               static::$staticFilesCache[$hashed] = $content;
             }
          } else {
             // --- Wrap component in IIFE ---
             if (!$isGlobalAsset && $isJS) {
-               $content = "(()=>{{$content}})()";
+               // --- Set compression ---
+               $content = Compressor::applyBinaryCompression("(()=>{{$content}})()");
             }
          }
       }
-
-      // --- Set compression ---
-      $content = Compressor::applyBinaryCompression($content);
-      // --- Cache the content ---
-      static::$staticFilesCache[$hashed] = $content;
 
       FINALIZE:
 
