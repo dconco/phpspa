@@ -23,6 +23,7 @@ use PhpSPA\Core\Utils\FileFunction;
 use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 use PhpSPA\Core\Utils\Validate;
 use PhpSPA\Core\Utils\Timer;
+use PhpSPA\Http\Response;
 use PhpSPA\Interfaces\ApplicationContract;
 use PhpSPA\Interfaces\IComponent;
 use ReflectionFunction;
@@ -421,6 +422,7 @@ abstract class AppImpl implements ApplicationContract {
    public function run (bool $return = false)
    {
       HttpRequest::$cachedRawPostData = null;
+      HttpRequest::$cachedPostData = null;
 
       $request = new HttpRequest();
       static::$request_uri = $request->path();
@@ -536,6 +538,7 @@ abstract class AppImpl implements ApplicationContract {
 
             return;
 
+         
          } else if (isset($data['__call'])) {
             try {
                $raw = base64_decode($data['__call']['token'] ?? '');
@@ -548,20 +551,24 @@ abstract class AppImpl implements ApplicationContract {
                $publicName = $payload[0] ?? null;
                $token = $payload[1] ?? null;
                $use_once = $payload[2] ?? false;
-
+               
                if (!$publicName || !$token) {
                   throw new \Exception('Invalid or Expired Token');
                }
 
-               $csrf = new CsrfManager($publicName, CALL_FUNC_HANDLE);
+               $csrf = new CsrfManager($publicName, null, CALL_FUNC_HANDLE);
 
                if ($functionName = $csrf->verifyToken($token, $use_once)) {
-                  $func = new ReflectionFunction($functionName);
+                  // Convert ANY callable into a single Closure object
+                  $closure = ($functionName instanceof Closure) ? $functionName : \Closure::fromCallable($functionName);
+                  $func = new ReflectionFunction($closure);
                   $totalRequiredParams = $func->getNumberOfRequiredParameters();
                   $totalParams = $func->getNumberOfParameters();
 
                   $args = $data['__call']['args'] ?? [];
+
                   $totalReceivedArgs = \count($args);
+                  console_log("ARGS", json_encode($args), "TOTAL", $totalRequiredParams, "RECEIVED", $totalReceivedArgs);
                   $validatedParams = [];
 
                   if ($totalReceivedArgs < $totalRequiredParams) throw new \InvalidArgumentException('Missing required arguments');
@@ -594,13 +601,21 @@ abstract class AppImpl implements ApplicationContract {
                      throw new \InvalidArgumentException("Received unexpected arguments: {$unknown}");
                   }
 
-                  $res = \call_user_func_array($functionName, $validatedParams);
+                  $res = \call_user_func($func, ...$validatedParams);
 
-                  print_r(
-                     json_encode([
-                        'response' => json_encode($res),
-                     ]),
-                  );
+                  if ($res instanceof Response) {
+                     print_r(
+                        json_encode([
+                           'response' => $res->send()
+                        ])
+                     );
+                  } else {
+                     print_r(
+                        json_encode([
+                           'response' => json_encode($res),
+                        ]),
+                     );
+                  }
                }
                else {
                   throw new \Exception('Invalid or Expired Token');

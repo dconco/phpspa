@@ -13,6 +13,7 @@ class HttpRequest implements Request
 
    private array $tempData = [];
    public static string|false|null $cachedRawPostData = null;
+   public static array|false|null $cachedPostData = null;
 
    public function __construct(private readonly array $params = [])
    {
@@ -188,7 +189,11 @@ class HttpRequest implements Request
 
    public function json(?string $name = null)
    {
-      $data = json_decode($this->getContent(), true);
+      if (static::$cachedPostData !== null) {
+         $data = static::$cachedPostData;
+      } else {
+         $data = static::$cachedPostData = json_decode($this->getContent(), true);
+      }
 
       if ($data === null || json_last_error() !== JSON_ERROR_NONE) {
          return null;

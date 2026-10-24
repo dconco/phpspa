@@ -78,11 +78,12 @@ class CsrfManager implements CsrfManagerInterface
             $this->removeForm();
         }
 
-        if ($isValid && $matchMetadata !== null) {
-            if (!hash_equals($storedTokenData['metadata'], $matchMetadata)) {
+        if ($isValid) {
+            if ($matchMetadata !== null && !hash_equals($storedTokenData['metadata'], $matchMetadata)) {
                 return false;
             }
-            return $storedTokenData['metadata'];
+
+            if ($storedTokenData['metadata'] !== null) return $storedTokenData['metadata'];
         }
 
         return $isValid;
@@ -109,11 +110,12 @@ class CsrfManager implements CsrfManagerInterface
             $this->removeForm();
         }
 
-        if ($isValid && $matchMetadata !== null) {
-            if (!hash_equals($storedTokenData['metadata'], $matchMetadata)) {
+        if ($isValid) {
+            if ($matchMetadata !== null && !hash_equals($storedTokenData['metadata'], $matchMetadata)) {
                 return false;
             }
-            return $storedTokenData['metadata'];
+
+            if ($storedTokenData['metadata'] !== null) return $storedTokenData['metadata'];
         }
 
         return $isValid;

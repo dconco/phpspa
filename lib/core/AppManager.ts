@@ -693,14 +693,14 @@ export class AppManager {
 	 * Used for server-side function calls from the client.
 	 *
 	 * @param token - The authentication token for the call
-	 * @param args - Arguments to pass to the server function
+	 * @param args - Arguments to pass to the server function, must be an object, the argument is passed to the php function as a named parameters.
 	 * @returns The decoded response from the server
 	 */
 	public static async __call(
 		token: string,
-		...args: any[]
+		args: Object
 	): Promise<StateValueType> {
-		const callPayload = JSON.stringify({ __call: { token, args } })
+		const callPayload = JSON.stringify({ __call: { token, args: args } })
 
 		try {
 			const response = await fetch(location.pathname, {

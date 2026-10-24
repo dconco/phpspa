@@ -65,6 +65,9 @@ composer require dconco/phpspa:dev-support/php-8.4
 
 ### ⚠️ Deprecations
 
+- Modified the `phpspa.__call` method in AppManager to accept a single object argument instead of a rest parameter.
+- Updated documentation to clarify that the argument must be an object, which will be passed as named parameters to the PHP function.
+
 - **`disableMinificationWithEsbuild()` is deprecated and is now a no-op.** In earlier versions esbuild was the default JavaScript minifier and this method turned it off. The default is now the fast in-process **C++** minifier (esbuild is opt-in via `useEsbuildForJsMinification()`), so there is nothing left to disable — the method does nothing and simply returns `$this`. It is kept only so existing code keeps working (calling it is **not** a fatal error) and **will be removed in a future version**. Migrate by deleting the call; to use esbuild, opt in explicitly with `useEsbuildForJsMinification()`.
 
 ### 🐛 Bug Fixes
