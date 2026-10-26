@@ -602,12 +602,12 @@ abstract class AppImpl implements ApplicationContract {
                      throw new \InvalidArgumentException("Received unexpected arguments: {$unknown}");
                   }
 
-                  $res = \call_user_func($closure, ...$validatedParams);
+                  $response = \call_user_func($closure, ...$validatedParams);
 
-                  if ($res instanceof Response) {
-                     $response = json_encode(['response' => $res->__toString()]);
-                  } else {
-                     $response = json_encode(['response' => $res]);
+                  if ($response instanceof Response) {
+                     $response = $response->__toString();
+                  } elseif (\is_array($response) || \is_object($response)) {
+                     $response = json_encode($response);
                   }
 
                   if ($return) return $response;
