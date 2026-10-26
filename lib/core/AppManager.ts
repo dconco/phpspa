@@ -93,10 +93,10 @@ export class AppManager {
 						let responseData
 
 						// --- Try to parse JSON response, fallback to raw text ---
-						if (responseText && responseText.trim().startsWith('{')) {
+						if (responseText) {
 							try {
 								responseData = JSON.parse(responseText)
-							} catch (parseError) {
+							} catch {
 								responseData = responseText
 							}
 						} else {
@@ -123,10 +123,8 @@ export class AppManager {
 
 						try {
 							// --- Attempt to parse error response as JSON ---
-							errorData = fallbackResponse?.trim().startsWith('{')
-								? JSON.parse(fallbackResponse)
-								: fallbackResponse
-						} catch (parseError) {
+							errorData = JSON.parse(fallbackResponse)
+						} catch {
 							// --- If parsing fails, use raw text ---
 							errorData = fallbackResponse
 						}
@@ -461,10 +459,10 @@ export class AppManager {
 					let responseData
 
 					// --- Parse response as JSON if possible ---
-					if (responseText && responseText.trim().startsWith('{')) {
+					if (responseText) {
 						try {
 							responseData = JSON.parse(responseText)
-						} catch (parseError) {
+						} catch {
 							responseData = responseText
 						}
 					} else {
@@ -490,10 +488,8 @@ export class AppManager {
 							let errorData
 
 							try {
-								errorData = fallbackResponse?.trim().startsWith('{')
-									? JSON.parse(fallbackResponse)
-									: fallbackResponse
-							} catch (parseError) {
+								errorData = JSON.parse(fallbackResponse)
+							} catch {
 								errorData = fallbackResponse
 							}
 
@@ -576,14 +572,10 @@ export class AppManager {
 						let responseData
 
 						// --- Parse response ---
-						if (responseText && responseText.trim().startsWith('{')) {
-							try {
-								responseData = JSON.parse(responseText)
-							} catch (parseError) {
-								responseData = responseText
-							}
-						} else {
-							responseData = responseText || ''
+						try {
+							responseData = JSON.parse(responseText)
+						} catch {
+							responseData = responseText
 						}
 
 						updateComponentContent(responseData)
@@ -607,10 +599,8 @@ export class AppManager {
 						let errorData
 
 						try {
-							errorData = fallbackResponse?.trim().startsWith('{')
-								? JSON.parse(fallbackResponse)
-								: fallbackResponse
-						} catch (parseError) {
+							errorData = JSON.parse(fallbackResponse)
+						} catch {
 							errorData = fallbackResponse
 						}
 
@@ -717,17 +707,10 @@ export class AppManager {
 			let responseData
 
 			// --- Parse and decode response ---
-			if (responseText && responseText.trim().startsWith('{')) {
-				try {
-					responseData = JSON.parse(responseText)
-					responseData = responseData?.response
-						? JSON.parse(responseData.response)
-						: responseData
-				} catch (parseError) {
-					responseData = responseText
-				}
-			} else {
-				responseData = responseText || ''
+			try {
+				responseData = JSON.parse(responseText)
+			} catch {
+				responseData = responseText
 			}
 
 			return responseData
@@ -739,14 +722,8 @@ export class AppManager {
 					let errorData
 
 					try {
-						errorData = fallbackResponse?.trim().startsWith('{')
-							? JSON.parse(fallbackResponse)
-							: fallbackResponse
-
-						errorData = errorData?.response
-							? JSON.parse(errorData.response)
-							: errorData
-					} catch (parseError) {
+						errorData = JSON.parse(fallbackResponse)
+					} catch {
 						errorData = fallbackResponse
 					}
 

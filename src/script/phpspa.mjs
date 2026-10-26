@@ -1332,11 +1332,11 @@ class AppManager {
                 .then(responseText => {
                 let responseData;
                 // --- Try to parse JSON response, fallback to raw text ---
-                if (responseText && responseText.trim().startsWith('{')) {
+                if (responseText) {
                     try {
                         responseData = JSON.parse(responseText);
                     }
-                    catch (parseError) {
+                    catch {
                         responseData = responseText;
                     }
                 }
@@ -1361,11 +1361,9 @@ class AppManager {
                     let errorData;
                     try {
                         // --- Attempt to parse error response as JSON ---
-                        errorData = fallbackResponse?.trim().startsWith('{')
-                            ? JSON.parse(fallbackResponse)
-                            : fallbackResponse;
+                        errorData = JSON.parse(fallbackResponse);
                     }
-                    catch (parseError) {
+                    catch {
                         // --- If parsing fails, use raw text ---
                         errorData = fallbackResponse;
                     }
@@ -1626,11 +1624,11 @@ class AppManager {
                     const responseText = await response.text();
                     let responseData;
                     // --- Parse response as JSON if possible ---
-                    if (responseText && responseText.trim().startsWith('{')) {
+                    if (responseText) {
                         try {
                             responseData = JSON.parse(responseText);
                         }
-                        catch (parseError) {
+                        catch {
                             responseData = responseText;
                         }
                     }
@@ -1655,11 +1653,9 @@ class AppManager {
                         .then((fallbackResponse) => {
                         let errorData;
                         try {
-                            errorData = fallbackResponse?.trim().startsWith('{')
-                                ? JSON.parse(fallbackResponse)
-                                : fallbackResponse;
+                            errorData = JSON.parse(fallbackResponse);
                         }
-                        catch (parseError) {
+                        catch {
                             errorData = fallbackResponse;
                         }
                         updateContent(errorData || '');
@@ -1728,16 +1724,11 @@ class AppManager {
                 .then(responseText => {
                 let responseData;
                 // --- Parse response ---
-                if (responseText && responseText.trim().startsWith('{')) {
-                    try {
-                        responseData = JSON.parse(responseText);
-                    }
-                    catch (parseError) {
-                        responseData = responseText;
-                    }
+                try {
+                    responseData = JSON.parse(responseText);
                 }
-                else {
-                    responseData = responseText || '';
+                catch {
+                    responseData = responseText;
                 }
                 updateComponentContent(responseData);
             })
@@ -1758,11 +1749,9 @@ class AppManager {
                     .then((fallbackResponse) => {
                     let errorData;
                     try {
-                        errorData = fallbackResponse?.trim().startsWith('{')
-                            ? JSON.parse(fallbackResponse)
-                            : fallbackResponse;
+                        errorData = JSON.parse(fallbackResponse);
                     }
-                    catch (parseError) {
+                    catch {
                         errorData = fallbackResponse;
                     }
                     updateComponentContent(errorData || '');
@@ -1845,19 +1834,11 @@ class AppManager {
             const responseText = await response.text();
             let responseData;
             // --- Parse and decode response ---
-            if (responseText && responseText.trim().startsWith('{')) {
-                try {
-                    responseData = JSON.parse(responseText);
-                    responseData = responseData?.response
-                        ? JSON.parse(responseData.response)
-                        : responseData;
-                }
-                catch (parseError) {
-                    responseData = responseText;
-                }
+            try {
+                responseData = JSON.parse(responseText);
             }
-            else {
-                responseData = responseText || '';
+            catch {
+                responseData = responseText;
             }
             return responseData;
         }
@@ -1868,14 +1849,9 @@ class AppManager {
                     const fallbackResponse = await error.response.text();
                     let errorData;
                     try {
-                        errorData = fallbackResponse?.trim().startsWith('{')
-                            ? JSON.parse(fallbackResponse)
-                            : fallbackResponse;
-                        errorData = errorData?.response
-                            ? JSON.parse(errorData.response)
-                            : errorData;
+                        errorData = JSON.parse(fallbackResponse);
                     }
-                    catch (parseError) {
+                    catch {
                         errorData = fallbackResponse;
                     }
                     return errorData;

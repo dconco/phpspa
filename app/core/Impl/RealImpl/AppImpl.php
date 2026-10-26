@@ -607,6 +607,7 @@ abstract class AppImpl implements ApplicationContract {
                   if ($response instanceof Response) {
                      $response = $response->__toString();
                   } elseif (\is_array($response) || \is_object($response)) {
+                     if (!\headers_sent()) header('Content-Type: application/json');
                      $response = json_encode($response);
                   }
 
