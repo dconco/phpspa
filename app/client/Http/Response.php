@@ -180,7 +180,7 @@ class Response
     *    Content-Length: int,
     * } $headers The response headers.
     */
-   public function __construct(private $data = null, private int $statusCode = Response::StatusOK, private array $headers = [])
+   public function __construct(public $data = null, public int $statusCode = Response::StatusOK, public array $headers = [])
    {
       if (!isset($this->headers['Content-Type'])) {
          $this->contentType('application/json');
@@ -324,12 +324,13 @@ class Response
     * Sets the content type for the response.
     *
     * @param string $type The content type.
-    * @param string $charset The charset (default: utf-8).
+    * @param string $charset The charset (default: null, no charset included).
     * @return self
     */
-   public function contentType(string $type, string $charset = 'utf-8'): self
+   public function contentType(string $type, string $charset = null): self
    {
-      return $this->header('Content-Type', "{$type}; charset={$charset}");
+      if ($charset !== null) return $this->header('Content-Type', "{$type}; charset={$charset}");
+      else return $this->header('Content-Type', $type);
    }
 
    /**

@@ -432,7 +432,9 @@ abstract class AppImpl implements ApplicationContract {
       if (!empty($staticFileOutput)) return $staticFileOutput;
 
       $this->resolveCors($request);
-      $this->handlePhpSPARequest($request);
+      $assetResponse = $this->handlePhpSPARequest($request, $return);
+
+      if (isset($assetResponse)) return $assetResponse;
 
       /**
        * Handle asset requests (CSS/JS files from session-based links)
@@ -523,7 +525,7 @@ abstract class AppImpl implements ApplicationContract {
       }
    }
 
-   private function handlePhpSPARequest(Request $request) {
+   private function handlePhpSPARequest(Request $request, bool $return) {
       if ($request->requestedWith() === 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
          $data = json_decode(base64_decode($request->auth()->bearer ?? ''), true);
 
@@ -603,26 +605,24 @@ abstract class AppImpl implements ApplicationContract {
                   $res = \call_user_func($closure, ...$validatedParams);
 
                   if ($res instanceof Response) {
-                     print_r(
-                        json_encode([
-                           'response' => $res->send()
-                        ])
-                     );
+                     $response = json_encode(['response' => $res->__toString()]);
                   } else {
-                     print_r(
-                        json_encode([
-                           'response' => json_encode($res),
-                        ]),
-                     );
+                     $response = json_encode(['response' => $res]);
                   }
+
+                  if ($return) return $response;
+                  echo $response;
+                  exit(0);
                }
                else {
                   throw new \Exception('Invalid or Expired Token');
                }
-            } catch ( \Exception $e ) {
-               print_r($e->getMessage());
+            } catch (\Exception $e) {
+               error_log($e->getMessage());
+               if ($return) return $e->getMessage();
+               echo $e->getMessage();
+               exit(0);
             }
-            exit();
          }
       }
    }
