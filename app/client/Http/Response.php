@@ -327,7 +327,7 @@ class Response
     * @param string $charset The charset (default: null, no charset included).
     * @return self
     */
-   public function contentType(string $type, string $charset = null): self
+   public function contentType(string $type, ?string $charset = null): self
    {
       if ($charset !== null) return $this->header('Content-Type', "{$type}; charset={$charset}");
       else return $this->header('Content-Type', $type);
