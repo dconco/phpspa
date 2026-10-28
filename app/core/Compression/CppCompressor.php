@@ -96,14 +96,18 @@ final class CppCompressor implements NativeCompressor
          return false;
       }
 
-      // Check if already preloaded into shared OPcache memory
-      try {
-         self::$ffi = \FFI::scope('phpspa_compressor');
-         if (!($disableLogs & DISABLE_LIBRARY_LOG)) error_log('Using preloaded native compressor (FFI scope "phpspa_compressor").');
-         return true;
-      } catch (\FFI\Exception $e) {
-         if (!($disableLogs & DISABLE_PRELOAD_LOG)) error_log("phpspa_compressor isn't preloaded in PHP INI, falling back to loading directly from the shared library.");
-         // Not preloaded; proceed to dynamic loading below
+      // Check if already preloaded into shared OPcache memory, unless the app
+      // opted out of the preload probe via skipPreloadCheck() — then go straight
+      // to the dynamic FFI::cdef load below.
+      if (!self::skipPreloadCheck()) {
+         try {
+            self::$ffi = \FFI::scope('phpspa_compressor');
+            if (!($disableLogs & DISABLE_LIBRARY_LOG)) error_log('Using preloaded native compressor (FFI scope "phpspa_compressor").');
+            return true;
+         } catch (\FFI\Exception $e) {
+            if (!($disableLogs & DISABLE_PRELOAD_LOG)) error_log("phpspa_compressor isn't preloaded in PHP INI, falling back to loading directly from the shared library.");
+            // Not preloaded; proceed to dynamic loading below
+         }
       }
 
       $libraryPath = self::resolveLibraryPath($disableLogs);
@@ -122,6 +126,16 @@ final class CppCompressor implements NativeCompressor
          self::$lastError = 'FFI failed to load ' . $libraryPath . ': ' . $e->getMessage();
          return false;
       }
+   }
+
+   /**
+    * Whether the app opted out of the `FFI::scope()` preload probe via
+    * `App()->skipPreloadCheck()`. When true, initialize() skips straight to the
+    * dynamic `FFI::cdef` load.
+    */
+   private static function skipPreloadCheck(): bool
+   {
+      return (\getenv('PHPSPA_SKIP_PRELOAD_CHECK') ?: ($_ENV['PHPSPA_SKIP_PRELOAD_CHECK'] ?? '')) !== '';
    }
 
    private static function resolveLibraryPath(int $disableLogs): ?string

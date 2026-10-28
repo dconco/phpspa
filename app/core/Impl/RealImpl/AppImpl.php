@@ -277,6 +277,17 @@ abstract class AppImpl implements ApplicationContract {
       return $this;
    }
 
+   public function skipPreloadCheck(): ApplicationContract
+   {
+      // Skip the `FFI::scope()` preload probe in both native compressors and go
+      // straight to the dynamic `FFI::cdef` load. The resolved handle is cached
+      // in a static property, so under a persistent runtime (FrankenPHP) only the
+      // first request per worker pays the cdef cost; later concurrent calls reuse
+      // the already-loaded FFI instance without re-running cdef.
+      putenv('PHPSPA_SKIP_PRELOAD_CHECK=1');
+      return $this;
+   }
+
    public function script (callable|string $content, ?string $name = null, ?string $type = 'text/javascript', array $attributes = []): ApplicationContract
    {
       $scripts = [
@@ -1703,7 +1714,7 @@ abstract class AppImpl implements ApplicationContract {
          if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) error_log("Compressed combined $assetType asset ({$count} files) within {$timer->getFormattedElapsedTime()}");
 
          // --- Cache the result ---
-         if (!$isPhpSpaRequest && $fileName) {
+         if (!$isPhpSpaRequest && $newName) {
             // Race-safe: concurrent combined-asset requests can all pass the
             // is_dir() check and then race into mkdir(), so the losers would
             // throw "File exists". Suppress and re-verify instead — a dir that
