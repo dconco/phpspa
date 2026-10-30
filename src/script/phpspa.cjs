@@ -1456,17 +1456,24 @@ class AppManager {
                     '__phpspa_body__';
                 // --- Preload stylesheets in the new content ---
                 const { element, ready } = preloadStylesFromContent(component.content, styleScopeKey);
-                ready
-                    .then(() => {
-                    morphdom(targetElement, element, {
-                        childrenOnly: true
-                    });
+                const applyDOM = () => {
+                    try {
+                        morphdom(targetElement, element, {
+                            childrenOnly: true
+                        });
+                    }
+                    catch {
+                        targetElement.appendChild(element);
+                    }
                     resolve(0);
-                })
-                    .catch(() => {
-                    targetElement.appendChild(element);
-                    resolve(0);
-                });
+                };
+                // --- Only block the swap on stylesheet loading when enabled ---
+                if (RuntimeManager.config.waitForStyles) {
+                    ready.then(applyDOM).catch(applyDOM);
+                }
+                else {
+                    applyDOM();
+                }
             });
             const stateData = {
                 url: newUrl.toString(),
@@ -1792,17 +1799,24 @@ class AppManager {
                     '__phpspa_body__';
                 // --- Preload stylesheets in the new content ---
                 const { element, ready } = preloadStylesFromContent(component.content, styleScopeKey);
-                ready
-                    .then(() => {
-                    morphdom(targetElement, element, {
-                        childrenOnly: true
-                    });
+                const applyDOM = () => {
+                    try {
+                        morphdom(targetElement, element, {
+                            childrenOnly: true
+                        });
+                    }
+                    catch {
+                        targetElement.appendChild(element);
+                    }
                     resolve(0);
-                })
-                    .catch(() => {
-                    targetElement.appendChild(element);
-                    resolve(0);
-                });
+                };
+                // --- Only block the swap on stylesheet loading when enabled ---
+                if (RuntimeManager.config.waitForStyles) {
+                    ready.then(applyDOM).catch(applyDOM);
+                }
+                else {
+                    applyDOM();
+                }
             });
             const completedDOMUpdate = () => {
                 // --- Execute any inline scripts in the new content ---
@@ -2021,16 +2035,24 @@ const navigateHistory = (event) => {
             const styleScopeKey = navigationState.targetID || targetContainer.id || '__phpspa_body__';
             // --- Preload stylesheets in the new content ---
             const { element, ready } = preloadStylesFromContent(navigationState.content, styleScopeKey);
-            ready.then(() => {
-                morphdom(targetContainer, element, {
-                    childrenOnly: true
-                });
+            const applyDOM = () => {
+                try {
+                    morphdom(targetContainer, element, {
+                        childrenOnly: true
+                    });
+                }
+                catch {
+                    targetContainer.appendChild(element);
+                }
                 resolve(0);
-            })
-                .catch(() => {
-                targetContainer.appendChild(element);
-                resolve(0);
-            });
+            };
+            // --- Only block the swap on stylesheet loading when enabled ---
+            if (RuntimeManager.config.waitForStyles) {
+                ready.then(applyDOM).catch(applyDOM);
+            }
+            else {
+                applyDOM();
+            }
         });
         const completedDOMUpdate = async () => {
             // --- Clear old executed scripts cache ---

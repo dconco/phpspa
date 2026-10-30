@@ -239,17 +239,23 @@ export class AppManager {
 						styleScopeKey
 					)
 
-					ready
-						.then(() => {
+					const applyDOM = () => {
+						try {
 							morphdom(targetElement, element, {
 								childrenOnly: true
 							})
-							resolve(0)
-						})
-						.catch(() => {
+						} catch {
 							targetElement.appendChild(element)
-							resolve(0)
-						})
+						}
+						resolve(0)
+					}
+
+					// --- Only block the swap on stylesheet loading when enabled ---
+					if (RuntimeManager.config.waitForStyles) {
+						ready.then(applyDOM).catch(applyDOM)
+					} else {
+						applyDOM()
+					}
 				})
 
 			const stateData: StateObject = {
@@ -651,17 +657,23 @@ export class AppManager {
 						styleScopeKey
 					)
 
-					ready
-						.then(() => {
+					const applyDOM = () => {
+						try {
 							morphdom(targetElement, element, {
 								childrenOnly: true
 							})
-							resolve(0)
-						})
-						.catch(() => {
+						} catch {
 							targetElement.appendChild(element)
-							resolve(0)
-						})
+						}
+						resolve(0)
+					}
+
+					// --- Only block the swap on stylesheet loading when enabled ---
+					if (RuntimeManager.config.waitForStyles) {
+						ready.then(applyDOM).catch(applyDOM)
+					} else {
+						applyDOM()
+					}
 				})
 
 			const completedDOMUpdate = () => {

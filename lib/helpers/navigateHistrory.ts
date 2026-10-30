@@ -88,16 +88,23 @@ export const navigateHistory = (event: PopStateEvent) => {
             // --- Preload stylesheets in the new content ---
             const { element, ready } = preloadStylesFromContent(navigationState.content, styleScopeKey)
 
-            ready.then(() => {
-               morphdom(targetContainer, element, {
-                  childrenOnly: true
-               })
-               resolve(0)
-            })
-               .catch(() => {
+            const applyDOM = () => {
+               try {
+                  morphdom(targetContainer, element, {
+                     childrenOnly: true
+                  })
+               } catch {
                   targetContainer.appendChild(element)
-                  resolve(0)
-               })
+               }
+               resolve(0)
+            }
+
+            // --- Only block the swap on stylesheet loading when enabled ---
+            if (RuntimeManager.config.waitForStyles) {
+               ready.then(applyDOM).catch(applyDOM)
+            } else {
+               applyDOM()
+            }
          })
 
       const completedDOMUpdate = async () => {

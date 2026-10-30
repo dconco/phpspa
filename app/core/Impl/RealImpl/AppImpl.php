@@ -413,7 +413,12 @@ abstract class AppImpl implements ApplicationContract {
    }
 
    public function disableLogs(int $flags = DISABLE_COMPRESSION_LOG | DISABLE_LIBRARY_LOG | DISABLE_PRELOAD_LOG): ApplicationContract {
-      $this->disableLogs |= $flags; return $this;
+      $this->disableLogs |= $flags;
+      // The native Oxc engine writes its per-compress line straight to stderr
+      // (inherited by the PHP error log), so a PHP-side flag cannot reach it.
+      // Export the compression-log bit to the env the Rust side reads at runtime.
+      if ($this->disableLogs & DISABLE_COMPRESSION_LOG) putenv('PHPSPA_DISABLE_COMPRESSION_LOG=1');
+      return $this;
    }
 
    public function randomizeAssetName(): ApplicationContract {
