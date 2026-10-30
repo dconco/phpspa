@@ -1,5 +1,5 @@
 /*!
- * PhpSPA Client Runtime v2.1.2
+ * PhpSPA Client Runtime v2.1.3
  * Docs: https://phpspa.tech | Package: @dconco/phpspa
  * License: MIT
  */
@@ -336,8 +336,14 @@
         const cleanup = () => {
             link.removeEventListener('load', onLoad);
             link.removeEventListener('error', onLoad);
-            // Wait for styles to be applied to CSSOM after download
-            waitForNextPaint().then(() => waitForNextPaint()).then(resolve);
+            // After load, sheet should be available; wait for paint to apply styles
+            if (link.sheet) {
+                waitForNextPaint().then(resolve);
+            }
+            else {
+                // Sheet not ready yet, wait extra frames for CSSOM
+                waitForNextPaint().then(() => waitForNextPaint()).then(resolve);
+            }
         };
         const onLoad = () => cleanup();
         link.addEventListener('load', onLoad, { once: true });
