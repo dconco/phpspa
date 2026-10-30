@@ -16,18 +16,25 @@ use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  * @author dconco <me@dconco.tech>
  * @copyright 2026 Dave Conco
  * @license MIT
- * @see https://phpspa.tech/v1.1.5/2-php-js-integration/ PHP-JS Integration Documentation
+ * @see https://phpspa.tech/hooks/use-function PHP-JS Integration Documentation
  */
 class FunctionCaller
 {
     public string $token;
 
-    public function __construct(callable|string $function, bool $use_once)
+    /**
+     * Constructs a new FunctionCaller instance with CSRF protection.
+     * 
+     * @param callable|string $function The function to call
+     * @param bool $use_once Whether the function can only be called once
+     * @param string|null $public_name Optional public name for the function, recommended to avoid exposing the actual function name to the client-side. If not provided, the callable name will be used.
+     */
+    public function __construct(callable|string $function, bool $use_once = false, ?string $public_name = null)
     {
         $funcName = $this->getCallableName($function);
-        $csrf = new CsrfManager($funcName, CALL_FUNC_HANDLE);
+        $csrf = new CsrfManager($public_name ?? $funcName, $funcName, CALL_FUNC_HANDLE);
 
-        $this->token = base64_encode(json_encode([$funcName, $csrf->generate(), $use_once]));
+        $this->token = base64_encode(serialize([$public_name ?? $funcName, $csrf->generate(), $use_once]));
     }
 
     public function __toString()

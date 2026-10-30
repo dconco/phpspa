@@ -119,7 +119,7 @@ $greeterPage = new Component(function () {
     // 2. Wrap your function with useFunction().
     $greeter = useFunction("sayHello");
 
-    echo <<<HTML
+    return <<<HTML
         <input type="text" id="nameInput" placeholder="Enter your name">
         <input type="number" id="ageInput" placeholder="Enter your age">
         <button id="greetBtn">Greet Me</button>

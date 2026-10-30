@@ -12,8 +12,8 @@ final class ResponseTest extends TestCase
       $response = new Response();
       $response->success(['id' => 1], 'Done');
 
-      $data = $this->getPrivateProperty($response, 'data');
-      $status = $this->getPrivateProperty($response, 'statusCode');
+      $data = $response->data;
+      $status = $response->statusCode;
 
       $this->assertSame(Response::StatusOK, $status);
       $this->assertSame(true, $data['success']);
@@ -26,8 +26,8 @@ final class ResponseTest extends TestCase
       $response = new Response();
       $response->validationError(['field' => 'required']);
 
-      $data = $this->getPrivateProperty($response, 'data');
-      $status = $this->getPrivateProperty($response, 'statusCode');
+      $data = $response->data;
+      $status = $response->statusCode;
 
       $this->assertSame(Response::StatusUnprocessableEntity, $status);
       $this->assertSame(false, $data['success']);
@@ -39,9 +39,9 @@ final class ResponseTest extends TestCase
    {
       $response = Response::make('payload', Response::StatusAccepted, ['X-Test' => 'yes']);
 
-      $data = $this->getPrivateProperty($response, 'data');
-      $status = $this->getPrivateProperty($response, 'statusCode');
-      $headers = $this->getPrivateProperty($response, 'headers');
+      $data = $response->data;
+      $status = $response->statusCode;
+      $headers = $response->headers;
 
       $this->assertSame('payload', $data);
       $this->assertSame(Response::StatusAccepted, $status);
@@ -53,8 +53,8 @@ final class ResponseTest extends TestCase
       $response = new Response();
       $response->json(['ok' => true]);
 
-      $headers = $this->getPrivateProperty($response, 'headers');
-      $data = $this->getPrivateProperty($response, 'data');
+      $headers = $response->headers;
+      $data = $response->data;
 
       $this->assertStringContainsString('application/json', $headers['Content-Type']);
       $this->assertSame(['ok' => true], $data);
@@ -64,9 +64,9 @@ final class ResponseTest extends TestCase
    {
       $response = new Response();
       $response->header('X-Token', 'value');
-      $response->contentType('text/plain');
+      $response->contentType('text/plain', 'utf-8');
 
-      $headers = $this->getPrivateProperty($response, 'headers');
+      $headers = $response->headers;
 
       $this->assertSame('value', $headers['X-Token']);
       $this->assertSame('text/plain; charset=utf-8', $headers['Content-Type']);
@@ -77,8 +77,8 @@ final class ResponseTest extends TestCase
       $response = new Response();
       $response->created(['id' => 2], 'Created');
 
-      $data = $this->getPrivateProperty($response, 'data');
-      $status = $this->getPrivateProperty($response, 'statusCode');
+      $data = $response->data;
+      $status = $response->statusCode;
 
       $this->assertSame(Response::StatusCreated, $status);
       $this->assertSame(true, $data['success']);
@@ -91,21 +91,21 @@ final class ResponseTest extends TestCase
       $response = new Response();
       $response->notFound('Missing');
 
-      $data = $this->getPrivateProperty($response, 'data');
-      $status = $this->getPrivateProperty($response, 'statusCode');
+      $data = $response->data;
+      $status = $response->statusCode;
 
       $this->assertSame(Response::StatusNotFound, $status);
       $this->assertSame('Missing', $data['message']);
 
       $response->unauthorized('Nope');
-      $status = $this->getPrivateProperty($response, 'statusCode');
-      $data = $this->getPrivateProperty($response, 'data');
+      $status = $response->statusCode;
+      $data = $response->data;
       $this->assertSame(Response::StatusUnauthorized, $status);
       $this->assertSame('Nope', $data['message']);
 
       $response->forbidden('Denied');
-      $status = $this->getPrivateProperty($response, 'statusCode');
-      $data = $this->getPrivateProperty($response, 'data');
+      $status = $response->statusCode;
+      $data = $response->data;
       $this->assertSame(Response::StatusForbidden, $status);
       $this->assertSame('Denied', $data['message']);
    }
@@ -115,7 +115,7 @@ final class ResponseTest extends TestCase
       $response = new Response();
       $response->paginate(['a'], 10, 5, 1, 2);
 
-      $data = $this->getPrivateProperty($response, 'data');
+      $data = $response->data;
 
       $this->assertSame(true, $data['success']);
       $this->assertSame(['a'], $data['data']);
@@ -148,9 +148,9 @@ final class ResponseTest extends TestCase
          $response = new Response();
          $response->sendFile($jsonPath);
 
-         $data = $this->getPrivateProperty($response, 'data');
-         $status = $this->getPrivateProperty($response, 'statusCode');
-         $headers = $this->getPrivateProperty($response, 'headers');
+         $data = $response->data;
+         $status = $response->statusCode;
+         $headers = $response->headers;
 
          $this->assertSame(Response::StatusOK, $status);
          $this->assertSame('application/json; charset=utf-8', $headers['Content-Type']);

@@ -166,14 +166,17 @@ final class OxcCompressor implements NativeCompressor
          return false;
       }
 
-      // 1) Preferred: already preloaded into shared OPcache memory.
-      try {
-         self::$ffi = \FFI::scope(self::FFI_SCOPE);
-         if (!($disableLogs & DISABLE_LIBRARY_LOG)) error_log('Using preloaded Oxc minifier (FFI scope "' . self::FFI_SCOPE . '").');
-         return true;
-      } catch (\FFI\Exception $e) {
-         if (!($disableLogs & DISABLE_PRELOAD_LOG)) error_log("phpspa_oxc isn't preloaded in PHP INI, falling back to loading directly from the shared library.");
-         // Not preloaded; fall through to dynamic loading below.
+      // 1) Preferred: already preloaded into shared OPcache memory. Skipped when
+      // the app opted out via skipPreloadCheck() — then go straight to cdef.
+      if (!self::skipPreloadCheck()) {
+         try {
+            self::$ffi = \FFI::scope(self::FFI_SCOPE);
+            if (!($disableLogs & DISABLE_LIBRARY_LOG)) error_log('Using preloaded Oxc minifier (FFI scope "' . self::FFI_SCOPE . '").');
+            return true;
+         } catch (\FFI\Exception $e) {
+            if (!($disableLogs & DISABLE_PRELOAD_LOG)) error_log("phpspa_oxc isn't preloaded in PHP INI, falling back to loading directly from the shared library.");
+            // Not preloaded; fall through to dynamic loading below.
+         }
       }
 
       // 2) Dynamic load via FFI::cdef from the configured path.
@@ -202,6 +205,16 @@ final class OxcCompressor implements NativeCompressor
    public static function getLibraryPath(): ?string
    {
       return self::$libraryPath;
+   }
+
+   /**
+    * Whether the app opted out of the `FFI::scope()` preload probe via
+    * `App()->skipPreloadCheck()`. When true, initialize() skips straight to the
+    * dynamic `FFI::cdef` load.
+    */
+   private static function skipPreloadCheck(): bool
+   {
+      return (\getenv('PHPSPA_SKIP_PRELOAD_CHECK') ?: ($_ENV['PHPSPA_SKIP_PRELOAD_CHECK'] ?? '')) !== '';
    }
 
    /**

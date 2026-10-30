@@ -23,8 +23,10 @@ use PhpSPA\Core\Utils\FileFunction;
 use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 use PhpSPA\Core\Utils\Validate;
 use PhpSPA\Core\Utils\Timer;
+use PhpSPA\Http\Response;
 use PhpSPA\Interfaces\ApplicationContract;
 use PhpSPA\Interfaces\IComponent;
+use ReflectionFunction;
 
 use function Component\HTMLAttrInArrayToString;
 
@@ -169,6 +171,11 @@ abstract class AppImpl implements ApplicationContract {
 
    private bool $useOxc = false;
 
+   /**
+    * @var array<string,string>
+    */
+   private static array $staticFilesCache = [];
+
    public function defaultTargetID (string $targetID): ApplicationContract
    {
       $this->defaultTargetID = $targetID;
@@ -267,6 +274,17 @@ abstract class AppImpl implements ApplicationContract {
       // engine fails/unavailable, throw instead of silently degrading to PHP.
       // It does NOT change which JS engine is selected; Oxc/esbuild opt-ins stay.
       putenv("PHPSPA_COMPRESSION_STRATEGY=native");
+      return $this;
+   }
+
+   public function skipPreloadCheck(): ApplicationContract
+   {
+      // Skip the `FFI::scope()` preload probe in both native compressors and go
+      // straight to the dynamic `FFI::cdef` load. The resolved handle is cached
+      // in a static property, so under a persistent runtime (FrankenPHP) only the
+      // first request per worker pays the cdef cost; later concurrent calls reuse
+      // the already-loaded FFI instance without re-running cdef.
+      putenv('PHPSPA_SKIP_PRELOAD_CHECK=1');
       return $this;
    }
 
@@ -395,7 +413,12 @@ abstract class AppImpl implements ApplicationContract {
    }
 
    public function disableLogs(int $flags = DISABLE_COMPRESSION_LOG | DISABLE_LIBRARY_LOG | DISABLE_PRELOAD_LOG): ApplicationContract {
-      $this->disableLogs |= $flags; return $this;
+      $this->disableLogs |= $flags;
+      // The native Oxc engine writes its per-compress line straight to stderr
+      // (inherited by the PHP error log), so a PHP-side flag cannot reach it.
+      // Export the compression-log bit to the env the Rust side reads at runtime.
+      if ($this->disableLogs & DISABLE_COMPRESSION_LOG) putenv('PHPSPA_DISABLE_COMPRESSION_LOG=1');
+      return $this;
    }
 
    public function randomizeAssetName(): ApplicationContract {
@@ -415,6 +438,7 @@ abstract class AppImpl implements ApplicationContract {
    public function run (bool $return = false)
    {
       HttpRequest::$cachedRawPostData = null;
+      HttpRequest::$cachedPostData = null;
 
       $request = new HttpRequest();
       static::$request_uri = $request->path();
@@ -424,7 +448,9 @@ abstract class AppImpl implements ApplicationContract {
       if (!empty($staticFileOutput)) return $staticFileOutput;
 
       $this->resolveCors($request);
-      $this->handlePhpSPARequest($request);
+      $assetResponse = $this->handlePhpSPARequest($request, $return);
+
+      if (isset($assetResponse)) return $assetResponse;
 
       /**
        * Handle asset requests (CSS/JS files from session-based links)
@@ -515,7 +541,7 @@ abstract class AppImpl implements ApplicationContract {
       }
    }
 
-   private function handlePhpSPARequest(Request $request) {
+   private function handlePhpSPARequest(Request $request, bool $return) {
       if ($request->requestedWith() === 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
          $data = json_decode(base64_decode($request->auth()->bearer ?? ''), true);
 
@@ -530,38 +556,90 @@ abstract class AppImpl implements ApplicationContract {
 
             return;
 
+         
          } else if (isset($data['__call'])) {
             try {
+               $raw = base64_decode($data['__call']['token'] ?? '');
+
                /**
                 * @var array{0: string, 1: string, 2: bool} $tokenData
                 */
-               $tokenData = json_decode(base64_decode($data['__call']['token'] ?? ''));
+               $payload = ($raw !== false && $raw !== '') ? @unserialize($raw) : null;
 
-               $token = $tokenData[1] ?? null;
-               $functionName = $tokenData[0] ?? null;
-               $use_once = $tokenData[2] ?? false;
-               $csrf = new CsrfManager($functionName, CALL_FUNC_HANDLE);
+               $publicName = $payload[0] ?? null;
+               $token = $payload[1] ?? null;
+               $use_once = $payload[2] ?? false;
+               
+               if (!$publicName || !$token) {
+                  throw new \Exception('Invalid or Expired Token');
+               }
 
-               if ($csrf->verifyToken($token, $use_once)) {
-                  $res = \call_user_func_array(
-                     $functionName,
-                     $data['__call']['args'],
-                  );
+               $csrf = new CsrfManager($publicName, null, CALL_FUNC_HANDLE);
 
-                  print_r(
-                     json_encode([
-                        'response' => json_encode($res),
-                     ]),
-                  );
+               if ($functionName = $csrf->verifyToken($token, $use_once)) {
+                  // Convert ANY callable into a single Closure object
+                  $closure = ($functionName instanceof \Closure) ? $functionName : \Closure::fromCallable($functionName);
+                  $func = new ReflectionFunction($closure);
+                  $totalRequiredParams = $func->getNumberOfRequiredParameters();
+                  $totalParams = $func->getNumberOfParameters();
+
+                  $args = $data['__call']['args'] ?? [];
+
+                  $totalReceivedArgs = \count($args);
+                  $validatedParams = [];
+
+                  if ($totalReceivedArgs < $totalRequiredParams) throw new \InvalidArgumentException('Missing required arguments');
+                  if ($totalReceivedArgs > $totalParams) throw new \InvalidArgumentException('Too many arguments');
+
+                  foreach ($func->getParameters() as $param) {
+                     $paramName = $param->getName();
+                     $paramTypes = CallableInspector::getParamTypes($param);
+
+                     if (!array_key_exists($paramName, $args)) {
+                        if ($param->isDefaultValueAvailable()) {
+                           $validatedParams[$paramName] = $param->getDefaultValue();
+                           continue;
+                        }
+                        throw new \InvalidArgumentException("Missing required parameter: {$paramName}");
+                     }
+
+                     $argsValue = Validate::validate($args[$paramName] ?? null);
+                     if (!Validate::matchesType($argsValue, $paramTypes)) {
+                        throw new \InvalidArgumentException("Invalid type for parameter: {$paramName}");
+                     }
+
+                     $validatedParams[$paramName] = $argsValue;
+                  }
+
+                  $extraKeys = \array_diff_key($args, $validatedParams);
+
+                  if (!empty($extraKeys)) {
+                     $unknown = \implode(', ', \array_keys($extraKeys));
+                     throw new \InvalidArgumentException("Received unexpected arguments: {$unknown}");
+                  }
+
+                  $response = \call_user_func($closure, ...$validatedParams);
+
+                  if ($response instanceof Response) {
+                     $response = $response->__toString();
+                  } elseif (\is_array($response) || \is_object($response)) {
+                     if (!\headers_sent()) header('Content-Type: application/json');
+                     $response = json_encode($response);
+                  }
+
+                  if ($return) return $response;
+                  echo $response;
+                  exit(0);
                }
                else {
                   throw new \Exception('Invalid or Expired Token');
                }
+            } catch (\Exception $e) {
+               error_log($e->getMessage());
+               if ($return) return $e->getMessage();
+               echo $e->getMessage();
+               exit(0);
             }
-            catch ( \Exception $e ) {
-               print_r($e->getMessage());
-            }
-            exit();
          }
       }
    }
@@ -1413,6 +1491,12 @@ abstract class AppImpl implements ApplicationContract {
 
          if ($fileName) {
             $hashed = md5($assetInfo['componentRoute'] . $assetInfo['assetIndex'] . $fileModifyTime . $assetInfo['assetType']);
+
+            if (isset(static::$staticFilesCache[$hashed])) {
+               $content = static::$staticFilesCache[$hashed];
+               goto FINALIZE;
+            }
+
             $fileDir = $this->generatedCacheDirectory ?? (pathinfo($fileName, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 'generated');
             $newName = $fileDir . DIRECTORY_SEPARATOR . $hashed . ".generated.php";
 
@@ -1422,12 +1506,10 @@ abstract class AppImpl implements ApplicationContract {
                }
                else {
                   $content = require $newName;
-
                   $content = Compressor::applyBinaryCompression($content);
-                  $this->setAssetHeaders($assetInfo['type']);
-                  if ($return) return $content;
-                  echo $content;
-                  exit(0);
+                  // --- Save to cache ---
+                  static::$staticFilesCache[$hashed] = $content;
+                  goto FINALIZE;
                }
             }
          }
@@ -1462,7 +1544,7 @@ abstract class AppImpl implements ApplicationContract {
             $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type'], $isGlobalAsset ? 'global' : 'scoped');
             if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) error_log("Compressed $assetType asset output within {$timer->getFormattedElapsedTime()} | From {$assetInfo['name']}");
 
-            if (!$isPhpSpaRequest) {
+            if (!$isPhpSpaRequest && $fileName) {
                // Race-safe + recursive (parent 'generated' dir may not exist).
                if (!is_dir($fileDir) && !@mkdir($fileDir, 0755, true) && !is_dir($fileDir)) {
                   if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
@@ -1470,20 +1552,30 @@ abstract class AppImpl implements ApplicationContract {
                   }
                }
 
-               if ($fileName && is_dir($fileDir)) {
-                  if (OxcCompressor::isErrorOutput($content) && !($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
-                     error_log("phpspa: caching Oxc parse-error output for $assetType asset (will regenerate when the source changes): {$assetInfo['name']}");
-                  }
-                  @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
+               if (OxcCompressor::isErrorOutput($content) && !($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+                  error_log("phpspa: caching Oxc parse-error output for $assetType asset (will regenerate when the source changes): {$assetInfo['name']}");
                }
+               if (!@file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;")) {
+                  if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+                     error_log("phpspa: failed to cache asset: $newName");
+                  }
+               }
+
+               // --- Set compression ---
+               $content = Compressor::applyBinaryCompression($content);
+               // --- Cache the content ---
+               static::$staticFilesCache[$hashed] = $content;
             }
          } else {
             // --- Wrap component in IIFE ---
             if (!$isGlobalAsset && $isJS) {
-               $content = "(()=>{{$content}})()";
+               // --- Set compression ---
+               $content = Compressor::applyBinaryCompression("(()=>{{$content}})()");
             }
          }
       }
+
+      FINALIZE:
 
       // --- Set appropriate headers ---
       $this->setAssetHeaders($assetInfo['type']);
@@ -1564,6 +1656,12 @@ abstract class AppImpl implements ApplicationContract {
       // --- Check generated cache ---
       $indexesKey = \implode(',', $indexes);
       $hashed = md5($assetInfo['componentRoute'] . $indexesKey . $maxMtime . $assetInfo['assetType']);
+
+      if (isset(static::$staticFilesCache[$hashed])) {
+         $content = static::$staticFilesCache[$hashed];
+         goto FINALIZE_COMBINED;
+      }
+
       $fileDir = $this->generatedCacheDirectory ?? ($firstFileName ? (pathinfo($firstFileName, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 'generated') : null);
       $newName = $fileDir ? ($fileDir . DIRECTORY_SEPARATOR . $hashed . ".generated.php") : null;
 
@@ -1573,10 +1671,9 @@ abstract class AppImpl implements ApplicationContract {
          } else {
             $content = require $newName;
             $content = Compressor::applyBinaryCompression($content);
-            $this->setAssetHeaders($assetInfo['type']);
-            if ($return) return $content;
-            echo $content;
-            exit(0);
+            // --- Save to cache ---
+            static::$staticFilesCache[$hashed] = $content;
+            goto FINALIZE_COMBINED;
          }
       }
 
@@ -1622,7 +1719,7 @@ abstract class AppImpl implements ApplicationContract {
          if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) error_log("Compressed combined $assetType asset ({$count} files) within {$timer->getFormattedElapsedTime()}");
 
          // --- Cache the result ---
-         if (!$isPhpSpaRequest && $fileDir) {
+         if (!$isPhpSpaRequest && $newName) {
             // Race-safe: concurrent combined-asset requests can all pass the
             // is_dir() check and then race into mkdir(), so the losers would
             // throw "File exists". Suppress and re-verify instead — a dir that
@@ -1632,11 +1729,13 @@ abstract class AppImpl implements ApplicationContract {
                   error_log("phpspa: failed to create generated cache directory: $fileDir");
                }
             }
-            if ($newName && is_dir($fileDir)) {
-               if (OxcCompressor::isErrorOutput($content) && !($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
-                  error_log("phpspa: caching Oxc parse-error output for combined $assetType asset (will regenerate when a source changes)");
+            if (OxcCompressor::isErrorOutput($content) && !($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+               error_log("phpspa: caching Oxc parse-error output for combined $assetType asset (will regenerate when a source changes)");
+            }
+            if (!@file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;")) {
+               if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+                  error_log("phpspa: failed to cache combined asset: $newName");
                }
-               @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
             }
          }
       } else {
@@ -1646,6 +1745,12 @@ abstract class AppImpl implements ApplicationContract {
             $content = "(()=>{{$content}})()";
          }
       }
+
+      // --- Apply binary compression (gzip/deflate) if requested ---
+      $content = Compressor::applyBinaryCompression($content);
+      static::$staticFilesCache[$hashed] = $content;
+
+      FINALIZE_COMBINED:
 
       $this->setAssetHeaders($assetInfo['type']);
       if ($return) return $content;

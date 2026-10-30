@@ -93,10 +93,10 @@ export class AppManager {
 						let responseData
 
 						// --- Try to parse JSON response, fallback to raw text ---
-						if (responseText && responseText.trim().startsWith('{')) {
+						if (responseText) {
 							try {
 								responseData = JSON.parse(responseText)
-							} catch (parseError) {
+							} catch {
 								responseData = responseText
 							}
 						} else {
@@ -123,10 +123,8 @@ export class AppManager {
 
 						try {
 							// --- Attempt to parse error response as JSON ---
-							errorData = fallbackResponse?.trim().startsWith('{')
-								? JSON.parse(fallbackResponse)
-								: fallbackResponse
-						} catch (parseError) {
+							errorData = JSON.parse(fallbackResponse)
+						} catch {
 							// --- If parsing fails, use raw text ---
 							errorData = fallbackResponse
 						}
@@ -241,17 +239,23 @@ export class AppManager {
 						styleScopeKey
 					)
 
-					ready
-						.then(() => {
+					const applyDOM = () => {
+						try {
 							morphdom(targetElement, element, {
 								childrenOnly: true
 							})
-							resolve(0)
-						})
-						.catch(() => {
+						} catch {
 							targetElement.appendChild(element)
-							resolve(0)
-						})
+						}
+						resolve(0)
+					}
+
+					// --- Only block the swap on stylesheet loading when enabled ---
+					if (RuntimeManager.config.waitForStyles) {
+						ready.then(applyDOM).catch(applyDOM)
+					} else {
+						applyDOM()
+					}
 				})
 
 			const stateData: StateObject = {
@@ -461,10 +465,10 @@ export class AppManager {
 					let responseData
 
 					// --- Parse response as JSON if possible ---
-					if (responseText && responseText.trim().startsWith('{')) {
+					if (responseText) {
 						try {
 							responseData = JSON.parse(responseText)
-						} catch (parseError) {
+						} catch {
 							responseData = responseText
 						}
 					} else {
@@ -490,10 +494,8 @@ export class AppManager {
 							let errorData
 
 							try {
-								errorData = fallbackResponse?.trim().startsWith('{')
-									? JSON.parse(fallbackResponse)
-									: fallbackResponse
-							} catch (parseError) {
+								errorData = JSON.parse(fallbackResponse)
+							} catch {
 								errorData = fallbackResponse
 							}
 
@@ -576,14 +578,10 @@ export class AppManager {
 						let responseData
 
 						// --- Parse response ---
-						if (responseText && responseText.trim().startsWith('{')) {
-							try {
-								responseData = JSON.parse(responseText)
-							} catch (parseError) {
-								responseData = responseText
-							}
-						} else {
-							responseData = responseText || ''
+						try {
+							responseData = JSON.parse(responseText)
+						} catch {
+							responseData = responseText
 						}
 
 						updateComponentContent(responseData)
@@ -607,10 +605,8 @@ export class AppManager {
 						let errorData
 
 						try {
-							errorData = fallbackResponse?.trim().startsWith('{')
-								? JSON.parse(fallbackResponse)
-								: fallbackResponse
-						} catch (parseError) {
+							errorData = JSON.parse(fallbackResponse)
+						} catch {
 							errorData = fallbackResponse
 						}
 
@@ -661,17 +657,23 @@ export class AppManager {
 						styleScopeKey
 					)
 
-					ready
-						.then(() => {
+					const applyDOM = () => {
+						try {
 							morphdom(targetElement, element, {
 								childrenOnly: true
 							})
-							resolve(0)
-						})
-						.catch(() => {
+						} catch {
 							targetElement.appendChild(element)
-							resolve(0)
-						})
+						}
+						resolve(0)
+					}
+
+					// --- Only block the swap on stylesheet loading when enabled ---
+					if (RuntimeManager.config.waitForStyles) {
+						ready.then(applyDOM).catch(applyDOM)
+					} else {
+						applyDOM()
+					}
 				})
 
 			const completedDOMUpdate = () => {
@@ -693,14 +695,14 @@ export class AppManager {
 	 * Used for server-side function calls from the client.
 	 *
 	 * @param token - The authentication token for the call
-	 * @param args - Arguments to pass to the server function
+	 * @param args - Arguments to pass to the server function, must be an object, the argument is passed to the php function as a named parameters.
 	 * @returns The decoded response from the server
 	 */
 	public static async __call(
 		token: string,
-		...args: any[]
+		args: Object
 	): Promise<StateValueType> {
-		const callPayload = JSON.stringify({ __call: { token, args } })
+		const callPayload = JSON.stringify({ __call: { token, args: args } })
 
 		try {
 			const response = await fetch(location.pathname, {
@@ -717,17 +719,10 @@ export class AppManager {
 			let responseData
 
 			// --- Parse and decode response ---
-			if (responseText && responseText.trim().startsWith('{')) {
-				try {
-					responseData = JSON.parse(responseText)
-					responseData = responseData?.response
-						? JSON.parse(responseData.response)
-						: responseData
-				} catch (parseError) {
-					responseData = responseText
-				}
-			} else {
-				responseData = responseText || ''
+			try {
+				responseData = JSON.parse(responseText)
+			} catch {
+				responseData = responseText
 			}
 
 			return responseData
@@ -739,14 +734,8 @@ export class AppManager {
 					let errorData
 
 					try {
-						errorData = fallbackResponse?.trim().startsWith('{')
-							? JSON.parse(fallbackResponse)
-							: fallbackResponse
-
-						errorData = errorData?.response
-							? JSON.parse(errorData.response)
-							: errorData
-					} catch (parseError) {
+						errorData = JSON.parse(fallbackResponse)
+					} catch {
 						errorData = fallbackResponse
 					}
 

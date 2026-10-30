@@ -24,7 +24,7 @@ final class FunctionCallerTest extends TestCase
 
       preg_match("/phpspa\.__call\('([^']+)'\)/", $output, $matches);
       $token = $matches[1] ?? '';
-      $decoded = json_decode(base64_decode($token), true);
+      $decoded = unserialize(base64_decode($token));
 
       $this->assertIsArray($decoded);
       $this->assertSame('strlen', $decoded[0]);
@@ -82,7 +82,7 @@ final class FunctionCallerTest extends TestCase
    private function decodeToken(string $output): array
    {
       $token = $this->extractToken($output);
-      return json_decode(base64_decode($token), true) ?? [];
+      return unserialize(base64_decode($token)) ?? [];
    }
 }
 

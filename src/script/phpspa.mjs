@@ -1332,11 +1332,11 @@ class AppManager {
                 .then(responseText => {
                 let responseData;
                 // --- Try to parse JSON response, fallback to raw text ---
-                if (responseText && responseText.trim().startsWith('{')) {
+                if (responseText) {
                     try {
                         responseData = JSON.parse(responseText);
                     }
-                    catch (parseError) {
+                    catch {
                         responseData = responseText;
                     }
                 }
@@ -1361,11 +1361,9 @@ class AppManager {
                     let errorData;
                     try {
                         // --- Attempt to parse error response as JSON ---
-                        errorData = fallbackResponse?.trim().startsWith('{')
-                            ? JSON.parse(fallbackResponse)
-                            : fallbackResponse;
+                        errorData = JSON.parse(fallbackResponse);
                     }
-                    catch (parseError) {
+                    catch {
                         // --- If parsing fails, use raw text ---
                         errorData = fallbackResponse;
                     }
@@ -1454,17 +1452,24 @@ class AppManager {
                     '__phpspa_body__';
                 // --- Preload stylesheets in the new content ---
                 const { element, ready } = preloadStylesFromContent(component.content, styleScopeKey);
-                ready
-                    .then(() => {
-                    morphdom(targetElement, element, {
-                        childrenOnly: true
-                    });
+                const applyDOM = () => {
+                    try {
+                        morphdom(targetElement, element, {
+                            childrenOnly: true
+                        });
+                    }
+                    catch {
+                        targetElement.appendChild(element);
+                    }
                     resolve(0);
-                })
-                    .catch(() => {
-                    targetElement.appendChild(element);
-                    resolve(0);
-                });
+                };
+                // --- Only block the swap on stylesheet loading when enabled ---
+                if (RuntimeManager.config.waitForStyles) {
+                    ready.then(applyDOM).catch(applyDOM);
+                }
+                else {
+                    applyDOM();
+                }
             });
             const stateData = {
                 url: newUrl.toString(),
@@ -1626,11 +1631,11 @@ class AppManager {
                     const responseText = await response.text();
                     let responseData;
                     // --- Parse response as JSON if possible ---
-                    if (responseText && responseText.trim().startsWith('{')) {
+                    if (responseText) {
                         try {
                             responseData = JSON.parse(responseText);
                         }
-                        catch (parseError) {
+                        catch {
                             responseData = responseText;
                         }
                     }
@@ -1655,11 +1660,9 @@ class AppManager {
                         .then((fallbackResponse) => {
                         let errorData;
                         try {
-                            errorData = fallbackResponse?.trim().startsWith('{')
-                                ? JSON.parse(fallbackResponse)
-                                : fallbackResponse;
+                            errorData = JSON.parse(fallbackResponse);
                         }
-                        catch (parseError) {
+                        catch {
                             errorData = fallbackResponse;
                         }
                         updateContent(errorData || '');
@@ -1728,16 +1731,11 @@ class AppManager {
                 .then(responseText => {
                 let responseData;
                 // --- Parse response ---
-                if (responseText && responseText.trim().startsWith('{')) {
-                    try {
-                        responseData = JSON.parse(responseText);
-                    }
-                    catch (parseError) {
-                        responseData = responseText;
-                    }
+                try {
+                    responseData = JSON.parse(responseText);
                 }
-                else {
-                    responseData = responseText || '';
+                catch {
+                    responseData = responseText;
                 }
                 updateComponentContent(responseData);
             })
@@ -1758,11 +1756,9 @@ class AppManager {
                     .then((fallbackResponse) => {
                     let errorData;
                     try {
-                        errorData = fallbackResponse?.trim().startsWith('{')
-                            ? JSON.parse(fallbackResponse)
-                            : fallbackResponse;
+                        errorData = JSON.parse(fallbackResponse);
                     }
-                    catch (parseError) {
+                    catch {
                         errorData = fallbackResponse;
                     }
                     updateComponentContent(errorData || '');
@@ -1799,17 +1795,24 @@ class AppManager {
                     '__phpspa_body__';
                 // --- Preload stylesheets in the new content ---
                 const { element, ready } = preloadStylesFromContent(component.content, styleScopeKey);
-                ready
-                    .then(() => {
-                    morphdom(targetElement, element, {
-                        childrenOnly: true
-                    });
+                const applyDOM = () => {
+                    try {
+                        morphdom(targetElement, element, {
+                            childrenOnly: true
+                        });
+                    }
+                    catch {
+                        targetElement.appendChild(element);
+                    }
                     resolve(0);
-                })
-                    .catch(() => {
-                    targetElement.appendChild(element);
-                    resolve(0);
-                });
+                };
+                // --- Only block the swap on stylesheet loading when enabled ---
+                if (RuntimeManager.config.waitForStyles) {
+                    ready.then(applyDOM).catch(applyDOM);
+                }
+                else {
+                    applyDOM();
+                }
             });
             const completedDOMUpdate = () => {
                 // --- Execute any inline scripts in the new content ---
@@ -1827,11 +1830,11 @@ class AppManager {
      * Used for server-side function calls from the client.
      *
      * @param token - The authentication token for the call
-     * @param args - Arguments to pass to the server function
+     * @param args - Arguments to pass to the server function, must be an object, the argument is passed to the php function as a named parameters.
      * @returns The decoded response from the server
      */
-    static async __call(token, ...args) {
-        const callPayload = JSON.stringify({ __call: { token, args } });
+    static async __call(token, args) {
+        const callPayload = JSON.stringify({ __call: { token, args: args } });
         try {
             const response = await fetch(location.pathname, {
                 headers: {
@@ -1845,19 +1848,11 @@ class AppManager {
             const responseText = await response.text();
             let responseData;
             // --- Parse and decode response ---
-            if (responseText && responseText.trim().startsWith('{')) {
-                try {
-                    responseData = JSON.parse(responseText);
-                    responseData = responseData?.response
-                        ? JSON.parse(responseData.response)
-                        : responseData;
-                }
-                catch (parseError) {
-                    responseData = responseText;
-                }
+            try {
+                responseData = JSON.parse(responseText);
             }
-            else {
-                responseData = responseText || '';
+            catch {
+                responseData = responseText;
             }
             return responseData;
         }
@@ -1868,14 +1863,9 @@ class AppManager {
                     const fallbackResponse = await error.response.text();
                     let errorData;
                     try {
-                        errorData = fallbackResponse?.trim().startsWith('{')
-                            ? JSON.parse(fallbackResponse)
-                            : fallbackResponse;
-                        errorData = errorData?.response
-                            ? JSON.parse(errorData.response)
-                            : errorData;
+                        errorData = JSON.parse(fallbackResponse);
                     }
-                    catch (parseError) {
+                    catch {
                         errorData = fallbackResponse;
                     }
                     return errorData;
@@ -2041,16 +2031,24 @@ const navigateHistory = (event) => {
             const styleScopeKey = navigationState.targetID || targetContainer.id || '__phpspa_body__';
             // --- Preload stylesheets in the new content ---
             const { element, ready } = preloadStylesFromContent(navigationState.content, styleScopeKey);
-            ready.then(() => {
-                morphdom(targetContainer, element, {
-                    childrenOnly: true
-                });
+            const applyDOM = () => {
+                try {
+                    morphdom(targetContainer, element, {
+                        childrenOnly: true
+                    });
+                }
+                catch {
+                    targetContainer.appendChild(element);
+                }
                 resolve(0);
-            })
-                .catch(() => {
-                targetContainer.appendChild(element);
-                resolve(0);
-            });
+            };
+            // --- Only block the swap on stylesheet loading when enabled ---
+            if (RuntimeManager.config.waitForStyles) {
+                ready.then(applyDOM).catch(applyDOM);
+            }
+            else {
+                applyDOM();
+            }
         });
         const completedDOMUpdate = async () => {
             // --- Clear old executed scripts cache ---

@@ -43,6 +43,7 @@ use PhpSPA\Interfaces\ApplicationContract;
  * @method ApplicationContract setCustomCompressorLibraryPath(string $path) Set a custom compressor library path
  * @method ApplicationContract setOxcLibraryPath(string $path) Set the Oxc JS minifier library path (PHPSPA_OXC_LIB), used for a direct FFI::cdef load when Oxc isn't preloaded
  * @method ApplicationContract forceNativeCompression() Force native compression
+ * @method ApplicationContract skipPreloadCheck() Skip the FFI::scope() preload probe and load the native compressor library directly via FFI::cdef
  * @method ApplicationContract cors(array $data = []) Configure CORS
  *
  * @author dconco <me@dconco.tech>

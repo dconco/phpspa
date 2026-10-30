@@ -363,6 +363,28 @@ interface ApplicationContract {
     public function forceNativeCompression(): self;
 
     /**
+     * Skips the `FFI::scope()` preload probe in the native compressors.
+     *
+     * By default each native engine (C++ and Oxc) first tries `FFI::scope()` to
+     * reuse a library preloaded via `ffi.preload`, then falls back to a dynamic
+     * `FFI::cdef` load when it is not preloaded. Calling this makes the engines
+     * skip that probe and load the shared library directly with `FFI::cdef`.
+     *
+     * Use it when you are NOT preloading via `php.ini` and want to avoid the
+     * failing `FFI::scope()` attempt (and its fallback log line) on every worker
+     * start. The resolved FFI handle is stored statically, so under a persistent
+     * runtime like FrankenPHP only the first request per worker runs `FFI::cdef`;
+     * later concurrent calls reuse the loaded instance without reloading it.
+     *
+     * Sets the `PHPSPA_SKIP_PRELOAD_CHECK` environment variable.
+     *
+     * @return self
+     * @since v2.1.0
+     * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
+     */
+    public function skipPreloadCheck(): self;
+
+    /**
      * Configure CORS (Cross-Origin Resource Sharing) settings for the application.
      *
      * Loads default CORS configuration from the config file and optionally merges
