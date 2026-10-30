@@ -1691,10 +1691,13 @@ abstract class AppImpl implements ApplicationContract {
          if (\is_array($part)) $part = $part[0] ?? '';
 
          $label = $names[$idx] ?? "#$idx";
-         $banner = "\n/* ====================== {$label} ====================== */\n";
+         // JS banner kept for debugging; CSS banner omitted to prevent minifier
+         // from treating cross-file selectors as mergeable (the minifier sees one
+         // big stylesheet and may reorder/dedupe selectors across file boundaries).
+         $jsBanner = "\n/* ====================== {$label} ====================== */\n";
 
          if ($isCss) {
-            $buffer .= $banner . $part . "\n";
+            $buffer .= $part . "\n";
          } else {
             // Trim trailing whitespace + semicolons, then terminate on its own
             // line so a trailing line-comment can't eat the semicolon.
@@ -1702,7 +1705,7 @@ abstract class AppImpl implements ApplicationContract {
             $part = \rtrim($part, ';');
             $part = \rtrim($part);
             if ($part === '') continue;
-            $buffer .= $banner . $part . "\n;\n";
+            $buffer .= $jsBanner . $part . "\n;\n";
          }
       }
 
