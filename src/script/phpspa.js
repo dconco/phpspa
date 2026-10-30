@@ -1,5 +1,5 @@
 /*!
- * PhpSPA Client Runtime v2.1.1
+ * PhpSPA Client Runtime v2.1.2
  * Docs: https://phpspa.tech | Package: @dconco/phpspa
  * License: MIT
  */
@@ -336,7 +336,8 @@
         const cleanup = () => {
             link.removeEventListener('load', onLoad);
             link.removeEventListener('error', onLoad);
-            resolve();
+            // Wait for paint after load so styles are applied before DOM swap
+            waitForNextPaint().then(resolve);
         };
         const onLoad = () => cleanup();
         link.addEventListener('load', onLoad, { once: true });
