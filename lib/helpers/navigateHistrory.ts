@@ -99,9 +99,15 @@ export const navigateHistory = (event: PopStateEvent) => {
                resolve(0)
             }
 
-            // --- Only block the swap on stylesheet loading when enabled ---
+            // --- Block swap on stylesheet loading and use View Transition for flicker-free navigation ---
             if (RuntimeManager.config.waitForStyles) {
-               ready.then(applyDOM).catch(applyDOM)
+               ready.then(() => {
+                  if (document.startViewTransition) {
+                     document.startViewTransition(applyDOM)
+                  } else {
+                     applyDOM()
+                  }
+               }).catch(applyDOM)
             } else {
                applyDOM()
             }
