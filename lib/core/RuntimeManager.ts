@@ -1,6 +1,5 @@
 import { CurrentRoutesObject, EffectType, EventObject, EventPayloadMap, RuntimeConfig } from "../types/RuntimeInterfaces"
 import { StateObject, StateValueType } from "../types/StateObjectTypes"
-import { utf8ToBase64 } from "../utils/baseConverter"
 
 
 /**
@@ -252,7 +251,23 @@ export class RuntimeManager {
    private static runInlineStyles(container: HTMLElement) {
       const styles = container.querySelectorAll("style")
 
+      // --- Snapshot the inline styles already applied in <head> so repeat
+      //     navigations do not pile up duplicate <style> blocks ---
+      const appliedStyles = new Set(
+         Array.from(document.head.querySelectorAll<HTMLStyleElement>("style[data-phpspa-inline]"))
+            .map(existing => existing.textContent ?? "")
+      )
+
       styles.forEach((style: HTMLStyleElement) => {
+         const css = style.textContent ?? ""
+
+         // --- Already applied from a previous swap: just drop the duplicate
+         //     source node so morphdom does not re-inject it into the body ---
+         if (appliedStyles.has(css)) {
+            style.remove()
+            return
+         }
+
          // --- Create new style element ---
          const newStyle = document.createElement("style")
 
@@ -261,9 +276,14 @@ export class RuntimeManager {
             newStyle.setAttribute(attribute.name, attribute.value)
          }
 
-         // --- Copy style content and inject into head ---
-         newStyle.textContent = style.textContent
-         document.head.appendChild(newStyle).remove()
+         // --- Copy style content and inject into head (kept connected so the
+         //     rules stay applied), then drop the source node from the content
+         //     so morphdom does not swap a duplicate <style> into the body ---
+         newStyle.setAttribute("data-phpspa-inline", "1")
+         newStyle.textContent = css
+         document.head.appendChild(newStyle)
+         appliedStyles.add(css)
+         style.remove()
       })
    }
 
