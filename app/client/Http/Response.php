@@ -324,10 +324,10 @@ class Response
     * Sets the content type for the response.
     *
     * @param string $type The content type.
-    * @param string $charset The charset (default: null, no charset included).
+    * @param string $charset The charset (default: 'utf-8', set as null to exclude charset).
     * @return self
     */
-   public function contentType(string $type, ?string $charset = null): self
+   public function contentType(string $type, ?string $charset = 'utf-8'): self
    {
       if ($charset !== null) return $this->header('Content-Type', "{$type}; charset={$charset}");
       else return $this->header('Content-Type', $type);

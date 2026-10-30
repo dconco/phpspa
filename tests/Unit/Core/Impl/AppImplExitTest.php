@@ -33,7 +33,7 @@ final class AppImplExitTest extends TestCase
 
    public function testRunExitsForPhpSpaCall(): void
    {
-      $expected = json_encode(['response' => json_encode('result-ok')]);
+      $expected = 'result-test-payload';
 
       [$status, $output] = $this->runIsolatedPhp(
          <<<'PHP'
@@ -44,14 +44,14 @@ final class AppImplExitTest extends TestCase
          $_SERVER['HTTP_X_REQUESTED_WITH'] = 'PHPSPA_REQUEST';
          PhpSPA\Core\Impl\RealImpl\AppImpl::$request_uri = '/';
 
-         $csrf = new PhpSPA\Core\Helper\CsrfManager('AppImplExitFunction', PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE);
+         $csrf = new PhpSPA\Core\Helper\CsrfManager('AppImplExitFunction', 'AppImplExitFunction', PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE);
          $token = $csrf->getToken();
 
-         $tokenData = base64_encode(json_encode(['AppImplExitFunction', $token, false]));
+         $tokenData = base64_encode(serialize(['AppImplExitFunction', $token, false]));
          $payload = base64_encode(json_encode([
             '__call' => [
                'token' => $tokenData,
-               'args' => ['ok'],
+               'args' => ['value' => 'test-payload'],
             ],
          ]));
 
