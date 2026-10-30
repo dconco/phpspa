@@ -15,8 +15,8 @@ const waitForStylesheet = (link: HTMLLinkElement): Promise<void> =>
       const cleanup = () => {
          link.removeEventListener('load', onLoad)
          link.removeEventListener('error', onLoad)
-         // Wait for paint after load so styles are applied before DOM swap
-         waitForNextPaint().then(resolve)
+         // Wait for styles to be applied to CSSOM after download
+         waitForNextPaint().then(() => waitForNextPaint()).then(resolve)
       }
 
       const onLoad = () => cleanup()
