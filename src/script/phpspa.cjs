@@ -1,5 +1,5 @@
 /*!
- * PhpSPA Client Runtime v2.1.3
+ * PhpSPA Client Runtime v2.1.4
  * Docs: https://phpspa.tech | Package: @dconco/phpspa
  * License: MIT
  */
@@ -447,9 +447,9 @@ const preloadStylesFromContent = (content, scopeKey) => {
     RuntimeManager.runStylesForElement(tempElem);
     // --- Keep current styles until the caller is ready to replace the DOM ---
     if (nextHrefs.size === 0) {
-        const ready = Promise.resolve()
-            .then(() => setScopeStyles(normalizedScopeKey, nextHrefs));
-        return { element: tempElem, ready };
+        const ready = Promise.resolve([]);
+        const commitStyles = () => setScopeStyles(normalizedScopeKey, nextHrefs);
+        return { element: tempElem, ready, commitStyles };
     }
     const headLinks = getHeadStylesheetLinks();
     const loadPromises = Array.from(rawHrefs.entries()).map(([resolvedHref, rawHref]) => {
@@ -472,9 +472,10 @@ const preloadStylesFromContent = (content, scopeKey) => {
         RuntimeManager.executedStyles.add(resolvedHref);
         return waitForStylesheet(headLink);
     });
-    const ready = Promise.all(loadPromises)
-        .then(() => setScopeStyles(normalizedScopeKey, nextHrefs));
-    return { element: tempElem, ready };
+    // --- ready: styles are loaded; commitStyles: removes old styles (call AFTER DOM swap) ---
+    const ready = Promise.all(loadPromises);
+    const commitStyles = () => setScopeStyles(normalizedScopeKey, nextHrefs);
+    return { element: tempElem, ready, commitStyles };
 };
 
 /**
@@ -1478,7 +1479,7 @@ class AppManager {
                     targetElement.id ||
                     '__phpspa_body__';
                 // --- Preload stylesheets in the new content ---
-                const { element, ready } = preloadStylesFromContent(component.content, styleScopeKey);
+                const { element, ready, commitStyles } = preloadStylesFromContent(component.content, styleScopeKey);
                 const applyDOM = () => {
                     try {
                         morphdom(targetElement, element, {
@@ -1488,11 +1489,20 @@ class AppManager {
                     catch {
                         targetElement.appendChild(element);
                     }
+                    // --- Remove old styles AFTER DOM swap to prevent flicker ---
+                    commitStyles();
                     resolve(0);
                 };
-                // --- Only block the swap on stylesheet loading when enabled ---
+                // --- Block swap on stylesheet loading and use View Transition for flicker-free navigation ---
                 if (RuntimeManager.config.waitForStyles) {
-                    ready.then(applyDOM).catch(applyDOM);
+                    ready.then(() => {
+                        if (document.startViewTransition) {
+                            document.startViewTransition(applyDOM);
+                        }
+                        else {
+                            applyDOM();
+                        }
+                    }).catch(applyDOM);
                 }
                 else {
                     applyDOM();
@@ -2057,7 +2067,7 @@ const navigateHistory = (event) => {
         const updateDOM = () => new Promise((resolve) => {
             const styleScopeKey = navigationState.targetID || targetContainer.id || '__phpspa_body__';
             // --- Preload stylesheets in the new content ---
-            const { element, ready } = preloadStylesFromContent(navigationState.content, styleScopeKey);
+            const { element, ready, commitStyles } = preloadStylesFromContent(navigationState.content, styleScopeKey);
             const applyDOM = () => {
                 try {
                     morphdom(targetContainer, element, {
@@ -2067,11 +2077,20 @@ const navigateHistory = (event) => {
                 catch {
                     targetContainer.appendChild(element);
                 }
+                // --- Remove old styles AFTER DOM swap to prevent flicker ---
+                commitStyles();
                 resolve(0);
             };
-            // --- Only block the swap on stylesheet loading when enabled ---
+            // --- Block swap on stylesheet loading and use View Transition for flicker-free navigation ---
             if (RuntimeManager.config.waitForStyles) {
-                ready.then(applyDOM).catch(applyDOM);
+                ready.then(() => {
+                    if (document.startViewTransition) {
+                        document.startViewTransition(applyDOM);
+                    }
+                    else {
+                        applyDOM();
+                    }
+                }).catch(applyDOM);
             }
             else {
                 applyDOM();

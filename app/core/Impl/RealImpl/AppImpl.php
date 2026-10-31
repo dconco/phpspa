@@ -463,6 +463,15 @@ abstract class AppImpl implements ApplicationContract {
       $assetInfo = self::resolveAssetRequestMemoized(static::$request_uri);
 
       if ($assetInfo !== null) {
+         // Handle expired assets
+         if (!empty($assetInfo['expired'])) {
+            http_response_code(Response::StatusGone);
+            header('Content-Type: text/plain');
+            if ($return) return "Asset has expired";
+            echo "Asset has expired";
+            return;
+         }
+
          // #3 -- Fast skip: an instance-scoped global asset (`__global__:<id>`)
          // owned by a DIFFERENT App is not ours; do nothing and let the owning
          // App's run() handle it, without entering serveAsset at all.

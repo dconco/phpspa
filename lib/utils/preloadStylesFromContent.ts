@@ -150,7 +150,7 @@ export const preloadStylesFromContent =  (content: string, scopeKey?: string): {
 
    // --- Keep current styles until the caller is ready to replace the DOM ---
    if (nextHrefs.size === 0) {
-      const ready = Promise.resolve() as Promise<void[]>
+      const ready = Promise.resolve([])
       const commitStyles = () => setScopeStyles(normalizedScopeKey, nextHrefs)
 
       return { element: tempElem, ready, commitStyles }
