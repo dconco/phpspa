@@ -447,7 +447,9 @@ abstract class AppImpl implements ApplicationContract {
       $staticFileOutput = $this->resolveStaticPath($return);
       if (!empty($staticFileOutput)) return $staticFileOutput;
 
-      $this->resolveCors($request);
+      $corsResponse = $this->resolveCors($request, $return);
+      if ($corsResponse !== null) return $corsResponse;
+
       $assetResponse = $this->handlePhpSPARequest($request, $return);
 
       if (isset($assetResponse)) return $assetResponse;
@@ -502,7 +504,7 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       foreach ($this->components as $component) {
-         $output = $this->runComponent($component, false, $this->renderedData);
+         $output = $this->runComponent($component, false, $this->renderedData, $return);
 
          if ($output === true) {
             $success = true;
@@ -527,7 +529,7 @@ abstract class AppImpl implements ApplicationContract {
 
    }
 
-   private function resolveCors(Request $request) {
+   private function resolveCors(Request $request, bool $return = false): ?string {
       if (!headers_sent()) {
          foreach ($this->cors as $key => $value) {
             $key =
@@ -546,8 +548,12 @@ abstract class AppImpl implements ApplicationContract {
        * Handle preflight requests (OPTIONS method)
        */
       if ($request->isMethod('options')) {
+         http_response_code(204);
+         if ($return) return \PhpSPA\Http\PREFLIGHT_HANDLED;
          exit();
       }
+
+      return null;
    }
 
    private function handlePhpSPARequest(Request $request, bool $return) {
@@ -654,7 +660,7 @@ abstract class AppImpl implements ApplicationContract {
    }
 
 
-   private function runComponent(Component|Icomponent $component, bool $isPreloadingComponent = false, ?string &$layoutOutput = null) {
+   private function runComponent(Component|Icomponent $component, bool $isPreloadingComponent = false, ?string &$layoutOutput = null, bool $return = false) {
       static $request = new HttpRequest();
       static $router = null;
 
@@ -879,7 +885,9 @@ abstract class AppImpl implements ApplicationContract {
             $info['reloadTime'] = $reloadTime;
 
          // Use compressed JSON output
-         print_r(Compressor::compressJson($info));
+         $jsonOutput = Compressor::compressJson($info);
+         if ($return) return $jsonOutput;
+         print_r($jsonOutput);
          exit(0);
       }
       else {
