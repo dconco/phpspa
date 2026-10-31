@@ -86,7 +86,7 @@ export const navigateHistory = (event: PopStateEvent) => {
             const styleScopeKey = navigationState.targetID || targetContainer.id || '__phpspa_body__'
 
             // --- Preload stylesheets in the new content ---
-            const { element, ready } = preloadStylesFromContent(navigationState.content, styleScopeKey)
+            const { element, ready, commitStyles } = preloadStylesFromContent(navigationState.content, styleScopeKey)
 
             const applyDOM = () => {
                try {
@@ -96,6 +96,8 @@ export const navigateHistory = (event: PopStateEvent) => {
                } catch {
                   targetContainer.appendChild(element)
                }
+               // --- Remove old styles AFTER DOM swap to prevent flicker ---
+               commitStyles()
                resolve(0)
             }
 

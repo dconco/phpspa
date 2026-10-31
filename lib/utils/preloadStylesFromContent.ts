@@ -122,7 +122,7 @@ export const retainStylesheetLinks = (sourceContent: string, updatedContent: str
    return stylesheetLinks ? stylesheetLinks.join('') + updatedContent : updatedContent
 }
 
-export const preloadStylesFromContent =  (content: string, scopeKey?: string): { element: HTMLDivElement; ready: Promise<void> } => {
+export const preloadStylesFromContent =  (content: string, scopeKey?: string): { element: HTMLDivElement; ready: Promise<void[]>; commitStyles: () => void } => {
    const normalizedScopeKey = normalizeScopeKey(scopeKey)
 
    const nextHrefs: Set<string> = new Set()
@@ -150,10 +150,10 @@ export const preloadStylesFromContent =  (content: string, scopeKey?: string): {
 
    // --- Keep current styles until the caller is ready to replace the DOM ---
    if (nextHrefs.size === 0) {
-      const ready = Promise.resolve()
-         .then(() => setScopeStyles(normalizedScopeKey, nextHrefs))
+      const ready = Promise.resolve() as Promise<void[]>
+      const commitStyles = () => setScopeStyles(normalizedScopeKey, nextHrefs)
 
-      return { element: tempElem, ready }
+      return { element: tempElem, ready, commitStyles }
    }
 
    const headLinks = getHeadStylesheetLinks()
@@ -182,8 +182,9 @@ export const preloadStylesFromContent =  (content: string, scopeKey?: string): {
       return waitForStylesheet(headLink)
    })
 
+   // --- ready: styles are loaded; commitStyles: removes old styles (call AFTER DOM swap) ---
    const ready = Promise.all(loadPromises)
-      .then(() => setScopeStyles(normalizedScopeKey, nextHrefs))
+   const commitStyles = () => setScopeStyles(normalizedScopeKey, nextHrefs)
 
-   return { element: tempElem, ready }
+   return { element: tempElem, ready, commitStyles }
 }

@@ -234,7 +234,7 @@ export class AppManager {
 						'__phpspa_body__'
 
 					// --- Preload stylesheets in the new content ---
-					const { element, ready } = preloadStylesFromContent(
+					const { element, ready, commitStyles } = preloadStylesFromContent(
 						component.content,
 						styleScopeKey
 					)
@@ -247,6 +247,8 @@ export class AppManager {
 						} catch {
 							targetElement.appendChild(element)
 						}
+						// --- Remove old styles AFTER DOM swap to prevent flicker ---
+						commitStyles()
 						resolve(0)
 					}
 
