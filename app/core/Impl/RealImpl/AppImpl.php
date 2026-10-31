@@ -839,6 +839,12 @@ abstract class AppImpl implements ApplicationContract {
       $assetLinks = $this->generateAssetLinks($route, $scripts, $stylesheets, $this->scripts, $this->stylesheets);
 
       if ($request->requestedWith() === 'PHPSPA_REQUEST') {
+         // --- Send Link header preload hints for stylesheets (browser fetches at high priority)
+         $preloadHrefs = $assetLinks['component']['preloadHrefs'] ?? [];
+         foreach ($preloadHrefs as $href) {
+            header("Link: <{$href}>; rel=preload; as=style", false);
+         }
+
          // --- For PHPSPA requests (component updates), include component scripts with the component ---
          $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput . $assetLinks['global']['scripts'] . $assetLinks['component']['scripts'];
 
@@ -1259,8 +1265,8 @@ abstract class AppImpl implements ApplicationContract {
    private function generateCombinedAssetLinks (?string $primaryRoute, string $globalRoute, array $scripts, array $stylesheets, array $globalScripts, array $globalStylesheets, bool $isPhpSpaRequest): array
    {
       $result = [
-         'component' => [ 'scripts' => '', 'stylesheets' => '' ],
-         'global' => [ 'scripts' => '', 'stylesheets' => '' ]
+         'component' => [ 'scripts' => '', 'stylesheets' => '', 'preloadHrefs' => [] ],
+         'global' => [ 'scripts' => '', 'stylesheets' => '', 'preloadHrefs' => [] ]
       ];
 
       // --- Helper to group callables by type and collect external links ---
@@ -1300,15 +1306,13 @@ abstract class AppImpl implements ApplicationContract {
             $attrs['href'] = $href;
             unset($attrs['name'], $attrs['content']);
 
-            // --- Preload hint disabled: styles already sit at the top of <head>,
-            // --- so the browser discovers them nearly as early without the extra tag.
-            // --- Revisit with HTTP `Link:` / 103 Early Hints in a future release.
-            // if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet') {
-            //    $preload = $attrs;
-            //    $preload['rel'] = 'preload';
-            //    $preload['as'] = 'style';
-            //    $result['global']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($preload) . " />";
-            // }
+            // --- Preload hint: tell browser to fetch stylesheet at highest priority
+            if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet') {
+               $preload = $attrs;
+               $preload['rel'] = 'preload';
+               $preload['as'] = 'style';
+               $result['global']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($preload) . " />";
+            }
             $result['global']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($attrs) . " />";
          }
 
@@ -1332,15 +1336,17 @@ abstract class AppImpl implements ApplicationContract {
             $attrs['href'] = $href;
             unset($attrs['name'], $attrs['content']);
 
-            // --- Preload hint disabled: styles already sit at the top of <head>,
-            // --- so the browser discovers them nearly as early without the extra tag.
-            // --- Revisit with HTTP `Link:` / 103 Early Hints in a future release.
-            // if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet' && !$isPhpSpaRequest) {
-            //    $preload = $attrs;
-            //    $preload['rel'] = 'preload';
-            //    $preload['as'] = 'style';
-            //    $result['component']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($preload) . " />";
-            // }
+            // --- Preload hint: tell browser to fetch stylesheet at highest priority (skip for SPA requests)
+            if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet' && !$isPhpSpaRequest) {
+               $preload = $attrs;
+               $preload['rel'] = 'preload';
+               $preload['as'] = 'style';
+               $result['component']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($preload) . " />";
+            }
+            // --- Collect href for Link header preload on SPA requests
+            if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet') {
+               $result['component']['preloadHrefs'][] = $href;
+            }
             $result['component']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($attrs) . " />";
          }
 
