@@ -495,6 +495,12 @@ abstract class AppImpl implements ApplicationContract {
 
       foreach ($this->prefix as $prefix) {
          $output = $this->handlePrefix($prefix, [], $return);
+
+         if ($output instanceof \PhpSPA\Http\RedirectException) {
+            // Redirect was triggered - headers already sent
+            if ($return) return $output;
+            exit();
+         }
          if (isset($output)) return $output;
       }
 
@@ -530,7 +536,6 @@ abstract class AppImpl implements ApplicationContract {
          }
 
          if ($return) return $compressedOutput;
-
          print_r($compressedOutput);
          exit(0);
       }
@@ -761,16 +766,14 @@ abstract class AppImpl implements ApplicationContract {
          $componentOutput = $pipeline($request);
       } catch (\PhpSPA\Http\RedirectException $e) {
          // Redirect() was called - headers already sent
-         if ($return) return $e;
-         exit();
+         return $e;
       }
 
       if ($layoutOutput === null) {
          try {
             $layoutOutput = is_callable($this->layout) ? (string) \call_user_func($this->layout, $request) : (string) $this->layout;
          } catch (\PhpSPA\Http\RedirectException $e) {
-            if ($return) return $e;
-            exit();
+            return $e;
          }
          $layoutOutput = $this->ensureHeadTag($layoutOutput);
       }
