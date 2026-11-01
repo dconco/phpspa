@@ -193,30 +193,60 @@ PhpSPA automatically resets internal static state between requests when using `r
     }
     ```
 
-## Redirects and Early Exits
+## Redirects in Worker Mode
 
-!!! warning "User-Level APIs Still Exit"
-    User-level redirect APIs like `Response->redirect()`, `Redirect()`, and `Response->send()` still call `exit()`. In worker mode, use header-based redirects instead:
+PhpSPA provides worker-mode compatible redirects:
 
-=== "Don't use (exits)"
+### Using `$response->redirect()`
 
-    ```php
-    <?php
-    // This will kill your worker process!
-    $response->redirect('/dashboard');
-    ```
+The `Response->redirect()` method returns the response object, so you can return it from your handler:
 
-=== "Use instead (returns)"
+```php
+<?php
+// In your component/middleware
+return $response->redirect('/dashboard', 302);
+```
 
-    ```php
-    <?php
-    // Set headers and return control to your loop
-    header('Location: /dashboard', true, 302);
-    return; // In your worker loop
-    ```
+Headers are sent immediately; your worker loop just returns.
 
-!!! tip "Future Enhancement"
-    A future version may add worker-compatible redirect helpers that return instead of exiting.
+### Using `Redirect()`
+
+The global `Redirect()` function throws a `RedirectException` that PhpSPA catches:
+
+```php
+<?php
+// This throws RedirectException (headers sent before throw)
+Redirect('/dashboard', 302);
+```
+
+In your worker loop, check if the output is a `RedirectException`:
+
+```php
+<?php
+use PhpSPA\Http\RedirectException;
+
+$output = $app->run(true);
+
+if ($output === PREFLIGHT_HANDLED) {
+    continue; // OPTIONS handled
+}
+
+if ($output instanceof RedirectException) {
+    continue; // Redirect headers sent, no body needed
+}
+
+if (isset($output)) {
+    echo $output;
+}
+```
+
+!!! tip "Return Types for Special Cases"
+    | Return Value | Meaning |
+    |--------------|---------|
+    | `PREFLIGHT_HANDLED` | CORS preflight, headers sent |
+    | `RedirectException` | `Redirect()` was called, headers sent, no body |
+    | `string` | Normal response body (includes `$response->redirect()`, whose Location header is already sent) |
+    | `null` | No matching route |
 
 ## Performance Benefits
 
