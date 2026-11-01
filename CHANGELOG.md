@@ -12,10 +12,10 @@ composer require dconco/phpspa:dev-support/php-8.4
 #### **FrankenPHP / Worker Mode Compatibility**
 
 - Eliminated `exit()` calls from the request lifecycle when using `App->run(true)`, enabling persistent worker mode (FrankenPHP, RoadRunner, etc.) where the script must return output instead of terminating.
-- **CORS preflight (OPTIONS)**: Returns the `PREFLIGHT_HANDLED` constant instead of exiting. Check with `$output === \PhpSPA\Http\PREFLIGHT_HANDLED`.
+- **CORS preflight (OPTIONS)**: Returns the `PREFLIGHT_HANDLED` constant instead of exiting. Check with `$output === \PREFLIGHT_HANDLED`.
 - **Expired assets**: Returns `"Asset has expired"` string with 410 status code instead of exiting.
 - **PHPSPA JSON responses**: Returns the JSON string instead of printing and exiting.
-- Added `\PhpSPA\Http\PREFLIGHT_HANDLED` constant for identifying handled preflight requests in worker loops.
+- Added `PREFLIGHT_HANDLED` constant for identifying handled preflight requests in worker loops.
 
 **Documentation:** [performance/worker-mode](https://phpspa.tech/performance/worker-mode/)
 

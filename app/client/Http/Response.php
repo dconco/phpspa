@@ -6,12 +6,6 @@ use PhpSPA\Compression\Compressor;
 use PhpSPA\Core\Helper\FileHandler;
 
 /**
- * Sentinel value returned by App->run(true) for CORS preflight (OPTIONS) requests.
- * Headers are already sent; no body output is needed.
- */
-const PREFLIGHT_HANDLED = '__phpspa_preflight_handled__';
-
-/**
  * Handles HTTP responses for API calls in a PHP application.
  * Provides methods to set response data, status codes, headers, and output JSON.
  *

@@ -35,7 +35,6 @@ $output = $app->run(true);
     <?php
     
     use PhpSPA\App;
-    use const PhpSPA\Http\PREFLIGHT_HANDLED;
     
     // FrankenPHP worker loop
     while ($request = \frankenphp_handle_request()) {
@@ -66,7 +65,6 @@ $output = $app->run(true);
     
     use PhpSPA\App;
     use Spiral\RoadRunner\Http\PSR7Worker;
-    use const PhpSPA\Http\PREFLIGHT_HANDLED;
     
     $worker = new PSR7Worker(...);
     
@@ -93,7 +91,6 @@ $output = $app->run(true);
     <?php
     
     use PhpSPA\App;
-    use const PhpSPA\Http\PREFLIGHT_HANDLED;
     
     $server = new Swoole\HTTP\Server('0.0.0.0', 9501);
     
@@ -133,8 +130,7 @@ When using `run(true)`, the method returns different values depending on the req
 !!! tip "Checking Return Types"
     ```php
     <?php
-    use const PhpSPA\Http\PREFLIGHT_HANDLED;
-    
+
     $output = $app->run(true);
     
     if ($output === PREFLIGHT_HANDLED) {
@@ -159,7 +155,6 @@ Import the constant to check for handled CORS preflight (OPTIONS) requests:
 
 ```php
 <?php
-use const PhpSPA\Http\PREFLIGHT_HANDLED;
 
 $output = $app->run(true);
 
@@ -248,7 +243,6 @@ Worker mode provides significant performance improvements:
 use PhpSPA\App;
 use PhpSPA\Component;
 use PhpSPA\Compression\Compressor;
-use const PhpSPA\Http\PREFLIGHT_HANDLED;
 
 // Layout defined once (persists across requests)
 $layout = fn() => <<<HTML

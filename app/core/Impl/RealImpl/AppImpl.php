@@ -549,7 +549,7 @@ abstract class AppImpl implements ApplicationContract {
        */
       if ($request->isMethod('options')) {
          http_response_code(204);
-         if ($return) return \PhpSPA\Http\PREFLIGHT_HANDLED;
+         if ($return) return \PREFLIGHT_HANDLED;
          exit();
       }
 
