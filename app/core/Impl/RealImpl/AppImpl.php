@@ -509,6 +509,10 @@ abstract class AppImpl implements ApplicationContract {
          if ($output === true) {
             $success = true;
             break;
+         } elseif (!empty($output)) {
+            if ($return) return $output;
+            print_r($output);
+            exit(0);
          }
       }
 
@@ -526,7 +530,6 @@ abstract class AppImpl implements ApplicationContract {
          print_r($compressedOutput);
          exit(0);
       }
-
    }
 
    private function resolveCors(Request $request, bool $return = false): ?string {
