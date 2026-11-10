@@ -11,7 +11,7 @@ import {
 import {
 	clearPreloadedStylesForScope,
 	preloadStylesFromContent,
-	retainStylesheetLinks
+	retainStyleTags
 } from '../utils/preloadStylesFromContent'
 import { utf8ToBase64 } from '../utils/baseConverter'
 import { RuntimeManager } from './RuntimeManager'
@@ -39,7 +39,7 @@ export class AppManager {
 			...currentState,
 			url: location.toString(),
 			title: document.title,
-			content: retainStylesheetLinks(
+			content: retainStyleTags(
 				currentState.content,
 				currentTarget.innerHTML
 			)
@@ -69,6 +69,9 @@ export class AppManager {
 	) {
 		const newUrl =
 			url instanceof URL ? url : new URL(url, location.toString())
+
+		const navigationId = ++RuntimeManager.navigationId
+		const isSuperseded = () => navigationId !== RuntimeManager.navigationId
 
 		// --- Persist current DOM state before changing route when enabled ---
 		AppManager.snapshotCurrentRouteState()
@@ -164,17 +167,12 @@ export class AppManager {
 		 * Processes the server response and updates the DOM
 		 */
 		function processResponse(responseData: ComponentObject | string) {
+			if (isSuperseded()) return
+
 			const component: ComponentObject =
 				typeof responseData === 'string'
 					? { content: responseData, stateData: {} }
 					: responseData
-
-			RuntimeManager.currentStateData = component.stateData
-
-			// --- Update document title if provided ---
-			if (component?.title && component.title.length > 0) {
-				document.title = component.title
-			}
 
 			// --- Find target element for content replacement ---
 			const targetElement =
@@ -182,51 +180,60 @@ export class AppManager {
 				document.getElementById(history.state?.targetID) ??
 				document.body
 
-			if (component?.targetID) {
-				RuntimeManager.currentRoutes[component.targetID] = {
-					route: newUrl,
-					exact: component.exact ?? false,
-					defaultContent:
-						RuntimeManager.currentRoutes[component.targetID]
-							?.defaultContent ?? targetElement.innerHTML
-				}
-			}
-
 			const currentRoutes = RuntimeManager.currentRoutes
 
-			for (const targetID in currentRoutes) {
-				if (!Object.hasOwn(currentRoutes, targetID)) continue
+			const commitRouteState = () => {
+				RuntimeManager.currentStateData = component.stateData
 
-				const targetInfo = currentRoutes[targetID]
+				// --- Update document title if provided ---
+				if (component?.title && component.title.length > 0) {
+					document.title = component.title
+				}
 
-				// --- If route is exact and the route target ID is not equal to the navigated route target ID ---
-				// --- Then the document URL has changed ---
-				// --- That is they are navigating away ---
-				// --- And any route with exact === true must go back to its default content ---
-				if (targetInfo.exact === true && targetID !== component?.targetID) {
-					let currentHTML = document.getElementById(targetID)
-					if (currentHTML) {
-						try {
-							morphdom(
-								currentHTML,
-								'<div>' + targetInfo.defaultContent + '</div>',
-								{
-									childrenOnly: true
-								}
-							)
-						} catch {
-							currentHTML.innerHTML = targetInfo.defaultContent
-						}
+				if (component?.targetID) {
+					currentRoutes[component.targetID] = {
+						route: newUrl,
+						exact: component.exact ?? false,
+						defaultContent:
+							currentRoutes[component.targetID]?.defaultContent ??
+							targetElement.innerHTML
 					}
+				}
 
-					clearPreloadedStylesForScope(targetID)
-					delete currentRoutes[targetID]
+				for (const targetID in currentRoutes) {
+					if (!Object.hasOwn(currentRoutes, targetID)) continue
+
+					const targetInfo = currentRoutes[targetID]
+
+					// --- If route is exact and the route target ID is not equal to the navigated route target ID ---
+					// --- Then the document URL has changed ---
+					// --- That is they are navigating away ---
+					// --- And any route with exact === true must go back to its default content ---
+					if (targetInfo.exact === true && targetID !== component?.targetID) {
+						let currentHTML = document.getElementById(targetID)
+						if (currentHTML) {
+							try {
+								morphdom(
+									currentHTML,
+									'<div>' + targetInfo.defaultContent + '</div>',
+									{
+										childrenOnly: true
+									}
+								)
+							} catch {
+								currentHTML.innerHTML = targetInfo.defaultContent
+							}
+						}
+
+						clearPreloadedStylesForScope(targetID)
+						delete currentRoutes[targetID]
+					}
 				}
 			}
 
 			// --- Update content ---
 			const updateDOM = () =>
-				new Promise(resolve => {
+				new Promise<boolean>(resolve => {
 					const styleScopeKey =
 						component?.targetID ||
 						history.state?.targetID ||
@@ -236,10 +243,19 @@ export class AppManager {
 					// --- Preload stylesheets in the new content ---
 					const { element, ready, commitStyles } = preloadStylesFromContent(
 						component.content,
-						styleScopeKey
+						styleScopeKey,
+						newUrl
 					)
 
+					// --- Everything visible changes in this one task, so no half-updated page can paint ---
 					const applyDOM = () => {
+						if (isSuperseded()) {
+							resolve(false)
+							return
+						}
+
+						commitRouteState()
+
 						try {
 							morphdom(targetElement, element, {
 								childrenOnly: true
@@ -247,40 +263,32 @@ export class AppManager {
 						} catch {
 							targetElement.appendChild(element)
 						}
-						// --- Remove old styles AFTER DOM swap to prevent flicker ---
 						commitStyles()
-						resolve(0)
+						resolve(true)
 					}
 
-					// --- Block swap on stylesheet loading and use View Transition for flicker-free navigation ---
 					if (RuntimeManager.config.waitForStyles) {
-						ready.then(() => {
-							if (document.startViewTransition) {
-								document.startViewTransition(applyDOM)
-							} else {
-								applyDOM()
-							}
-						}).catch(applyDOM)
+						ready.then(applyDOM).catch(applyDOM)
 					} else {
 						applyDOM()
 					}
 				})
 
-			const stateData: StateObject = {
-				url: newUrl.toString(),
-				title: component?.title ?? document.title,
-				targetID: targetElement.id,
-				content: component.content,
-				exact: currentRoutes[component?.targetID]?.exact,
-				defaultContent: currentRoutes[component?.targetID]?.defaultContent
-			}
-
-			// --- Include reload time if specified ---
-			if (component?.reloadTime) {
-				stateData.reloadTime = component.reloadTime
-			}
-
 			const completedDOMUpdate = async (): Promise<void> => {
+				const stateData: StateObject = {
+					url: newUrl.toString(),
+					title: component?.title ?? document.title,
+					targetID: targetElement.id,
+					content: component.content,
+					exact: currentRoutes[component?.targetID]?.exact,
+					defaultContent: currentRoutes[component?.targetID]?.defaultContent
+				}
+
+				// --- Include reload time if specified ---
+				if (component?.reloadTime) {
+					stateData.reloadTime = component.reloadTime
+				}
+
 				// --- Update browser history ---
 				if (state === 'push') {
 					RuntimeManager.pushState(stateData, stateData.title, newUrl)
@@ -321,7 +329,9 @@ export class AppManager {
 				}
 			}
 
-			updateDOM().then(completedDOMUpdate)
+			updateDOM().then(applied => {
+				if (applied) return completedDOMUpdate()
+			})
 		}
 	}
 
@@ -660,7 +670,7 @@ export class AppManager {
 						'__phpspa_body__'
 
 					// --- Preload stylesheets in the new content ---
-					const { element, ready } = preloadStylesFromContent(
+					const { element, ready, commitStyles } = preloadStylesFromContent(
 						component.content,
 						styleScopeKey
 					)
@@ -673,6 +683,7 @@ export class AppManager {
 						} catch {
 							targetElement.appendChild(element)
 						}
+						commitStyles()
 						resolve(0)
 					}
 

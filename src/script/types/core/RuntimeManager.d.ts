@@ -9,6 +9,10 @@ import { StateObject, StateValueType } from "../types/StateObjectTypes";
 export declare class RuntimeManager {
     static config: RuntimeConfig;
     /**
+     * Identifies the latest navigation so a slower, superseded one cannot overwrite it
+     */
+    static navigationId: number;
+    /**
      * Tracks executed styles to prevent duplicates
      */
     static executedStyles: Set<string>;
@@ -54,20 +58,13 @@ export declare class RuntimeManager {
     private static resolveDependency;
     private static invokeEffect;
     static runScripts(): void;
-    static runStyles(): void;
     static runScriptsForElement(element: HTMLElement): void;
-    static runStylesForElement(element: HTMLElement): void;
     /**
      * Processes and executes inline scripts within a container
      * Creates isolated scopes using IIFE to prevent variable conflicts
      */
     private static runInlineScripts;
     private static runPhpSpaScripts;
-    /**
-     * Processes and injects inline styles within a container
-     * Prevents duplicate style injection by tracking content hashes
-     */
-    private static runInlineStyles;
     /**
      * Emits a custom event to all registered listeners
      * Used for lifecycle events like 'beforeload' and 'load'
