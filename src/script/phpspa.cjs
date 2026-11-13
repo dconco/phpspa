@@ -1,5 +1,5 @@
 /*!
- * PhpSPA Client Runtime v2.1.0
+ * PhpSPA Client Runtime v2.1.4
  * Docs: https://phpspa.tech | Package: @dconco/phpspa
  * License: MIT
  */
@@ -16,8 +16,12 @@ Object.defineProperty(exports, '__esModule', { value: true });
 class RuntimeManager {
     static config = {
         preserveUpdatedHtmlState: false,
-        waitForStyles: false,
+        waitForStyles: true,
     };
+    /**
+     * Identifies the latest navigation so a slower, superseded one cannot overwrite it
+     */
+    static navigationId = 0;
     /**
      * Tracks executed styles to prevent duplicates
      */
@@ -134,19 +138,8 @@ class RuntimeManager {
             }
         }
     }
-    static runStyles() {
-        for (const targetID in RuntimeManager.currentRoutes) {
-            const element = document.getElementById(targetID);
-            if (element) {
-                this.runStylesForElement(element);
-            }
-        }
-    }
     static runScriptsForElement(element) {
         this.runPhpSpaScripts(element);
-    }
-    static runStylesForElement(element) {
-        this.runInlineStyles(element);
     }
     /**
      * Processes and executes inline scripts within a container
@@ -198,24 +191,6 @@ class RuntimeManager {
             newScript.textContent = script.textContent;
             // --- Execute and immediately remove from DOM ---
             return document.head.appendChild(newScript).remove();
-        });
-    }
-    /**
-     * Processes and injects inline styles within a container
-     * Prevents duplicate style injection by tracking content hashes
-     */
-    static runInlineStyles(container) {
-        const styles = container.querySelectorAll("style");
-        styles.forEach((style) => {
-            // --- Create new style element ---
-            const newStyle = document.createElement("style");
-            // --- Copy all attributes except the data-type identifier ---
-            for (const attribute of Array.from(style.attributes)) {
-                newStyle.setAttribute(attribute.name, attribute.value);
-            }
-            // --- Copy style content and inject into head ---
-            newStyle.textContent = style.textContent;
-            document.head.appendChild(newStyle).remove();
         });
     }
     /**
@@ -307,37 +282,39 @@ class RuntimeManager {
     }
 }
 
-const waitForNextPaint = () => new Promise((resolve) => {
-    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-});
+const DEFAULT_SCOPE_KEY = '__phpspa_default__';
+// --- Attribute selector, so unquoted markup from the HTML compressor still matches ---
+const STYLESHEET_SELECTOR = 'link[rel~="stylesheet" i]:not([rel~="alternate" i])';
+// --- A sheet with a non-matching media query still downloads and parses, but styles nothing ---
+const INERT_MEDIA = 'not all';
+const ORIGINAL_MEDIA_ATTRIBUTE = 'data-phpspa-media';
+// --- A stalled stylesheet must not block navigation forever ---
+const STYLESHEET_LOAD_TIMEOUT_MS = 5000;
+const scopeToKeys = new Map();
+const keyToScopes = new Map();
+const ownedNodes = new Map();
 const waitForStylesheet = (link) => new Promise((resolve) => {
     if (link.sheet) {
-        waitForNextPaint().then(resolve);
+        resolve();
         return;
     }
-    const cleanup = () => {
-        link.removeEventListener('load', onLoad);
-        link.removeEventListener('error', onLoad);
+    const finish = () => {
+        clearTimeout(timer);
+        link.removeEventListener('load', finish);
+        link.removeEventListener('error', finish);
         resolve();
     };
-    const onLoad = () => cleanup();
-    link.addEventListener('load', onLoad, { once: true });
-    link.addEventListener('error', onLoad, { once: true });
+    const timer = setTimeout(finish, STYLESHEET_LOAD_TIMEOUT_MS);
+    link.addEventListener('load', finish);
+    link.addEventListener('error', finish);
 });
-const DEFAULT_SCOPE_KEY = '__phpspa_default__';
-const STYLESHEET_LINK_REGEX = /<link[^>]+rel=["']stylesheet["'][^>]*>/gi;
-const scopeToHrefs = new Map();
-const hrefToScopes = new Map();
-const ownedLinksByHref = new Map();
 const normalizeScopeKey = (scopeKey) => {
     const key = (scopeKey ?? '').trim();
     return key.length > 0 ? key : DEFAULT_SCOPE_KEY;
 };
-const resolveHref = (href) => {
+const resolveHref = (href, baseUrl) => {
     try {
-        // Use origin + pathname as base to stabilize resolution regardless of current query/hash
-        const base = location.origin + location.pathname;
-        return new URL(href, base).href;
+        return new URL(href, baseUrl).href;
     }
     catch {
         return href;
@@ -358,100 +335,147 @@ const findExistingHeadLink = (resolvedHref, rawHref, headLinks) => {
     }
     return null;
 };
-const releaseScopeHref = (scopeKey, resolvedHref) => {
-    const scopes = hrefToScopes.get(resolvedHref);
-    if (scopes) {
-        scopes.delete(scopeKey);
-        if (scopes.size === 0) {
-            hrefToScopes.delete(resolvedHref);
-            const owned = ownedLinksByHref.get(resolvedHref);
-            if (owned && owned.isConnected) {
-                owned.remove();
-            }
-            ownedLinksByHref.delete(resolvedHref);
-            RuntimeManager.executedStyles.delete(resolvedHref);
-        }
-    }
+const activateLink = (link) => {
+    const media = link.getAttribute(ORIGINAL_MEDIA_ATTRIBUTE);
+    if (media)
+        link.media = media;
+    else if (link.media === INERT_MEDIA)
+        link.removeAttribute('media');
 };
-const setScopeStyles = (scopeKey, nextHrefs) => {
-    const previous = scopeToHrefs.get(scopeKey) ?? new Set();
-    // remove old hrefs that are no longer needed by this scope
-    for (const href of previous) {
-        if (!nextHrefs.has(href)) {
-            releaseScopeHref(scopeKey, href);
-        }
+const createInertLink = (parsed, resolvedHref, scopeKey) => {
+    const link = document.createElement('link');
+    for (const attribute of Array.from(parsed.attributes)) {
+        link.setAttribute(attribute.name, attribute.value);
     }
-    // add new hrefs for this scope
-    for (const href of nextHrefs) {
-        if (!previous.has(href)) {
-            let scopes = hrefToScopes.get(href);
-            if (!scopes) {
-                scopes = new Set();
-                hrefToScopes.set(href, scopes);
-            }
-            scopes.add(scopeKey);
-        }
+    const originalMedia = parsed.getAttribute('media');
+    if (originalMedia)
+        link.setAttribute(ORIGINAL_MEDIA_ATTRIBUTE, originalMedia);
+    link.media = INERT_MEDIA;
+    link.href = resolvedHref;
+    link.setAttribute('data-phpspa-managed', '1');
+    link.setAttribute('data-phpspa-scope', scopeKey);
+    // --- Forget failed sheets so the next navigation retries instead of waiting on a dead link ---
+    link.addEventListener('error', () => {
+        link.remove();
+        if (ownedNodes.get(resolvedHref) === link)
+            ownedNodes.delete(resolvedHref);
+    }, { once: true });
+    document.head.appendChild(link);
+    return link;
+};
+const releaseScopeKey = (scopeKey, key) => {
+    const scopes = keyToScopes.get(key);
+    if (!scopes)
+        return;
+    scopes.delete(scopeKey);
+    if (scopes.size > 0)
+        return;
+    keyToScopes.delete(key);
+    ownedNodes.get(key)?.remove();
+    ownedNodes.delete(key);
+    RuntimeManager.executedStyles.delete(key);
+};
+const setScopeStyles = (scopeKey, nextKeys) => {
+    const previous = scopeToKeys.get(scopeKey) ?? new Set();
+    for (const key of previous) {
+        if (!nextKeys.has(key))
+            releaseScopeKey(scopeKey, key);
     }
-    scopeToHrefs.set(scopeKey, new Set(nextHrefs));
+    for (const key of nextKeys) {
+        let scopes = keyToScopes.get(key);
+        if (!scopes) {
+            scopes = new Set();
+            keyToScopes.set(key, scopes);
+        }
+        scopes.add(scopeKey);
+    }
+    scopeToKeys.set(scopeKey, new Set(nextKeys));
+};
+// --- Drops sheets downloaded for a navigation that was superseded before it could commit ---
+const removeAbandonedLinks = () => {
+    ownedNodes.forEach((node, key) => {
+        if (keyToScopes.has(key) || !(node instanceof HTMLLinkElement) || !node.sheet)
+            return;
+        node.remove();
+        ownedNodes.delete(key);
+        RuntimeManager.executedStyles.delete(key);
+    });
 };
 const clearPreloadedStylesForScope = (scopeKey) => {
-    const key = normalizeScopeKey(scopeKey);
-    setScopeStyles(key, new Set());
+    setScopeStyles(normalizeScopeKey(scopeKey), new Set());
 };
-const retainStylesheetLinks = (sourceContent, updatedContent) => {
-    const stylesheetLinks = sourceContent.match(STYLESHEET_LINK_REGEX);
-    return stylesheetLinks ? stylesheetLinks.join('') + updatedContent : updatedContent;
+/**
+ * Keeps the source content's style tags on a live-HTML snapshot, because they are
+ * moved to <head> on navigation and so are missing from the target's current markup.
+ */
+const retainStyleTags = (sourceContent, updatedContent) => {
+    const template = document.createElement('template');
+    template.innerHTML = sourceContent;
+    const styleTags = Array.from(template.content.querySelectorAll(`${STYLESHEET_SELECTOR}, style`));
+    return styleTags.map(node => node.outerHTML).join('') + updatedContent;
 };
-const preloadStylesFromContent = (content, scopeKey) => {
+/**
+ * Prepares a component's styles without letting them affect the current page.
+ *
+ * Stylesheets download inert. `commitStyles` then switches styles over in one
+ * synchronous step, so calling it in the same task as the DOM swap leaves the
+ * browser no opportunity to paint a half-styled page.
+ *
+ * @param content - The component HTML
+ * @param scopeKey - The target that owns these styles
+ * @param baseUrl - The URL the content was rendered for, which relative hrefs are resolved against
+ */
+const preloadStylesFromContent = (content, scopeKey, baseUrl = location.href) => {
     const normalizedScopeKey = normalizeScopeKey(scopeKey);
-    const nextHrefs = new Set();
-    const rawHrefs = new Map();
-    // --- Use regex to extract stylesheet links before DOM parsing triggers loads ---
-    const hrefRegex = /href=["']([^"']+)["']/i;
-    const strippedContent = content.replace(STYLESHEET_LINK_REGEX, (match) => {
-        const hrefMatch = match.match(hrefRegex);
-        if (hrefMatch && hrefMatch[1]) {
-            const rawHref = hrefMatch[1];
-            const resolvedHref = resolveHref(rawHref);
-            nextHrefs.add(resolvedHref);
-            rawHrefs.set(resolvedHref, rawHref);
-        }
-        return ''; // Remove the link from content
-    });
-    const tempElem = document.createElement('div');
-    tempElem.innerHTML = strippedContent;
-    // --- Execute any inline styles in the new content ---
-    RuntimeManager.runStylesForElement(tempElem);
-    // --- Keep current styles until the caller is ready to replace the DOM ---
-    if (nextHrefs.size === 0) {
-        const ready = Promise.resolve()
-            .then(() => setScopeStyles(normalizedScopeKey, nextHrefs));
-        return { element: tempElem, ready };
-    }
+    // --- Links and styles do nothing while detached, so parsing here cannot affect the page ---
+    const element = document.createElement('div');
+    element.innerHTML = content;
+    const nextKeys = new Set();
+    const inlineStyles = new Map();
+    const loadPromises = [];
     const headLinks = getHeadStylesheetLinks();
-    const loadPromises = Array.from(rawHrefs.entries()).map(([resolvedHref, rawHref]) => {
-        // prefer a previously-owned managed link if still present
-        const owned = ownedLinksByHref.get(resolvedHref);
-        let headLink = (owned && owned.isConnected) ? owned : null;
-        if (!headLink) {
-            headLink = findExistingHeadLink(resolvedHref, rawHref, headLinks);
-        }
-        if (!headLink) {
-            headLink = document.createElement('link');
-            headLink.rel = 'stylesheet';
-            headLink.href = rawHref;
-            headLink.setAttribute('data-phpspa-managed', '1');
-            headLink.setAttribute('data-phpspa-scope', normalizedScopeKey);
-            document.head.appendChild(headLink);
-            headLinks.push(headLink);
-            ownedLinksByHref.set(resolvedHref, headLink);
-        }
+    element.querySelectorAll(STYLESHEET_SELECTOR).forEach((parsed) => {
+        parsed.remove();
+        const rawHref = parsed.getAttribute('href');
+        if (!rawHref)
+            return;
+        const resolvedHref = resolveHref(rawHref, baseUrl);
+        if (nextKeys.has(resolvedHref))
+            return;
+        nextKeys.add(resolvedHref);
         RuntimeManager.executedStyles.add(resolvedHref);
-        return waitForStylesheet(headLink);
+        let link = ownedNodes.get(resolvedHref);
+        if (!link?.isConnected) {
+            link = findExistingHeadLink(resolvedHref, rawHref, headLinks) ?? undefined;
+        }
+        if (!link) {
+            link = createInertLink(parsed, resolvedHref, normalizedScopeKey);
+            ownedNodes.set(resolvedHref, link);
+        }
+        loadPromises.push(waitForStylesheet(link));
     });
-    const ready = Promise.all(loadPromises)
-        .then(() => setScopeStyles(normalizedScopeKey, nextHrefs));
-    return { element: tempElem, ready };
+    element.querySelectorAll('style').forEach((style) => {
+        style.remove();
+        const key = `inline:${style.textContent ?? ''}`;
+        nextKeys.add(key);
+        inlineStyles.set(key, style);
+    });
+    const commitStyles = () => {
+        inlineStyles.forEach((style, key) => {
+            if (ownedNodes.has(key))
+                return;
+            document.head.appendChild(style);
+            ownedNodes.set(key, style);
+        });
+        setScopeStyles(normalizedScopeKey, nextKeys);
+        nextKeys.forEach((key) => {
+            const node = ownedNodes.get(key);
+            if (node instanceof HTMLLinkElement)
+                activateLink(node);
+        });
+        removeAbandonedLinks();
+    };
+    return { element, ready: Promise.all(loadPromises), commitStyles };
 };
 
 /**
@@ -1299,7 +1323,7 @@ class AppManager {
             ...currentState,
             url: location.toString(),
             title: document.title,
-            content: retainStylesheetLinks(currentState.content, currentTarget.innerHTML)
+            content: retainStyleTags(currentState.content, currentTarget.innerHTML)
         };
         RuntimeManager.replaceState(updatedState, updatedState.title, updatedState.url);
     }
@@ -1316,6 +1340,8 @@ class AppManager {
      */
     static navigate(url, state = 'push') {
         const newUrl = url instanceof URL ? url : new URL(url, location.toString());
+        const navigationId = ++RuntimeManager.navigationId;
+        const isSuperseded = () => navigationId !== RuntimeManager.navigationId;
         // --- Persist current DOM state before changing route when enabled ---
         AppManager.snapshotCurrentRouteState();
         // --- Emit beforeload event for loading indicators ---
@@ -1403,51 +1429,55 @@ class AppManager {
          * Processes the server response and updates the DOM
          */
         function processResponse(responseData) {
+            if (isSuperseded())
+                return;
             const component = typeof responseData === 'string'
                 ? { content: responseData, stateData: {} }
                 : responseData;
-            RuntimeManager.currentStateData = component.stateData;
-            // --- Update document title if provided ---
-            if (component?.title && component.title.length > 0) {
-                document.title = component.title;
-            }
             // --- Find target element for content replacement ---
             const targetElement = document.getElementById(component?.targetID) ??
                 document.getElementById(history.state?.targetID) ??
                 document.body;
-            if (component?.targetID) {
-                RuntimeManager.currentRoutes[component.targetID] = {
-                    route: newUrl,
-                    exact: component.exact ?? false,
-                    defaultContent: RuntimeManager.currentRoutes[component.targetID]
-                        ?.defaultContent ?? targetElement.innerHTML
-                };
-            }
             const currentRoutes = RuntimeManager.currentRoutes;
-            for (const targetID in currentRoutes) {
-                if (!Object.hasOwn(currentRoutes, targetID))
-                    continue;
-                const targetInfo = currentRoutes[targetID];
-                // --- If route is exact and the route target ID is not equal to the navigated route target ID ---
-                // --- Then the document URL has changed ---
-                // --- That is they are navigating away ---
-                // --- And any route with exact === true must go back to its default content ---
-                if (targetInfo.exact === true && targetID !== component?.targetID) {
-                    let currentHTML = document.getElementById(targetID);
-                    if (currentHTML) {
-                        try {
-                            morphdom(currentHTML, '<div>' + targetInfo.defaultContent + '</div>', {
-                                childrenOnly: true
-                            });
-                        }
-                        catch {
-                            currentHTML.innerHTML = targetInfo.defaultContent;
-                        }
-                    }
-                    clearPreloadedStylesForScope(targetID);
-                    delete currentRoutes[targetID];
+            const commitRouteState = () => {
+                RuntimeManager.currentStateData = component.stateData;
+                // --- Update document title if provided ---
+                if (component?.title && component.title.length > 0) {
+                    document.title = component.title;
                 }
-            }
+                if (component?.targetID) {
+                    currentRoutes[component.targetID] = {
+                        route: newUrl,
+                        exact: component.exact ?? false,
+                        defaultContent: currentRoutes[component.targetID]?.defaultContent ??
+                            targetElement.innerHTML
+                    };
+                }
+                for (const targetID in currentRoutes) {
+                    if (!Object.hasOwn(currentRoutes, targetID))
+                        continue;
+                    const targetInfo = currentRoutes[targetID];
+                    // --- If route is exact and the route target ID is not equal to the navigated route target ID ---
+                    // --- Then the document URL has changed ---
+                    // --- That is they are navigating away ---
+                    // --- And any route with exact === true must go back to its default content ---
+                    if (targetInfo.exact === true && targetID !== component?.targetID) {
+                        let currentHTML = document.getElementById(targetID);
+                        if (currentHTML) {
+                            try {
+                                morphdom(currentHTML, '<div>' + targetInfo.defaultContent + '</div>', {
+                                    childrenOnly: true
+                                });
+                            }
+                            catch {
+                                currentHTML.innerHTML = targetInfo.defaultContent;
+                            }
+                        }
+                        clearPreloadedStylesForScope(targetID);
+                        delete currentRoutes[targetID];
+                    }
+                }
+            };
             // --- Update content ---
             const updateDOM = () => new Promise(resolve => {
                 const styleScopeKey = component?.targetID ||
@@ -1455,8 +1485,14 @@ class AppManager {
                     targetElement.id ||
                     '__phpspa_body__';
                 // --- Preload stylesheets in the new content ---
-                const { element, ready } = preloadStylesFromContent(component.content, styleScopeKey);
+                const { element, ready, commitStyles } = preloadStylesFromContent(component.content, styleScopeKey, newUrl);
+                // --- Everything visible changes in this one task, so no half-updated page can paint ---
                 const applyDOM = () => {
+                    if (isSuperseded()) {
+                        resolve(false);
+                        return;
+                    }
+                    commitRouteState();
                     try {
                         morphdom(targetElement, element, {
                             childrenOnly: true
@@ -1465,9 +1501,9 @@ class AppManager {
                     catch {
                         targetElement.appendChild(element);
                     }
-                    resolve(0);
+                    commitStyles();
+                    resolve(true);
                 };
-                // --- Only block the swap on stylesheet loading when enabled ---
                 if (RuntimeManager.config.waitForStyles) {
                     ready.then(applyDOM).catch(applyDOM);
                 }
@@ -1475,19 +1511,19 @@ class AppManager {
                     applyDOM();
                 }
             });
-            const stateData = {
-                url: newUrl.toString(),
-                title: component?.title ?? document.title,
-                targetID: targetElement.id,
-                content: component.content,
-                exact: currentRoutes[component?.targetID]?.exact,
-                defaultContent: currentRoutes[component?.targetID]?.defaultContent
-            };
-            // --- Include reload time if specified ---
-            if (component?.reloadTime) {
-                stateData.reloadTime = component.reloadTime;
-            }
             const completedDOMUpdate = async () => {
+                const stateData = {
+                    url: newUrl.toString(),
+                    title: component?.title ?? document.title,
+                    targetID: targetElement.id,
+                    content: component.content,
+                    exact: currentRoutes[component?.targetID]?.exact,
+                    defaultContent: currentRoutes[component?.targetID]?.defaultContent
+                };
+                // --- Include reload time if specified ---
+                if (component?.reloadTime) {
+                    stateData.reloadTime = component.reloadTime;
+                }
                 // --- Update browser history ---
                 if (state === 'push') {
                     RuntimeManager.pushState(stateData, stateData.title, newUrl);
@@ -1521,7 +1557,10 @@ class AppManager {
                     setTimeout(AppManager.reloadComponent, component.reloadTime);
                 }
             };
-            updateDOM().then(completedDOMUpdate);
+            updateDOM().then(applied => {
+                if (applied)
+                    return completedDOMUpdate();
+            });
         }
     }
     /**
@@ -1798,7 +1837,7 @@ class AppManager {
                     targetElement.id ||
                     '__phpspa_body__';
                 // --- Preload stylesheets in the new content ---
-                const { element, ready } = preloadStylesFromContent(component.content, styleScopeKey);
+                const { element, ready, commitStyles } = preloadStylesFromContent(component.content, styleScopeKey);
                 const applyDOM = () => {
                     try {
                         morphdom(targetElement, element, {
@@ -1808,6 +1847,7 @@ class AppManager {
                     catch {
                         targetElement.appendChild(element);
                     }
+                    commitStyles();
                     resolve(0);
                 };
                 // --- Only block the swap on stylesheet loading when enabled ---
@@ -1990,52 +2030,61 @@ const navigateHistory = (event) => {
     history.scrollRestoration = "auto";
     // --- Check if we have valid PhpSPA state data ---
     if (navigationState && navigationState.content) {
-        // --- Restore page title ---
-        document.title = navigationState.title ?? document.title;
+        const navigationId = ++RuntimeManager.navigationId;
         // --- Find target container or fallback to body ---
         const targetContainer = document.getElementById(navigationState.targetID);
         if (!targetContainer) {
             location.reload();
             return;
         }
-        if (navigationState.targetID) {
-            RuntimeManager.currentRoutes[navigationState.targetID] = {
-                route: new URL(navigationState.url),
-                exact: navigationState.exact ?? false,
-                defaultContent: navigationState.defaultContent || ''
-            };
-        }
-        const currentRoutes = RuntimeManager.currentRoutes;
-        for (const targetID in currentRoutes) {
-            if (!Object.hasOwn(currentRoutes, targetID))
-                continue;
-            const targetInfo = currentRoutes[targetID];
-            // --- If route is exact and the route target ID is not equal to the navigated route target ID ---
-            // --- Then the document URL has changed ---
-            // --- That is they are navigating away ---
-            // --- And any route with exact === true must go back to its default content ---
-            if (targetInfo.exact === true && targetID !== navigationState.targetID) {
-                let currentHTML = document.getElementById(targetID);
-                if (currentHTML) {
-                    try {
-                        morphdom(currentHTML, `<div>${targetInfo.defaultContent}</div>`, {
-                            childrenOnly: true
-                        });
-                    }
-                    catch {
-                        currentHTML.innerHTML = targetInfo.defaultContent;
-                    }
-                }
-                clearPreloadedStylesForScope(targetID);
-                delete currentRoutes[targetID];
+        const commitRouteState = () => {
+            // --- Restore page title ---
+            document.title = navigationState.title ?? document.title;
+            if (navigationState.targetID) {
+                RuntimeManager.currentRoutes[navigationState.targetID] = {
+                    route: new URL(navigationState.url),
+                    exact: navigationState.exact ?? false,
+                    defaultContent: navigationState.defaultContent || ''
+                };
             }
-        }
+            const currentRoutes = RuntimeManager.currentRoutes;
+            for (const targetID in currentRoutes) {
+                if (!Object.hasOwn(currentRoutes, targetID))
+                    continue;
+                const targetInfo = currentRoutes[targetID];
+                // --- If route is exact and the route target ID is not equal to the navigated route target ID ---
+                // --- Then the document URL has changed ---
+                // --- That is they are navigating away ---
+                // --- And any route with exact === true must go back to its default content ---
+                if (targetInfo.exact === true && targetID !== navigationState.targetID) {
+                    let currentHTML = document.getElementById(targetID);
+                    if (currentHTML) {
+                        try {
+                            morphdom(currentHTML, `<div>${targetInfo.defaultContent}</div>`, {
+                                childrenOnly: true
+                            });
+                        }
+                        catch {
+                            currentHTML.innerHTML = targetInfo.defaultContent;
+                        }
+                    }
+                    clearPreloadedStylesForScope(targetID);
+                    delete currentRoutes[targetID];
+                }
+            }
+        };
         // --- Decode and restore HTML content ---
         const updateDOM = () => new Promise((resolve) => {
             const styleScopeKey = navigationState.targetID || targetContainer.id || '__phpspa_body__';
             // --- Preload stylesheets in the new content ---
-            const { element, ready } = preloadStylesFromContent(navigationState.content, styleScopeKey);
+            const { element, ready, commitStyles } = preloadStylesFromContent(navigationState.content, styleScopeKey);
+            // --- Everything visible changes in this one task, so no half-updated page can paint ---
             const applyDOM = () => {
+                if (navigationId !== RuntimeManager.navigationId) {
+                    resolve(false);
+                    return;
+                }
+                commitRouteState();
                 try {
                     morphdom(targetContainer, element, {
                         childrenOnly: true
@@ -2044,9 +2093,9 @@ const navigateHistory = (event) => {
                 catch {
                     targetContainer.appendChild(element);
                 }
-                resolve(0);
+                commitStyles();
+                resolve(true);
             };
-            // --- Only block the swap on stylesheet loading when enabled ---
             if (RuntimeManager.config.waitForStyles) {
                 ready.then(applyDOM).catch(applyDOM);
             }
@@ -2064,7 +2113,10 @@ const navigateHistory = (event) => {
                 setTimeout(AppManager.reloadComponent, navigationState.reloadTime);
             }
         };
-        updateDOM().then(completedDOMUpdate);
+        updateDOM().then(applied => {
+            if (applied)
+                return completedDOMUpdate();
+        });
     }
     else {
         // --- No valid state found - reload current URL to refresh ---

@@ -9,6 +9,26 @@ composer require dconco/phpspa:dev-support/php-8.4
 
 ### ✨ New Features
 
+#### **FrankenPHP / Worker Mode Compatibility**
+
+- Eliminated `exit()` calls from the request lifecycle when using `App->run(true)`, enabling persistent worker mode (FrankenPHP, RoadRunner, etc.) where the script must return output instead of terminating.
+- **CORS preflight (OPTIONS)**: Returns the `PREFLIGHT_HANDLED` constant instead of exiting. Check with `$output === \PREFLIGHT_HANDLED`.
+- **Expired assets**: Returns `"Asset has expired"` string with 410 status code instead of exiting.
+- **PHPSPA JSON responses**: Returns the JSON string instead of printing and exiting.
+- **Redirects**: 
+  - `$response->redirect()` now returns `$this` instead of exiting, enabling `return $response->redirect('/path')` from handlers.
+  - `Redirect()` function throws `RedirectException` (headers sent before throw) which PhpSPA catches and returns to the worker loop.
+- Added `PREFLIGHT_HANDLED` constant for identifying handled preflight requests in worker loops.
+- Added `RedirectException` class for worker-compatible redirects.
+
+**Documentation:** [performance/worker-mode](https://phpspa.tech/performance/worker-mode/)
+
+#### **SPA Navigation Flicker Fix — Deferred Style Removal**
+
+- Fixed visual flicker during SPA navigation caused by removing the current page's stylesheets before the DOM swap completed.
+- Style removal is now deferred until **after** the new DOM is applied via `commitStyles()` callback, keeping the outgoing page styled throughout the transition.
+- Added `Link` header preload hints for SPA responses, enabling browsers to fetch incoming stylesheets at high priority before parsing the JSON response body.
+
 #### **Route Parameter Range Constraint — `INT<min,max>`**
 
 - Fixed and finalized the integer range constraint so it matches its documented semantics:

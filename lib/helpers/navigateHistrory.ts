@@ -31,8 +31,7 @@ export const navigateHistory = (event: PopStateEvent) => {
 
    // --- Check if we have valid PhpSPA state data ---
    if (navigationState && navigationState.content) {
-      // --- Restore page title ---
-      document.title = navigationState.title ?? document.title
+      const navigationId = ++RuntimeManager.navigationId
 
       // --- Find target container or fallback to body ---
       const targetContainer =
@@ -43,52 +42,64 @@ export const navigateHistory = (event: PopStateEvent) => {
          return
       }
 
-      if (navigationState.targetID) {
-         RuntimeManager.currentRoutes[navigationState.targetID] = {
-            route: new URL(navigationState.url),
-            exact: navigationState.exact ?? false,
-            defaultContent: navigationState.defaultContent || ''
-         }
-      }
+      const commitRouteState = () => {
+         // --- Restore page title ---
+         document.title = navigationState.title ?? document.title
 
-      const currentRoutes = RuntimeManager.currentRoutes
-
-      for (const targetID in currentRoutes) {
-         if (!Object.hasOwn(currentRoutes, targetID)) continue
-
-         const targetInfo = currentRoutes[targetID]
-
-         // --- If route is exact and the route target ID is not equal to the navigated route target ID ---
-         // --- Then the document URL has changed ---
-         // --- That is they are navigating away ---
-         // --- And any route with exact === true must go back to its default content ---
-         if (targetInfo.exact === true && targetID !== navigationState.targetID) {
-            let currentHTML = document.getElementById(targetID)
-            if (currentHTML) {
-               try {
-                  morphdom(currentHTML, `<div>${targetInfo.defaultContent}</div>`, {
-                     childrenOnly: true
-                  })
-               } catch {
-                  currentHTML.innerHTML = targetInfo.defaultContent
-               }
+         if (navigationState.targetID) {
+            RuntimeManager.currentRoutes[navigationState.targetID] = {
+               route: new URL(navigationState.url),
+               exact: navigationState.exact ?? false,
+               defaultContent: navigationState.defaultContent || ''
             }
+         }
 
-            clearPreloadedStylesForScope(targetID)
-            delete currentRoutes[targetID]
+         const currentRoutes = RuntimeManager.currentRoutes
+
+         for (const targetID in currentRoutes) {
+            if (!Object.hasOwn(currentRoutes, targetID)) continue
+
+            const targetInfo = currentRoutes[targetID]
+
+            // --- If route is exact and the route target ID is not equal to the navigated route target ID ---
+            // --- Then the document URL has changed ---
+            // --- That is they are navigating away ---
+            // --- And any route with exact === true must go back to its default content ---
+            if (targetInfo.exact === true && targetID !== navigationState.targetID) {
+               let currentHTML = document.getElementById(targetID)
+               if (currentHTML) {
+                  try {
+                     morphdom(currentHTML, `<div>${targetInfo.defaultContent}</div>`, {
+                        childrenOnly: true
+                     })
+                  } catch {
+                     currentHTML.innerHTML = targetInfo.defaultContent
+                  }
+               }
+
+               clearPreloadedStylesForScope(targetID)
+               delete currentRoutes[targetID]
+            }
          }
       }
-
 
       // --- Decode and restore HTML content ---
       const updateDOM = () =>
-         new Promise((resolve) => {
+         new Promise<boolean>((resolve) => {
             const styleScopeKey = navigationState.targetID || targetContainer.id || '__phpspa_body__'
 
             // --- Preload stylesheets in the new content ---
-            const { element, ready } = preloadStylesFromContent(navigationState.content, styleScopeKey)
+            const { element, ready, commitStyles } = preloadStylesFromContent(navigationState.content, styleScopeKey)
 
+            // --- Everything visible changes in this one task, so no half-updated page can paint ---
             const applyDOM = () => {
+               if (navigationId !== RuntimeManager.navigationId) {
+                  resolve(false)
+                  return
+               }
+
+               commitRouteState()
+
                try {
                   morphdom(targetContainer, element, {
                      childrenOnly: true
@@ -96,10 +107,10 @@ export const navigateHistory = (event: PopStateEvent) => {
                } catch {
                   targetContainer.appendChild(element)
                }
-               resolve(0)
+               commitStyles()
+               resolve(true)
             }
 
-            // --- Only block the swap on stylesheet loading when enabled ---
             if (RuntimeManager.config.waitForStyles) {
                ready.then(applyDOM).catch(applyDOM)
             } else {
@@ -121,7 +132,9 @@ export const navigateHistory = (event: PopStateEvent) => {
          }
       }
 
-      updateDOM().then(completedDOMUpdate)
+      updateDOM().then(applied => {
+         if (applied) return completedDOMUpdate()
+      })
 
    } else {
       // --- No valid state found - reload current URL to refresh ---

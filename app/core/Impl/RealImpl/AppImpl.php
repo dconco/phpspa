@@ -447,7 +447,9 @@ abstract class AppImpl implements ApplicationContract {
       $staticFileOutput = $this->resolveStaticPath($return);
       if (!empty($staticFileOutput)) return $staticFileOutput;
 
-      $this->resolveCors($request);
+      $corsResponse = $this->resolveCors($request, $return);
+      if ($corsResponse !== null) return $corsResponse;
+
       $assetResponse = $this->handlePhpSPARequest($request, $return);
 
       if (isset($assetResponse)) return $assetResponse;
@@ -463,6 +465,15 @@ abstract class AppImpl implements ApplicationContract {
       $assetInfo = self::resolveAssetRequestMemoized(static::$request_uri);
 
       if ($assetInfo !== null) {
+         // Handle expired assets
+         if (!empty($assetInfo['expired'])) {
+            http_response_code(Response::StatusGone);
+            header('Content-Type: text/plain');
+            if ($return) return "Asset has expired";
+            echo "Asset has expired";
+            return;
+         }
+
          // #3 -- Fast skip: an instance-scoped global asset (`__global__:<id>`)
          // owned by a DIFFERENT App is not ours; do nothing and let the owning
          // App's run() handle it, without entering serveAsset at all.
@@ -484,6 +495,12 @@ abstract class AppImpl implements ApplicationContract {
 
       foreach ($this->prefix as $prefix) {
          $output = $this->handlePrefix($prefix, [], $return);
+
+         if ($output instanceof \PhpSPA\Http\RedirectException) {
+            // Redirect was triggered - headers already sent
+            if ($return) return $output;
+            exit();
+         }
          if (isset($output)) return $output;
       }
 
@@ -493,11 +510,19 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       foreach ($this->components as $component) {
-         $output = $this->runComponent($component, false, $this->renderedData);
+         $output = $this->runComponent($component, false, $this->renderedData, $return);
 
          if ($output === true) {
             $success = true;
             break;
+         } elseif ($output instanceof \PhpSPA\Http\RedirectException) {
+            // Redirect was triggered - headers already sent
+            if ($return) return $output;
+            exit();
+         } elseif (!empty($output)) {
+            if ($return) return $output;
+            print_r($output);
+            exit(0);
          }
       }
 
@@ -511,14 +536,12 @@ abstract class AppImpl implements ApplicationContract {
          }
 
          if ($return) return $compressedOutput;
-
          print_r($compressedOutput);
          exit(0);
       }
-
    }
 
-   private function resolveCors(Request $request) {
+   private function resolveCors(Request $request, bool $return = false): ?string {
       if (!headers_sent()) {
          foreach ($this->cors as $key => $value) {
             $key =
@@ -537,8 +560,12 @@ abstract class AppImpl implements ApplicationContract {
        * Handle preflight requests (OPTIONS method)
        */
       if ($request->isMethod('options')) {
+         http_response_code(204);
+         if ($return) return \PREFLIGHT_HANDLED;
          exit();
       }
+
+      return null;
    }
 
    private function handlePhpSPARequest(Request $request, bool $return) {
@@ -622,6 +649,7 @@ abstract class AppImpl implements ApplicationContract {
 
                   if ($response instanceof Response) {
                      $response = $response->__toString();
+                  } elseif ($response instanceof \PhpSPA\Http\RedirectException) {
                   } elseif (\is_array($response) || \is_object($response)) {
                      if (!\headers_sent()) header('Content-Type: application/json');
                      $response = json_encode($response);
@@ -645,7 +673,7 @@ abstract class AppImpl implements ApplicationContract {
    }
 
 
-   private function runComponent(Component|Icomponent $component, bool $isPreloadingComponent = false, ?string &$layoutOutput = null) {
+   private function runComponent(Component|Icomponent $component, bool $isPreloadingComponent = false, ?string &$layoutOutput = null, bool $return = false) {
       static $request = new HttpRequest();
       static $router = null;
 
@@ -735,10 +763,19 @@ abstract class AppImpl implements ApplicationContract {
       );
 
       // --- Execute the pipeline ---
-      $componentOutput = $pipeline($request);
+      try {
+         $componentOutput = $pipeline($request);
+      } catch (\PhpSPA\Http\RedirectException $e) {
+         // Redirect() was called - headers already sent
+         return $e;
+      }
 
       if ($layoutOutput === null) {
-         $layoutOutput = is_callable($this->layout) ? (string) \call_user_func($this->layout, $request) : (string) $this->layout;
+         try {
+            $layoutOutput = is_callable($this->layout) ? (string) \call_user_func($this->layout, $request) : (string) $this->layout;
+         } catch (\PhpSPA\Http\RedirectException $e) {
+            return $e;
+         }
          $layoutOutput = $this->ensureHeadTag($layoutOutput);
       }
 
@@ -839,6 +876,12 @@ abstract class AppImpl implements ApplicationContract {
       $assetLinks = $this->generateAssetLinks($route, $scripts, $stylesheets, $this->scripts, $this->stylesheets);
 
       if ($request->requestedWith() === 'PHPSPA_REQUEST') {
+         // --- Send Link header preload hints for stylesheets (browser fetches at high priority)
+         $preloadHrefs = $assetLinks['component']['preloadHrefs'] ?? [];
+         foreach ($preloadHrefs as $href) {
+            header("Link: <{$href}>; rel=preload; as=style", false);
+         }
+
          // --- For PHPSPA requests (component updates), include component scripts with the component ---
          $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput . $assetLinks['global']['scripts'] . $assetLinks['component']['scripts'];
 
@@ -864,7 +907,9 @@ abstract class AppImpl implements ApplicationContract {
             $info['reloadTime'] = $reloadTime;
 
          // Use compressed JSON output
-         print_r(Compressor::compressJson($info));
+         $jsonOutput = Compressor::compressJson($info);
+         if ($return) return $jsonOutput;
+         print_r($jsonOutput);
          exit(0);
       }
       else {
@@ -1259,8 +1304,8 @@ abstract class AppImpl implements ApplicationContract {
    private function generateCombinedAssetLinks (?string $primaryRoute, string $globalRoute, array $scripts, array $stylesheets, array $globalScripts, array $globalStylesheets, bool $isPhpSpaRequest): array
    {
       $result = [
-         'component' => [ 'scripts' => '', 'stylesheets' => '' ],
-         'global' => [ 'scripts' => '', 'stylesheets' => '' ]
+         'component' => [ 'scripts' => '', 'stylesheets' => '', 'preloadHrefs' => [] ],
+         'global' => [ 'scripts' => '', 'stylesheets' => '', 'preloadHrefs' => [] ]
       ];
 
       // --- Helper to group callables by type and collect external links ---
@@ -1300,15 +1345,13 @@ abstract class AppImpl implements ApplicationContract {
             $attrs['href'] = $href;
             unset($attrs['name'], $attrs['content']);
 
-            // --- Preload hint disabled: styles already sit at the top of <head>,
-            // --- so the browser discovers them nearly as early without the extra tag.
-            // --- Revisit with HTTP `Link:` / 103 Early Hints in a future release.
-            // if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet') {
-            //    $preload = $attrs;
-            //    $preload['rel'] = 'preload';
-            //    $preload['as'] = 'style';
-            //    $result['global']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($preload) . " />";
-            // }
+            // --- Preload hint: tell browser to fetch stylesheet at highest priority
+            if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet') {
+               $preload = $attrs;
+               $preload['rel'] = 'preload';
+               $preload['as'] = 'style';
+               $result['global']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($preload) . " />";
+            }
             $result['global']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($attrs) . " />";
          }
 
@@ -1332,15 +1375,17 @@ abstract class AppImpl implements ApplicationContract {
             $attrs['href'] = $href;
             unset($attrs['name'], $attrs['content']);
 
-            // --- Preload hint disabled: styles already sit at the top of <head>,
-            // --- so the browser discovers them nearly as early without the extra tag.
-            // --- Revisit with HTTP `Link:` / 103 Early Hints in a future release.
-            // if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet' && !$isPhpSpaRequest) {
-            //    $preload = $attrs;
-            //    $preload['rel'] = 'preload';
-            //    $preload['as'] = 'style';
-            //    $result['component']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($preload) . " />";
-            // }
+            // --- Preload hint: tell browser to fetch stylesheet at highest priority (skip for SPA requests)
+            if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet' && !$isPhpSpaRequest) {
+               $preload = $attrs;
+               $preload['rel'] = 'preload';
+               $preload['as'] = 'style';
+               $result['component']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($preload) . " />";
+            }
+            // --- Collect href for Link header preload on SPA requests
+            if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet') {
+               $result['component']['preloadHrefs'][] = $href;
+            }
             $result['component']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($attrs) . " />";
          }
 
@@ -1691,10 +1736,13 @@ abstract class AppImpl implements ApplicationContract {
          if (\is_array($part)) $part = $part[0] ?? '';
 
          $label = $names[$idx] ?? "#$idx";
-         $banner = "\n/* ====================== {$label} ====================== */\n";
+         // JS banner kept for debugging; CSS banner omitted to prevent minifier
+         // from treating cross-file selectors as mergeable (the minifier sees one
+         // big stylesheet and may reorder/dedupe selectors across file boundaries).
+         $jsBanner = "\n/* ====================== {$label} ====================== */\n";
 
          if ($isCss) {
-            $buffer .= $banner . $part . "\n";
+            $buffer .= $part . "\n";
          } else {
             // Trim trailing whitespace + semicolons, then terminate on its own
             // line so a trailing line-comment can't eat the semicolon.
@@ -1702,7 +1750,7 @@ abstract class AppImpl implements ApplicationContract {
             $part = \rtrim($part, ';');
             $part = \rtrim($part);
             if ($part === '') continue;
-            $buffer .= $banner . $part . "\n;\n";
+            $buffer .= $jsBanner . $part . "\n;\n";
          }
       }
 

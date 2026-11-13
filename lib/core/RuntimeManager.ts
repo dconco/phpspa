@@ -1,6 +1,5 @@
 import { CurrentRoutesObject, EffectType, EventObject, EventPayloadMap, RuntimeConfig } from "../types/RuntimeInterfaces"
 import { StateObject, StateValueType } from "../types/StateObjectTypes"
-import { utf8ToBase64 } from "../utils/baseConverter"
 
 
 /**
@@ -12,8 +11,13 @@ import { utf8ToBase64 } from "../utils/baseConverter"
 export class RuntimeManager {
    public static config: RuntimeConfig = {
       preserveUpdatedHtmlState: false,
-      waitForStyles: false,
+      waitForStyles: true,
    }
+
+   /**
+    * Identifies the latest navigation so a slower, superseded one cannot overwrite it
+    */
+   public static navigationId: number = 0
 
    /**
     * Tracks executed styles to prevent duplicates
@@ -156,22 +160,8 @@ export class RuntimeManager {
       }
    }
 
-   public static runStyles(): void {
-      for (const targetID in RuntimeManager.currentRoutes) {
-         const element = document.getElementById(targetID)
-
-         if (element) {
-            this.runStylesForElement(element)
-         }
-      }
-   }
-
    public static runScriptsForElement(element: HTMLElement): void {
       this.runPhpSpaScripts(element)
-   }
-
-   public static runStylesForElement(element: HTMLElement): void {
-      this.runInlineStyles(element)
    }
 
    /**
@@ -244,28 +234,6 @@ export class RuntimeManager {
       })
    }
 
-
-   /**
-    * Processes and injects inline styles within a container
-    * Prevents duplicate style injection by tracking content hashes
-    */
-   private static runInlineStyles(container: HTMLElement) {
-      const styles = container.querySelectorAll("style")
-
-      styles.forEach((style: HTMLStyleElement) => {
-         // --- Create new style element ---
-         const newStyle = document.createElement("style")
-
-         // --- Copy all attributes except the data-type identifier ---
-         for (const attribute of Array.from(style.attributes)) {
-            newStyle.setAttribute(attribute.name, attribute.value)
-         }
-
-         // --- Copy style content and inject into head ---
-         newStyle.textContent = style.textContent
-         document.head.appendChild(newStyle).remove()
-      })
-   }
 
    /**
     * Emits a custom event to all registered listeners
