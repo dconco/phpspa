@@ -16,7 +16,7 @@ namespace PhpSPA\Core\Helper;
  */
 trait ComponentParser
 {
-    private static function parseAttributesToArray($attributes): array
+    private static function parseAttributesToArray(string $attributes): array
     {
         $attrArray = [];
         $pattern = '/([a-zA-Z_-]+)\s*=\s*"([^"]*)"/';

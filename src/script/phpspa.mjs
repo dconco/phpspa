@@ -1,5 +1,5 @@
 /*!
- * PhpSPA Client Runtime v2.1.5
+ * PhpSPA Client Runtime v2.1.6
  * Docs: https://phpspa.tech | Package: @dconco/phpspa
  * License: MIT
  */
