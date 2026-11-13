@@ -14,6 +14,7 @@ use PhpSPA\Compression\Compressor;
 use PhpSPA\Core\Compression\OxcCompressor;
 use PhpSPA\Core\Config\CompressionConfig;
 use PhpSPA\Core\Helper\CsrfManager;
+use PhpSPA\Core\Helper\FunctionCallToken;
 use PhpSPA\Core\Helper\SessionHandler;
 use PhpSPA\Core\Helper\CallableInspector;
 use PhpSPA\Core\Helper\ComponentScope;
@@ -569,107 +570,140 @@ abstract class AppImpl implements ApplicationContract {
    }
 
    private function handlePhpSPARequest(Request $request, bool $return) {
-      if ($request->requestedWith() === 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
-         $data = json_decode(base64_decode($request->auth()->bearer ?? ''), true);
-
-         if (isset($data['state'])) {
-            $state = $data['state'];
-
-            if (isset($state['key'])) {
-               $sessionData = SessionHandler::get(STATE_HANDLE);
-               $sessionData[$state['key']] = @$state['value'];
-               SessionHandler::set(STATE_HANDLE, $sessionData);
-            }
-
-            return;
-
-         
-         } else if (isset($data['__call'])) {
-            try {
-               $raw = base64_decode($data['__call']['token'] ?? '');
-
-               /**
-                * @var array{0: string, 1: string, 2: bool} $tokenData
-                */
-               $payload = ($raw !== false && $raw !== '') ? @unserialize($raw) : null;
-
-               $publicName = $payload[0] ?? null;
-               $token = $payload[1] ?? null;
-               $use_once = $payload[2] ?? false;
-               
-               if (!$publicName || !$token) {
-                  throw new \Exception('Invalid or Expired Token');
-               }
-
-               $csrf = new CsrfManager($publicName, null, CALL_FUNC_HANDLE);
-
-               if ($functionName = $csrf->verifyToken($token, $use_once)) {
-                  // Convert ANY callable into a single Closure object
-                  $closure = ($functionName instanceof \Closure) ? $functionName : \Closure::fromCallable($functionName);
-                  $func = new ReflectionFunction($closure);
-                  $totalRequiredParams = $func->getNumberOfRequiredParameters();
-                  $totalParams = $func->getNumberOfParameters();
-
-                  $args = $data['__call']['args'] ?? [];
-
-                  $totalReceivedArgs = \count($args);
-                  $validatedParams = [];
-
-                  if ($totalReceivedArgs < $totalRequiredParams) throw new \InvalidArgumentException('Missing required arguments');
-                  if ($totalReceivedArgs > $totalParams) throw new \InvalidArgumentException('Too many arguments');
-
-                  foreach ($func->getParameters() as $param) {
-                     $paramName = $param->getName();
-                     $paramTypes = CallableInspector::getParamTypes($param);
-
-                     if (!array_key_exists($paramName, $args)) {
-                        if ($param->isDefaultValueAvailable()) {
-                           $validatedParams[$paramName] = $param->getDefaultValue();
-                           continue;
-                        }
-                        throw new \InvalidArgumentException("Missing required parameter: {$paramName}");
-                     }
-
-                     $argsValue = Validate::validate($args[$paramName] ?? null);
-                     if (!Validate::matchesType($argsValue, $paramTypes)) {
-                        throw new \InvalidArgumentException("Invalid type for parameter: {$paramName}");
-                     }
-
-                     $validatedParams[$paramName] = $argsValue;
-                  }
-
-                  $extraKeys = \array_diff_key($args, $validatedParams);
-
-                  if (!empty($extraKeys)) {
-                     $unknown = \implode(', ', \array_keys($extraKeys));
-                     throw new \InvalidArgumentException("Received unexpected arguments: {$unknown}");
-                  }
-
-                  $response = \call_user_func($closure, ...$validatedParams);
-
-                  if ($response instanceof Response) {
-                     $response = $response->__toString();
-                  } elseif ($response instanceof \PhpSPA\Http\RedirectException) {
-                  } elseif (\is_array($response) || \is_object($response)) {
-                     if (!\headers_sent()) header('Content-Type: application/json');
-                     $response = json_encode($response);
-                  }
-
-                  if ($return) return $response;
-                  echo $response;
-                  exit(0);
-               }
-               else {
-                  throw new \Exception('Invalid or Expired Token');
-               }
-            } catch (\Exception $e) {
-               error_log($e->getMessage());
-               if ($return) return $e->getMessage();
-               echo $e->getMessage();
-               exit(0);
-            }
-         }
+      if ($request->requestedWith() !== 'PHPSPA_REQUEST' || !$request->isSameOrigin()) {
+         return null;
       }
+
+      $encodedPayload = $request->auth()->bearer;
+
+      // Normal SPA navigations use the PHPSPA_REQUEST marker without a bearer
+      // payload. Only state updates and server calls enter this control channel.
+      if ($encodedPayload === null || $encodedPayload === '') {
+         return null;
+      }
+
+      if (!is_string($encodedPayload) || strlen($encodedPayload) > 1_398_104) {
+         return $this->rejectPhpSPAControlRequest($return);
+      }
+
+      $rawPayload = base64_decode($encodedPayload, true);
+      if ($rawPayload === false || strlen($rawPayload) > 1_048_576) {
+         return $this->rejectPhpSPAControlRequest($return);
+      }
+
+      try {
+         $data = json_decode($rawPayload, true, 32, JSON_THROW_ON_ERROR);
+      } catch (\JsonException) {
+         return $this->rejectPhpSPAControlRequest($return);
+      }
+
+      if (!is_array($data) || !$request->isMethod('POST')) {
+         return $this->rejectPhpSPAControlRequest($return);
+      }
+
+      if (array_key_exists('state', $data)) {
+         $state = $data['state'];
+         $key = is_array($state) ? ($state['key'] ?? null) : null;
+
+         if (!is_string($key) || $key === '' || strlen($key) > 256 || !array_key_exists('value', $state)) {
+            return $this->rejectPhpSPAControlRequest($return);
+         }
+
+         $sessionData = SessionHandler::get(STATE_HANDLE);
+         if (!array_key_exists($key, $sessionData)) {
+            return $this->rejectPhpSPAControlRequest($return);
+         }
+
+         $sessionData[$key] = Validate::validate($state['value']);
+         SessionHandler::set(STATE_HANDLE, $sessionData);
+         return null;
+      }
+
+      if (!array_key_exists('__call', $data) || !is_array($data['__call'])) {
+         return $this->rejectPhpSPAControlRequest($return);
+      }
+
+      try {
+         $payload = FunctionCallToken::decode($data['__call']['token'] ?? null);
+         $args = $data['__call']['args'] ?? [];
+
+         if ($payload === null || !is_array($args)) {
+            throw new \InvalidArgumentException('Invalid call payload');
+         }
+
+         [$publicName, $token, $useOnce] = $payload;
+         $csrf = new CsrfManager($publicName, null, CALL_FUNC_HANDLE);
+         $functionName = $csrf->verifyToken($token, $useOnce);
+
+         if (!$functionName || !is_callable($functionName)) {
+            throw new \InvalidArgumentException('Invalid call token');
+         }
+
+         // Convert any verified callable into a single Closure object.
+         $closure = ($functionName instanceof \Closure) ? $functionName : \Closure::fromCallable($functionName);
+         $func = new ReflectionFunction($closure);
+         $totalRequiredParams = $func->getNumberOfRequiredParameters();
+         $totalParams = $func->getNumberOfParameters();
+         $totalReceivedArgs = \count($args);
+         $validatedParams = [];
+
+         if ($totalReceivedArgs < $totalRequiredParams) throw new \InvalidArgumentException('Missing required arguments');
+         if (!$func->isVariadic() && $totalReceivedArgs > $totalParams) throw new \InvalidArgumentException('Too many arguments');
+
+         foreach ($func->getParameters() as $param) {
+            $paramName = $param->getName();
+            $paramTypes = CallableInspector::getParamTypes($param);
+
+            if (!array_key_exists($paramName, $args)) {
+               if ($param->isDefaultValueAvailable()) {
+                  $validatedParams[$paramName] = $param->getDefaultValue();
+                  continue;
+               }
+               if ($param->isVariadic()) continue;
+               throw new \InvalidArgumentException("Missing required parameter: {$paramName}");
+            }
+
+            $argsValue = Validate::validate($args[$paramName] ?? null);
+            if (!Validate::matchesType($argsValue, $paramTypes)) {
+               throw new \InvalidArgumentException("Invalid type for parameter: {$paramName}");
+            }
+
+            $validatedParams[$paramName] = $argsValue;
+         }
+
+         $extraKeys = \array_diff_key($args, $validatedParams);
+         if (!empty($extraKeys) && !$func->isVariadic()) {
+            throw new \InvalidArgumentException('Received unexpected arguments');
+         }
+
+         $response = \call_user_func($closure, ...$validatedParams);
+
+         if ($response instanceof Response) {
+            $response = $response->__toString();
+         } elseif ($response instanceof \PhpSPA\Http\RedirectException) {
+         } elseif (\is_array($response) || \is_object($response)) {
+            if (!\headers_sent()) header('Content-Type: application/json');
+            $response = json_encode($response);
+         }
+
+         if ($return) return $response;
+         echo $response;
+         exit(0);
+      } catch (\Throwable) {
+         return $this->rejectPhpSPAControlRequest($return);
+      }
+   }
+
+   private function rejectPhpSPAControlRequest(bool $return): ?string
+   {
+      http_response_code(Response::StatusBadRequest);
+      if (!headers_sent()) header('Content-Type: text/plain; charset=utf-8');
+
+      $message = 'Invalid request';
+      if ($return) return $message;
+
+      echo $message;
+      exit(0);
    }
 
 

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
+use PhpSPA\Core\Helper\ComponentValueCodec;
 use PhpSPA\Core\Utils\Formatter\FormatComponent;
 
 final class FormatComponentTest extends TestCase
@@ -32,7 +33,8 @@ final class FormatComponentTest extends TestCase
    {
       $component = new FormatComponent(['count' => 1]);
 
-      $this->assertSame(base64_encode(serialize(['count' => 1])), (string) $component);
+      $this->assertSame(['count' => 1], ComponentValueCodec::decode((string) $component, $valid));
+      $this->assertTrue($valid);
    }
 
    public function testInvokeEncodesCallableResult(): void
@@ -41,6 +43,7 @@ final class FormatComponentTest extends TestCase
 
       $result = $component('ok');
 
-      $this->assertSame(base64_encode(serialize(['value' => 'ok'])), $result);
+      $this->assertSame(['value' => 'ok'], ComponentValueCodec::decode($result, $valid));
+      $this->assertTrue($valid);
    }
 }

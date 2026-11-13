@@ -34,7 +34,11 @@ class FunctionCaller
         $funcName = $this->getCallableName($function);
         $csrf = new CsrfManager($public_name ?? $funcName, $funcName, CALL_FUNC_HANDLE);
 
-        $this->token = base64_encode(serialize([$public_name ?? $funcName, $csrf->generate(), $use_once]));
+        $this->token = FunctionCallToken::encode(
+            $public_name ?? $funcName,
+            $csrf->generate(),
+            $use_once,
+        );
     }
 
     public function __toString()

@@ -462,8 +462,9 @@ export class AppManager {
 
 				const { route } = currentRoutes[targetID]
 
-				const prom = fetch(route || '', {
-					headers: {
+			const prom = fetch(route || '', {
+				method: 'POST',
+				headers: {
 						'X-Requested-With': 'PHPSPA_REQUEST',
 						Authorization: `Bearer ${utf8ToBase64(statePayload)}`
 					},
@@ -725,6 +726,7 @@ export class AppManager {
 
 		try {
 			const response = await fetch(location.pathname, {
+				method: 'POST',
 				headers: {
 					'X-Requested-With': 'PHPSPA_REQUEST',
 					Authorization: `Bearer ${utf8ToBase64(callPayload)}`

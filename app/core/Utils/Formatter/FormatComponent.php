@@ -3,6 +3,7 @@
 namespace PhpSPA\Core\Utils\Formatter;
 
 use ArrayAccess;
+use PhpSPA\Core\Helper\ComponentValueCodec;
 use PhpSPA\Core\Utils\Validate;
 
 class FormatComponent implements ArrayAccess {
@@ -12,7 +13,7 @@ class FormatComponent implements ArrayAccess {
    }
 
    public function __toString(): string {
-      return base64_encode(serialize($this->data));
+      return ComponentValueCodec::encode($this->data);
    }
 
    public function offsetExists($offset): bool
@@ -57,6 +58,6 @@ class FormatComponent implements ArrayAccess {
 
    public function __invoke(): mixed
    {
-      return base64_encode(serialize(($this->data)(func_get_args())));
+      return ComponentValueCodec::encode(($this->data)(func_get_args()));
    }
 }

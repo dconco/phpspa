@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## v2.1.6 — Security hardening
+
+### Security
+
+- Removed PHP deserialization from the network-facing `phpspa.__call` token path. Function-call tokens now use a strictly validated, versioned JSON format; legacy serialized tokens are rejected.
+- State updates and server-function calls now require `POST`, strict Base64/JSON decoding, bounded payload sizes, and generic error responses.
+- Component attribute values that need PHP object fidelity are now authenticated with a per-session HMAC before deserialization. Unsigned values are always treated as plain text.
+- Component tags can no longer invoke internal PHP functions or internal class methods, and callables declared to return non-renderable objects are rejected before invocation.
+- Client bundles now send state updates and server-function calls with `POST`.
+
+Deploy the PHP package and regenerated JavaScript runtime together. Any page opened before the update must be reloaded because legacy function-call tokens are intentionally incompatible.
+
 ## dev-support/php-8.4 (PHP 8.4) (v2.1.0)
 
 **Installation:**

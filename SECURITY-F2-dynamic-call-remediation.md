@@ -7,7 +7,26 @@ Files:
 - app/client/Component/use_function_hook.php (useFunction)
 - app/core/Helper/CsrfManager.php
 
-## What is NOT the problem (scope correction)
+## Additional finding: object injection before token verification
+
+The committed control-request handler deserialized an untrusted token before
+verifying its CSRF binding. This is independent of argument validation: object
+construction, array access and string conversion can invoke magic methods before
+verification. Local tests confirmed execution into the HTTP transport without a
+valid CSRF token; production shell execution has not been independently verified.
+
+The remediation uses `FunctionCallToken` for versioned JSON-only tokens, validates
+scalar fields before creating `CsrfManager`, and rejects legacy serialized tokens
+without a fallback. GET control requests are rejected. Regression tests cover
+top-level and nested serialized objects on both GET and POST, checking that no
+wakeup occurs and that requests receive a generic HTTP 400 response. Valid JSON
+calls and ordinary SPA navigation must continue to work.
+
+Deploy the token producer and consumer together. Pages holding legacy tokens must
+be reloaded after deployment. A source-code fix does not establish that production
+is patched or clean; preserve incident evidence and investigate independently.
+
+## Callable binding (does not prevent pre-verification object injection)
 
 The function name is NOT an arbitrary-callable sink. The CSRF token binds to the
 exact function name: the handler builds `new CsrfManager($functionName, CALL_FUNC_HANDLE)`
@@ -20,7 +39,7 @@ cross-function replay and no reach to arbitrary PHP callables such as `system`.
 
 ## The actual defect: unvalidated arguments
 
-The only client-controlled, unvalidated input that reaches the sink is the
+Separately, the original argument-validation finding concerned the
 arguments array:
 
     $res = \call_user_func_array($functionName, $data['__call']['args']);
@@ -55,7 +74,27 @@ A local unit PoC asserts only: given a validly exposed function F (token minted 
 useFunction for F) and a valid CSRF token for F, the client-supplied args array is
 passed to F unchanged and unvalidated. Positive control: the args reach F exactly as
 sent. Negative control: a token whose function name was changed to G does NOT verify
-(confirming the name is bound, so only the unvalidated-args issue remains).
+(confirming the name is bound after safe token decoding, but not ruling out
+pre-verification object injection in the legacy handler).
 
 Severity: High, bounded by the exposed function's own trust in its arguments (not
 unauthenticated RCE from nothing).
+
+## Scope correction: component-tag invocation
+
+The callable-binding argument above applies only when `useFunction()` is reached
+through normal application code. The component formatter previously treated any
+capitalized tag in final rendered HTML as a PHP callable. Consequently, unescaped
+visitor-controlled HTML could attempt to invoke internal PHP functions or invoke
+framework hooks such as `Component\\useFunction` as components. That invalidates
+the assumption that only a developer can expose a callable.
+
+The formatter now rejects internal PHP functions and methods, rejects declared
+non-string component return types before invocation, and refuses non-string
+results instead of invoking `__toString()` implicitly. Applications must still
+escape all visitor-controlled output; these framework guards are defense in depth,
+not an HTML-escaping substitute.
+
+Overall severity of the pre-verification deserialization and component-callable
+issues is **Critical**. The argument-validation issue by itself retains the scoped
+severity described above.

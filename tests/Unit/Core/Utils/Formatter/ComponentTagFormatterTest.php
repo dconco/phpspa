@@ -51,6 +51,22 @@ final class ComponentTagFormatterTest extends TestCase
 
       $this->assertSame('Var Yes', $output);
    }
+
+   public function testFormatRejectsInternalPhpFunctions(): void
+   {
+      $this->expectException(InvalidArgumentException::class);
+      $this->expectExceptionMessage('Internal PHP callable STRTOUPPER cannot be used as a component');
+
+      ComponentTagFormatterProxy::formatPublic('<STRTOUPPER string="proof" />');
+   }
+
+   public function testFormatRejectsFrameworkHooksThatReturnObjects(): void
+   {
+      $this->expectException(InvalidArgumentException::class);
+      $this->expectExceptionMessage('Component Component\\useFunction must return a string');
+
+      ComponentTagFormatterProxy::formatPublic('<Component.useFunction function="strlen" />');
+   }
 }
 
 final class ComponentTagFormatterProxy
