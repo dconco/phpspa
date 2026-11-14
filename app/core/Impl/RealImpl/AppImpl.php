@@ -419,6 +419,8 @@ abstract class AppImpl implements ApplicationContract {
       // (inherited by the PHP error log), so a PHP-side flag cannot reach it.
       // Export the compression-log bit to the env the Rust side reads at runtime.
       if ($this->disableLogs & DISABLE_COMPRESSION_LOG) putenv('PHPSPA_DISABLE_COMPRESSION_LOG=1');
+      if ($this->disableLogs & DISABLE_PRELOAD_LOG) putenv('PHPSPA_DISABLE_PRELOAD_LOG=1');
+      if ($this->disableLogs & DISABLE_LIBRARY_LOG) putenv('PHPSPA_DISABLE_LIBRARY_LOG=1');
       return $this;
    }
 
