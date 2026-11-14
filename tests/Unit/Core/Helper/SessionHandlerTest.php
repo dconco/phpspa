@@ -32,4 +32,16 @@ final class SessionHandlerTest extends TestCase
 
       $this->assertSame($payload, SessionHandler::get('phpspa_test'));
    }
+
+   public function testGetDoesNotInstantiateObjects(): void
+   {
+      $probe = new stdClass();
+      $probe->name = 'probe';
+
+      SessionHandler::set('phpspa_test', $probe);
+
+      $value = SessionHandler::get('phpspa_test');
+
+      $this->assertInstanceOf(__PHP_Incomplete_Class::class, $value);
+   }
 }

@@ -48,6 +48,19 @@ final class ResponseTest extends TestCase
       $this->assertSame('yes', $headers['X-Test']);
    }
 
+   public function testSendFileRefusesPhpFiles(): void
+   {
+      $path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'phpspa_sendfile_' . bin2hex(random_bytes(4)) . '.php';
+      file_put_contents($path, '<?php echo "executed";');
+
+      try {
+         $this->expectException(InvalidArgumentException::class);
+         (new Response())->sendFile($path);
+      } finally {
+         @unlink($path);
+      }
+   }
+
    public function testJsonSetsContentTypeAndData(): void
    {
       $response = new Response();

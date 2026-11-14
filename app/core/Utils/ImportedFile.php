@@ -156,6 +156,14 @@ class ImportedFile
     */
    public function getRawContent (): string
    {
+      // --- cURL read callbacks are invoked with arguments (handle, stream).
+      // --- Refuse anything but a direct zero-argument call so this object can
+      // --- never be repurposed as a CURLOPT_READFUNCTION that exfiltrates a
+      // --- file selected by an attacker. ---
+      if (func_num_args() !== 0) {
+         throw new \BadMethodCallException('getRawContent() cannot be used as a callback.');
+      }
+
       return base64_decode($this->base64Content);
    }
 

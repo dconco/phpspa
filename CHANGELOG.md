@@ -1,16 +1,27 @@
 # CHANGELOG
 
-## v2.1.6 — Security hardening
+## v2.1.6 — Critical Security Hardening & Deserialization Defusal
 
-### Security
+> [!CAUTION]
+> **Urgent Security Release.** This release patches multiple critical Remote Code Execution (RCE), PHP Object Injection, and Server-Side Request Forgery (SSRF) vulnerabilities across the client runtime and core server handlers. All deployments should upgrade immediately.
 
-- Removed PHP deserialization from the network-facing `phpspa.__call` token path. Function-call tokens now use a strictly validated, versioned JSON format; legacy serialized tokens are rejected.
-- State updates and server-function calls now require `POST`, strict Base64/JSON decoding, bounded payload sizes, and generic error responses.
-- Component attribute values that need PHP object fidelity are now authenticated with a per-session HMAC before deserialization. Unsigned values are always treated as plain text.
-- Component tags can no longer invoke internal PHP functions or internal class methods, and callables declared to return non-renderable objects are rejected before invocation.
-- Client bundles now send state updates and server-function calls with `POST`.
+### 🛡️ Security Fixes
 
-Deploy the PHP package and regenerated JavaScript runtime together. Any page opened before the update must be reloaded because legacy function-call tokens are intentionally incompatible.
+- **Arbitrary PHP Execution in `Response::sendFile()`**: Refused execution of `.php` files inside `Response::sendFile()`. Previously, `sendFile()` executed `.php` files via `require`, which allowed arbitrary code execution (RCE) if user-influenced paths were served. It now throws `\InvalidArgumentException`.
+- **Eliminated Deserialization in `phpspa.__call`**: Replaced untrusted serialized PHP tokens in client-server RPC function calls with strict, versioned JSON tokens (`FunctionCallToken`). Legacy serialized tokens are permanently rejected.
+- **Defused SSRF POP Gadget in `PendingRequest`**: Removed network I/O (`fetchDataIfNeeded()`) from `PendingRequest::__toString()`. String coercion of pending requests will never trigger network requests, preventing weaponization in deserialization gadget chains.
+- **Session Object Injection Mitigation**: Configured `SessionHandler::get()` with `unserialize($sessionData, ['allowed_classes' => false])` to prevent untrusted or tampered session stores from instantiating arbitrary PHP objects.
+- **POP Callback Gadget Neutralization in `ImportedFile`**: Hardened `ImportedFile::getRawContent()` to reject any argument-based calls, preventing its abuse as a `CURLOPT_READFUNCTION` file-read gadget.
+- **HMAC Authentication for Component Values**: Component attribute values requiring PHP object preservation are now authenticated with a per-session HMAC before deserialization via `ComponentValueCodec`. Unsigned or untrusted values are treated strictly as plain text.
+- **Strict Endpoint Hardening**: State updates and server-function calls now strictly enforce HTTP `POST`, rigorous Base64/JSON decoding, bounded payload sizes, and generic HTTP 400 error responses without leaking internal stack traces.
+- **Component Tag Callable Restrictions**: Component tags can no longer execute internal PHP functions or internal class methods, and callables declared to return non-renderable objects are rejected before invocation.
+
+### ⚠️ Breaking Changes
+
+- **Explicit HTTP Requests Required for `useFetch`**: String casting a `PendingRequest` (e.g. `echo useFetch(...)`) no longer auto-triggers an HTTP GET request. Requests must be executed explicitly with `->get()` (e.g. `echo useFetch(...)->get()`).
+- **`Response::sendFile()` Refuses PHP Scripts**: Passing a path to a `.php` file into `sendFile()` now throws `\InvalidArgumentException`. Use standard routing and view rendering to evaluate PHP templates.
+- **Legacy Function Call Tokens Incompatible**: Client bundles and backend runtime must be updated together. Existing open pages must be refreshed as legacy serialized RPC tokens are rejected.
+- **HTTP POST Required for State & RPC**: Any custom scripts interacting with `phpspa` state updates or `__call` endpoints using `GET` must be transitioned to `POST`.
 
 ## dev-support/php-8.4 (PHP 8.4) (v2.1.0)
 

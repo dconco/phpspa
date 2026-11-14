@@ -428,8 +428,11 @@ class PendingRequest implements \ArrayAccess {
 
    public function __toString(): string
    {
-      $this->fetchDataIfNeeded();
-      return $this->response?->text() ?? false;
+      // --- String coercion must never perform network I/O. A serialized
+      // --- PendingRequest is a known gadget: casting it to a string used to
+      // --- issue an attacker-controlled HTTP request (SSRF). Return only the
+      // --- body of a request that has already been executed. ---
+      return $this->response?->text() ?? '';
    }
 
    public function offsetExists($offset): bool

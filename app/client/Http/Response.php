@@ -248,12 +248,11 @@ class Response
 
       $fileType = FileHandler::fileType($filePath);
 
+      // --- Never execute PHP from a file-serving path. sendFile() is for
+      // --- static assets; executing a .php file here turns an attacker-chosen
+      // --- path into code execution. ---
       if ($fileType === 'text/x-php') {
-         $fileType = 'text/html';
-
-         ob_start();
-            require $filePath;
-         $contents = ob_get_clean();
+         throw new \InvalidArgumentException('Refusing to execute PHP files from sendFile().');
       }
 
       if (!isset($contents) || !$contents) {

@@ -74,6 +74,16 @@ final class PendingRequestTest extends TestCase
       $this->assertSame('{"name":"PhpSPA"}', $fake->lastBody);
    }
 
+   public function testStringCastDoesNotExecuteRequest(): void
+   {
+      $request = new PendingRequest('https://example.com');
+      $fake = new PendingRequestFakeClient();
+      $this->setPrivateProperty($request, 'client', $fake);
+
+      $this->assertSame('', (string) $request);
+      $this->assertSame('', $fake->lastMethod, 'string coercion must not perform I/O');
+   }
+
    private function getPrivateProperty(object $object, string $property): mixed
    {
       $reader = Closure::bind(
