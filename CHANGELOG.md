@@ -10,12 +10,6 @@
 composer require dconco/phpspa:v2.1.6
 ```
 
-### 🚨 Affected Versions
-
-- **All releases from `v1.1.6` through `v2.0.14`** (including patch and platform variants `v2.0.5.1`, `v2.0.5.2`, `v2.0.5.81`, `v2.0.5.82`, `v2.0.5.83`, `v2.0.7.1`).
-- **All versions in the `v2.1.x` branch prior to `v2.1.6`** (`v2.1.0` through `v2.1.5`).
-- **Remediation**: Upgrade to `v2.1.6` or later immediately.
-
 ### 🛡️ Security Fixes
 
 - **Arbitrary PHP Execution in `Response::sendFile()`**: Refused execution of `.php` files inside `Response::sendFile()`. Previously, `sendFile()` executed `.php` files via `require`, which allowed arbitrary code execution (RCE) if user-influenced paths were served. It now throws `\InvalidArgumentException`.
