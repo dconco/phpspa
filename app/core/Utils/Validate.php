@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace PhpSPA\Core\Utils;
 
-use DateTime;
-
 /**
  * Data validation
  *
@@ -45,6 +43,63 @@ class Validate
 
         // If the data is not an array, validate the value directly
         return static::realValidate($data);
+    }
+
+    /**
+     * Checks if a value matches any of the allowed types.
+     *
+     * @param mixed $value The value to check.
+     * @param array $allowedTypes The list of allowed types.
+     * @return bool True if the value matches any of the allowed types, false otherwise.
+     */
+    public static function matchesType(mixed $value, array $allowedTypes): bool {
+        if (in_array('mixed', $allowedTypes, true)) {
+            return true;
+        }
+
+        if ($value === null) {
+            return in_array('null', $allowedTypes, true);
+        }
+
+        $debugType = get_debug_type($value);
+
+        // Normalize primitive debug types to PHP reflection type names
+        $normalizedType = match ($debugType) {
+            'integer' => 'int',
+            'boolean' => 'bool',
+            'double'  => 'float',
+            'array'   => 'array',
+            default   => $debugType,
+        };
+
+        foreach ($allowedTypes as $expected) {
+            // Direct match for primitives (int, string, bool, float, array)
+            if ($expected === $normalizedType) {
+                return true;
+            }
+
+            // Generic object type hint
+            if ($expected === 'object' && is_object($value)) {
+                return true;
+            }
+
+            // Specific class / interface type hint (e.g. stdClass, Request, User)
+            if (is_object($value) && $value instanceof $expected) {
+                return true;
+            }
+
+            // Iterable check (arrays and Traversable objects)
+            if ($expected === 'iterable' && is_iterable($value)) {
+                return true;
+            }
+
+            // Callable check
+            if ($expected === 'callable' && is_callable($value)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

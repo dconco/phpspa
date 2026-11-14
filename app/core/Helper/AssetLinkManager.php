@@ -165,10 +165,11 @@ class AssetLinkManager
 
         // Check if mapping has expired
         if (self::isMappingExpired($data['created'])) {
-            http_response_code(Response::StatusGone);
-            header('Content-Type: text/plain');
-            echo "Asset has expired";
-            exit;
+            return [
+                'expired' => true,
+                'hash' => $encoded,
+                'type' => $type,
+            ];
         }
 
         return [

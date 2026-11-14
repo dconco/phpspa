@@ -24,6 +24,7 @@ build/
 site/
 cmake-build-*/
 out/
+.verify_build
 
 # PhpSPA generated output
 /**/*/generated/
@@ -42,6 +43,7 @@ access_log
 composer.lock
 composer.phar
 pnpm-lock.yaml
+package-lock.json
 
 # Compiled Object files
 *.o

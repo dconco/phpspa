@@ -39,7 +39,7 @@ class HtmlCompressor {
       static void minifyHTML(std::string& html);
 
       // --- Optimize attributes (remove quotes where safe, trim values) ---
-      static void optimizeAttributes(std::string& tagContent);
+      static void optimizeAttributes(std::string& tagContent, const std::string& tagName = "");
 };
 
 #endif // HTML_COMPRESSOR_H

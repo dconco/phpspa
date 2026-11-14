@@ -11,7 +11,7 @@ import {
 import {
 	clearPreloadedStylesForScope,
 	preloadStylesFromContent,
-	retainStylesheetLinks
+	retainStyleTags
 } from '../utils/preloadStylesFromContent'
 import { utf8ToBase64 } from '../utils/baseConverter'
 import { RuntimeManager } from './RuntimeManager'
@@ -39,7 +39,7 @@ export class AppManager {
 			...currentState,
 			url: location.toString(),
 			title: document.title,
-			content: retainStylesheetLinks(
+			content: retainStyleTags(
 				currentState.content,
 				currentTarget.innerHTML
 			)
@@ -70,6 +70,9 @@ export class AppManager {
 		const newUrl =
 			url instanceof URL ? url : new URL(url, location.toString())
 
+		const navigationId = ++RuntimeManager.navigationId
+		const isSuperseded = () => navigationId !== RuntimeManager.navigationId
+
 		// --- Persist current DOM state before changing route when enabled ---
 		AppManager.snapshotCurrentRouteState()
 
@@ -93,10 +96,10 @@ export class AppManager {
 						let responseData
 
 						// --- Try to parse JSON response, fallback to raw text ---
-						if (responseText && responseText.trim().startsWith('{')) {
+						if (responseText) {
 							try {
 								responseData = JSON.parse(responseText)
-							} catch (parseError) {
+							} catch {
 								responseData = responseText
 							}
 						} else {
@@ -123,10 +126,8 @@ export class AppManager {
 
 						try {
 							// --- Attempt to parse error response as JSON ---
-							errorData = fallbackResponse?.trim().startsWith('{')
-								? JSON.parse(fallbackResponse)
-								: fallbackResponse
-						} catch (parseError) {
+							errorData = JSON.parse(fallbackResponse)
+						} catch {
 							// --- If parsing fails, use raw text ---
 							errorData = fallbackResponse
 						}
@@ -166,17 +167,12 @@ export class AppManager {
 		 * Processes the server response and updates the DOM
 		 */
 		function processResponse(responseData: ComponentObject | string) {
+			if (isSuperseded()) return
+
 			const component: ComponentObject =
 				typeof responseData === 'string'
 					? { content: responseData, stateData: {} }
 					: responseData
-
-			RuntimeManager.currentStateData = component.stateData
-
-			// --- Update document title if provided ---
-			if (component?.title && component.title.length > 0) {
-				document.title = component.title
-			}
 
 			// --- Find target element for content replacement ---
 			const targetElement =
@@ -184,51 +180,60 @@ export class AppManager {
 				document.getElementById(history.state?.targetID) ??
 				document.body
 
-			if (component?.targetID) {
-				RuntimeManager.currentRoutes[component.targetID] = {
-					route: newUrl,
-					exact: component.exact ?? false,
-					defaultContent:
-						RuntimeManager.currentRoutes[component.targetID]
-							?.defaultContent ?? targetElement.innerHTML
-				}
-			}
-
 			const currentRoutes = RuntimeManager.currentRoutes
 
-			for (const targetID in currentRoutes) {
-				if (!Object.hasOwn(currentRoutes, targetID)) continue
+			const commitRouteState = () => {
+				RuntimeManager.currentStateData = component.stateData
 
-				const targetInfo = currentRoutes[targetID]
+				// --- Update document title if provided ---
+				if (component?.title && component.title.length > 0) {
+					document.title = component.title
+				}
 
-				// --- If route is exact and the route target ID is not equal to the navigated route target ID ---
-				// --- Then the document URL has changed ---
-				// --- That is they are navigating away ---
-				// --- And any route with exact === true must go back to its default content ---
-				if (targetInfo.exact === true && targetID !== component?.targetID) {
-					let currentHTML = document.getElementById(targetID)
-					if (currentHTML) {
-						try {
-							morphdom(
-								currentHTML,
-								'<div>' + targetInfo.defaultContent + '</div>',
-								{
-									childrenOnly: true
-								}
-							)
-						} catch {
-							currentHTML.innerHTML = targetInfo.defaultContent
-						}
+				if (component?.targetID) {
+					currentRoutes[component.targetID] = {
+						route: newUrl,
+						exact: component.exact ?? false,
+						defaultContent:
+							currentRoutes[component.targetID]?.defaultContent ??
+							targetElement.innerHTML
 					}
+				}
 
-					clearPreloadedStylesForScope(targetID)
-					delete currentRoutes[targetID]
+				for (const targetID in currentRoutes) {
+					if (!Object.hasOwn(currentRoutes, targetID)) continue
+
+					const targetInfo = currentRoutes[targetID]
+
+					// --- If route is exact and the route target ID is not equal to the navigated route target ID ---
+					// --- Then the document URL has changed ---
+					// --- That is they are navigating away ---
+					// --- And any route with exact === true must go back to its default content ---
+					if (targetInfo.exact === true && targetID !== component?.targetID) {
+						let currentHTML = document.getElementById(targetID)
+						if (currentHTML) {
+							try {
+								morphdom(
+									currentHTML,
+									'<div>' + targetInfo.defaultContent + '</div>',
+									{
+										childrenOnly: true
+									}
+								)
+							} catch {
+								currentHTML.innerHTML = targetInfo.defaultContent
+							}
+						}
+
+						clearPreloadedStylesForScope(targetID)
+						delete currentRoutes[targetID]
+					}
 				}
 			}
 
 			// --- Update content ---
 			const updateDOM = () =>
-				new Promise(resolve => {
+				new Promise<boolean>(resolve => {
 					const styleScopeKey =
 						component?.targetID ||
 						history.state?.targetID ||
@@ -236,39 +241,54 @@ export class AppManager {
 						'__phpspa_body__'
 
 					// --- Preload stylesheets in the new content ---
-					const { element, ready } = preloadStylesFromContent(
+					const { element, ready, commitStyles } = preloadStylesFromContent(
 						component.content,
-						styleScopeKey
+						styleScopeKey,
+						newUrl
 					)
 
-					ready
-						.then(() => {
+					// --- Everything visible changes in this one task, so no half-updated page can paint ---
+					const applyDOM = () => {
+						if (isSuperseded()) {
+							resolve(false)
+							return
+						}
+
+						commitRouteState()
+
+						try {
 							morphdom(targetElement, element, {
 								childrenOnly: true
 							})
-							resolve(0)
-						})
-						.catch(() => {
+						} catch {
 							targetElement.appendChild(element)
-							resolve(0)
-						})
+						}
+						commitStyles()
+						resolve(true)
+					}
+
+					if (RuntimeManager.config.waitForStyles) {
+						ready.then(applyDOM).catch(applyDOM)
+					} else {
+						applyDOM()
+					}
 				})
 
-			const stateData: StateObject = {
-				url: newUrl.toString(),
-				title: component?.title ?? document.title,
-				targetID: targetElement.id,
-				content: component.content,
-				exact: currentRoutes[component?.targetID]?.exact,
-				defaultContent: currentRoutes[component?.targetID]?.defaultContent
-			}
-
-			// --- Include reload time if specified ---
-			if (component?.reloadTime) {
-				stateData.reloadTime = component.reloadTime
-			}
-
 			const completedDOMUpdate = async (): Promise<void> => {
+				const stateData: StateObject = {
+					url: newUrl.toString(),
+					title: component?.title ?? document.title,
+					targetID: targetElement.id,
+					content: component.content,
+					exact: currentRoutes[component?.targetID]?.exact,
+					defaultContent: currentRoutes[component?.targetID]?.defaultContent
+				}
+
+				// --- Include reload time if specified ---
+				if (component?.reloadTime) {
+					stateData.reloadTime = component.reloadTime
+				}
+
 				// --- Update browser history ---
 				if (state === 'push') {
 					RuntimeManager.pushState(stateData, stateData.title, newUrl)
@@ -309,7 +329,9 @@ export class AppManager {
 				}
 			}
 
-			updateDOM().then(completedDOMUpdate)
+			updateDOM().then(applied => {
+				if (applied) return completedDOMUpdate()
+			})
 		}
 	}
 
@@ -440,8 +462,9 @@ export class AppManager {
 
 				const { route } = currentRoutes[targetID]
 
-				const prom = fetch(route || '', {
-					headers: {
+			const prom = fetch(route || '', {
+				method: 'POST',
+				headers: {
 						'X-Requested-With': 'PHPSPA_REQUEST',
 						Authorization: `Bearer ${utf8ToBase64(statePayload)}`
 					},
@@ -461,10 +484,10 @@ export class AppManager {
 					let responseData
 
 					// --- Parse response as JSON if possible ---
-					if (responseText && responseText.trim().startsWith('{')) {
+					if (responseText) {
 						try {
 							responseData = JSON.parse(responseText)
-						} catch (parseError) {
+						} catch {
 							responseData = responseText
 						}
 					} else {
@@ -490,10 +513,8 @@ export class AppManager {
 							let errorData
 
 							try {
-								errorData = fallbackResponse?.trim().startsWith('{')
-									? JSON.parse(fallbackResponse)
-									: fallbackResponse
-							} catch (parseError) {
+								errorData = JSON.parse(fallbackResponse)
+							} catch {
 								errorData = fallbackResponse
 							}
 
@@ -576,14 +597,10 @@ export class AppManager {
 						let responseData
 
 						// --- Parse response ---
-						if (responseText && responseText.trim().startsWith('{')) {
-							try {
-								responseData = JSON.parse(responseText)
-							} catch (parseError) {
-								responseData = responseText
-							}
-						} else {
-							responseData = responseText || ''
+						try {
+							responseData = JSON.parse(responseText)
+						} catch {
+							responseData = responseText
 						}
 
 						updateComponentContent(responseData)
@@ -607,10 +624,8 @@ export class AppManager {
 						let errorData
 
 						try {
-							errorData = fallbackResponse?.trim().startsWith('{')
-								? JSON.parse(fallbackResponse)
-								: fallbackResponse
-						} catch (parseError) {
+							errorData = JSON.parse(fallbackResponse)
+						} catch {
 							errorData = fallbackResponse
 						}
 
@@ -656,22 +671,29 @@ export class AppManager {
 						'__phpspa_body__'
 
 					// --- Preload stylesheets in the new content ---
-					const { element, ready } = preloadStylesFromContent(
+					const { element, ready, commitStyles } = preloadStylesFromContent(
 						component.content,
 						styleScopeKey
 					)
 
-					ready
-						.then(() => {
+					const applyDOM = () => {
+						try {
 							morphdom(targetElement, element, {
 								childrenOnly: true
 							})
-							resolve(0)
-						})
-						.catch(() => {
+						} catch {
 							targetElement.appendChild(element)
-							resolve(0)
-						})
+						}
+						commitStyles()
+						resolve(0)
+					}
+
+					// --- Only block the swap on stylesheet loading when enabled ---
+					if (RuntimeManager.config.waitForStyles) {
+						ready.then(applyDOM).catch(applyDOM)
+					} else {
+						applyDOM()
+					}
 				})
 
 			const completedDOMUpdate = () => {
@@ -693,17 +715,18 @@ export class AppManager {
 	 * Used for server-side function calls from the client.
 	 *
 	 * @param token - The authentication token for the call
-	 * @param args - Arguments to pass to the server function
+	 * @param args - Arguments to pass to the server function, must be an object, the argument is passed to the php function as a named parameters.
 	 * @returns The decoded response from the server
 	 */
 	public static async __call(
 		token: string,
-		...args: any[]
+		args: Object
 	): Promise<StateValueType> {
-		const callPayload = JSON.stringify({ __call: { token, args } })
+		const callPayload = JSON.stringify({ __call: { token, args: args } })
 
 		try {
 			const response = await fetch(location.pathname, {
+				method: 'POST',
 				headers: {
 					'X-Requested-With': 'PHPSPA_REQUEST',
 					Authorization: `Bearer ${utf8ToBase64(callPayload)}`
@@ -717,17 +740,10 @@ export class AppManager {
 			let responseData
 
 			// --- Parse and decode response ---
-			if (responseText && responseText.trim().startsWith('{')) {
-				try {
-					responseData = JSON.parse(responseText)
-					responseData = responseData?.response
-						? JSON.parse(responseData.response)
-						: responseData
-				} catch (parseError) {
-					responseData = responseText
-				}
-			} else {
-				responseData = responseText || ''
+			try {
+				responseData = JSON.parse(responseText)
+			} catch {
+				responseData = responseText
 			}
 
 			return responseData
@@ -739,14 +755,8 @@ export class AppManager {
 					let errorData
 
 					try {
-						errorData = fallbackResponse?.trim().startsWith('{')
-							? JSON.parse(fallbackResponse)
-							: fallbackResponse
-
-						errorData = errorData?.response
-							? JSON.parse(errorData.response)
-							: errorData
-					} catch (parseError) {
+						errorData = JSON.parse(fallbackResponse)
+					} catch {
 						errorData = fallbackResponse
 					}
 

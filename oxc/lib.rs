@@ -213,14 +213,18 @@ pub extern "C" fn oxc_minify(
 	// Report to stderr what level/scope actually ran. PHP's FFI inherits this
 	// process's stderr, so the line shows up in the PHP error log — the log the
 	// caller asked the Rust side to emit, confirming the level is not stuck.
-	eprintln!(
-		"[phpspa_oxc] minified scope={} level={} (minify={}, comments_stripped={}, mangle={})",
-		if scoped { "scoped" } else { "global" },
-		level_name,
-		strip,
-		strip,
-		mangled,
-	);
+	// Suppressed when the PHP app called disableLogs() with the compression-log
+	// bit, which exports PHPSPA_DISABLE_COMPRESSION_LOG into this process's env.
+	if std::env::var_os("PHPSPA_DISABLE_COMPRESSION_LOG").is_none() {
+		eprintln!(
+			"[phpspa_oxc] minified scope={} level={} (minify={}, comments_stripped={}, mangle={})",
+			if scoped { "scoped" } else { "global" },
+			level_name,
+			strip,
+			strip,
+			mangled,
+		);
+	}
 
 	// 4. Scoped scripts are sealed in an IIFE so their locals never leak into
 	//    the global namespace — the same guarantee esbuild's --format=iife gives.

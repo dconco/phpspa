@@ -152,6 +152,7 @@ nav:
       - Handling CORS: security/cors.md
    - Performance & Assets:
       - HTML Compression: performance/html-compression.md
+      - Worker Mode: performance/worker-mode.md
       - Managing Styles & Scripts: performance/managing-styles-and-scripts.md
       - Assets Caching: performance/assets-caching.md
    - API References:

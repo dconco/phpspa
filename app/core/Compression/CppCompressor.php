@@ -33,7 +33,7 @@ final class CppCompressor implements NativeCompressor
    {
       if (self::$available !== null) return self::$available;
 
-      return self::$available = self::initialize(disableLogs: DISABLE_LIBRARY_LOG);
+      return self::$available = self::initialize(disableLogs: DISABLE_LIBRARY_LOG | DISABLE_PRELOAD_LOG);
    }
 
    public static function getLastError(): ?string
@@ -83,11 +83,15 @@ final class CppCompressor implements NativeCompressor
       return self::$libraryPath;
    }
 
-   private static function initialize(int $disableLogs): bool
+   private static function initialize(int $disableLogs = 0): bool
    {
       if (self::$ffi !== null) {
          return true;
       }
+
+      if (getenv('PHPSPA_DISABLE_PRELOAD_LOG')) $disableLogs |= DISABLE_PRELOAD_LOG;
+      if (getenv('PHPSPA_DISABLE_LIBRARY_LOG')) $disableLogs |= DISABLE_LIBRARY_LOG;
+      if (getenv('PHPSPA_DISABLE_COMPRESSION_LOG')) $disableLogs |= DISABLE_COMPRESSION_LOG;
 
       self::$lastError = null;
 
@@ -96,14 +100,18 @@ final class CppCompressor implements NativeCompressor
          return false;
       }
 
-      // Check if already preloaded into shared OPcache memory
-      try {
-         self::$ffi = \FFI::scope('phpspa_compressor');
-         if (!($disableLogs & DISABLE_LIBRARY_LOG)) error_log('Using preloaded native compressor (FFI scope "phpspa_compressor").');
-         return true;
-      } catch (\FFI\Exception $e) {
-         if (!($disableLogs & DISABLE_PRELOAD_LOG)) error_log("phpspa_compressor isn't preloaded in PHP INI, falling back to loading directly from the shared library.");
-         // Not preloaded; proceed to dynamic loading below
+      // Check if already preloaded into shared OPcache memory, unless the app
+      // opted out of the preload probe via skipPreloadCheck() — then go straight
+      // to the dynamic FFI::cdef load below.
+      if (!self::skipPreloadCheck()) {
+         try {
+            self::$ffi = \FFI::scope('phpspa_compressor');
+            if (!($disableLogs & DISABLE_LIBRARY_LOG)) error_log('Using preloaded native compressor (FFI scope "phpspa_compressor").');
+            return true;
+         } catch (\FFI\Exception $e) {
+            if (!($disableLogs & DISABLE_PRELOAD_LOG)) error_log("phpspa_compressor isn't preloaded in PHP INI, falling back to loading directly from the shared library.");
+            // Not preloaded; proceed to dynamic loading below
+         }
       }
 
       $libraryPath = self::resolveLibraryPath($disableLogs);
@@ -122,6 +130,16 @@ final class CppCompressor implements NativeCompressor
          self::$lastError = 'FFI failed to load ' . $libraryPath . ': ' . $e->getMessage();
          return false;
       }
+   }
+
+   /**
+    * Whether the app opted out of the `FFI::scope()` preload probe via
+    * `App()->skipPreloadCheck()`. When true, initialize() skips straight to the
+    * dynamic `FFI::cdef` load.
+    */
+   private static function skipPreloadCheck(): bool
+   {
+      return (\getenv('PHPSPA_SKIP_PRELOAD_CHECK') ?: ($_ENV['PHPSPA_SKIP_PRELOAD_CHECK'] ?? '')) !== '';
    }
 
    private static function resolveLibraryPath(int $disableLogs): ?string

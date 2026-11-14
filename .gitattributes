@@ -32,6 +32,7 @@ CMakeLists.txt export-ignore
 src/bin/ -export-ignore
 src/bin/compressor.* -export-ignore
 src/bin/libcompressor.* -export-ignore
+oxc export-ignore
 
 # Ignore development and environment files
 TODO.md export-ignore
@@ -44,6 +45,10 @@ badge/ export-ignore
 .npmignore export-ignore
 tsconfig.json export-ignore
 rollup.config.js export-ignore
+Cargo.toml export-ignore
+md5_speed_test.php export-ignore
+OXC_SETUP.md export-ignore
+regex_speed_test.php export-ignore
 
 # Ignore test directories
 tests/ export-ignore

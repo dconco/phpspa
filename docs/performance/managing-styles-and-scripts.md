@@ -175,6 +175,47 @@ Assets are combined **by type**, so they can be merged into a single tag safely:
 - Stylesheets are grouped by their `rel`. Standard `rel="stylesheet"` links combine together.
 - **External links** (a `script()`/`link()` given a URL string instead of a callable) are **never combined** — they stay as individual tags pointing at their original source.
 
+### Which attributes the combined tag uses
+
+A combined bundle produces **one** tag, but a tag can only carry **one** set of attributes. So within each group, PhpSPA keeps the attributes of the **first** asset registered for that `type` (scripts) / `rel` (stylesheets) value, and **discards** the attributes of every later asset in the same group. Only the first asset's attributes — *all* of them — survive onto the combined tag.
+
+This only affects assets that land in the **same** group. Assets with a different `type`/`rel` go into their own group and keep their own first-asset attributes.
+
+**Example — same type, so same group (later attributes dropped):**
+
+```php
+$dashboard
+   ->script(require 'scripts/charts.php',   attributes: ['defer' => true, 'data-chart' => 'main'])
+   ->script(require 'scripts/realtime.php', attributes: ['async' => true, 'data-live' => 'ws']);
+```
+
+Both scripts use the default `type` (`text/javascript`), so they're **one group**. The combined tag carries only the **first** script's attributes:
+
+```html
+<!-- charts.php was registered first, so its attributes win -->
+<script defer data-chart="main" src="/…combined.js"></script>
+<!-- realtime.php's async + data-live are DISCARDED -->
+```
+
+**Example — different types, so different groups (each keeps its own):**
+
+```php
+$dashboard
+   ->script(require 'scripts/app.php',    type: 'module', attributes: ['data-app' => '1'])
+   ->script(require 'scripts/legacy.php',                  attributes: ['defer' => true]);
+```
+
+`module` and `text/javascript` are **two groups** → two tags, each with its own first-asset attributes:
+
+```html
+<script type="module" data-app="1" src="/…module.js"></script>
+<script defer src="/…combined.js"></script>
+```
+
+!!! warning "Put shared attributes on the first asset of each type"
+    Because later assets in a group lose their attributes, set any attribute the whole bundle needs (`defer`, `async`, `crossorigin`, `integrity`, `data-*`) on the **first** `->script()`/`->styleSheet()` call of that `type`/`rel`. Attributes on the 2nd, 3rd … asset in the same group are silently ignored.
+
+
 !!! tip "Use default types for maximum combining"
     If all your `->script(fn() => ...)` calls omit the `type` argument and all your `->link(fn() => ...)` calls omit `rel`, every callable asset in a component falls into one group — giving you exactly **one CSS link and one JS link per component**.
 

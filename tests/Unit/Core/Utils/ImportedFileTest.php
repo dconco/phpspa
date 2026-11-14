@@ -36,4 +36,17 @@ final class ImportedFileTest extends TestCase
          @unlink($tempPath);
       }
    }
+
+   public function testGetRawContentRejectsCallbackInvocation(): void
+   {
+      $file = new ImportedFile(
+         'data:text/plain;base64,' . base64_encode('secret'),
+         '/tmp/example.txt'
+      );
+
+      // cURL invokes read callbacks with arguments; this method must refuse so
+      // it cannot be repurposed as a file-read gadget.
+      $this->expectException(BadMethodCallException::class);
+      $file->getRawContent(STDIN, STDIN);
+   }
 }

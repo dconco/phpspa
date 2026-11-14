@@ -1,7 +1,12 @@
 <?php
 
 namespace PhpSPA\Core\Helper;
+
 use ReflectionFunction;
+use ReflectionIntersectionType;
+use ReflectionNamedType;
+use ReflectionParameter;
+use ReflectionUnionType;
 
 /**
  * Class CallableInspector
@@ -39,7 +44,7 @@ class CallableInspector
    /**
     * Retrieves the value of a specified property from a given class or object.
     *
-    * @param object|string $class    The object instance or class name from which to retrieve the property.
+    * @param object|string $classOrObject    The object instance or class name from which to retrieve the property.
     * @param string        $property The name of the property to retrieve.
     * @return mixed                  The value of the specified property, or null if not found.
     */
@@ -73,5 +78,25 @@ class CallableInspector
       {
          throw new \LogicException("Cannot access non-static property '$property' without an object instance");
       }
+   }
+
+   public static function getParamTypes(ReflectionParameter $param): array {
+      $type = $param->getType();
+
+      if ($type === null) {
+         return ['mixed']; // No type declared, accepts anything
+      }
+
+      // Handles standard single types (int, string, User, etc.)
+      if ($type instanceof ReflectionNamedType) {
+         return [$type->getName()];
+      }
+
+      // Handles union types (int|string) and intersection types
+      if ($type instanceof ReflectionUnionType || $type instanceof ReflectionIntersectionType) {
+         return array_map(fn($t) => $t->getName(), $type->getTypes());
+      }
+
+      return [];
    }
 }

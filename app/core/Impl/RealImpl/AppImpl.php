@@ -14,6 +14,7 @@ use PhpSPA\Compression\Compressor;
 use PhpSPA\Core\Compression\OxcCompressor;
 use PhpSPA\Core\Config\CompressionConfig;
 use PhpSPA\Core\Helper\CsrfManager;
+use PhpSPA\Core\Helper\FunctionCallToken;
 use PhpSPA\Core\Helper\SessionHandler;
 use PhpSPA\Core\Helper\CallableInspector;
 use PhpSPA\Core\Helper\ComponentScope;
@@ -23,8 +24,10 @@ use PhpSPA\Core\Utils\FileFunction;
 use PhpSPA\Core\Utils\Formatter\ComponentTagFormatter;
 use PhpSPA\Core\Utils\Validate;
 use PhpSPA\Core\Utils\Timer;
+use PhpSPA\Http\Response;
 use PhpSPA\Interfaces\ApplicationContract;
 use PhpSPA\Interfaces\IComponent;
+use ReflectionFunction;
 
 use function Component\HTMLAttrInArrayToString;
 
@@ -169,6 +172,11 @@ abstract class AppImpl implements ApplicationContract {
 
    private bool $useOxc = false;
 
+   /**
+    * @var array<string,string>
+    */
+   private static array $staticFilesCache = [];
+
    public function defaultTargetID (string $targetID): ApplicationContract
    {
       $this->defaultTargetID = $targetID;
@@ -267,6 +275,17 @@ abstract class AppImpl implements ApplicationContract {
       // engine fails/unavailable, throw instead of silently degrading to PHP.
       // It does NOT change which JS engine is selected; Oxc/esbuild opt-ins stay.
       putenv("PHPSPA_COMPRESSION_STRATEGY=native");
+      return $this;
+   }
+
+   public function skipPreloadCheck(): ApplicationContract
+   {
+      // Skip the `FFI::scope()` preload probe in both native compressors and go
+      // straight to the dynamic `FFI::cdef` load. The resolved handle is cached
+      // in a static property, so under a persistent runtime (FrankenPHP) only the
+      // first request per worker pays the cdef cost; later concurrent calls reuse
+      // the already-loaded FFI instance without re-running cdef.
+      putenv('PHPSPA_SKIP_PRELOAD_CHECK=1');
       return $this;
    }
 
@@ -395,7 +414,14 @@ abstract class AppImpl implements ApplicationContract {
    }
 
    public function disableLogs(int $flags = DISABLE_COMPRESSION_LOG | DISABLE_LIBRARY_LOG | DISABLE_PRELOAD_LOG): ApplicationContract {
-      $this->disableLogs |= $flags; return $this;
+      $this->disableLogs |= $flags;
+      // The native Oxc engine writes its per-compress line straight to stderr
+      // (inherited by the PHP error log), so a PHP-side flag cannot reach it.
+      // Export the compression-log bit to the env the Rust side reads at runtime.
+      if ($this->disableLogs & DISABLE_COMPRESSION_LOG) putenv('PHPSPA_DISABLE_COMPRESSION_LOG=1');
+      if ($this->disableLogs & DISABLE_PRELOAD_LOG) putenv('PHPSPA_DISABLE_PRELOAD_LOG=1');
+      if ($this->disableLogs & DISABLE_LIBRARY_LOG) putenv('PHPSPA_DISABLE_LIBRARY_LOG=1');
+      return $this;
    }
 
    public function randomizeAssetName(): ApplicationContract {
@@ -414,10 +440,8 @@ abstract class AppImpl implements ApplicationContract {
 
    public function run (bool $return = false)
    {
-      // --- Reset DOM/Nonce/Reset HttpRequest static state for worker mode compatibility ---
-      DOM::reset();
-      Nonce::reset();
       HttpRequest::$cachedRawPostData = null;
+      HttpRequest::$cachedPostData = null;
 
       $request = new HttpRequest();
       static::$request_uri = $request->path();
@@ -426,8 +450,12 @@ abstract class AppImpl implements ApplicationContract {
       $staticFileOutput = $this->resolveStaticPath($return);
       if (!empty($staticFileOutput)) return $staticFileOutput;
 
-      $this->resolveCors($request);
-      $this->handlePhpSPARequest($request);
+      $corsResponse = $this->resolveCors($request, $return);
+      if ($corsResponse !== null) return $corsResponse;
+
+      $assetResponse = $this->handlePhpSPARequest($request, $return);
+
+      if (isset($assetResponse)) return $assetResponse;
 
       /**
        * Handle asset requests (CSS/JS files from session-based links)
@@ -440,6 +468,15 @@ abstract class AppImpl implements ApplicationContract {
       $assetInfo = self::resolveAssetRequestMemoized(static::$request_uri);
 
       if ($assetInfo !== null) {
+         // Handle expired assets
+         if (!empty($assetInfo['expired'])) {
+            http_response_code(Response::StatusGone);
+            header('Content-Type: text/plain');
+            if ($return) return "Asset has expired";
+            echo "Asset has expired";
+            return;
+         }
+
          // #3 -- Fast skip: an instance-scoped global asset (`__global__:<id>`)
          // owned by a DIFFERENT App is not ours; do nothing and let the owning
          // App's run() handle it, without entering serveAsset at all.
@@ -453,10 +490,20 @@ abstract class AppImpl implements ApplicationContract {
          return;
       }
 
+      // --- Reset DOM/Nonce/Reset HttpRequest static state for worker mode compatibility ---
+      DOM::reset();
+      Nonce::reset();
+      Nonce::sendHeader();
       $success = false;
 
       foreach ($this->prefix as $prefix) {
          $output = $this->handlePrefix($prefix, [], $return);
+
+         if ($output instanceof \PhpSPA\Http\RedirectException) {
+            // Redirect was triggered - headers already sent
+            if ($return) return $output;
+            exit();
+         }
          if (isset($output)) return $output;
       }
 
@@ -466,11 +513,19 @@ abstract class AppImpl implements ApplicationContract {
       }
 
       foreach ($this->components as $component) {
-         $output = $this->runComponent($component, false, $this->renderedData);
+         $output = $this->runComponent($component, false, $this->renderedData, $return);
 
          if ($output === true) {
             $success = true;
             break;
+         } elseif ($output instanceof \PhpSPA\Http\RedirectException) {
+            // Redirect was triggered - headers already sent
+            if ($return) return $output;
+            exit();
+         } elseif (!empty($output)) {
+            if ($return) return $output;
+            print_r($output);
+            exit(0);
          }
       }
 
@@ -484,14 +539,12 @@ abstract class AppImpl implements ApplicationContract {
          }
 
          if ($return) return $compressedOutput;
-
          print_r($compressedOutput);
          exit(0);
       }
-
    }
 
-   private function resolveCors(Request $request) {
+   private function resolveCors(Request $request, bool $return = false): ?string {
       if (!headers_sent()) {
          foreach ($this->cors as $key => $value) {
             $key =
@@ -510,63 +563,153 @@ abstract class AppImpl implements ApplicationContract {
        * Handle preflight requests (OPTIONS method)
        */
       if ($request->isMethod('options')) {
+         http_response_code(204);
+         if ($return) return \PREFLIGHT_HANDLED;
          exit();
       }
+
+      return null;
    }
 
-   private function handlePhpSPARequest(Request $request) {
-      if ($request->requestedWith() === 'PHPSPA_REQUEST' && $request->isSameOrigin()) {
-         $data = json_decode(base64_decode($request->auth()->bearer ?? ''), true);
+   private function handlePhpSPARequest(Request $request, bool $return) {
+      if ($request->requestedWith() !== 'PHPSPA_REQUEST' || !$request->isSameOrigin()) {
+         return null;
+      }
 
-         if (isset($data['state'])) {
-            $state = $data['state'];
+      $encodedPayload = $request->auth()->bearer;
 
-            if (isset($state['key'])) {
-               $sessionData = SessionHandler::get(STATE_HANDLE);
-               $sessionData[$state['key']] = @$state['value'];
-               SessionHandler::set(STATE_HANDLE, $sessionData);
-            }
+      // Normal SPA navigations use the PHPSPA_REQUEST marker without a bearer
+      // payload. Only state updates and server calls enter this control channel.
+      if ($encodedPayload === null || $encodedPayload === '') {
+         return null;
+      }
 
-            return;
+      if (!is_string($encodedPayload) || strlen($encodedPayload) > 1_398_104) {
+         return $this->rejectPhpSPAControlRequest($return);
+      }
 
-         } else if (isset($data['__call'])) {
-            try {
-               /**
-                * @var array{0: string, 1: string, 2: bool} $tokenData
-                */
-               $tokenData = json_decode(base64_decode($data['__call']['token'] ?? ''));
+      $rawPayload = base64_decode($encodedPayload, true);
+      if ($rawPayload === false || strlen($rawPayload) > 1_048_576) {
+         return $this->rejectPhpSPAControlRequest($return);
+      }
 
-               $token = $tokenData[1] ?? null;
-               $functionName = $tokenData[0] ?? null;
-               $use_once = $tokenData[2] ?? false;
-               $csrf = new CsrfManager($functionName, CALL_FUNC_HANDLE);
+      try {
+         $data = json_decode($rawPayload, true, 32, JSON_THROW_ON_ERROR);
+      } catch (\JsonException) {
+         return $this->rejectPhpSPAControlRequest($return);
+      }
 
-               if ($csrf->verifyToken($token, $use_once)) {
-                  $res = \call_user_func_array(
-                     $functionName,
-                     $data['__call']['args'],
-                  );
+      if (!is_array($data) || !$request->isMethod('POST')) {
+         return $this->rejectPhpSPAControlRequest($return);
+      }
 
-                  print_r(
-                     json_encode([
-                        'response' => json_encode($res),
-                     ]),
-                  );
-               }
-               else {
-                  throw new \Exception('Invalid or Expired Token');
-               }
-            }
-            catch ( \Exception $e ) {
-               print_r($e->getMessage());
-            }
-            exit();
+      if (array_key_exists('state', $data)) {
+         $state = $data['state'];
+         $key = is_array($state) ? ($state['key'] ?? null) : null;
+
+         if (!is_string($key) || $key === '' || strlen($key) > 256 || !array_key_exists('value', $state)) {
+            return $this->rejectPhpSPAControlRequest($return);
          }
+
+         $sessionData = SessionHandler::get(STATE_HANDLE);
+         if (!array_key_exists($key, $sessionData)) {
+            return $this->rejectPhpSPAControlRequest($return);
+         }
+
+         $sessionData[$key] = Validate::validate($state['value']);
+         SessionHandler::set(STATE_HANDLE, $sessionData);
+         return null;
+      }
+
+      if (!array_key_exists('__call', $data) || !is_array($data['__call'])) {
+         return $this->rejectPhpSPAControlRequest($return);
+      }
+
+      try {
+         $payload = FunctionCallToken::decode($data['__call']['token'] ?? null);
+         $args = $data['__call']['args'] ?? [];
+
+         if ($payload === null || !is_array($args)) {
+            throw new \InvalidArgumentException('Invalid call payload');
+         }
+
+         [$publicName, $token, $useOnce] = $payload;
+         $csrf = new CsrfManager($publicName, null, CALL_FUNC_HANDLE);
+         $functionName = $csrf->verifyToken($token, $useOnce);
+
+         if (!$functionName || !is_callable($functionName)) {
+            throw new \InvalidArgumentException('Invalid call token');
+         }
+
+         // Convert any verified callable into a single Closure object.
+         $closure = ($functionName instanceof \Closure) ? $functionName : \Closure::fromCallable($functionName);
+         $func = new ReflectionFunction($closure);
+         $totalRequiredParams = $func->getNumberOfRequiredParameters();
+         $totalParams = $func->getNumberOfParameters();
+         $totalReceivedArgs = \count($args);
+         $validatedParams = [];
+
+         if ($totalReceivedArgs < $totalRequiredParams) throw new \InvalidArgumentException('Missing required arguments');
+         if (!$func->isVariadic() && $totalReceivedArgs > $totalParams) throw new \InvalidArgumentException('Too many arguments');
+
+         foreach ($func->getParameters() as $param) {
+            $paramName = $param->getName();
+            $paramTypes = CallableInspector::getParamTypes($param);
+
+            if (!array_key_exists($paramName, $args)) {
+               if ($param->isDefaultValueAvailable()) {
+                  $validatedParams[$paramName] = $param->getDefaultValue();
+                  continue;
+               }
+               if ($param->isVariadic()) continue;
+               throw new \InvalidArgumentException("Missing required parameter: {$paramName}");
+            }
+
+            $argsValue = Validate::validate($args[$paramName] ?? null);
+            if (!Validate::matchesType($argsValue, $paramTypes)) {
+               throw new \InvalidArgumentException("Invalid type for parameter: {$paramName}");
+            }
+
+            $validatedParams[$paramName] = $argsValue;
+         }
+
+         $extraKeys = \array_diff_key($args, $validatedParams);
+         if (!empty($extraKeys) && !$func->isVariadic()) {
+            throw new \InvalidArgumentException('Received unexpected arguments');
+         }
+
+         $response = \call_user_func($closure, ...$validatedParams);
+
+         if ($response instanceof Response) {
+            $response = $response->__toString();
+         } elseif ($response instanceof \PhpSPA\Http\RedirectException) {
+         } elseif (\is_array($response) || \is_object($response)) {
+            if (!\headers_sent()) header('Content-Type: application/json');
+            $response = json_encode($response);
+         }
+
+         if ($return) return $response;
+         echo $response;
+         exit(0);
+      } catch (\Throwable) {
+         return $this->rejectPhpSPAControlRequest($return);
       }
    }
 
+   private function rejectPhpSPAControlRequest(bool $return): ?string
+   {
+      http_response_code(Response::StatusBadRequest);
+      if (!headers_sent()) header('Content-Type: text/plain; charset=utf-8');
 
-   private function runComponent(Component|Icomponent $component, bool $isPreloadingComponent = false, ?string &$layoutOutput = null) {
+      $message = 'Invalid request';
+      if ($return) return $message;
+
+      echo $message;
+      exit(0);
+   }
+
+
+   private function runComponent(Component|Icomponent $component, bool $isPreloadingComponent = false, ?string &$layoutOutput = null, bool $return = false) {
       static $request = new HttpRequest();
       static $router = null;
 
@@ -656,10 +799,19 @@ abstract class AppImpl implements ApplicationContract {
       );
 
       // --- Execute the pipeline ---
-      $componentOutput = $pipeline($request);
+      try {
+         $componentOutput = $pipeline($request);
+      } catch (\PhpSPA\Http\RedirectException $e) {
+         // Redirect() was called - headers already sent
+         return $e;
+      }
 
       if ($layoutOutput === null) {
-         $layoutOutput = is_callable($this->layout) ? (string) \call_user_func($this->layout, $request) : (string) $this->layout;
+         try {
+            $layoutOutput = is_callable($this->layout) ? (string) \call_user_func($this->layout, $request) : (string) $this->layout;
+         } catch (\PhpSPA\Http\RedirectException $e) {
+            return $e;
+         }
          $layoutOutput = $this->ensureHeadTag($layoutOutput);
       }
 
@@ -760,6 +912,12 @@ abstract class AppImpl implements ApplicationContract {
       $assetLinks = $this->generateAssetLinks($route, $scripts, $stylesheets, $this->scripts, $this->stylesheets);
 
       if ($request->requestedWith() === 'PHPSPA_REQUEST') {
+         // --- Send Link header preload hints for stylesheets (browser fetches at high priority)
+         $preloadHrefs = $assetLinks['component']['preloadHrefs'] ?? [];
+         foreach ($preloadHrefs as $href) {
+            header("Link: <{$href}>; rel=preload; as=style", false);
+         }
+
          // --- For PHPSPA requests (component updates), include component scripts with the component ---
          $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput . $assetLinks['global']['scripts'] . $assetLinks['component']['scripts'];
 
@@ -785,7 +943,9 @@ abstract class AppImpl implements ApplicationContract {
             $info['reloadTime'] = $reloadTime;
 
          // Use compressed JSON output
-         print_r(Compressor::compressJson($info));
+         $jsonOutput = Compressor::compressJson($info);
+         if ($return) return $jsonOutput;
+         print_r($jsonOutput);
          exit(0);
       }
       else {
@@ -807,7 +967,6 @@ abstract class AppImpl implements ApplicationContract {
       // --- For regular HTML requests, only include component stylesheets with the component content ---
       // --- Component scripts will be injected later to ensure proper execution order ---
       $componentOutput = $assetLinks['component']['stylesheets'] . $componentOutput;
-      $nonce = Nonce::nonce();
 
       // --- Initialize static variable once ---
       /**
@@ -870,15 +1029,6 @@ abstract class AppImpl implements ApplicationContract {
                   1,
                );
             }
-         }
-
-         if ($nonce) {
-            $layoutOutput = preg_replace(
-               '/<head\b([^>]*)>/i',
-               "<head$1 x-phpspa=\"$nonce\">",
-               $layoutOutput,
-               1,
-            );
          }
 
          $tt = ' data-phpspa-target';
@@ -1190,8 +1340,8 @@ abstract class AppImpl implements ApplicationContract {
    private function generateCombinedAssetLinks (?string $primaryRoute, string $globalRoute, array $scripts, array $stylesheets, array $globalScripts, array $globalStylesheets, bool $isPhpSpaRequest): array
    {
       $result = [
-         'component' => [ 'scripts' => '', 'stylesheets' => '' ],
-         'global' => [ 'scripts' => '', 'stylesheets' => '' ]
+         'component' => [ 'scripts' => '', 'stylesheets' => '', 'preloadHrefs' => [] ],
+         'global' => [ 'scripts' => '', 'stylesheets' => '', 'preloadHrefs' => [] ]
       ];
 
       // --- Helper to group callables by type and collect external links ---
@@ -1231,15 +1381,13 @@ abstract class AppImpl implements ApplicationContract {
             $attrs['href'] = $href;
             unset($attrs['name'], $attrs['content']);
 
-            // --- Preload hint disabled: styles already sit at the top of <head>,
-            // --- so the browser discovers them nearly as early without the extra tag.
-            // --- Revisit with HTTP `Link:` / 103 Early Hints in a future release.
-            // if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet') {
-            //    $preload = $attrs;
-            //    $preload['rel'] = 'preload';
-            //    $preload['as'] = 'style';
-            //    $result['global']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($preload) . " />";
-            // }
+            // --- Preload hint: tell browser to fetch stylesheet at highest priority
+            if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet') {
+               $preload = $attrs;
+               $preload['rel'] = 'preload';
+               $preload['as'] = 'style';
+               $result['global']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($preload) . " />";
+            }
             $result['global']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($attrs) . " />";
          }
 
@@ -1263,15 +1411,17 @@ abstract class AppImpl implements ApplicationContract {
             $attrs['href'] = $href;
             unset($attrs['name'], $attrs['content']);
 
-            // --- Preload hint disabled: styles already sit at the top of <head>,
-            // --- so the browser discovers them nearly as early without the extra tag.
-            // --- Revisit with HTTP `Link:` / 103 Early Hints in a future release.
-            // if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet' && !$isPhpSpaRequest) {
-            //    $preload = $attrs;
-            //    $preload['rel'] = 'preload';
-            //    $preload['as'] = 'style';
-            //    $result['component']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($preload) . " />";
-            // }
+            // --- Preload hint: tell browser to fetch stylesheet at highest priority (skip for SPA requests)
+            if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet' && !$isPhpSpaRequest) {
+               $preload = $attrs;
+               $preload['rel'] = 'preload';
+               $preload['as'] = 'style';
+               $result['component']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($preload) . " />";
+            }
+            // --- Collect href for Link header preload on SPA requests
+            if (($attrs['rel'] ?? 'stylesheet') === 'stylesheet') {
+               $result['component']['preloadHrefs'][] = $href;
+            }
             $result['component']['stylesheets'] .= "\n      <link " . HTMLAttrInArrayToString($attrs) . " />";
          }
 
@@ -1293,6 +1443,15 @@ abstract class AppImpl implements ApplicationContract {
       if (!empty($globalScripts) && !$isPhpSpaRequest) {
          $grouped = $groupAssets($globalScripts, 'type');
 
+         // External scripts (e.g. CDN links) MUST always come first, before the
+         // combined local bundle, so dependencies like jQuery load before the
+         // callable scripts that rely on them.
+         foreach ($grouped['external'] as $ext) {
+            $ext['src'] = $ext['content'];
+            unset($ext['name'], $ext['content']);
+            $result['global']['scripts'] .= "\n      <script " . HTMLAttrInArrayToString($ext) . "></script>";
+         }
+
          foreach ($grouped['groups'] as $type => $group) {
             $maxMtime = \max($group['mtimes']);
             $src = AssetLinkManager::generateCombinedJsLink($globalRoute, $group['indexes'], $maxMtime, $type);
@@ -1302,17 +1461,20 @@ abstract class AppImpl implements ApplicationContract {
             unset($attrs['name'], $attrs['content']);
             $result['global']['scripts'] .= "\n      <script " . HTMLAttrInArrayToString($attrs) . "></script>";
          }
-
-         foreach ($grouped['external'] as $ext) {
-            $ext['src'] = $ext['content'];
-            unset($ext['name'], $ext['content']);
-            $result['global']['scripts'] .= "\n      <script " . HTMLAttrInArrayToString($ext) . "></script>";
-         }
       }
 
       // --- Generate component script links (combined) ---
       if (!empty($scripts)) {
          $grouped = $groupAssets($scripts, 'type');
+
+         // External scripts (e.g. CDN links) MUST always come first, before the
+         // combined local bundle, so dependencies load before the callable
+         // scripts that rely on them.
+         foreach ($grouped['external'] as $ext) {
+            $ext['src'] = $ext['content'];
+            unset($ext['name'], $ext['content']);
+            $result['component']['scripts'] .= "\n      <script " . HTMLAttrInArrayToString($ext) . "></script>";
+         }
 
          foreach ($grouped['groups'] as $type => $group) {
             $maxMtime = \max($group['mtimes']);
@@ -1326,12 +1488,6 @@ abstract class AppImpl implements ApplicationContract {
                ? "\n      <script data-type=\"phpspa/script\" " . HTMLAttrInArrayToString($attrs) . "></script>"
                : "\n      <script " . HTMLAttrInArrayToString($attrs) . "></script>";
             $result['component']['scripts'] .= $tag;
-         }
-
-         foreach ($grouped['external'] as $ext) {
-            $ext['src'] = $ext['content'];
-            unset($ext['name'], $ext['content']);
-            $result['component']['scripts'] .= "\n      <script " . HTMLAttrInArrayToString($ext) . "></script>";
          }
       }
 
@@ -1416,6 +1572,12 @@ abstract class AppImpl implements ApplicationContract {
 
          if ($fileName) {
             $hashed = md5($assetInfo['componentRoute'] . $assetInfo['assetIndex'] . $fileModifyTime . $assetInfo['assetType']);
+
+            if (isset(static::$staticFilesCache[$hashed])) {
+               $content = static::$staticFilesCache[$hashed];
+               goto FINALIZE;
+            }
+
             $fileDir = $this->generatedCacheDirectory ?? (pathinfo($fileName, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 'generated');
             $newName = $fileDir . DIRECTORY_SEPARATOR . $hashed . ".generated.php";
 
@@ -1425,12 +1587,10 @@ abstract class AppImpl implements ApplicationContract {
                }
                else {
                   $content = require $newName;
-
                   $content = Compressor::applyBinaryCompression($content);
-                  $this->setAssetHeaders($assetInfo['type']);
-                  if ($return) return $content;
-                  echo $content;
-                  exit(0);
+                  // --- Save to cache ---
+                  static::$staticFilesCache[$hashed] = $content;
+                  goto FINALIZE;
                }
             }
          }
@@ -1465,7 +1625,7 @@ abstract class AppImpl implements ApplicationContract {
             $content = $this->compressAssetContent($content, $compressionLevel, $assetInfo['type'], $isGlobalAsset ? 'global' : 'scoped');
             if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) error_log("Compressed $assetType asset output within {$timer->getFormattedElapsedTime()} | From {$assetInfo['name']}");
 
-            if (!$isPhpSpaRequest) {
+            if (!$isPhpSpaRequest && $fileName) {
                // Race-safe + recursive (parent 'generated' dir may not exist).
                if (!is_dir($fileDir) && !@mkdir($fileDir, 0755, true) && !is_dir($fileDir)) {
                   if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
@@ -1473,20 +1633,30 @@ abstract class AppImpl implements ApplicationContract {
                   }
                }
 
-               if ($fileName && is_dir($fileDir)) {
-                  if (OxcCompressor::isErrorOutput($content) && !($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
-                     error_log("phpspa: caching Oxc parse-error output for $assetType asset (will regenerate when the source changes): {$assetInfo['name']}");
-                  }
-                  @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
+               if (OxcCompressor::isErrorOutput($content) && !($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+                  error_log("phpspa: caching Oxc parse-error output for $assetType asset (will regenerate when the source changes): {$assetInfo['name']}");
                }
+               if (!@file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;")) {
+                  if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+                     error_log("phpspa: failed to cache asset: $newName");
+                  }
+               }
+
+               // --- Set compression ---
+               $content = Compressor::applyBinaryCompression($content);
+               // --- Cache the content ---
+               static::$staticFilesCache[$hashed] = $content;
             }
          } else {
             // --- Wrap component in IIFE ---
             if (!$isGlobalAsset && $isJS) {
-               $content = "(()=>{{$content}})()";
+               // --- Set compression ---
+               $content = Compressor::applyBinaryCompression("(()=>{{$content}})()");
             }
          }
       }
+
+      FINALIZE:
 
       // --- Set appropriate headers ---
       $this->setAssetHeaders($assetInfo['type']);
@@ -1567,6 +1737,12 @@ abstract class AppImpl implements ApplicationContract {
       // --- Check generated cache ---
       $indexesKey = \implode(',', $indexes);
       $hashed = md5($assetInfo['componentRoute'] . $indexesKey . $maxMtime . $assetInfo['assetType']);
+
+      if (isset(static::$staticFilesCache[$hashed])) {
+         $content = static::$staticFilesCache[$hashed];
+         goto FINALIZE_COMBINED;
+      }
+
       $fileDir = $this->generatedCacheDirectory ?? ($firstFileName ? (pathinfo($firstFileName, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . 'generated') : null);
       $newName = $fileDir ? ($fileDir . DIRECTORY_SEPARATOR . $hashed . ".generated.php") : null;
 
@@ -1576,10 +1752,9 @@ abstract class AppImpl implements ApplicationContract {
          } else {
             $content = require $newName;
             $content = Compressor::applyBinaryCompression($content);
-            $this->setAssetHeaders($assetInfo['type']);
-            if ($return) return $content;
-            echo $content;
-            exit(0);
+            // --- Save to cache ---
+            static::$staticFilesCache[$hashed] = $content;
+            goto FINALIZE_COMBINED;
          }
       }
 
@@ -1597,10 +1772,13 @@ abstract class AppImpl implements ApplicationContract {
          if (\is_array($part)) $part = $part[0] ?? '';
 
          $label = $names[$idx] ?? "#$idx";
-         $banner = "\n/* ====================== {$label} ====================== */\n";
+         // JS banner kept for debugging; CSS banner omitted to prevent minifier
+         // from treating cross-file selectors as mergeable (the minifier sees one
+         // big stylesheet and may reorder/dedupe selectors across file boundaries).
+         $jsBanner = "\n/* ====================== {$label} ====================== */\n";
 
          if ($isCss) {
-            $buffer .= $banner . $part . "\n";
+            $buffer .= $part . "\n";
          } else {
             // Trim trailing whitespace + semicolons, then terminate on its own
             // line so a trailing line-comment can't eat the semicolon.
@@ -1608,7 +1786,7 @@ abstract class AppImpl implements ApplicationContract {
             $part = \rtrim($part, ';');
             $part = \rtrim($part);
             if ($part === '') continue;
-            $buffer .= $banner . $part . "\n;\n";
+            $buffer .= $jsBanner . $part . "\n;\n";
          }
       }
 
@@ -1625,7 +1803,7 @@ abstract class AppImpl implements ApplicationContract {
          if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) error_log("Compressed combined $assetType asset ({$count} files) within {$timer->getFormattedElapsedTime()}");
 
          // --- Cache the result ---
-         if (!$isPhpSpaRequest && $fileDir) {
+         if (!$isPhpSpaRequest && $newName) {
             // Race-safe: concurrent combined-asset requests can all pass the
             // is_dir() check and then race into mkdir(), so the losers would
             // throw "File exists". Suppress and re-verify instead — a dir that
@@ -1635,11 +1813,13 @@ abstract class AppImpl implements ApplicationContract {
                   error_log("phpspa: failed to create generated cache directory: $fileDir");
                }
             }
-            if ($newName && is_dir($fileDir)) {
-               if (OxcCompressor::isErrorOutput($content) && !($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
-                  error_log("phpspa: caching Oxc parse-error output for combined $assetType asset (will regenerate when a source changes)");
+            if (OxcCompressor::isErrorOutput($content) && !($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+               error_log("phpspa: caching Oxc parse-error output for combined $assetType asset (will regenerate when a source changes)");
+            }
+            if (!@file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;")) {
+               if (!($this->disableLogs & DISABLE_COMPRESSION_LOG)) {
+                  error_log("phpspa: failed to cache combined asset: $newName");
                }
-               @file_put_contents($newName, "<?php\nreturn <<<'$assetType'\n$content\n$assetType;");
             }
          }
       } else {
@@ -1649,6 +1829,12 @@ abstract class AppImpl implements ApplicationContract {
             $content = "(()=>{{$content}})()";
          }
       }
+
+      // --- Apply binary compression (gzip/deflate) if requested ---
+      $content = Compressor::applyBinaryCompression($content);
+      static::$staticFilesCache[$hashed] = $content;
+
+      FINALIZE_COMBINED:
 
       $this->setAssetHeaders($assetInfo['type']);
       if ($return) return $content;

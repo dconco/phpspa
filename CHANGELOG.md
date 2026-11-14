@@ -1,13 +1,58 @@
 # CHANGELOG
 
-## dev-support/php-8.4 (PHP 8.4) (v2.1.0)
+## v2.1.6 (Stable) (Latest) (PHP 8.4) — Critical Security Hardening & Deserialization Defusal
+
+> [!CAUTION]
+> **Urgent Security Release.** This release patches multiple critical Remote Code Execution (RCE), PHP Object Injection, and Server-Side Request Forgery (SSRF) vulnerabilities across the client runtime and core server handlers. All deployments should upgrade immediately.
 
 **Installation:**
 ```bash
-composer require dconco/phpspa:dev-support/php-8.4
+composer require dconco/phpspa:v2.1.6
 ```
 
+### 🛡️ Security Fixes
+
+- **Arbitrary PHP Execution in `Response::sendFile()`**: Refused execution of `.php` files inside `Response::sendFile()`. Previously, `sendFile()` executed `.php` files via `require`, which allowed arbitrary code execution (RCE) if user-influenced paths were served. It now throws `\InvalidArgumentException`.
+- **Eliminated Deserialization in `phpspa.__call`**: Replaced untrusted serialized PHP tokens in client-server RPC function calls with strict, versioned JSON tokens (`FunctionCallToken`). Legacy serialized tokens are permanently rejected.
+- **Defused SSRF POP Gadget in `PendingRequest`**: Removed network I/O (`fetchDataIfNeeded()`) from `PendingRequest::__toString()`. String coercion of pending requests will never trigger network requests, preventing weaponization in deserialization gadget chains.
+- **Session Object Injection Mitigation**: Configured `SessionHandler::get()` with `unserialize($sessionData, ['allowed_classes' => false])` to prevent untrusted or tampered session stores from instantiating arbitrary PHP objects.
+- **POP Callback Gadget Neutralization in `ImportedFile`**: Hardened `ImportedFile::getRawContent()` to reject any argument-based calls, preventing its abuse as a `CURLOPT_READFUNCTION` file-read gadget.
+- **HMAC Authentication for Component Values**: Component attribute values requiring PHP object preservation are now authenticated with a per-session HMAC before deserialization via `ComponentValueCodec`. Unsigned or untrusted values are treated strictly as plain text.
+- **Strict Endpoint Hardening**: State updates and server-function calls now strictly enforce HTTP `POST`, rigorous Base64/JSON decoding, bounded payload sizes, and generic HTTP 400 error responses without leaking internal stack traces.
+- **Component Tag Callable Restrictions**: Component tags can no longer execute internal PHP functions or internal class methods, and callables declared to return non-renderable objects are rejected before invocation.
+
+### ⚡ Performance & HTML Compression
+
+- **Meta Tag Attribute Quote Preservation for Social Crawlers**: The C++ HTML compressor and PHP fallback compressor now preserve attribute quotes on all `<meta>` tags across all compression levels (including `EXTREME`). Social scrapers (such as WhatsApp, Facebook, and iMessage link preview parsers) fail to extract titles, descriptions, and images when quotes are dropped (e.g. `<meta property=og:image>`). Attributes on `<meta>` tags now retain their quotes, and unquoted attributes on `<meta>` tags are automatically quoted, while all other HTML tags (`div`, `span`, `p`, etc.) continue to have safe quotes removed as normal for maximum compression.
+
+### ⚠️ Breaking Changes
+
+- **Explicit HTTP Requests Required for `useFetch`**: String casting a `PendingRequest` (e.g. `echo useFetch(...)`) no longer auto-triggers an HTTP GET request. Requests must be executed explicitly with `->get()` (e.g. `echo useFetch(...)->get()`).
+- **`Response::sendFile()` Refuses PHP Scripts**: Passing a path to a `.php` file into `sendFile()` now throws `\InvalidArgumentException`. Use standard routing and view rendering to evaluate PHP templates.
+- **Legacy Function Call Tokens Incompatible**: Client bundles and backend runtime must be updated together. Existing open pages must be refreshed as legacy serialized RPC tokens are rejected.
+- **HTTP POST Required for State & RPC**: Any custom scripts interacting with `phpspa` state updates or `__call` endpoints using `GET` must be transitioned to `POST`.
+
 ### ✨ New Features
+
+#### **FrankenPHP / Worker Mode Compatibility**
+
+- Eliminated `exit()` calls from the request lifecycle when using `App->run(true)`, enabling persistent worker mode (FrankenPHP, RoadRunner, etc.) where the script must return output instead of terminating.
+- **CORS preflight (OPTIONS)**: Returns the `PREFLIGHT_HANDLED` constant instead of exiting. Check with `$output === \PREFLIGHT_HANDLED`.
+- **Expired assets**: Returns `"Asset has expired"` string with 410 status code instead of exiting.
+- **PHPSPA JSON responses**: Returns the JSON string instead of printing and exiting.
+- **Redirects**: 
+  - `$response->redirect()` now returns `$this` instead of exiting, enabling `return $response->redirect('/path')` from handlers.
+  - `Redirect()` function throws `RedirectException` (headers sent before throw) which PhpSPA catches and returns to the worker loop.
+- Added `PREFLIGHT_HANDLED` constant for identifying handled preflight requests in worker loops.
+- Added `RedirectException` class for worker-compatible redirects.
+
+**Documentation:** [performance/worker-mode](https://phpspa.tech/performance/worker-mode/)
+
+#### **SPA Navigation Flicker Fix — Deferred Style Removal**
+
+- Fixed visual flicker during SPA navigation caused by removing the current page's stylesheets before the DOM swap completed.
+- Style removal is now deferred until **after** the new DOM is applied via `commitStyles()` callback, keeping the outgoing page styled throughout the transition.
+- Added `Link` header preload hints for SPA responses, enabling browsers to fetch incoming stylesheets at high priority before parsing the JSON response body.
 
 #### **Route Parameter Range Constraint — `INT<min,max>`**
 
@@ -65,6 +110,9 @@ composer require dconco/phpspa:dev-support/php-8.4
 
 ### ⚠️ Deprecations
 
+- Modified the `phpspa.__call` method in AppManager to accept a single object argument instead of a rest parameter.
+- Updated documentation to clarify that the argument must be an object, which will be passed as named parameters to the PHP function.
+
 - **`disableMinificationWithEsbuild()` is deprecated and is now a no-op.** In earlier versions esbuild was the default JavaScript minifier and this method turned it off. The default is now the fast in-process **C++** minifier (esbuild is opt-in via `useEsbuildForJsMinification()`), so there is nothing left to disable — the method does nothing and simply returns `$this`. It is kept only so existing code keeps working (calling it is **not** a fatal error) and **will be removed in a future version**. Migrate by deleting the call; to use esbuild, opt in explicitly with `useEsbuildForJsMinification()`.
 
 ### 🐛 Bug Fixes
@@ -94,7 +142,7 @@ composer require dconco/phpspa:dev-support/php-8.4
 
 
 
-## v2.0.14 (Stable) (Latest) (PHP 8.4)
+## v2.0.14 (Stable) (PHP 8.4)
 
 **Installation:**
 ```bash

@@ -33,7 +33,7 @@ final class AppImplExitTest extends TestCase
 
    public function testRunExitsForPhpSpaCall(): void
    {
-      $expected = json_encode(['response' => json_encode('result-ok')]);
+      $expected = 'result-test-payload';
 
       [$status, $output] = $this->runIsolatedPhp(
          <<<'PHP'
@@ -44,14 +44,14 @@ final class AppImplExitTest extends TestCase
          $_SERVER['HTTP_X_REQUESTED_WITH'] = 'PHPSPA_REQUEST';
          PhpSPA\Core\Impl\RealImpl\AppImpl::$request_uri = '/';
 
-         $csrf = new PhpSPA\Core\Helper\CsrfManager('AppImplExitFunction', PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE);
+         $csrf = new PhpSPA\Core\Helper\CsrfManager('AppImplExitFunction', 'AppImplExitFunction', PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE);
          $token = $csrf->getToken();
 
-         $tokenData = base64_encode(json_encode(['AppImplExitFunction', $token, false]));
+         $tokenData = PhpSPA\Core\Helper\FunctionCallToken::encode('AppImplExitFunction', $token, false);
          $payload = base64_encode(json_encode([
             '__call' => [
                'token' => $tokenData,
-               'args' => ['ok'],
+               'args' => ['value' => 'test-payload'],
             ],
          ]));
 
@@ -64,6 +64,50 @@ final class AppImplExitTest extends TestCase
 
       $this->assertSame(0, $status);
       $this->assertSame($expected, $output);
+   }
+
+   #[\PHPUnit\Framework\Attributes\DataProvider('serializedObjectRequests')]
+   public function testRunRejectsSerializedObjectTokenWithoutDeserializingIt(string $method, bool $nested): void
+   {
+      [$status, $output] = $this->runIsolatedPhp(
+         '$_SERVER["REQUEST_METHOD"] = ' . var_export($method, true) . ';'
+         . '$nested = ' . var_export($nested, true) . ';'
+         . <<<'PHP'
+         $_SERVER['REQUEST_URI'] = '/';
+         $_SERVER['HTTP_HOST'] = 'example.com';
+         $_SERVER['SERVER_NAME'] = 'example.com';
+         $_SERVER['HTTP_X_REQUESTED_WITH'] = 'PHPSPA_REQUEST';
+         PhpSPA\Core\Impl\RealImpl\AppImpl::$request_uri = '/';
+
+         $GLOBALS['phpspa_wakeup_probe'] = false;
+         $probe = new AppImplWakeupProbe();
+         $tokenData = base64_encode(serialize($nested ? [$probe, str_repeat('a', 64), false] : $probe));
+         $payload = base64_encode(json_encode([
+            '__call' => [
+               'token' => $tokenData,
+               'args' => [],
+            ],
+         ]));
+         $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . $payload;
+
+         $app = new TestExitAppImpl();
+         $result = $app->run(true);
+         echo ($GLOBALS['phpspa_wakeup_probe'] ? 'woke' : 'safe') . '|' . http_response_code() . '|' . $result;
+         PHP
+      );
+
+      $this->assertSame(0, $status);
+      $this->assertSame('safe|400|Invalid request', $output);
+   }
+
+   public static function serializedObjectRequests(): array
+   {
+      return [
+         'GET top-level object' => ['GET', false],
+         'GET nested object' => ['GET', true],
+         'POST top-level object' => ['POST', false],
+         'POST nested object' => ['POST', true],
+      ];
    }
 
    public function testRunComponentExitsForPhpSpaRequest(): void
@@ -108,11 +152,19 @@ final class AppImplExitTest extends TestCase
          }
       }
 
-      function AppImplExitFunction(string $value): string
-      {
-         return 'result-' . $value;
-      }
-      PHP;
+       function AppImplExitFunction(string $value): string
+       {
+          return 'result-' . $value;
+       }
+
+       class AppImplWakeupProbe
+       {
+          public function __wakeup(): void
+          {
+             $GLOBALS['phpspa_wakeup_probe'] = true;
+          }
+       }
+PHP;
 
       $script = tempnam(sys_get_temp_dir(), 'phpspa_exit_') . '.php';
       $scriptBody = "<?php\nrequire " . var_export($autoload, true) . ";\n" . $bootstrap . "\n" . $code;
