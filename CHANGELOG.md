@@ -21,6 +21,10 @@ composer require dconco/phpspa:v2.1.6
 - **Strict Endpoint Hardening**: State updates and server-function calls now strictly enforce HTTP `POST`, rigorous Base64/JSON decoding, bounded payload sizes, and generic HTTP 400 error responses without leaking internal stack traces.
 - **Component Tag Callable Restrictions**: Component tags can no longer execute internal PHP functions or internal class methods, and callables declared to return non-renderable objects are rejected before invocation.
 
+### ⚡ Performance & HTML Compression
+
+- **Meta Tag Attribute Quote Preservation for Social Crawlers**: The C++ HTML compressor and PHP fallback compressor now preserve attribute quotes on all `<meta>` tags across all compression levels (including `EXTREME`). Social scrapers (such as WhatsApp, Facebook, and iMessage link preview parsers) fail to extract titles, descriptions, and images when quotes are dropped (e.g. `<meta property=og:image>`). Attributes on `<meta>` tags now retain their quotes, and unquoted attributes on `<meta>` tags are automatically quoted, while all other HTML tags (`div`, `span`, `p`, etc.) continue to have safe quotes removed as normal for maximum compression.
+
 ### ⚠️ Breaking Changes
 
 - **Explicit HTTP Requests Required for `useFetch`**: String casting a `PendingRequest` (e.g. `echo useFetch(...)`) no longer auto-triggers an HTTP GET request. Requests must be executed explicitly with `->get()` (e.g. `echo useFetch(...)->get()`).
