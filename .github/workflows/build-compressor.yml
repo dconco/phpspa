@@ -6,13 +6,13 @@ permissions:
 on:
   workflow_dispatch:
   push:
-    branches: [support/php-8.4, master]
+    branches: [support/php-8.4]
   # Run only after "PHP (8.4) Tests" finishes successfully. The cpp-tests job
   # guards on conclusion == 'success', so a failed test run never produces a build.
   workflow_run:
     workflows: ["PHP (8.4) Tests"]
     types: [completed]
-    branches: [support/php-8.4, master]
+    branches: [support/php-8.4]
   release:
     types: [published]
 
@@ -177,7 +177,7 @@ jobs:
           path: src/bin/libcompressor.so
 
       - name: Commit and push updated shared libraries
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/support/php-8.4' || github.ref == 'refs/heads/master')
+        if: github.event_name == 'push' && github.ref == 'refs/heads/support/php-8.4'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
