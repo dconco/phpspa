@@ -1,9 +1,14 @@
 # CHANGELOG
 
-## v2.1.6 — Critical Security Hardening & Deserialization Defusal
+## v2.1.6 (Stable) (Latest) (PHP 8.4) — Critical Security Hardening & Deserialization Defusal
 
 > [!CAUTION]
 > **Urgent Security Release.** This release patches multiple critical Remote Code Execution (RCE), PHP Object Injection, and Server-Side Request Forgery (SSRF) vulnerabilities across the client runtime and core server handlers. All deployments should upgrade immediately.
+
+**Installation:**
+```bash
+composer require dconco/phpspa:v2.1.6
+```
 
 ### 🛡️ Security Fixes
 
@@ -22,13 +27,6 @@
 - **`Response::sendFile()` Refuses PHP Scripts**: Passing a path to a `.php` file into `sendFile()` now throws `\InvalidArgumentException`. Use standard routing and view rendering to evaluate PHP templates.
 - **Legacy Function Call Tokens Incompatible**: Client bundles and backend runtime must be updated together. Existing open pages must be refreshed as legacy serialized RPC tokens are rejected.
 - **HTTP POST Required for State & RPC**: Any custom scripts interacting with `phpspa` state updates or `__call` endpoints using `GET` must be transitioned to `POST`.
-
-## dev-support/php-8.4 (PHP 8.4) (v2.1.0)
-
-**Installation:**
-```bash
-composer require dconco/phpspa:dev-support/php-8.4
-```
 
 ### ✨ New Features
 
@@ -140,7 +138,7 @@ composer require dconco/phpspa:dev-support/php-8.4
 
 
 
-## v2.0.14 (Stable) (Latest) (PHP 8.4)
+## v2.0.14 (Stable) (PHP 8.4)
 
 **Installation:**
 ```bash
