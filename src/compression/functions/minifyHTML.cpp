@@ -145,7 +145,7 @@ void HtmlCompressor::minifyHTML(std::string& html) {
             }
          }
 
-         optimizeAttributes(tagContent);
+         optimizeAttributes(tagContent, tagName);
          writeChunk(html, tagContent, writePos);
 
          pendingSpace = false;

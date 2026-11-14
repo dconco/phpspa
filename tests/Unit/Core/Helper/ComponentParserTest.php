@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
+use PhpSPA\Core\Helper\ComponentValueCodec;
 use PhpSPA\Core\Helper\ComponentParser;
 
 final class ComponentParserTest extends TestCase
@@ -20,14 +21,25 @@ final class ComponentParserTest extends TestCase
       $this->assertSame('2.0', $parsed['version']);
    }
 
-   public function testParseAttributesToArrayDecodesSerializedValues(): void
+   public function testParseAttributesToArrayDecodesAuthenticatedValues(): void
    {
       $payload = ['a' => 1, 'b' => 'two'];
-      $encoded = base64_encode(serialize($payload));
+      $encoded = ComponentValueCodec::encode($payload);
 
       $parsed = $this->parseAttributes("data=\"{$encoded}\"");
 
       $this->assertSame($payload, $parsed['data']);
+   }
+
+   public function testParseAttributesDoesNotUnserializeVisitorControlledValues(): void
+   {
+      ComponentParserWakeupProbe::$woke = false;
+      $encoded = base64_encode(serialize(new ComponentParserWakeupProbe()));
+
+      $parsed = $this->parseAttributes("data=\"{$encoded}\"");
+
+      $this->assertSame($encoded, $parsed['data']);
+      $this->assertFalse(ComponentParserWakeupProbe::$woke);
    }
 }
 
@@ -38,5 +50,15 @@ final class ComponentParserProxy
    public static function parse(string $attributes): array
    {
       return self::parseAttributesToArray($attributes);
+   }
+}
+
+final class ComponentParserWakeupProbe
+{
+   public static bool $woke = false;
+
+   public function __wakeup(): void
+   {
+      self::$woke = true;
    }
 }

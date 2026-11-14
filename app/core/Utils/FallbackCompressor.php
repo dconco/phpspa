@@ -80,11 +80,26 @@ class FallbackCompressor
         // Remove empty attributes (but preserve required ones)
         $html = preg_replace('/\s(class|id|style)=""\s*/', ' ', $html);
 
-        // Remove unnecessary quotes from attributes (simple values only)
-        $html = preg_replace(
-            '/\s([a-zA-Z-]+)="([a-zA-Z0-9-_\.]+)"\s*/',
-            ' $1=$2 ',
-            $html,
+        // Remove unnecessary quotes from attributes (simple values only),
+        // but preserve quotes on <meta> tags for crawler compatibility (WhatsApp, OpenGraph, etc.).
+        $html = preg_replace_callback(
+            '/<([a-zA-Z0-9:_-]+)([^>]*)>/',
+            function ($matches) {
+                $tag = strtolower($matches[1]);
+                $attrs = $matches[2];
+                if ($tag === 'meta') {
+                    // Ensure attributes on meta tags have quotes
+                    $attrs = preg_replace_callback(
+                        '/(\s[a-zA-Z_:][-a-zA-Z0-9_.:]*)=([^\s"\'=<>`]+)/',
+                        fn($a) => "{$a[1]}=\"{$a[2]}\"",
+                        $attrs
+                    );
+                    return "<{$matches[1]}{$attrs}>";
+                }
+                $attrs = preg_replace('/\s([a-zA-Z-]+)="([a-zA-Z0-9-_\.]+)"\s*/', ' $1=$2 ', $attrs);
+                return "<{$matches[1]}{$attrs}>";
+            },
+            $html
         );
 
         // Minify JavaScript inside script tags

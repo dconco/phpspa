@@ -16,7 +16,7 @@ namespace PhpSPA\Core\Helper;
  */
 trait ComponentParser
 {
-    private static function parseAttributesToArray($attributes): array
+    private static function parseAttributesToArray(string $attributes): array
     {
         $attrArray = [];
         $pattern = '/([a-zA-Z_-]+)\s*=\s*"([^"]*)"/';
@@ -26,15 +26,11 @@ trait ComponentParser
 
         if (preg_match_all($pattern, $normalized, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $match) {
-                $decoded = base64_decode($match[2], true);
+                $decoded = ComponentValueCodec::decode($match[2], $valid);
 
-                if ($decoded !== false) {
-                    $unserialized = @unserialize($decoded);
-
-                    if ($unserialized !== false || $decoded === 'b:0;') {
-                        $attrArray[$match[1]] = $unserialized;
-                        continue;
-                    }
+                if ($valid) {
+                    $attrArray[$match[1]] = $decoded;
+                    continue;
                 }
                 $attrArray[$match[1]] = $match[2];
             }

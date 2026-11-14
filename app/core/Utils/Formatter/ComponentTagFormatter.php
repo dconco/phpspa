@@ -3,9 +3,13 @@
 namespace PhpSPA\Core\Utils\Formatter;
 
 use PhpSPA\Exceptions\AppException;
+use PhpSPA\Core\Helper\ComponentValueCodec;
 use PhpSPA\Core\Helper\ComponentScope;
+use ReflectionFunctionAbstract;
 use ReflectionFunction;
 use ReflectionMethod;
+use ReflectionNamedType;
+use ReflectionUnionType;
 
 /**
  * Component tag formatting utilities
@@ -87,17 +91,8 @@ trait ComponentTagFormatter
                $processedChildren = self::format($matches[3]);
 
                // Now assign the processed children
-               $decoded = base64_decode($processedChildren ?? '', true);
-
-               if ($decoded !== false) {
-                  $unserialized = @unserialize($decoded);
-                  if ($unserialized !== false || $decoded === 'b:0;')
-                     $attributes['children'] = $unserialized;
-                  else
-                     $attributes['children'] = $processedChildren;
-               } else {
-                  $attributes['children'] = $processedChildren;
-               }
+               $decoded = ComponentValueCodec::decode($processedChildren ?? '', $valid);
+               $attributes['children'] = $valid ? $decoded : $processedChildren;
             }
 
             // Handle different component types
@@ -105,9 +100,14 @@ trait ComponentTagFormatter
                $callable ??= null;
 
                // Variable component
-               $fileName = new ReflectionFunction($callable)->getFileName();
+               $reflection = new ReflectionFunction($callable);
+               $fileName = $reflection->getFileName();
                try {
-                  return \call_user_func_array($callable, $attributes);
+                  self::assertSafeComponentCallable($reflection, (string) $component);
+                  return self::requireStringComponentResult(
+                     \call_user_func_array($callable, $attributes),
+                     (string) $component,
+                  );
                } catch (\Throwable $e) {
                   throw new \InvalidArgumentException("{$e->getMessage()} at component <$callable /> in {$fileName} on line {$e->getLine()}", 1);
                }
@@ -121,11 +121,15 @@ trait ComponentTagFormatter
                   $reflection = ReflectionMethod::createFromMethodName("$className::$methodName");
 
                   try {
+                     self::assertSafeComponentCallable($reflection, "$className::$methodName");
+
                      if ($reflection->isStatic()) {
-                        return \call_user_func_array([$className, $methodName], $attributes);
+                        $result = \call_user_func_array([$className, $methodName], $attributes);
                      } else {
-                        return (new $className)->$methodName(...$attributes);
+                        $result = (new $className)->$methodName(...$attributes);
                      }
+
+                     return self::requireStringComponentResult($result, "$className::$methodName");
                   } catch (\Throwable $e) {
                      throw new \InvalidArgumentException("{$e->getMessage()} at component <$className::$methodName /> in {$reflection->getFileName()} on line {$e->getLine()}", 1);
                   }
@@ -138,11 +142,15 @@ trait ComponentTagFormatter
                   $reflection = ReflectionMethod::createFromMethodName("$className::__render");
 
                   try {
+                     self::assertSafeComponentCallable($reflection, "$className::__render");
+
                      if ($reflection->isStatic()) {
-                        return \call_user_func_array([$className, '__render'], $attributes);
+                        $result = \call_user_func_array([$className, '__render'], $attributes);
                      } else {
-                        return (new $className)->__render(...$attributes);
+                        $result = (new $className)->__render(...$attributes);
                      }
+
+                     return self::requireStringComponentResult($result, "$className::__render");
                   } catch (\Throwable $e) {
                      throw new \InvalidArgumentException("{$e->getMessage()} at component <$className /> in {$reflection->getFileName()} on line {$e->getLine()}", 1);
                   }
@@ -151,10 +159,15 @@ trait ComponentTagFormatter
                }
             } elseif (function_exists($className)) {
                // Function syntax
-               $fileName = new ReflectionFunction($className)->getFileName();
+               $reflection = new ReflectionFunction($className);
+               $fileName = $reflection->getFileName();
 
                try {
-                  return \call_user_func_array($className, $attributes);
+                  self::assertSafeComponentCallable($reflection, $className);
+                  return self::requireStringComponentResult(
+                     \call_user_func_array($className, $attributes),
+                     $className,
+                  );
                } catch (\Throwable $e) {
                   throw new \InvalidArgumentException("{$e->getMessage()} at component <$className /> in {$fileName} on line {$e->getLine()}", 1);
                }
@@ -171,5 +184,45 @@ trait ComponentTagFormatter
       }
 
       return $updatedDom ?? '';
+   }
+
+   /**
+    * Component tags are a rendering DSL, not a general PHP invocation syntax.
+    * Never expose internal PHP functions/classes, and reject callables whose
+    * declared return type cannot be rendered as HTML text.
+    */
+   private static function assertSafeComponentCallable(
+      ReflectionFunctionAbstract $reflection,
+      string $displayName,
+   ): void {
+      if ($reflection->isInternal()) {
+         throw new \BadFunctionCallException("Internal PHP callable {$displayName} cannot be used as a component.");
+      }
+
+      if ($reflection instanceof ReflectionMethod && $reflection->getDeclaringClass()->isInternal()) {
+         throw new \BadFunctionCallException("Internal PHP class methods cannot be used as components.");
+      }
+
+      $returnType = $reflection->getReturnType();
+      if ($returnType === null) return;
+
+      $types = $returnType instanceof ReflectionUnionType
+         ? $returnType->getTypes()
+         : [$returnType];
+
+      foreach ($types as $type) {
+         if (!$type instanceof ReflectionNamedType || !in_array($type->getName(), ['string', 'mixed'], true)) {
+            throw new \BadFunctionCallException("Component {$displayName} must return a string.");
+         }
+      }
+   }
+
+   private static function requireStringComponentResult(mixed $result, string $displayName): string
+   {
+      if (!is_string($result)) {
+         throw new \UnexpectedValueException("Component {$displayName} returned a non-string value.");
+      }
+
+      return $result;
    }
 }

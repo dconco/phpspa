@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
 use PhpSPA\Core\Helper\FunctionCaller;
+use PhpSPA\Core\Helper\FunctionCallToken;
 use PhpSPA\Http\Session;
 
 use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
@@ -24,7 +25,7 @@ final class FunctionCallerTest extends TestCase
 
       preg_match("/phpspa\.__call\('([^']+)'\)/", $output, $matches);
       $token = $matches[1] ?? '';
-      $decoded = unserialize(base64_decode($token));
+      $decoded = FunctionCallToken::decode($token);
 
       $this->assertIsArray($decoded);
       $this->assertSame('strlen', $decoded[0]);
@@ -82,7 +83,7 @@ final class FunctionCallerTest extends TestCase
    private function decodeToken(string $output): array
    {
       $token = $this->extractToken($output);
-      return unserialize(base64_decode($token)) ?? [];
+      return FunctionCallToken::decode($token) ?? [];
    }
 }
 

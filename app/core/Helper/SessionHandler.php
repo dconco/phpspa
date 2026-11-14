@@ -23,7 +23,9 @@ class SessionHandler
         $default = base64_encode($default);
 
         $sessionData = base64_decode(Session::get($session, $default));
-        $sessionData = unserialize($sessionData);
+        // --- Never instantiate objects from session data. A tampered session
+        // --- must not become a PHP object-injection primitive. ---
+        $sessionData = unserialize($sessionData, ['allowed_classes' => false]);
 
         return $sessionData;
     }

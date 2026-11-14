@@ -1,5 +1,5 @@
 /*!
- * PhpSPA Client Runtime v2.1.4
+ * PhpSPA Client Runtime v2.1.6
  * Docs: https://phpspa.tech | Package: @dconco/phpspa
  * License: MIT
  */
@@ -1658,6 +1658,7 @@ class AppManager {
                     continue;
                 const { route } = currentRoutes[targetID];
                 const prom = fetch(route || '', {
+                    method: 'POST',
                     headers: {
                         'X-Requested-With': 'PHPSPA_REQUEST',
                         Authorization: `Bearer ${utf8ToBase64(statePayload)}`
@@ -1881,6 +1882,7 @@ class AppManager {
         const callPayload = JSON.stringify({ __call: { token, args: args } });
         try {
             const response = await fetch(location.pathname, {
+                method: 'POST',
                 headers: {
                     'X-Requested-With': 'PHPSPA_REQUEST',
                     Authorization: `Bearer ${utf8ToBase64(callPayload)}`

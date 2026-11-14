@@ -70,7 +70,7 @@ final class OxcCompressor implements NativeCompressor
    {
       if (self::$available !== null) return self::$available;
 
-      return self::$available = self::initialize(DISABLE_LIBRARY_LOG);
+      return self::$available = self::initialize(DISABLE_LIBRARY_LOG | DISABLE_PRELOAD_LOG);
    }
 
    public static function getLastError(): ?string
@@ -158,6 +158,10 @@ final class OxcCompressor implements NativeCompressor
       if (self::$ffi !== null) {
          return true;
       }
+
+      if (getenv('PHPSPA_DISABLE_PRELOAD_LOG')) $disableLogs |= DISABLE_PRELOAD_LOG;
+      if (getenv('PHPSPA_DISABLE_LIBRARY_LOG')) $disableLogs |= DISABLE_LIBRARY_LOG;
+      if (getenv('PHPSPA_DISABLE_COMPRESSION_LOG')) $disableLogs |= DISABLE_COMPRESSION_LOG;
 
       self::$lastError = null;
 

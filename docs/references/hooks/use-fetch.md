@@ -46,8 +46,8 @@
 === "Direct Usage"
     ```php
     <?php
-    // Auto-executes and returns decoded JSON
-    echo useFetch('https://api.example.com/users/1');
+    // Executes GET request and prints response body
+    echo useFetch('https://api.example.com/users/1')->get();
     ```
 
 === "Array Access"
