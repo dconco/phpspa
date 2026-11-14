@@ -69,4 +69,17 @@ final class FallbackCompressorTest extends TestCase
       $this->assertStringNotContainsString('hi', $minified);
       $this->assertStringNotContainsString("\n", $minified);
    }
+
+   public function testPreservesMetaTagQuotesInAggressiveAndExtreme(): void
+   {
+      $html = '<head><meta property="og:title" content="Spyrochat"><meta name="description" content="hello"><meta charset=utf-8></head><body><div class="test">Body</div></body>';
+      $minified = FallbackCompressor::extremeMinify($html);
+
+      $this->assertStringContainsString('property="og:title"', $minified);
+      $this->assertStringContainsString('content="Spyrochat"', $minified);
+      $this->assertStringContainsString('name="description"', $minified);
+      $this->assertStringContainsString('content="hello"', $minified);
+      $this->assertStringContainsString('charset="utf-8"', $minified);
+      $this->assertStringContainsString('<div class=test>Body</div>', $minified);
+   }
 }

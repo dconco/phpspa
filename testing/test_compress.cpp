@@ -150,3 +150,46 @@ TEST(compress_minifies_inline_script) {
    CHECK(contains(out, "var a=1;"));
    CHECK(!contains(out, "(()=>{"));
 }
+
+// -----------------------------------------------------------------------------
+// EXTREME: Attribute quote preservation on <meta> tags.
+// Social crawlers (WhatsApp, Facebook, iMessage) fail to parse link previews if
+// attribute quotes on <meta> tags are stripped. <meta> tags must retain their
+// quotes even in EXTREME mode, while ordinary tags (div, span) continue to drop
+// safe quotes.
+// -----------------------------------------------------------------------------
+TEST(compress_extreme_preserves_meta_tag_quotes) {
+   HtmlCompressor::currentLevel = HtmlCompressor::EXTREME;
+
+   const std::string html =
+      "<head>"
+      "<meta property=\"og:title\" content=\"Spyrochat\">"
+      "<meta property=\"og:image\" content=\"https://spyrochat.org/logo.png\">"
+      "<meta name=\"description\" content=\"Secure chat\">"
+      "</head>"
+      "<body><div class=\"main\">Hello</div></body>";
+
+   const std::string out = HtmlCompressor::compress(html);
+
+   // Meta tag quotes MUST be preserved for social crawlers (WhatsApp)
+   CHECK(contains(out, "property=\"og:title\""));
+   CHECK(contains(out, "content=\"Spyrochat\""));
+   CHECK(contains(out, "property=\"og:image\""));
+   CHECK(contains(out, "content=\"https://spyrochat.org/logo.png\""));
+   CHECK(contains(out, "name=\"description\""));
+   CHECK(contains(out, "content=\"Secure chat\""));
+
+   // Non-meta tags MUST still drop safe quotes in EXTREME mode
+   CHECK(contains(out, "<div class=main>"));
+}
+
+// -----------------------------------------------------------------------------
+// EXTREME: If a <meta> tag contains an unquoted attribute, it is wrapped in quotes
+// so link-preview parsers always receive valid quoted attributes.
+// -----------------------------------------------------------------------------
+TEST(compress_extreme_quotes_unquoted_meta_attributes) {
+   HtmlCompressor::currentLevel = HtmlCompressor::EXTREME;
+
+   const std::string out = HtmlCompressor::compress("<meta charset=utf-8>");
+   CHECK(contains(out, "<meta charset=\"utf-8\">"));
+}
