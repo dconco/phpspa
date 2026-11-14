@@ -6,13 +6,13 @@ permissions:
 on:
   workflow_dispatch:
   push:
-    branches: [support/php-8.4]
+    branches: [support/php-8.4, master]
   # Run only after "PHP (8.4) Tests" finishes successfully. The cpp-tests job
   # guards on conclusion == 'success', so a failed test run never produces a build.
   workflow_run:
     workflows: ["PHP (8.4) Tests"]
     types: [completed]
-    branches: [support/php-8.4]
+    branches: [support/php-8.4, master]
   release:
     types: [published]
 
@@ -177,7 +177,7 @@ jobs:
           path: src/bin/libcompressor.so
 
       - name: Commit and push updated shared libraries
-        if: github.event_name == 'push' && github.ref == 'refs/heads/support/php-8.4'
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/support/php-8.4' || github.ref == 'refs/heads/master')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -185,6 +185,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin ${GITHUB_REF#refs/heads/}
           git reset --hard origin/${GITHUB_REF#refs/heads/}
+          cp build/libcompressor.so src/bin/libcompressor.so
+          cp build/compressor.dll src/bin/compressor.dll
           git add src/bin/libcompressor.so src/bin/compressor.dll
           if git diff --cached --quiet; then
             echo "No shared library updates to commit"
