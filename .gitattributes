@@ -11,7 +11,9 @@ requirements.txt export-ignore
 phpunit.xml.dist export-ignore
 
 CONTRIBUTING.md export-ignore
+RELEASE_NOTES.md export-ignore
 CODE_OF_CONDUCT.md export-ignore
+SECURITY.md export-ignore
 
 # Exclude TypeScript source files from distribution
 lib/ export-ignore
@@ -62,6 +64,7 @@ src/script/phpspa.mjs export-ignore
 
 # Exclude Node.js files from Composer distribution
 package.json export-ignore
+package-lock.json export-ignore
 pnpm-lock.yaml export-ignore
 
 # Mark only minified and type declarations as generated

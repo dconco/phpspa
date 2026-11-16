@@ -11,10 +11,10 @@ use PhpSPA\Component;
  * It handles layout management, component registration,
  * routing, and rendering logic that powers the single-page application experience.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
- * @see https://phpspa.tech/core-concepts
+ * @see https://phpspa.vercel.app/core-concepts
  */
 interface ApplicationContract {
     /**
@@ -22,7 +22,7 @@ interface ApplicationContract {
      *
      * @param string $targetID The target ID to be set.
      * @return self
-     * @see https://phpspa.tech/layout/#setting-the-default-target-id
+     * @see https://phpspa.vercel.app/layout/#setting-the-default-target-id
      */
     public function defaultTargetID (string $targetID): self;
 
@@ -35,7 +35,7 @@ interface ApplicationContract {
      * as case sensitive by default.
      *
      * @return self
-     * @see https://phpspa.tech/routing/component-configuration/#global-case-sensitivity
+     * @see https://phpspa.vercel.app/routing/component-configuration/#global-case-sensitivity
      */
     public function defaultToCaseSensitive (): self;
 
@@ -46,7 +46,7 @@ interface ApplicationContract {
      * @param int $level Compression level (0=none, 1=auto, 2=basic, 3=aggressive, 4=extreme)
      * @param bool $gzip Enable gzip compression
      * @return self
-     * @see https://phpspa.tech/performance/html-compression
+     * @see https://phpspa.vercel.app/performance/html-compression
      */
     public function compression (int $level, bool $gzip = true): self;
 
@@ -56,7 +56,7 @@ interface ApplicationContract {
      *
      * @param int $hours Number of hours to cache assets (0 for session-only) Default is 24 hours
      * @return self
-     * @see https://phpspa.tech/performance/assets-caching
+     * @see https://phpspa.vercel.app/performance/assets-caching
      */
     public function assetCacheHours (int $hours): self;
 
@@ -66,7 +66,7 @@ interface ApplicationContract {
      *
      * @param string $environment Environment: 'development', 'staging', 'production'
      * @return self
-     * @see https://phpspa.tech/performance/html-compression/#environment-based-configuration-recommended
+     * @see https://phpspa.vercel.app/performance/html-compression/#environment-based-configuration-recommended
      */
     public function compressionEnvironment (string $environment): self;
 
@@ -83,7 +83,7 @@ interface ApplicationContract {
      * @param string|null $type The type of script the content should be treated as
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self
-     * @see https://phpspa.tech/performance/managing-styles-and-scripts
+     * @see https://phpspa.vercel.app/performance/managing-styles-and-scripts
      */
     public function script (callable|string $content, ?string $name = null, ?string $type = 'text/javascript', array $attributes = []): self;
 
@@ -102,7 +102,7 @@ interface ApplicationContract {
      * @param string|null $rel The relationship attribute applied to the generated <link> tag (e.g., "stylesheet", "preload")
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self
-     * @see https://phpspa.tech/performance/managing-styles-and-scripts
+     * @see https://phpspa.vercel.app/performance/managing-styles-and-scripts
      */
     public function styleSheet (callable|string $content, ?string $name = null, ?string $type = null, ?string $rel = 'stylesheet', array $attributes = []): self;
 
@@ -120,7 +120,7 @@ interface ApplicationContract {
      * @param string|null $rel The relationship attribute applied to the generated <link> tag (e.g., "stylesheet", "preload")
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self
-     * @see https://phpspa.tech/performance/managing-styles-and-scripts
+     * @see https://phpspa.vercel.app/performance/managing-styles-and-scripts
      * @since v2.0.5
      */
     public function link (callable|string $content, ?string $name = null, ?string $type = null, ?string $rel = 'stylesheet', array $attributes = []): self;
@@ -139,7 +139,7 @@ interface ApplicationContract {
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self
      * @since v2.0.5
-     * @see https://phpspa.tech/references/component-meta
+     * @see https://phpspa.vercel.app/references/component-meta
      */
     public function meta(
         ?string $name = null,
@@ -157,7 +157,7 @@ interface ApplicationContract {
      * @param string $route The route to map.
      * @param string $staticPath The static file path.
      * @return ApplicationContract
-     * @see https://phpspa.tech/references/router/#static-files
+     * @see https://phpspa.vercel.app/references/router/#static-files
      * @since v2.0.5
      */
     public function useStatic(string $route, string $staticPath): self;
@@ -188,7 +188,7 @@ interface ApplicationContract {
      * @param callable|string $middleware The middleware function.
      * @return self
      * @since v2.0.5
-     * @see https://phpspa.tech/references/middleware/#app-middleware
+     * @see https://phpspa.vercel.app/references/middleware/#app-middleware
      */
     public function middleware(callable|string $middleware): self;
 
@@ -199,7 +199,7 @@ interface ApplicationContract {
      * @param callable|string $handler The handler function with Router as the parameter.
      * @return self
      * @since v2.0.4
-     * @see https://phpspa.tech/references/router/#app-level-prefixing
+     * @see https://phpspa.vercel.app/references/router/#app-level-prefixing
     */
     public function prefix(string $path, callable|string $handler): self;
 
@@ -245,7 +245,7 @@ interface ApplicationContract {
      *                   `DISABLE_LIBRARY_LOG`, `DISABLE_COMPRESSION_LOG`). Defaults to all three.
      * @return self
      * @since v2.0.14
-     * @see https://phpspa.tech/references/disabling-logs/
+     * @see https://phpspa.vercel.app/references/disabling-logs/
      */
     public function disableLogs(int $flags = DISABLE_COMPRESSION_LOG | DISABLE_LIBRARY_LOG | DISABLE_PRELOAD_LOG): self;
 
@@ -269,7 +269,7 @@ interface ApplicationContract {
      * Enable this if you want the most aggressive minification and have esbuild available in your environment; otherwise the default C++ minifier is recommended for its zero-process speed.
      *
      * @since v2.1.0
-     * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
+     * @see https://phpspa.vercel.app/performance/html-compression/#native-compressor-configuration
      */
     public function useEsbuildForJsMinification(): self;
 
@@ -312,7 +312,7 @@ interface ApplicationContract {
      * Applies only to JavaScript — HTML and CSS always use the native C++ compressor.
      *
      * @since v2.1.0
-     * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
+     * @see https://phpspa.vercel.app/performance/html-compression/#native-compressor-configuration
      */
     public function useOxcForJsMinification(): self;
 
@@ -327,7 +327,7 @@ interface ApplicationContract {
      * @param string $path Absolute path to the native compressor shared library.
      * @return self
      * @since v2.0.9
-     * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
+     * @see https://phpspa.vercel.app/performance/html-compression/#native-compressor-configuration
      */
     public function setCustomCompressorLibraryPath(string $path): self;
 
@@ -349,7 +349,7 @@ interface ApplicationContract {
      * @param string $path Absolute path to the Oxc shared library.
      * @return self
      * @since v2.1.0
-     * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
+     * @see https://phpspa.vercel.app/performance/html-compression/#native-compressor-configuration
      */
     public function setOxcLibraryPath(string $path): self;
 
@@ -358,7 +358,7 @@ interface ApplicationContract {
      *
      * @return self
      * @since v2.0.9
-     * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
+     * @see https://phpspa.vercel.app/performance/html-compression/#native-compressor-configuration
      */
     public function forceNativeCompression(): self;
 
@@ -380,7 +380,7 @@ interface ApplicationContract {
      *
      * @return self
      * @since v2.1.0
-     * @see https://phpspa.tech/performance/html-compression/#native-compressor-configuration
+     * @see https://phpspa.vercel.app/performance/html-compression/#native-compressor-configuration
      */
     public function skipPreloadCheck(): self;
 
@@ -402,7 +402,7 @@ interface ApplicationContract {
      * } $data
      *
      * @return self Returns the current instance for method chaining
-     * @see https://phpspa.tech/security/cors
+     * @see https://phpspa.vercel.app/security/cors
      */
     public function cors (array $data = []): self;
 
@@ -458,7 +458,7 @@ interface ApplicationContract {
      *
      * @return self
      * @since v2.1.0
-     * @see https://phpspa.tech/performance/managing-styles-and-scripts/#combining-assets-per-component
+     * @see https://phpspa.vercel.app/performance/managing-styles-and-scripts/#combining-assets-per-component
      */
     public function combineAssetsPerComponent(): self;
 }

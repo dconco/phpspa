@@ -10,14 +10,14 @@ namespace PhpSPA\Core\Utils;
  * and processing within the application's workflow.
  *
  * @package PhpSPA\Core\Utils
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @var string $dataUri
  * @var string $contentType
  * @var string $base64Content
  * @var string $filePath
  * @var int $contentLength
- * @see https://phpspa.tech/references/file-import-utility
+ * @see https://phpspa.vercel.app/references/file-import-utility
  */
 class ImportedFile
 {

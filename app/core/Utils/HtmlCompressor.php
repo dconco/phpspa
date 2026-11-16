@@ -16,7 +16,7 @@ use PhpSPA\Core\Compression\OxcCompressor;
  * Provides HTML minification and compression capabilities for PhpSPA
  * to reduce payload sizes and improve performance.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  */
@@ -91,7 +91,7 @@ trait HtmlCompressor
   • Performance-optimized for production
 
   Original source: Component-based PHP library with natural HTML syntax
-  Learn More: https://phpspa.tech/performance/html-compression
+  Learn More: https://phpspa.vercel.app/performance/html-compression
 -->\n";
 
       // Apply minification based on compression level

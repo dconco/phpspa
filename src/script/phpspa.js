@@ -1,6 +1,6 @@
 /*!
  * PhpSPA Client Runtime v2.1.6
- * Docs: https://phpspa.tech | Package: @dconco/phpspa
+ * Docs: https://phpspa.vercel.app | Package: @dconco/phpspa
  * License: MIT
  */
 (function (global, factory) {

@@ -13,7 +13,7 @@ use PhpSPA\Http\Response;
  * Manages the generation of encoded links for CSS and JavaScript assets.
  * Encodes asset details in the URL with HMAC for integrity and stateless asset serving with expiration validation.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  * @since v1.1.6
@@ -26,9 +26,14 @@ class AssetLinkManager
     private const DEFAULT_CACHE_HOURS = 24;
 
     /**
-     * Secret key for HMAC
+     * Default fallback secret key for HMAC when APP_KEY is not configured
      */
-    private static string $secretKey = 'phpspa_asset_secret_key_2026';
+    private const DEFAULT_SECRET_KEY = 'phpspa_asset_secret_key_2026';
+
+    /**
+     * Custom secret key for HMAC (overrides APP_KEY and default when set)
+     */
+    private static ?string $secretKey = null;
 
     /**
      * Cache duration in hours
@@ -185,7 +190,7 @@ class AssetLinkManager
     }
 
     /**
-     * Set the secret key for HMAC verification
+     * Set the secret key for HMAC verification (overrides APP_KEY environment variable)
      *
      * @param string $key The secret key
      * @return void
@@ -193,6 +198,31 @@ class AssetLinkManager
     public static function setSecretKey(string $key): void
     {
         self::$secretKey = $key;
+    }
+
+    /**
+     * Get the active secret key for HMAC verification.
+     * Prioritizes explicitly set key, then APP_KEY from environment, then default fallback.
+     *
+     * @return string
+     */
+    public static function getSecretKey(): string
+    {
+        if (self::$secretKey !== null && self::$secretKey !== '') {
+            return self::$secretKey;
+        }
+
+        $appKey = getenv('APP_KEY');
+        if (is_string($appKey) && trim($appKey) !== '') {
+            return trim($appKey);
+        }
+
+        $envKey = $_ENV['APP_KEY'] ?? $_SERVER['APP_KEY'] ?? null;
+        if (is_string($envKey) && trim($envKey) !== '') {
+            return trim($envKey);
+        }
+
+        return self::DEFAULT_SECRET_KEY;
     }
 
     /**
@@ -232,7 +262,7 @@ class AssetLinkManager
         // Use URL-safe Base64: + becomes -, / becomes _
         $base64 = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($json));
 
-        $signature = hash_hmac('sha256', $base64, self::$secretKey);
+        $signature = hash_hmac('sha256', $base64, self::getSecretKey());
         $sigShort = substr($signature, 0, 16);
 
         // Use '~' as the signature separator to avoid dot/extension conflicts
@@ -252,7 +282,7 @@ class AssetLinkManager
         [$encoded, $signature] = explode('~', $encodedWithSig);
 
         // Verify the signature
-        $expected = substr(hash_hmac('sha256', $encoded, self::$secretKey), 0, 16);
+        $expected = substr(hash_hmac('sha256', $encoded, self::getSecretKey()), 0, 16);
         if (!hash_equals($expected, $signature)) return null;
 
         $standardBase64 = str_replace(['-', '_'], ['+', '/'], $encoded);

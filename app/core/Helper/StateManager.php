@@ -16,7 +16,7 @@ use const PhpSPA\Core\Impl\Const\UNDEFINED_STATE_VARIABLE;
  * This class is responsible for handling state transitions, storing state data,
  * and providing access to state information throughout the application lifecycle.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @var string $stateKey
  * @var string $value

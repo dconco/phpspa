@@ -14,7 +14,7 @@
    "authors": [
       {
          "name": "Dave Conco",
-         "homepage": "https://phpspa.tech"
+         "homepage": "https://phpspa.vercel.app"
       }
    ],
    "require": {

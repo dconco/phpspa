@@ -11,7 +11,7 @@ use PhpSPA\Http\Session;
  * and base64 encoding for secure and efficient storage of complex data structures
  * within PHP sessions in the PhpSPA framework.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  */

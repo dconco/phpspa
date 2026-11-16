@@ -11,8 +11,8 @@ use PhpSPA\Core\Helper\CsrfManager;
  * to prevent cross-site request forgery attacks.
  *
  * @package Component
- * @author dconco <me@dconco.tech>
- * @see https://phpspa.tech/security/csrf-protection
+ * @author dconco <me@dconco.net>
+ * @see https://phpspa.vercel.app/security/csrf-protection
  */
 class Csrf
 {

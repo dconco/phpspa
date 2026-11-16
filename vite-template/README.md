@@ -9,7 +9,7 @@
 [![Vite](https://img.shields.io/badge/Vite-5.0-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-[**🌐 Live Preview**](https://phpspa-client.onrender.com) • [Documentation](https://phpspa.tech)
+[**🌐 Live Preview**](https://phpspa-client.onrender.com) • [Documentation](https://phpspa.vercel.app)
 
 </div>
 
@@ -245,7 +245,7 @@ In production you should output a canonical link per request. This template incl
 
 ## 🤝 Contributing
 
-Issues and PRs welcome! Visit [phpspa.tech](https://phpspa.tech) for full documentation.
+Issues and PRs welcome! Visit [phpspa.vercel.app](https://phpspa.vercel.app) for full documentation.
 
 ---
 
@@ -253,6 +253,6 @@ Issues and PRs welcome! Visit [phpspa.tech](https://phpspa.tech) for full docume
 
 **Built with ❤️ using PhpSPA + Vite**
 
-[Documentation](https://phpspa.tech) • [GitHub](https://github.com/dconco/phpspa) • [NPM Package](https://www.npmjs.com/package/@dconco/phpspa)
+[Documentation](https://phpspa.vercel.app) • [GitHub](https://github.com/dconco/phpspa) • [NPM Package](https://www.npmjs.com/package/@dconco/phpspa)
 
 </div>

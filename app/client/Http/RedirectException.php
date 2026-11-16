@@ -8,7 +8,7 @@ namespace PhpSPA\Http;
  * This exception is caught by PhpSPA's internal dispatcher and handled appropriately.
  * The headers are sent before throwing, so the worker loop just needs to return.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  */
 class RedirectException extends \RuntimeException
 {

@@ -1,6 +1,40 @@
 # CHANGELOG
 
-## v2.1.6 (Stable) (Latest) (PHP 8.4) — Critical Security Hardening & Deserialization Defusal
+## v2.1.8 (Stable) (Latest) (PHP 8.4) — Component Tag Isolation & Cryptographic Key Derivation
+
+> [!IMPORTANT]
+> **Security & Architecture Release.** This release introduces strict component tag isolation, requiring all class-based component tags to implement the `UIComponent` interface, enforces strict PascalCase naming across all component segments, and switches HMAC key generation in `ComponentValueCodec` to use stateless session-derived keys tied to `APP_KEY`.
+
+**Installation:**
+```bash
+composer require dconco/phpspa:v2.1.8
+```
+
+### 🛡️ Security Fixes & Component Hardening
+
+- **`UIComponent` Marker Interface for Class Components**: All classes invoked via component tags (`<MyClass />` or `<MyClass::Method />`) must now implement `PhpSPA\Interfaces\UIComponent`. Arbitrary framework, third-party, or internal classes (such as `HttpRequest`, `Session`, `PHPMailer`, etc.) can no longer be invoked through component tags, permanently closing arbitrary class and method execution vectors.
+- **Strict PascalCase Enforcement on Component Tags & Methods**: Component tag matching now strictly enforces PascalCase on all dot-separated namespaces, class names, and method invocations (`<Namespace.Class::Method />` and `<Class::Method />`). Lowercase method or namespace segments (e.g. `<Class::method />` or `<Namespace.class::Method />`) are excluded from component execution and remain untouched as plain markup.
+- **Exact-Case Verification via Reflection**: Function components and class methods are strictly verified against their exact declaration in PHP (`$reflection->getName() === $className`), preventing case-folding bypasses (e.g. capitalizing lowercase built-in functions like `<File_get_contents />` or `<Exec />`).
+- **Dynamic HMAC Key Derivation in `ComponentValueCodec`**: HMAC signing keys for serialized component attribute values are now derived dynamically via `hash_hmac('sha256', session_id(), APP_KEY, true)` rather than stored in `$_SESSION`. This eliminates session-storage leakage risks and ensures stateless verification.
+- **Centralized `APP_KEY` Integration in `AssetLinkManager`**: Asset HMAC signatures automatically use `APP_KEY` from the environment (`getenv('APP_KEY')` / `$_ENV['APP_KEY']`) with explicit override capability via `AssetLinkManager::setSecretKey()`.
+
+### ⚠️ Breaking Changes
+
+- **Class Components Must Implement `UIComponent`**: Any custom class-based component must now declare `implements PhpSPA\Interfaces\UIComponent`.
+- **Method Components Must Use PascalCase**: Custom methods called via `<Class::Method />` must be defined and invoked using PascalCase (e.g. `<Card::Header />` rather than `<Card::header />`).
+
+
+
+
+
+
+---
+
+
+
+
+
+## v2.1.6 (Stable) (PHP 8.4) — Critical Security Hardening & Deserialization Defusal
 
 > [!CAUTION]
 > **Urgent Security Release.** This release patches multiple critical Remote Code Execution (RCE), PHP Object Injection, and Server-Side Request Forgery (SSRF) vulnerabilities across the client runtime and core server handlers. All deployments should upgrade immediately.
@@ -58,7 +92,7 @@ composer require dconco/phpspa:v2.1.6
 - Added `PREFLIGHT_HANDLED` constant for identifying handled preflight requests in worker loops.
 - Added `RedirectException` class for worker-compatible redirects.
 
-**Documentation:** [performance/worker-mode](https://phpspa.tech/performance/worker-mode/)
+**Documentation:** [performance/worker-mode](https://phpspa.vercel.app/performance/worker-mode/)
 
 #### **SPA Navigation Flicker Fix — Deferred Style Removal**
 
@@ -74,13 +108,13 @@ composer require dconco/phpspa:v2.1.6
   - `int<1,10>` — inclusive `[1, 10]`.
 - Resolved two long-standing bugs: the min-only comparison was inverted (it rejected values *above* the minimum), and `$max = (int)$matches[2] ?? null` made a real maximum of `0` indistinguishable from "no maximum" (e.g. `int<0,10>` misfired). A max of `0` is now preserved via an `isset` guard.
 
-**Documentation:** [routing/advanced-routing#typed-parameters-and-constraints](https://phpspa.tech/routing/advanced-routing/#typed-parameters-and-constraints)
+**Documentation:** [routing/advanced-routing#typed-parameters-and-constraints](https://phpspa.vercel.app/routing/advanced-routing/#typed-parameters-and-constraints)
 
 #### **Route Parameter Enum Constraint — `ENUM<...>`**
 
 - Added a literal-whitelist route parameter type: `enum<draft,published,archived>` matches only one of the listed values, is case-inheriting, and composes with union syntax.
 
-**Documentation:** [routing/advanced-routing#typed-parameters-and-constraints](https://phpspa.tech/routing/advanced-routing/#typed-parameters-and-constraints)
+**Documentation:** [routing/advanced-routing#typed-parameters-and-constraints](https://phpspa.vercel.app/routing/advanced-routing/#typed-parameters-and-constraints)
 
 #### **Literal Prefixes & Suffixes in Route Segments**
 
@@ -91,7 +125,7 @@ composer require dconco/phpspa:v2.1.6
   - Composes with type constraints: `/order/#{id: int}` → `#42` captures int `42`.
 - The literal is matched exactly (special characters are not treated as regex), the capture is single-segment (never spans `/`), and an empty capture (e.g. `/profile/@` alone) is rejected.
 
-**Documentation:** [routing/advanced-routing#literal-prefixes-and-suffixes](https://phpspa.tech/routing/advanced-routing/#literal-prefixes-and-suffixes)
+**Documentation:** [routing/advanced-routing#literal-prefixes-and-suffixes](https://phpspa.vercel.app/routing/advanced-routing/#literal-prefixes-and-suffixes)
 
 #### **Selectable JavaScript Minification Engines (C++ default, Oxc, esbuild)**
 
@@ -102,7 +136,7 @@ composer require dconco/phpspa:v2.1.6
 - Engine selection priority when multiple are enabled: Oxc (only when actually available) → esbuild → C++.
 - Oxc honours the compression level: **BASIC** runs the base options, **AGGRESSIVE** adds full comment stripping, **EXTREME** also mangles symbols (global scope preserves top-level names while mangling inner-scope locals, with the UMD `exports`/`module` names reserved; component scope mangles fully and IIFE-wraps).
 
-**Documentation:** [performance/html-compression](https://phpspa.tech/performance/html-compression/)
+**Documentation:** [performance/html-compression](https://phpspa.vercel.app/performance/html-compression/)
 
 ### ⚡ Performance
 
@@ -175,7 +209,7 @@ composer require dconco/phpspa:v2.0.14
 - Added `HttpRequest::getContent()` to read the raw, unparsed request body from `php://input`, for any HTTP method and content type.
 - The raw body is read once and **cached** (`php://input` is not re-readable), so repeated calls and the methods built on it (`json()`, `form()`) reuse the cached payload. The cache distinguishes three states: unread, read-but-unreadable (`false`), and read-but-empty (`''`).
 
-**Documentation:** [requests/request-object#raw-request-body](https://phpspa.tech/requests/request-object/#raw-request-body)
+**Documentation:** [requests/request-object#raw-request-body](https://phpspa.vercel.app/requests/request-object/#raw-request-body)
 
 #### **`disableLogs()` Flags**
 
@@ -193,13 +227,13 @@ use PhpSPA\App;
    ->run();
 ```
 
-**Documentation:** [references/disabling-logs](https://phpspa.tech/references/disabling-logs/)
+**Documentation:** [references/disabling-logs](https://phpspa.vercel.app/references/disabling-logs/)
 
 #### **`randomizeAssetName()`**
 
 - Added `randomizeAssetName()` to drop the readable label (e.g. `global-styles`) that the named-asset parameter prepends to generated asset links, leaving only the content hash. This is for obscurity — making asset links non-self-explanatory — not caching (cache-busting already happens via the content hash) and not security.
 
-**Documentation:** [performance/managing-styles-and-scripts#randomizing-asset-names](https://phpspa.tech/performance/managing-styles-and-scripts/#randomizing-asset-names)
+**Documentation:** [performance/managing-styles-and-scripts#randomizing-asset-names](https://phpspa.vercel.app/performance/managing-styles-and-scripts/#randomizing-asset-names)
 
 ### 🐛 Bug Fixes
 
@@ -227,7 +261,7 @@ use PhpSPA\App;
 ### 📚 Documentation
 
 - Documented `getContent()` and the full public `HttpRequest` surface (input readers, URL params/query, headers, authentication, URLs/origin, dynamic attributes) in `docs/requests/request-object.md`.
-- New `docs/references/disabling-logs.md` for `disableLogs()` and its flags (added to the site nav under API References → Performance, published at `phpspa.tech/references/disabling-logs`); documented `randomizeAssetName()` in `docs/performance/managing-styles-and-scripts.md`.
+- New `docs/references/disabling-logs.md` for `disableLogs()` and its flags (added to the site nav under API References → Performance, published at `phpspa.vercel.app/references/disabling-logs`); documented `randomizeAssetName()` in `docs/performance/managing-styles-and-scripts.md`.
 - Documented preloading of the `phpspa_compressor.h` header in the compression docs.
 
 
@@ -409,7 +443,7 @@ This allows you to:
 - Store cache on faster storage (e.g., tmpfs, RAM disk)
 - Simplify cache cleanup and management
 
-**Documentation:** [performance/assets-caching#custom-cache-directory](https://phpspa.tech/performance/assets-caching/#custom-cache-directory)
+**Documentation:** [performance/assets-caching#custom-cache-directory](https://phpspa.vercel.app/performance/assets-caching/#custom-cache-directory)
 
 #### **Dynamic Link Tags with DOM::link()** 🔗
 
@@ -437,7 +471,7 @@ DOM::link('/favicon-dark.ico', 'favicon', 'image/x-icon', 'icon');
 - Perfect for dynamic theming, conditional resource loading, and per-route assets
 - Override by name, href, or rel+type combination
 
-**Documentation:** [references/dom-utilities#domlink](https://phpspa.tech/references/dom-utilities/#domlink)
+**Documentation:** [references/dom-utilities#domlink](https://phpspa.vercel.app/references/dom-utilities/#domlink)
 
 
 #### **Enhanced HTTP Client Methods** 🌐
@@ -464,7 +498,7 @@ $response = useFetch('https://api.example.com/webhook')
                ->post();-
 ```
 
-**Documentation:** [references/hooks/use-fetch#configuration-options](https://phpspa.tech/references/hooks/use-fetch/#configuration-options)
+**Documentation:** [references/hooks/use-fetch#configuration-options](https://phpspa.vercel.app/references/hooks/use-fetch/#configuration-options)
 
 
 
@@ -511,7 +545,7 @@ Added external JavaScript bundler support with intelligent compression levels:
   use PhpSPA\DOM;
   DOM::meta(name: 'description', content: 'Dynamic page description');
   ```
-- See docs: [references/dom-utilities#dommeta](https://phpspa.tech/references/dom-utilities/#dommeta)
+- See docs: [references/dom-utilities#dommeta](https://phpspa.vercel.app/references/dom-utilities/#dommeta)
 
 
 ### 🔧 Fixes
@@ -521,7 +555,7 @@ Added external JavaScript bundler support with intelligent compression levels:
 - **Double IIFE wrapping** - Fixed component scripts being wrapped twice (PHP + bundler)
 - **Performance** - Removed unnecessary `strlen()` calls for Content-Length headers
 
-**Documentation:** [performance/html-compression](https://www.phpspa.tech/performance/html-compression/#asset-caching-behavior)
+**Documentation:** [performance/html-compression](https://www.phpspa.vercel.app/performance/html-compression/#asset-caching-behavior)
 
 
 
@@ -669,7 +703,7 @@ new Component(...)
    ->meta(property: 'og:title', content: 'PhpSPA Design System');
 ```
 
-**Documentation:** [references/component-meta](https://phpspa.tech/references/component-meta)
+**Documentation:** [references/component-meta](https://phpspa.vercel.app/references/component-meta)
 
 
 #### **`useCallback()`**
@@ -746,7 +780,7 @@ useEffect(() => {
 }, ['stateKey']); // Re-runs only when 'stateKey' changes
 ```
 
-**Documentation:** [references/hooks/clients/use-effect](https://phpspa.tech/references/hooks/clients/use-effect)
+**Documentation:** [references/hooks/clients/use-effect](https://phpspa.vercel.app/references/hooks/clients/use-effect)
 
 
 ### **Core Fixes** 🔧
@@ -801,7 +835,7 @@ $form = (new Component(function() {
 }))->method('GET', 'POST');
 ```
 
-**Documentation:** [references/preloading-component](https://phpspa.tech/references/preloading-component/)
+**Documentation:** [references/preloading-component](https://phpspa.vercel.app/references/preloading-component/)
 
 
 ### **DOM Utilities** 🛠️
@@ -823,7 +857,7 @@ function UserProfile() {
 $currentTitle = DOM::Title(); // Returns: "User Profile - My App"
 ```
 
-**Documentation:** [references/dom-utilities](https://phpspa.tech/references/dom-utilities/)
+**Documentation:** [references/dom-utilities](https://phpspa.vercel.app/references/dom-utilities/)
 
 
 
@@ -868,7 +902,7 @@ $app->prefix('/api', function (Router $router) {
 });
 ```
 
-**Documentation:** [references/router](https://phpspa.tech/references/router/)
+**Documentation:** [references/router](https://phpspa.vercel.app/references/router/)
 
 
 
@@ -909,7 +943,7 @@ $app->compression(Compressor::LEVEL_AGGRESSIVE, true);
 putenv('PHPSPA_COMPRESSION_STRATEGY=native');
 ```
 
-**Documentation:** [references/compression](https://phpspa.tech/references/compression/)
+**Documentation:** [references/compression](https://phpspa.vercel.app/references/compression/)
 
 
 
@@ -933,7 +967,7 @@ Added asynchronous HTTP request support to `useFetch()` hook with true parallel 
 - Promise-like `then()` callbacks
 - Up to 3x faster for concurrent requests
 
-**Documentation:** [hooks/use-fetch](https://phpspa.tech/references/hooks/use-fetch)
+**Documentation:** [hooks/use-fetch](https://phpspa.vercel.app/references/hooks/use-fetch)
 
 #### **Component Props Type Preservation** 🎯
 
@@ -958,7 +992,7 @@ fmt($user);
 return "<UserCard>{$user}</UserCard>";
 ```
 
-**Documentation:** [references/helpers/fmt](https://phpspa.tech/references/helpers/fmt)
+**Documentation:** [references/helpers/fmt](https://phpspa.vercel.app/references/helpers/fmt)
 
 
 
@@ -1055,7 +1089,7 @@ function Counter() {
 }
 ```
 
-**Documentation:** [hooks/use-state](https://phpspa.tech/hooks/use-state)
+**Documentation:** [hooks/use-state](https://phpspa.vercel.app/hooks/use-state)
 
 ##### `useEffect()` Hook - NEW! 🎉
 Execute side effects when dependencies change:
@@ -1079,7 +1113,7 @@ function UserProfile() {
 }
 ```
 
-**Documentation:** [hooks/use-effect](https://phpspa.tech/hooks/use-effect)
+**Documentation:** [hooks/use-effect](https://phpspa.vercel.app/hooks/use-effect)
 
 #### 2. **Enhanced Security Features** 🔒
 
@@ -1108,7 +1142,7 @@ echo "<script nonce='{$nonce}'>console.log('secure');</script>";
 - Integration with inline scripts and styles
 - Protection against XSS attacks
 
-**Documentation:** [security/content-security-policy](https://phpspa.tech/security/content-security-policy)
+**Documentation:** [security/content-security-policy](https://phpspa.vercel.app/security/content-security-policy)
 
 #### 3. **Global Helper Functions** 🛠️
 
@@ -1235,7 +1269,7 @@ $assetPath = PathResolver::resolve('/assets/style.css');
    - Route registration now integrates with `phpSPA\Core\Router\MapRoute` for robust pattern and typed-parameter matching.
    - Response helpers (`Response::json`, `Response::error`, etc.) for concise route callbacks.
 
-   Docs: https://phpspa.tech/v1.1.8
+   Docs: https://phpspa.vercel.app/v1.1.8
 
 
 
@@ -1526,7 +1560,7 @@ $assetPath = PathResolver::resolve('/assets/style.css');
 
 - Updated phpSPA core from frontend to use the `Request` class instead of just global request `$_REQUEST`
 
-- Added Hooks Event Documentation. [View Docs](https://phpspa.tech/hooks-event/)
+- Added Hooks Event Documentation. [View Docs](https://phpspa.vercel.app/hooks-event/)
 
 ## v1.1.3
 
@@ -1558,7 +1592,7 @@ $assetPath = PathResolver::resolve('/assets/style.css');
 
 - ✨ Added `cors()` method to App class for CORS configuration
 
-[View Latest Documentation](https://phpspa.tech/v1.1.2)
+[View Latest Documentation](https://phpspa.vercel.app/v1.1.2)
 
 
 
@@ -1579,25 +1613,25 @@ $assetPath = PathResolver::resolve('/assets/style.css');
 
 ## v1.1.0
 
-- ✨ Added file import `phpSPA\Component\import()` function for importing files (images) to html. @see [File Import Utility](https://phpspa.tech/v1.1/1-file-import-utility)
+- ✨ Added file import `phpSPA\Component\import()` function for importing files (images) to html. @see [File Import Utility](https://phpspa.vercel.app/v1.1/1-file-import-utility)
 
-- ✨ Added `map()` method to state management, can now map array to html elements, `$stateItems->map(fn (item) => "<li>{$item}</li>")`. @see [Mapping In State Management](https://phpspa.tech/v1.1/2-mapping-in-state-management)
+- ✨ Added `map()` method to state management, can now map array to html elements, `$stateItems->map(fn (item) => "<li>{$item}</li>")`. @see [Mapping In State Management](https://phpspa.vercel.app/v1.1/2-mapping-in-state-management)
 
-- ✨ Added component to be accessible by html tags, `<Component />`, both inline tags and block tags `<Component></Component`. @see [Using Component Functions By HTML Tags](https://phpspa.tech/v1.1/3-using-component-functions-by-html-tags)
+- ✨ Added component to be accessible by html tags, `<Component />`, both inline tags and block tags `<Component></Component`. @see [Using Component Functions By HTML Tags](https://phpspa.vercel.app/v1.1/3-using-component-functions-by-html-tags)
 
-- ✨ Created component function `<Link />`, and made it be under the `phpSPA\Component` namespace. @see [Link Component](https://phpspa.tech/v1.1/4-link-component)
+- ✨ Created component function `<Link />`, and made it be under the `phpSPA\Component` namespace. @see [Link Component](https://phpspa.vercel.app/v1.1/4-link-component)
 
-- ✨ Added `phpSPA\Component\HTMLAttrInArrayToString()` function, use it when converting `...$props` rest properties in a component as rest of HTML attributes. @see [HTML Attribute In Array To String Conversion](https://phpspa.tech/v1.1/5-html-attr-in-array-to-string-function)
+- ✨ Added `phpSPA\Component\HTMLAttrInArrayToString()` function, use it when converting `...$props` rest properties in a component as rest of HTML attributes. @see [HTML Attribute In Array To String Conversion](https://phpspa.vercel.app/v1.1/5-html-attr-in-array-to-string-function)
 
-- ✨ Added function `phpSPA\Http\Redirect()` for redirecting to another URL. @see [Redirect Function](https://phpspa.tech/v1.1/6-redirect-function.md)
+- ✨ Added function `phpSPA\Http\Redirect()` for redirecting to another URL. @see [Redirect Function](https://phpspa.vercel.app/v1.1/6-redirect-function.md)
 
-- ✨ Created component function `<PhpSPA.Component.Navigate />`, for handling browser's navigation through PHP. @see [Navigate Component](https://phpspa.tech/v1.1/7-navigate-component.md)
+- ✨ Created component function `<PhpSPA.Component.Navigate />`, for handling browser's navigation through PHP. @see [Navigate Component](https://phpspa.vercel.app/v1.1/7-navigate-component.md)
 
 - ✨ Made JS `phpspa.setState()` available as just `setState()` function.
 
 ### Deprecated
 
-- ✨ Using HTML `<Link />` tag without the function namespace is deprecated. You must use the namespace in other to use the component function, `<PhpSPA.Component.Link />` See: [Deprecated HTML Link](https://phpspa.tech/v1.1/4-link-component/#deprecated)
+- ✨ Using HTML `<Link />` tag without the function namespace is deprecated. You must use the namespace in other to use the component function, `<PhpSPA.Component.Link />` See: [Deprecated HTML Link](https://phpspa.vercel.app/v1.1/4-link-component/#deprecated)
 
 
 
@@ -1647,7 +1681,7 @@ Include the JS engine:
 
 - GitHub: [dconco/phpspa](https://github.com/dconco/phpspa)
 - JS Engine: [dconco/phpspa-js](https://github.com/dconco/phpspa-js)
-- Website: [https://phpspa.tech](https://phpspa.tech)
+- Website: [https://phpspa.vercel.app](https://phpspa.vercel.app)
 - License: MIT
 
 ---

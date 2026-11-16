@@ -8,10 +8,10 @@ use PhpSPA\Core\Utils\Validate;
  * Converts HTML attributes array to string.
  *
  * @package Component
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @param array $HtmlAttr Array of attribute name-value pairs.
  * @return string HTML attributes string.
- * @see https://phpspa.tech/components HTML Attributes Documentation
+ * @see https://phpspa.vercel.app/components HTML Attributes Documentation
  */
 function HTMLAttrInArrayToString(array $HtmlAttr): string
 {

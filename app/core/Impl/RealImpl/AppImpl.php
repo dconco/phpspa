@@ -41,7 +41,7 @@ use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  * It handles layout management, component registration,
  * routing, and rendering logic that powers the single-page application experience.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  * @abstract

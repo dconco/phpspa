@@ -16,7 +16,7 @@ use PhpSPA\Interfaces\IComponent;
  * within the PhpSPA framework. It handles component properties such as routes,
  * methods, titles, target IDs, and associated scripts and stylesheets.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @method IComponent title(string $title) Set the title of the component
  * @method IComponent method(string ...$method) Set the HTTP method for the component, defaults to 'GET|VIEW'

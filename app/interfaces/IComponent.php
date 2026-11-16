@@ -9,7 +9,7 @@ namespace PhpSPA\Interfaces;
  * framework, including methods for component configuration, routing, and
  * rendering behavior. It ensures consistent component structure and behavior.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  */
@@ -21,7 +21,7 @@ interface  IComponent
      * Initializes the component with a callable that defines the component function.
      *
      * @param callable|string $component The callable representing the component logic.
-     * @see https://phpspa.tech/core-concepts
+     * @see https://phpspa.vercel.app/core-concepts
      */
     public function __construct(callable|string $component);
 
@@ -30,7 +30,7 @@ interface  IComponent
      *
      * @param string $title The title to set.
      * @return self Returns the current instance for method chaining.
-     * @see https://phpspa.tech/routing/component-configuration
+     * @see https://phpspa.vercel.app/routing/component-configuration
      */
     public function title(string $title): self;
 
@@ -45,7 +45,7 @@ interface  IComponent
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self Returns the current instance for method chaining.
      * @since v2.0.5
-     * @see https://phpspa.tech/references/component-meta
+     * @see https://phpspa.vercel.app/references/component-meta
      */
     public function meta(
         ?string $name = null,
@@ -61,7 +61,7 @@ interface  IComponent
      *
      * @param string ...$method The name of the method to set, default to "GET|VIEW".
      * @return self Returns the current instance for method chaining.
-     * @see https://phpspa.tech/routing/component-configuration/#specifying-http-methods
+     * @see https://phpspa.vercel.app/routing/component-configuration/#specifying-http-methods
      */
     public function method(string ...$method): self;
 
@@ -70,7 +70,7 @@ interface  IComponent
      *
      * @param string|array ...$route The route to be set.
      * @return self Returns the current instance for method chaining.
-     * @see https://phpspa.tech/routing/advanced-routing
+     * @see https://phpspa.vercel.app/routing/advanced-routing
      */
     public function route(string|array ...$route): self;
 
@@ -107,7 +107,7 @@ interface  IComponent
      *
      * @param string $targetID The identifier of the target element.
      * @return self Returns the current instance for method chaining.
-     * @see https://phpspa.tech/routing/component-configuration/#setting-the-target-render-element
+     * @see https://phpspa.vercel.app/routing/component-configuration/#setting-the-target-render-element
      */
     public function targetID(string $targetID): self;
 
@@ -117,7 +117,7 @@ interface  IComponent
      * Sets the internal flag to treat operations as case sensitive.
      *
      * @return self Returns the current instance for method chaining.
-     * @https://phpspa.tech/routing/component-configuration/#route-case-sensitivity
+     * @https://phpspa.vercel.app/routing/component-configuration/#route-case-sensitivity
      */
     public function caseSensitive(): self;
 
@@ -125,7 +125,7 @@ interface  IComponent
      * Sets the component to operate in a case-insensitive mode.
      *
      * @return self Returns the current instance for method chaining.
-     * @see https://phpspa.tech/routing/component-configuration/#__tabbed_1_2
+     * @see https://phpspa.vercel.app/routing/component-configuration/#__tabbed_1_2
      */
     public function caseInsensitive(): self;
 
@@ -154,7 +154,7 @@ interface  IComponent
      * @since v2.0.5
      * @param callable|string $middleware
      * @return self Returns the current instance for method chaining.
-     * @see https://phpspa.tech/references/middleware/#component-middleware
+     * @see https://phpspa.vercel.app/references/middleware/#component-middleware
      */
     public function middleware(callable|string $middleware): self;
 
@@ -166,7 +166,7 @@ interface  IComponent
      * @param string|null $type The type of script the content should be treated as
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self Returns the current instance for method chaining.
-     * @see https://phpspa.tech/performance/managing-styles-and-scripts/#component-specific-assets
+     * @see https://phpspa.vercel.app/performance/managing-styles-and-scripts/#component-specific-assets
     */
     public function script(callable|string $content, ?string $name = null, ?string $type = 'text/javascript', array $attributes = []): self;
 
@@ -180,7 +180,7 @@ interface  IComponent
      * @param string|null $rel The relationship attribute applied to the generated <link> tag (e.g., "stylesheet", "preload")
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self Returns the current instance for method chaining.
-     * @see https://phpspa.tech/performance/managing-styles-and-scripts/#component-specific-assets
+     * @see https://phpspa.vercel.app/performance/managing-styles-and-scripts/#component-specific-assets
      */
     public function styleSheet(callable|string $content, ?string $name = null, ?string $type = null, ?string $rel = 'stylesheet', array $attributes = []): self;
 
@@ -193,7 +193,7 @@ interface  IComponent
      * @param string|null $rel The relationship attribute applied to the generated <link> tag (e.g., "stylesheet", "preload")
      * @param array $attributes Optional additional attributes as key => value pairs.
      * @return self Returns the current instance for method chaining.
-     * @see https://phpspa.tech/performance/managing-styles-and-scripts/#component-specific-assets
+     * @see https://phpspa.vercel.app/performance/managing-styles-and-scripts/#component-specific-assets
      * @since v2.0.5
      */
     public function link(callable|string $content, ?string $name = null, ?string $type = null, ?string $rel = 'stylesheet', array $attributes = []): self;
@@ -203,7 +203,7 @@ interface  IComponent
      *
      * @param int $milliseconds
      * @return self Returns the current instance for method chaining.
-     * @see https://phpspa.tech/requests/auto-reloading-components
+     * @see https://phpspa.vercel.app/requests/auto-reloading-components
      */
     public function reload(int $milliseconds): self;
 

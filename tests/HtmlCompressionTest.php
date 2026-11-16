@@ -6,9 +6,9 @@
  * Tests the HTML compression functionality including multi-level compression,
  * size reduction verification, and compression level effectiveness.
  *
- * @see https://phpspa.tech/v1.1.5/1-compression-system/ Compression System Documentation
+ * @see https://phpspa.vercel.app/v1.1.5/1-compression-system/ Compression System Documentation
  * @since v1.1.5
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  */
 
 use PhpSPA\Compression\Compressor;

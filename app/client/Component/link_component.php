@@ -6,12 +6,12 @@ namespace Component;
  * Renders SPA navigation link component.
  *
  * @package Component
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @param string $children Link content
  * @param string $to Target URL/route
  * @param string ...$HtmlAttr Additional HTML attributes
  * @return string HTML anchor element
- * @see https://phpspa.tech/navigations/link-component
+ * @see https://phpspa.vercel.app/navigations/link-component
  */
 function Link(string $children, string $to = '#', string ...$HtmlAttr): string
 {

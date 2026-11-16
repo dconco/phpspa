@@ -46,12 +46,12 @@ use PhpSPA\Interfaces\ApplicationContract;
  * @method ApplicationContract skipPreloadCheck() Skip the FFI::scope() preload probe and load the native compressor library directly via FFI::cdef
  * @method ApplicationContract cors(array $data = []) Configure CORS
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  *
- * @see https://phpspa.tech/core-concepts
- * @link https://phpspa.tech
+ * @see https://phpspa.vercel.app/core-concepts
+ * @link https://phpspa.vercel.app
  */
 class App extends AppImpl implements ApplicationContract {
     /**
@@ -61,8 +61,8 @@ class App extends AppImpl implements ApplicationContract {
      *
      * @param callable $layout The name of the layout to be used by the application.
      * @param bool $autoInitCompression Whether to auto-initialize compression settings
-     * @see https://phpspa.tech/layout
-     * @see https://phpspa.tech/performance/html-compression
+     * @see https://phpspa.vercel.app/layout
+     * @see https://phpspa.vercel.app/performance/html-compression
      */
     public function __construct (callable|string $layout = "", bool $autoInitCompression = true)
     {

@@ -146,4 +146,37 @@ final class AssetLinkManagerTest extends TestCase
          'A changed max(filemtime) must change the combined link'
       );
    }
+
+   public function testGetSecretKeyHierarchy(): void
+   {
+      AssetLinkManager::setSecretKey('');
+      putenv('APP_KEY');
+      unset($_ENV['APP_KEY'], $_SERVER['APP_KEY']);
+
+      $this->assertSame('phpspa_asset_secret_key_2026', AssetLinkManager::getSecretKey());
+
+      putenv('APP_KEY=env_app_key_123');
+      $this->assertSame('env_app_key_123', AssetLinkManager::getSecretKey());
+
+      AssetLinkManager::setSecretKey('explicit_key_456');
+      $this->assertSame('explicit_key_456', AssetLinkManager::getSecretKey());
+
+      // Cleanup
+      AssetLinkManager::setSecretKey('');
+      putenv('APP_KEY');
+   }
+
+   public function testTamperFailsWhenSecretKeyChanges(): void
+   {
+      AssetLinkManager::setSecretKey('key_A');
+      $css = AssetLinkManager::generateCssLink('/profile', 0, 0);
+      $path = parse_url($css, PHP_URL_PATH);
+
+      $this->assertNotNull(AssetLinkManager::resolveAssetRequest($path));
+
+      AssetLinkManager::setSecretKey('key_B');
+      $this->assertNull(AssetLinkManager::resolveAssetRequest($path), 'Link generated with key_A must fail with key_B');
+
+      AssetLinkManager::setSecretKey('');
+   }
 }

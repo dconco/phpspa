@@ -11,7 +11,7 @@ namespace PhpSPA\Core\Utils;
  * within the PhpSPA framework. It ensures data integrity and security by applying
  * appropriate validation rules and techniques.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  */

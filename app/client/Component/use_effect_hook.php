@@ -15,12 +15,12 @@ use PhpSPA\Core\Helper\StateManager;
  * if any of the dependency values have changed since the previous render.
  *
  * @package Component
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @param Closure        $callback     The function to execute when a change is detected.
  * @param StateManager[] $dependencies An array of state objects to watch for changes.
  * @return void
  * @throws InvalidArgumentException If a dependency is not an instance of StateManager.
- * @see https://phpspa.tech/hooks/use-effect
+ * @see https://phpspa.vercel.app/hooks/use-effect
  */
 function useEffect(Closure $callback, array $dependencies = []): void
 {

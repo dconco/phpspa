@@ -7,7 +7,7 @@
  * to ensure safe compression without breaking JavaScript syntax.
  *
  * @since v1.1.5
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  */
 
 use PhpSPA\Compression\Compressor;
