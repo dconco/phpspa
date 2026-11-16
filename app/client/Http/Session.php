@@ -11,7 +11,7 @@ use PhpSPA\Core\Utils\Validate;
  * error handling and validation. This class ensures secure and consistent
  * session management throughout the PhpSPA framework.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  */
 class Session
 {

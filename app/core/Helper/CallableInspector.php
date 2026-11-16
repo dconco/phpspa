@@ -14,7 +14,7 @@ use ReflectionUnionType;
  * Provides utilities for inspecting and analyzing PHP callables.
  * Useful for determining callable types, extracting reflection information,
  * and facilitating dynamic invocation or introspection of functions, methods, or closures.
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @static
  */

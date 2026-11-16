@@ -11,8 +11,8 @@ namespace PhpSPA\Http\Security;
  * other security-sensitive operations.
  *
  * @package Security
- * @author dconco <me@dconco.tech>
- * @see https://phpspa.tech/security/content-security-policy
+ * @author dconco <me@dconco.net>
+ * @see https://phpspa.vercel.app/security/content-security-policy
  */
 class Nonce {
    private static bool $enabled = false;   // default off
@@ -66,7 +66,7 @@ class Nonce {
     *    'worker-src': array<string>,
     * } $sources
     *
-    * @see https://phpspa.tech/security/content-security-policy
+    * @see https://phpspa.vercel.app/security/content-security-policy
     */
    public static function enable (array $sources = []): void
    {

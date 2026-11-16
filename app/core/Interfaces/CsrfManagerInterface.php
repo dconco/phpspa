@@ -10,8 +10,8 @@ namespace PhpSPA\Core\Interfaces;
  *
  * @since v1.1.5
  * @copyright 2026 Dave Conco
- * @author dconco <me@dconco.tech>
- * @see https://phpspa.tech/security/csrf-protection
+ * @author dconco <me@dconco.net>
+ * @see https://phpspa.vercel.app/security/csrf-protection
  */
 interface CsrfManagerInterface
 {
@@ -40,7 +40,7 @@ interface CsrfManagerInterface
      * @param bool $expireAfterUse Whether to remove token after successful verification
      * @param mixed $matchMetadata Optional metadata to match against the stored metadata for the token. If provided, the verification will only succeed if the metadata matches.
      * @return mixed False if the token is invalid or expired, or if the metadata doesn't match. It will return the metadata if it is provided and matches. Else it will return true if the token is valid and not expired.
-     * @see https://phpspa.tech/security/csrf-protection/#verifying-the-token
+     * @see https://phpspa.vercel.app/security/csrf-protection/#verifying-the-token
      */
     public function verify(bool $expireAfterUse = true, mixed $matchMetadata = null): mixed;
 

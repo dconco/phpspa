@@ -13,10 +13,10 @@ use const PhpSPA\Core\Impl\Const\CALL_FUNC_HANDLE;
  * within the PhpSPA framework. It includes CSRF protection and token-based
  * authentication for safe function execution in client-side contexts.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
- * @see https://phpspa.tech/hooks/use-function PHP-JS Integration Documentation
+ * @see https://phpspa.vercel.app/hooks/use-function PHP-JS Integration Documentation
  */
 class FunctionCaller
 {

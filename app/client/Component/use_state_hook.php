@@ -8,11 +8,11 @@ use PhpSPA\Core\Helper\StateManager;
  * Creates a new StateManager instance for reactive component state.
  *
  * @package Component
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @param string $stateKey The unique key identifying the state variable.
  * @param mixed  $default  The default value to initialize the state with.
  * @return StateManager    The state manager instance.
- * @see https://phpspa.tech/hooks/use-state
+ * @see https://phpspa.vercel.app/hooks/use-state
  */
 function useState (string $stateKey, $default): StateManager
 {

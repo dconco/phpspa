@@ -14,7 +14,7 @@
  * 3. Combined functionality of all new features
  *
  * @since v1.1.6
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  */
 
 use PhpSPA\Compression\Compressor;

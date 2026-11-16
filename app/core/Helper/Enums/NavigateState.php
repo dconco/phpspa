@@ -9,7 +9,7 @@ namespace PhpSPA\Core\Helper\Enums;
  * within a single-page application to control how the browser history
  * is managed during navigation operations.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  */

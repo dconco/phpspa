@@ -11,7 +11,7 @@ use PhpSPA\Compression\Compressor;
  * Manages HTML compression settings for PhpSPA applications.
  * Provides easy configuration options for different environments.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  */

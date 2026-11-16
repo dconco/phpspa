@@ -27,7 +27,7 @@ class DOM {
     * @param array $attributes Optional additional attributes as key => value pairs
     * @return array Returns all dynamically set links
     * @since v2.0.8
-    * @see https://phpspa.tech/references/dom-utilities/#domlink
+    * @see https://phpspa.vercel.app/references/dom-utilities/#domlink
     */
    public static function link(
       callable|string|null $content = null,

@@ -9,7 +9,7 @@ namespace PhpSPA\Core\Impl\Const;
  * for state management, function calling, and other internal operations.
  * These constants ensure consistent naming and behavior across the framework.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  */

@@ -1,6 +1,6 @@
 {
   "name": "@dconco/phpspa",
-  "version": "2.1.6",
+  "version": "2.1.8",
   "description": "Client-side JavaScript library for PhpSPA - Component-based PHP framework with SPA-like navigation",
   "type": "module",
   "main": "src/script/phpspa.cjs",
@@ -25,7 +25,7 @@
     "navigation",
     "morphdom"
   ],
-  "author": "Dave Conco <me@dconco.tech> (https://dconco.tech)",
+  "author": "Dave Conco <me@dconco.net> (https://dconco.tech)",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -34,7 +34,7 @@
   "bugs": {
     "url": "https://github.com/dconco/phpspa/issues"
   },
-  "homepage": "https://phpspa.tech",
+  "homepage": "https://phpspa.vercel.app",
   "dependencies": {
     "morphdom": "^2.7.7"
   },

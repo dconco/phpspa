@@ -12,7 +12,7 @@ use PhpSPA\Core\Helper\FileHandler;
  * @package HTTP
  * @author Samuel Paschalson <samuelpaschalson@gmail.com>
  * @copyright 2026 Samuel Paschalson
- * @see https://phpspa.tech/references/response/#response-api-examples
+ * @see https://phpspa.vercel.app/references/response/#response-api-examples
  */
 class Response
 {
@@ -223,7 +223,7 @@ class Response
     * @param string $url The URL to redirect to.
     * @param int $code The HTTP status code for the redirect (e.g., 301, 302).
     * @return RedirectException Return this from your handler.
-    * @see https://phpspa.tech/requests/#redirects-session-management
+    * @see https://phpspa.vercel.app/requests/#redirects-session-management
     */
    public function redirect(string $url, int $code = 302): RedirectException
    {

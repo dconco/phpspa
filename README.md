@@ -9,7 +9,7 @@
 <br>
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)](LICENSE)
-[![Documentation](https://img.shields.io/badge/docs-read%20the%20docs-blue.svg?style=for-the-badge)](https://phpspa.tech)
+[![Documentation](https://img.shields.io/badge/docs-read%20the%20docs-blue.svg?style=for-the-badge)](https://phpspa.vercel.app)
 [![GitHub stars](https://img.shields.io/github/stars/dconco/phpspa?style=for-the-badge&color=yellow)](https://github.com/dconco/phpspa)
 [![PHP Version](https://img.shields.io/packagist/v/dconco/phpspa?style=for-the-badge&color=purple)](https://packagist.org/packages/dconco/phpspa)
 [![Downloads](https://img.shields.io/packagist/dt/dconco/phpspa?style=for-the-badge&color=orange)](https://packagist.org/packages/dconco/phpspa)
@@ -221,9 +221,9 @@ You’ll see `X-PhpSPA-Compression-Engine: native` in response headers when acti
 
 ## 📚 **Learn More**
 
-🔗 **[Complete Documentation](https://phpspa.tech)** — Full tutorials, examples and guides
+🔗 **[Complete Documentation](https://phpspa.vercel.app)** — Full tutorials, examples and guides
 
-👉 **[API References](https://phpspa.tech/references)** — Detailed API documentation for all PhpSPA features
+👉 **[API References](https://phpspa.vercel.app/references)** — Detailed API documentation for all PhpSPA features
 
 📦 **[Packagist](https://packagist.org/packages/dconco/phpspa)** — Installation and versions
 
@@ -260,7 +260,7 @@ _Building modern web applications with the simplicity of PHP_
   <a href="https://twitter.com/dave_conco">
     <img src="https://img.shields.io/badge/Twitter-@dave_conco-1DA1F2?style=flat&logo=twitter&logoColor=white" alt="Twitter">
   </a>
-  <a href="mailto:me@dconco.tech">
+  <a href="mailto:me@dconco.net">
     <img src="https://img.shields.io/badge/Email-Me%21-D14836?style=flat&logo=gmail&logoColor=white" alt="Email">
   </a>
   <a href="https://dconco.tech">

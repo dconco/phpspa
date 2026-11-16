@@ -6,7 +6,7 @@
  * Tests the async functionality of useFetch with cURL
  *
  * @since v2.0.1
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  */
 
 use PhpSPA\Core\Client\AsyncResponse;

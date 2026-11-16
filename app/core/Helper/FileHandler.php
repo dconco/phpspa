@@ -11,7 +11,7 @@ use PhpSPA\Exceptions\AppException;
  * file validation, and other file-related utilities within the PhpSPA framework.
  * It ensures secure and reliable file handling across the application.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  */

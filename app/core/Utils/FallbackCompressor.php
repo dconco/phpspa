@@ -9,7 +9,7 @@ namespace PhpSPA\Core\Utils;
  * This class is only loaded when native binary compressors are unavailable,
  * avoiding autoload overhead when binaries are present.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  */

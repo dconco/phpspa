@@ -5,6 +5,7 @@ namespace PhpSPA\Core\Utils\Formatter;
 use PhpSPA\Exceptions\AppException;
 use PhpSPA\Core\Helper\ComponentValueCodec;
 use PhpSPA\Core\Helper\ComponentScope;
+use PhpSPA\Interfaces\UIComponent;
 use ReflectionFunctionAbstract;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -19,7 +20,7 @@ use ReflectionUnionType;
  * into executable PHP components within the PhpSPA framework.
  *
  * @package PhpSPA\Core\Utils\Formatter
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  */
@@ -35,7 +36,7 @@ trait ComponentTagFormatter
     */
    protected static function format(string $dom): string
    {
-      $pattern = '/<([@\$]?[A-Z][a-zA-Z0-9.:]*)([^>]*)(?:\/>|>([\s\S]*?)<\/\1>)/';
+      $pattern = '/<([@\$]?[A-Z][a-zA-Z0-9]*(?:\.[A-Z][a-zA-Z0-9]*)*(?:::[A-Z][a-zA-Z0-9]*)?)(?![a-zA-Z0-9.:])([^>]*)(?:\/>|>([\s\S]*?)<\/\1>)/';
 
       $updatedDom = preg_replace_callback(
          $pattern,
@@ -117,8 +118,16 @@ trait ComponentTagFormatter
                   throw new \BadFunctionCallException("Class {$className} does not exist.");
                }
 
+               if (!is_subclass_of($className, UIComponent::class)) {
+                  throw new \BadFunctionCallException("Class {$className} must implement PhpSPA\\Interfaces\\UIComponent to be used as a component tag");
+               }
+
                if (method_exists($className, $methodName)) {
                   $reflection = ReflectionMethod::createFromMethodName("$className::$methodName");
+
+                  if ($reflection->getName() !== $methodName) {
+                     throw new \BadFunctionCallException("Method '{$methodName}' does not match exact declaration '{$reflection->getName()}' in class {$className}.");
+                  }
 
                   try {
                      self::assertSafeComponentCallable($reflection, "$className::$methodName");
@@ -138,6 +147,10 @@ trait ComponentTagFormatter
                }
             } elseif (class_exists($className)) {
                // Class syntax
+               if (!is_subclass_of($className, UIComponent::class)) {
+                  throw new \BadFunctionCallException("Class {$className} must implement PhpSPA\\Interfaces\\UIComponent to be used as a component tag");
+               }
+
                if (method_exists($className, '__render')) {
                   $reflection = ReflectionMethod::createFromMethodName("$className::__render");
 
@@ -164,6 +177,11 @@ trait ComponentTagFormatter
 
                try {
                   self::assertSafeComponentCallable($reflection, $className);
+
+                  if ($reflection->getName() !== $className) {
+                     throw new \BadFunctionCallException("Component function '{$className}' does not match exact declaration '{$reflection->getName()}'.");
+                  }
+
                   return self::requireStringComponentResult(
                      \call_user_func_array($className, $attributes),
                      $className,
@@ -191,16 +209,13 @@ trait ComponentTagFormatter
     * Never expose internal PHP functions/classes, and reject callables whose
     * declared return type cannot be rendered as HTML text.
     */
-   private static function assertSafeComponentCallable(
-      ReflectionFunctionAbstract $reflection,
-      string $displayName,
-   ): void {
+   private static function assertSafeComponentCallable(ReflectionFunctionAbstract $reflection, string $displayName): void {
       if ($reflection->isInternal()) {
-         throw new \BadFunctionCallException("Internal PHP callable {$displayName} cannot be used as a component.");
+         throw new \BadFunctionCallException("Internal PHP callable {$displayName} cannot be used as a component");
       }
 
       if ($reflection instanceof ReflectionMethod && $reflection->getDeclaringClass()->isInternal()) {
-         throw new \BadFunctionCallException("Internal PHP class methods cannot be used as components.");
+         throw new \BadFunctionCallException("Internal PHP class methods cannot be used as components");
       }
 
       $returnType = $reflection->getReturnType();
@@ -212,7 +227,7 @@ trait ComponentTagFormatter
 
       foreach ($types as $type) {
          if (!$type instanceof ReflectionNamedType || !in_array($type->getName(), ['string', 'mixed'], true)) {
-            throw new \BadFunctionCallException("Component {$displayName} must return a string.");
+            throw new \BadFunctionCallException("Component {$displayName} must return a string");
          }
       }
    }
@@ -220,7 +235,7 @@ trait ComponentTagFormatter
    private static function requireStringComponentResult(mixed $result, string $displayName): string
    {
       if (!is_string($result)) {
-         throw new \UnexpectedValueException("Component {$displayName} returned a non-string value.");
+         throw new \UnexpectedValueException("Component {$displayName} returned a non-string value");
       }
 
       return $result;

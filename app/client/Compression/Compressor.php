@@ -10,10 +10,10 @@ namespace PhpSPA\Compression;
  * various compression levels and environment-specific optimizations.
  *
  * @package Compression
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
- * @see https://phpspa.tech/performance/html-compression/ Compression System Documentation
+ * @see https://phpspa.vercel.app/performance/html-compression/ Compression System Documentation
  */
 class Compressor
 {

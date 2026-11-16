@@ -15,7 +15,6 @@ use PhpSPA\Http\Session;
 final class ComponentValueCodec
 {
     private const string PREFIX = 'phpspa-v1';
-    private const string SESSION_KEY = '__phpspa_component_value_key';
     private const int MAX_SERIALIZED_BYTES = 16_777_216;
 
     public static function encode(mixed $value): string
@@ -69,16 +68,16 @@ final class ComponentValueCodec
 
     private static function signingKey(): string
     {
-        $encoded = Session::get(self::SESSION_KEY);
-        if (is_string($encoded)) {
-            $key = base64_decode($encoded, true);
-            if ($key !== false && strlen($key) === 32) {
-                return $key;
-            }
+        $appKey = getenv('APP_KEY');
+        if (!is_string($appKey) || trim($appKey) === '') {
+            $appKey = $_ENV['APP_KEY'] ?? $_SERVER['APP_KEY'] ?? 'phpspa_component_value_fallback_key';
         }
 
-        $key = random_bytes(32);
-        Session::set(self::SESSION_KEY, base64_encode($key), true);
-        return $key;
+        $sessionId = session_id();
+        if ($sessionId === '') {
+            $sessionId = 'phpspa_session_default';
+        }
+
+        return hash_hmac('sha256', $sessionId, trim($appKey), true);
     }
 }

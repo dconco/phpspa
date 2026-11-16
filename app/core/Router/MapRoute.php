@@ -15,7 +15,7 @@ use PhpSPA\Interfaces\MapInterface;
  * This class is responsible for mapping and matching routes against the current request URI and HTTP method.
  * It extends the Controller class and implements the MapInterface interface.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  * @var string|array $route

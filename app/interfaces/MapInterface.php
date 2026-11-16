@@ -12,7 +12,7 @@ namespace PhpSPA\Interfaces;
  * This interface ensures consistent route matching behavior across
  * different routing strategies.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  * @since v1.0.0

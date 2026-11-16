@@ -10,7 +10,7 @@ namespace PhpSPA\Core\Utils\Formatter;
  * transformation of template expressions into executable PHP code.
  *
  * @package PhpSPA\Core\Utils\Formatter
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  * @since v1.0.0

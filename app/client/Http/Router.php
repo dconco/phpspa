@@ -13,7 +13,7 @@ use PhpSPA\Http\Response;
  * 
  * @package HTTP
  * @author Samuel Paschalson <samuelpaschalson@gmail.com>
- * @author Dave Conco <me@dconco.tech>
+ * @author Dave Conco <me@dconco.net>
  * @copyright 2026 Samuel Paschalson
  * @method void get(string|array $route, callable ...$handlers) Register a GET route. Handlers receive (Request $request, Response $response, Closure $next).
  * @method void put(string|array $route, callable ...$handlers) Register a PUT route. Handlers receive (Request $request, Response $response, Closure $next).
@@ -22,7 +22,7 @@ use PhpSPA\Http\Response;
  * @method void patch(string|array $route, callable ...$handlers) Register a PATCH route. Handlers receive (Request $request, Response $response, Closure $next).
  * @method void delete(string|array $route, callable ...$handlers) Register a DELETE route. Handlers receive (Request $request, Response $response, Closure $next).
  * @method void methods(string|array $methods, string|array $route, callable ...$handlers) Register a route for multiple HTTP methods.
- * @see https://phpspa.tech/references/response/#router-quick-examples
+ * @see https://phpspa.vercel.app/references/response/#router-quick-examples
  */
 
 class Router
@@ -67,7 +67,7 @@ class Router
     * @param callable|string $handler The middleware handler.
     * @return void
     * @since v2.0.4
-    * @see https://phpspa.tech/references/router/#middleware
+    * @see https://phpspa.vercel.app/references/router/#middleware
     */
    public function middleware(callable|string $handler) {
       $this->middlewares[] = $handler;
@@ -80,7 +80,7 @@ class Router
     * @param callable|string $handler The callback to define routes within this group.
     * @return void
     * @since v2.0.4
-    * @see https://phpspa.tech/references/router/#nested-prefixes
+    * @see https://phpspa.vercel.app/references/router/#nested-prefixes
     */
    public function prefix(string $path, callable|string $handler) {
       $prefix = ['path' => rtrim($this->prefix, '/') . '/' . ltrim($path, '/'), 'handler' => $handler];

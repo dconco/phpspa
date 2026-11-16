@@ -10,11 +10,11 @@ use PhpSPA\Exceptions\AppException;
  * Imports file as base64 data URI with MIME type detection.
  *
  * @package Component
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @param string $file File path to import
  * @return ImportedFile Data URI with MIME type and base64 content
  * @throws AppException If file is invalid or unreadable
- * @see https://phpspa.tech/references/file-import-utility
+ * @see https://phpspa.vercel.app/references/file-import-utility
  */
 function import(string $file): ImportedFile
 {

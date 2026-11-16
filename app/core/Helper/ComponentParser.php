@@ -9,7 +9,7 @@ namespace PhpSPA\Core\Helper;
  * into array format, facilitating component attribute handling and manipulation
  * within the PhpSPA framework.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  * @var string|array $attributes

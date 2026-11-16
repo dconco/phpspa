@@ -10,7 +10,7 @@ namespace PhpSPA\Exceptions;
  * provide framework-specific error handling and messaging capabilities.
  *
  * @package PhpSPA\Exceptions
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  * @since v1.0.0

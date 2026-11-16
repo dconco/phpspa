@@ -10,7 +10,7 @@ namespace PhpSPA\Core\Helper;
  * during component rendering. Each component gets its own scope to avoid
  * variable name collisions between different components.
  *
- * @author dconco <me@dconco.tech>
+ * @author dconco <me@dconco.net>
  * @copyright 2026 Dave Conco
  * @license MIT
  */

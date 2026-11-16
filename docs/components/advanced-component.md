@@ -11,9 +11,15 @@ Beyond simple functions, PhpSPA offers several powerful ways to structure and ca
 !!! info "Complex Components"
     For more complex components that might have their own methods or properties, you can use a class. If a class has a `__render()` method, `PhpSPA` will automatically call it when the class is used as a component. Props and children are passed as arguments to the `__render` method.
 
+!!! important "Security Requirement (v2.1.8+)"
+    Starting from **v2.1.8**, all class-based components must implement `PhpSPA\Interfaces\UIComponent`. This marker interface prevents arbitrary or unauthorized PHP classes from being executed as component tags. Both the class name and any custom methods must follow PascalCase naming (`<Namespace.Class::Method />` or `<Class::Method />`).
+
 ```php
 <?php
-class Alert {
+
+use PhpSPA\Interfaces\UIComponent;
+
+class Alert implements UIComponent {
    // This method is called automatically
    public function __render($type, $children) {
       $class = "alert alert-{$type}"; // e.g., 'alert alert-success'
@@ -36,8 +42,24 @@ function StatusMessage() {
 }
 ```
 
-!!! tip "Method Components"
-    You can even call other public methods of a class directly as components using the `::` syntax.
+!!! tip "Method Components (PascalCase)"
+    You can also call other public methods of a class directly as components using the `::` syntax. The method name must be in PascalCase and the class must implement `UIComponent`.
+
+    ```php
+    <?php
+
+    use PhpSPA\Interfaces\UIComponent;
+
+    class MyComponent implements UIComponent {
+       public static function Header() {
+          return "<header><h1>My Site</h1></header>";
+       }
+
+       public static function Footer() {
+          return "<footer><p>&copy; 2026</p></footer>";
+       }
+    }
+    ```
 
     ```html
     <MyComponent::Header />
