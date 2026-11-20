@@ -78,6 +78,33 @@ final class AppImplTest extends TestCase
       $this->assertSame('/tmp', $static[0]['staticPath']);
    }
 
+   public function testTargetInformationIncludesComponentScripts(): void
+   {
+      $_SERVER['REQUEST_METHOD'] = 'GET';
+      $_SERVER['REQUEST_URI'] = '/test-route';
+
+      $app = new TestAppImpl();
+      $component = new Component(fn () => '<h1>Hello</h1>');
+      $component->route('/test-route');
+      $component->targetID('app');
+      $component->script('console.log("component-script");');
+
+      $app->attach($component);
+
+      $html = $app->run(true);
+
+      $this->assertIsString($html);
+      $this->assertMatchesRegularExpression('/phpspa-target-data="([^"]+)"/', $html);
+
+      preg_match('/phpspa-target-data="([^"]+)"/', $html, $matches);
+      $targetData = json_decode(base64_decode($matches[1]), true);
+
+      $this->assertIsArray($targetData);
+      $this->assertArrayHasKey('scripts', $targetData);
+      $this->assertNotEmpty($targetData['scripts']);
+      $this->assertStringContainsString('<script', $targetData['scripts'][0]);
+   }
+
    private function getProperty(object $object, string $name, string $className): mixed
    {
       $reader = Closure::bind(

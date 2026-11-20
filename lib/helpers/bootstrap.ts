@@ -45,10 +45,14 @@ export function bootstrap() {
          targetDataInfo.targetIDs.forEach((targetID: string, index: number) => {
             const exact = targetDataInfo.exact[index]
             const defaultContent = targetDataInfo.defaultContent[index]
+            const script = targetDataInfo.scripts ? targetDataInfo.scripts[index] : ''
 
             if (targetID === targetElement.id) {
                initialState.exact = exact
                initialState.defaultContent = defaultContent
+               if (script) {
+                  initialState.content += script
+               }
             }
 
             RuntimeManager.currentRoutes[targetID] = {
