@@ -977,6 +977,7 @@ abstract class AppImpl implements ApplicationContract {
        *    currentRoutes: string[],
        *    defaultContent: string[],
        *    exact: bool[],
+       *    scripts: string[],
        * }
        * @static
        */
@@ -1042,7 +1043,7 @@ abstract class AppImpl implements ApplicationContract {
       // --- This render the component to the target ID ---
       $this->renderedData = preg_replace_callback(
          $tag,
-         function ($matches) use (&$targetInformation, &$tt, $componentOutput, $isPreloadingComponent, $exact, $reloadTime, $targetID) {
+         function ($matches) use (&$targetInformation, &$tt, $componentOutput, $isPreloadingComponent, $exact, $reloadTime, $targetID, $assetLinks) {
             // --- $matches[1] contains the tag name, ---
             // --- $matches[2] contains attributes with the target ID, ---
             // --- $matches[3] contains the default content inside the tag ---
@@ -1053,6 +1054,7 @@ abstract class AppImpl implements ApplicationContract {
             $targetInformation['exact'][] = $exact;
             $targetInformation['targetIDs'][] = $targetID;
             $targetInformation['defaultContent'][] = Compressor::compressComponent($matches[3], $this->disableLogs);
+            $targetInformation['scripts'][] = $assetLinks['component']['scripts'];
 
             // --- This is the last component which is the main component ---
             // --- Then attach it directly to the component target element ---

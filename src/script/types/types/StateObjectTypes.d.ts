@@ -23,6 +23,7 @@ export type TargetInformation = {
     stateData: Record<string, StateValueType>;
     reloadTime?: number;
     exact: boolean[];
+    scripts?: string[];
 };
 export type StateValueType = string | number | boolean | null | {
     [key: string]: StateValueType;

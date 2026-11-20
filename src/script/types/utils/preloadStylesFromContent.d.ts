@@ -1,7 +1,7 @@
 export declare const clearPreloadedStylesForScope: (scopeKey: string) => void;
 /**
- * Keeps the source content's style tags on a live-HTML snapshot, because they are
- * moved to <head> on navigation and so are missing from the target's current markup.
+ * Keeps the source content's style and script tags on a live-HTML snapshot, because
+ * styles are moved to <head> and initial component scripts reside outside the target element.
  */
 export declare const retainStyleTags: (sourceContent: string, updatedContent: string) => string;
 /**

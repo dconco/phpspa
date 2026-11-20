@@ -148,16 +148,30 @@ export const clearPreloadedStylesForScope = (scopeKey: string) => {
 }
 
 /**
- * Keeps the source content's style tags on a live-HTML snapshot, because they are
- * moved to <head> on navigation and so are missing from the target's current markup.
+ * Keeps the source content's style and script tags on a live-HTML snapshot, because
+ * styles are moved to <head> and initial component scripts reside outside the target element.
  */
 export const retainStyleTags = (sourceContent: string, updatedContent: string): string => {
    const template = document.createElement('template')
    template.innerHTML = sourceContent
 
    const styleTags = Array.from(template.content.querySelectorAll(`${STYLESHEET_SELECTOR}, style`))
+   const scriptTags = Array.from(template.content.querySelectorAll('script'))
 
-   return styleTags.map(node => node.outerHTML).join('') + updatedContent
+   const updatedTemplate = document.createElement('template')
+   updatedTemplate.innerHTML = updatedContent
+   const updatedScriptKeys = new Set(
+      Array.from(updatedTemplate.content.querySelectorAll('script')).map(s => s.getAttribute('src') || s.textContent)
+   )
+
+   const missingScripts = scriptTags.filter(s => {
+      const key = s.getAttribute('src') || s.textContent
+      return !updatedScriptKeys.has(key)
+   })
+
+   return styleTags.map(node => node.outerHTML).join('') +
+      updatedContent +
+      missingScripts.map(node => node.outerHTML).join('')
 }
 
 /**

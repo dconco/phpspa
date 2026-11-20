@@ -1,5 +1,5 @@
 /*!
- * PhpSPA Client Runtime v2.1.6
+ * PhpSPA Client Runtime v2.1.9
  * Docs: https://phpspa.vercel.app | Package: @dconco/phpspa
  * License: MIT
  */
@@ -401,14 +401,24 @@ const clearPreloadedStylesForScope = (scopeKey) => {
     setScopeStyles(normalizeScopeKey(scopeKey), new Set());
 };
 /**
- * Keeps the source content's style tags on a live-HTML snapshot, because they are
- * moved to <head> on navigation and so are missing from the target's current markup.
+ * Keeps the source content's style and script tags on a live-HTML snapshot, because
+ * styles are moved to <head> and initial component scripts reside outside the target element.
  */
 const retainStyleTags = (sourceContent, updatedContent) => {
     const template = document.createElement('template');
     template.innerHTML = sourceContent;
     const styleTags = Array.from(template.content.querySelectorAll(`${STYLESHEET_SELECTOR}, style`));
-    return styleTags.map(node => node.outerHTML).join('') + updatedContent;
+    const scriptTags = Array.from(template.content.querySelectorAll('script'));
+    const updatedTemplate = document.createElement('template');
+    updatedTemplate.innerHTML = updatedContent;
+    const updatedScriptKeys = new Set(Array.from(updatedTemplate.content.querySelectorAll('script')).map(s => s.getAttribute('src') || s.textContent));
+    const missingScripts = scriptTags.filter(s => {
+        const key = s.getAttribute('src') || s.textContent;
+        return !updatedScriptKeys.has(key);
+    });
+    return styleTags.map(node => node.outerHTML).join('') +
+        updatedContent +
+        missingScripts.map(node => node.outerHTML).join('');
 };
 /**
  * Prepares a component's styles without letting them affect the current page.
@@ -1986,9 +1996,13 @@ function bootstrap() {
             targetDataInfo.targetIDs.forEach((targetID, index) => {
                 const exact = targetDataInfo.exact[index];
                 const defaultContent = targetDataInfo.defaultContent[index];
+                const script = targetDataInfo.scripts ? targetDataInfo.scripts[index] : '';
                 if (targetID === targetElement.id) {
                     initialState.exact = exact;
                     initialState.defaultContent = defaultContent;
+                    if (script) {
+                        initialState.content += script;
+                    }
                 }
                 RuntimeManager.currentRoutes[targetID] = {
                     route: new URL(targetDataInfo.currentRoutes[index], uri),
